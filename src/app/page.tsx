@@ -10,13 +10,13 @@ import { Modal } from "@/components/ui/Modal";
 
 // SOLID COLORS CATEGORIES DATA
 const CATEGORIES = [
-  { name: "Food", icon: "🍔", bg: "bg-orange-500 text-white" },
-  { name: "Snacks", icon: "🍿", bg: "bg-pink-500 text-white" },
-  { name: "Drinks", icon: "🥤", bg: "bg-blue-500 text-white" },
-  { name: "Groceries", icon: "🛒", bg: "bg-emerald-500 text-white" },
-  { name: "Pastries", icon: "🥐", bg: "bg-amber-600 text-white" },
-  { name: "Stationery", icon: "✏️", bg: "bg-purple-500 text-white" },
-  { name: "Care", icon: "🧴", bg: "bg-indigo-600 text-white" },
+  { name: "Food", slug: "food", icon: "🍔", bg: "bg-orange-500 text-white" },
+  { name: "Snacks", slug: "snacks", icon: "🍿", bg: "bg-pink-500 text-white" },
+  { name: "Drinks", slug: "drinks", icon: "🥤", bg: "bg-blue-500 text-white" },
+  { name: "Groceries", slug: "groceries", icon: "🛒", bg: "bg-emerald-500 text-white" },
+  { name: "Pastries", slug: "pastries", icon: "🥐", bg: "bg-amber-600 text-white" },
+  { name: "Stationery", slug: "stationery", icon: "✏️", bg: "bg-purple-500 text-white" },
+  { name: "Care", slug: "care", icon: "🧴", bg: "bg-indigo-600 text-white" },
 ];
 
 const POPULAR_PRODUCTS = [
@@ -171,7 +171,7 @@ export default function Home() {
             </div>
             
             <div className="mt-4">
-              <Link href="/search" className="inline-flex items-center gap-2 bg-white text-indigo-900 font-bold text-xs md:text-sm px-4 py-2.5 rounded-full shadow-sm hover:bg-slate-100 active:scale-95 transition-all">
+              <Link href="/category/pastries" className="inline-flex items-center gap-2 bg-white text-indigo-900 font-bold text-xs md:text-sm px-4 py-2.5 rounded-full shadow-sm hover:bg-slate-100 active:scale-95 transition-all">
                 Order Now <ArrowRight size={16} />
               </Link>
             </div>
@@ -216,15 +216,16 @@ export default function Home() {
           
           <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
             {CATEGORIES.map((cat, i) => (
-              <button
+              <Link
                 key={i}
+                href={`/category/${cat.slug}`}
                 className="flex flex-col items-center justify-center min-w-[85px] min-h-[95px] bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 active:scale-95 hover:border-indigo-500 transition-all group"
               >
                 <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center text-2xl shadow-sm mb-1.5`}>
                   {cat.icon}
                 </div>
                 <span className="text-xs font-bold text-slate-800">{cat.name}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
