@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, ShoppingBag, ClipboardList, User } from "lucide-react";
+import { Home, ShoppingBag, ClipboardList, User } from "lucide-react";
 import clsx from "clsx";
 import { useCartStore } from "@/lib/store";
+import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -22,7 +23,7 @@ export function BottomNav() {
 
   const navItems = [
     { name: "Home", href: "/", icon: Home },
-    { name: "Search", href: "/search", icon: Search },
+    { name: "Search", href: "/search", icon: CustomSearchIcon },
     { name: "Cart", href: "/cart", icon: ShoppingBag, badge: isMounted ? itemCount : 0 },
     { name: "Orders", href: "/orders", icon: ClipboardList },
     { name: "Profile", href: "/profile", icon: User },
