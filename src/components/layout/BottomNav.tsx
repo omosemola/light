@@ -20,7 +20,12 @@ export function BottomNav() {
     setIsMounted(true);
   }, []);
 
-  if (pathname.startsWith("/vendor") || pathname.startsWith("/admin")) {
+  if (
+    pathname.startsWith("/vendor") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/product/") ||
+    pathname === "/checkout"
+  ) {
     return null;
   }
 
