@@ -64,24 +64,12 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading font-extrabold text-xl md:text-2xl text-white">
-                  Alex John
-                </h2>
-                <ShieldCheck size={18} className="text-[#FBBF24]" />
-              </div>
+              <h2 className="font-heading font-extrabold text-xl md:text-2xl text-white">
+                Alex John
+              </h2>
               <p className="text-slate-300 font-body font-normal text-xs md:text-sm">
                 alex.john@student.uni.edu
               </p>
-
-              <div className="flex items-center gap-2 pt-1">
-                <span className="bg-[#FBBF24] text-[#312E81] text-[11px] font-heading font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                  Verified Student
-                </span>
-                <span className="bg-white/15 text-white text-[11px] font-body font-medium px-2.5 py-0.5 rounded-full backdrop-blur-sm">
-                  Computer Science • Year 3
-                </span>
-              </div>
             </div>
           </div>
         </div>
