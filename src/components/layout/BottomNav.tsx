@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ShoppingBag, ClipboardList, User } from "lucide-react";
 import clsx from "clsx";
 import { useCartStore } from "@/lib/store";
+import { CustomHomeIcon } from "@/components/icons/CustomHomeIcon";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
+import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
+import { CustomOrdersIcon } from "@/components/icons/CustomOrdersIcon";
+import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -22,11 +25,11 @@ export function BottomNav() {
   }
 
   const navItems = [
-    { name: "Home", href: "/", icon: Home },
+    { name: "Home", href: "/", icon: CustomHomeIcon },
     { name: "Search", href: "/search", icon: CustomSearchIcon },
-    { name: "Cart", href: "/cart", icon: ShoppingBag, badge: isMounted ? itemCount : 0 },
-    { name: "Orders", href: "/orders", icon: ClipboardList },
-    { name: "Profile", href: "/profile", icon: User },
+    { name: "Cart", href: "/cart", icon: CustomCartIcon, badge: isMounted ? itemCount : 0 },
+    { name: "Orders", href: "/orders", icon: CustomOrdersIcon },
+    { name: "Profile", href: "/profile", icon: CustomProfileIcon },
   ];
 
   return (
