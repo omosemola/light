@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  VENDOR
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY_FOR_DELIVERY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  phone         String?
+  role          Role      @default(STUDENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  store         Store?
+  orders        Order[]
+  tickets       SupportTicket[]
+}
+
+model Store {
+  id                  String    @id @default(cuid())
+  name                String
+  description         String?
+  logo                String?
+  coverImage          String?
+  isOpen              Boolean   @default(true)
+  estimatedDelivery   String?   @default("30-45 mins")
+  rating              Float     @default(5.0)
+  paystackSubaccountCode String? // For split payments
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  products            Product[]
+  orders              Order[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  image       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  products    Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  image       String
+  isAvailable Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  deliveryLocation String
+  deliveryInstructions String?
+  paymentReference String?    @unique
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  items           OrderItem[]
+  tickets         SupportTicket[]
+}
+
+model OrderItem {
+  id          String    @id @default(cuid())
+  quantity    Int
+  price       Float
+  
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+}
+
+model SupportTicket {
+  id          String       @id @default(cuid())
+  subject     String
+  category    String
+  message     String
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?       @relation(fields: [orderId], references: [id])
+}
