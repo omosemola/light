@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, ShoppingBag, ClipboardList, User } from "lucide-react";
@@ -9,6 +10,11 @@ import { useCartStore } from "@/lib/store";
 export function BottomNav() {
   const pathname = usePathname();
   const itemCount = useCartStore((state) => state.getItemCount());
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (pathname.startsWith("/vendor") || pathname.startsWith("/admin")) {
     return null;
@@ -17,7 +23,7 @@ export function BottomNav() {
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Search", href: "/search", icon: Search },
-    { name: "Cart", href: "/cart", icon: ShoppingBag, badge: itemCount },
+    { name: "Cart", href: "/cart", icon: ShoppingBag, badge: isMounted ? itemCount : 0 },
     { name: "Orders", href: "/orders", icon: ClipboardList },
     { name: "Profile", href: "/profile", icon: User },
   ];

@@ -166,26 +166,20 @@ export default function Home() {
         {/* UNSPLASH RICH IMAGE BENTO PROMOTIONAL GRID */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Main Hero Bento Card with Unsplash Image Background */}
-          <div className="md:col-span-2 relative rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[210px] overflow-hidden bg-slate-900">
-            <Image 
-              src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80" 
-              alt="Fresh Pastries" 
-              fill 
-              className="object-cover opacity-40 hover:scale-105 transition-transform duration-700" 
-            />
-            <div className="relative z-10">
+          {/* Main Hero Bento Card */}
+          <div className="md:col-span-2 bg-indigo-600 rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[190px]">
+            <div>
               <span className="bg-amber-400 text-slate-900 px-3 py-1 text-xs font-black rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm">
                 <Flame size={14} className="fill-slate-900" /> Hot Deal
               </span>
-              <h2 className="font-heading font-extrabold text-2xl md:text-3xl leading-tight mt-3 drop-shadow-md">
+              <h2 className="font-heading font-extrabold text-2xl md:text-3xl leading-tight mt-3">
                 20% OFF All Pastries & Bakery 🥐
               </h2>
-              <p className="text-slate-200 text-xs md:text-sm font-medium mt-1">Use code CAMPUS20 at checkout</p>
+              <p className="text-indigo-100 text-xs md:text-sm font-medium mt-1">Use code CAMPUS20 at checkout</p>
             </div>
             
-            <div className="relative z-10 mt-4">
-              <Link href="/category/pastries" className="inline-flex items-center gap-2 bg-white text-slate-900 font-bold text-xs md:text-sm px-4.5 py-2.5 rounded-full shadow-md hover:bg-slate-100 active:scale-95 transition-all">
+            <div className="mt-4">
+              <Link href="/category/pastries" className="inline-flex items-center gap-2 bg-white text-indigo-900 font-bold text-xs md:text-sm px-4 py-2.5 rounded-full shadow-sm hover:bg-slate-100 active:scale-95 transition-all">
                 Order Now <ArrowRight size={16} />
               </Link>
             </div>

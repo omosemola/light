@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, ShoppingBag, User, Store } from "lucide-react";
@@ -8,6 +9,11 @@ import { useCartStore } from "@/lib/store";
 export function TopNav() {
   const pathname = usePathname();
   const itemCount = useCartStore((state) => state.getItemCount());
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (pathname.startsWith("/vendor") || pathname.startsWith("/admin")) {
     return null;
@@ -42,7 +48,7 @@ export function TopNav() {
           aria-label="View Cart"
         >
           <ShoppingBag size={22} />
-          {itemCount > 0 && (
+          {isMounted && itemCount > 0 && (
             <span className="absolute top-1.5 right-1.5 min-w-[20px] h-[20px] px-1 bg-amber-400 text-slate-900 text-[11px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-sm">
               {itemCount}
             </span>
