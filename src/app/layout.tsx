@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
 
-const roboto = Roboto({
-  variable: "--font-roboto",
-  weight: ["400", "500", "700"],
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -38,9 +37,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${roboto.variable} ${plusJakartaSans.variable} h-full antialiased`}
+      className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--color-background-main)]">
+      <body className="min-h-full flex flex-col bg-[#FAFAF7] text-[#18181B] font-body">
         <AuthProvider>
           <TopNav />
           <main className="flex-1 pb-20 md:pb-0">{children}</main>

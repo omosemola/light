@@ -1,38 +1,25 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #0F172A;
-  --color-primary-accent: #4F46E5;
-  --color-secondary: #F59E0B;
-  --color-secondary-bright: #FBBF24;
-  --color-accent-pink: #EC4899;
-  --color-accent-purple: #8B5CF6;
-  --color-background-main: #F8FAFC;
-  --color-background-card: #FFFFFF;
-  --color-text-primary: #0F172A;
-  --color-text-muted: #64748B;
-  --color-surface-soft: #F1F5F9;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-
+:root {
   --font-heading: var(--font-plus-jakarta-sans), sans-serif;
-  --font-body: var(--font-roboto), sans-serif;
-
-  --shadow-bento: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+  --font-body: var(--font-inter), sans-serif;
 }
 
 @layer base {
   body {
-    background-color: var(--color-background-main);
-    color: var(--color-text-primary);
+    background-color: #FAFAF7;
+    color: #18181B;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3, h4, h5, h6, .font-heading {
     font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
   }
 }
 
@@ -41,12 +28,7 @@
     display: none;
   }
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-
-  .glass-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

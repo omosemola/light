@@ -29,7 +29,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 shadow-md pb-safe z-50 md:hidden">
+    <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 shadow-md pb-safe z-50 md:hidden font-body">
       <div className="flex justify-around items-center h-16 px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -41,24 +41,24 @@ export function BottomNav() {
               href={item.href}
               className={clsx(
                 "flex flex-col items-center justify-center w-full h-full min-h-[48px] min-w-[48px] transition-colors relative",
-                isActive ? "text-indigo-600" : "text-slate-400 hover:text-slate-600"
+                isActive ? "text-[#312E81]" : "text-[#71717A] hover:text-[#18181B]"
               )}
               aria-label={item.name}
             >
               <div
                 className={clsx(
                   "flex items-center justify-center p-1.5 rounded-2xl relative transition-colors",
-                  isActive && "bg-indigo-50 text-indigo-600"
+                  isActive && "bg-[#F4F3FF] text-[#312E81]"
                 )}
               >
                 <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
                 {item.badge ? (
-                  <span className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 bg-amber-400 text-slate-900 text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+                  <span className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 bg-[#FBBF24] text-[#312E81] text-[10px] font-body font-extrabold flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                     {item.badge}
                   </span>
                 ) : null}
               </div>
-              <span className={clsx("text-[10px] mt-0.5 font-bold tracking-tight", isActive && "text-indigo-600")}>
+              <span className={clsx("text-[10px] mt-0.5 font-body font-bold tracking-tight", isActive ? "text-[#312E81]" : "text-[#71717A]")}>
                 {item.name}
               </span>
             </Link>

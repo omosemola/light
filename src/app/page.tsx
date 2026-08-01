@@ -8,15 +8,15 @@ import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 
-// SOLID COLORS CATEGORIES DATA
+// CATEGORIES DATA
 const CATEGORIES = [
-  { name: "Food", slug: "food", icon: "🍔", bg: "bg-orange-500 text-white" },
-  { name: "Snacks", slug: "snacks", icon: "🍿", bg: "bg-pink-500 text-white" },
-  { name: "Drinks", slug: "drinks", icon: "🥤", bg: "bg-blue-500 text-white" },
-  { name: "Groceries", slug: "groceries", icon: "🛒", bg: "bg-emerald-500 text-white" },
-  { name: "Pastries", slug: "pastries", icon: "🥐", bg: "bg-amber-600 text-white" },
-  { name: "Stationery", slug: "stationery", icon: "✏️", bg: "bg-purple-500 text-white" },
-  { name: "Care", slug: "care", icon: "🧴", bg: "bg-indigo-600 text-white" },
+  { name: "Food", slug: "food", icon: "🍔", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Snacks", slug: "snacks", icon: "🍿", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Drinks", slug: "drinks", icon: "🥤", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Groceries", slug: "groceries", icon: "🛒", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Pastries", slug: "pastries", icon: "🥐", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Stationery", slug: "stationery", icon: "✏️", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Care", slug: "care", icon: "🧴", bg: "bg-[#F4F3FF] text-[#312E81]" },
 ];
 
 const POPULAR_PRODUCTS = [
@@ -109,22 +109,24 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B]">
       
-      {/* SOLID HERO HEADER */}
-      <section className="bg-slate-900 text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md">
+      {/* HERO HEADER: Midnight Indigo (#1E1B4B) */}
+      <section className="bg-[#1E1B4B] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-amber-400 text-slate-900 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                {/* Popular Badge: Warm Electric Yellow (#FBBF24) + Deep Indigo (#312E81) text */}
+                <span className="bg-[#FBBF24] text-[#312E81] text-[11px] font-heading font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <Sparkles size={12} /> Campus Active
                 </span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight">
+              {/* Main Hero Heading: Plus Jakarta Sans 800 */}
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white">
                 Hey Alex! 👋
               </h1>
-              <p className="text-slate-300 text-xs md:text-sm font-medium mt-0.5">
+              <p className="text-slate-300 text-xs md:text-sm font-normal mt-0.5 font-body">
                 What are we ordering today?
               </p>
             </div>
@@ -141,10 +143,10 @@ export default function Home() {
 
           {/* Search Bar */}
           <Link href="/search" className="block relative w-full group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#71717A]">
               <Search size={22} />
             </div>
-            <div className="w-full h-14 pl-12 pr-4 flex items-center rounded-2xl bg-white text-slate-500 font-medium text-sm md:text-base border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+            <div className="w-full h-14 pl-12 pr-4 flex items-center rounded-2xl bg-white text-[#71717A] font-body font-medium text-sm md:text-base border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
               Search meals, snacks, stationery...
             </div>
           </Link>
@@ -154,62 +156,49 @@ export default function Home() {
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full -mt-4 z-20 space-y-8 pb-12">
         
-        {/* UNSPLASH RICH IMAGE BENTO PROMOTIONAL GRID */}
+        {/* PROMOTIONAL BENTO GRID */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Main Hero Bento Card */}
-          <div className="md:col-span-2 bg-indigo-600 rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[190px]">
+          {/* Main Hero Bento Card: Deep Indigo (#312E81) */}
+          <div className="md:col-span-2 bg-[#312E81] rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[190px]">
             <div>
-              <span className="bg-amber-400 text-slate-900 px-3 py-1 text-xs font-black rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm">
-                <Flame size={14} className="fill-slate-900" /> Hot Deal
+              {/* Discount Label: Electric Yellow (#FBBF24) */}
+              <span className="bg-[#FBBF24] text-[#312E81] px-3 py-1 text-xs font-heading font-extrabold rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm">
+                <Flame size={14} className="fill-[#312E81]" /> Hot Deal
               </span>
               <h2 className="font-heading font-extrabold text-2xl md:text-3xl leading-tight mt-3">
                 20% OFF All Pastries & Bakery 🥐
               </h2>
-              <p className="text-indigo-100 text-xs md:text-sm font-medium mt-1">Use code CAMPUS20 at checkout</p>
+              <p className="text-[#F4F3FF] text-xs md:text-sm font-normal mt-1 font-body">Use code CAMPUS20 at checkout</p>
             </div>
             
             <div className="mt-4">
-              <Link href="/category/pastries" className="inline-flex items-center gap-2 bg-white text-indigo-900 font-bold text-xs md:text-sm px-4 py-2.5 rounded-full shadow-sm hover:bg-slate-100 active:scale-95 transition-all">
+              <Link href="/category/pastries" className="inline-flex items-center gap-2 bg-white text-[#312E81] font-body font-semibold text-xs md:text-sm px-4 py-2.5 rounded-full shadow-sm hover:bg-slate-100 active:scale-95 transition-all">
                 Order Now <ArrowRight size={16} />
               </Link>
             </div>
           </div>
 
-          {/* Side Bento Cards with Unsplash Images */}
+          {/* Side Bento Cards */}
           <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
             
-            <div className="relative rounded-3xl p-4 text-white flex flex-col justify-between shadow-sm overflow-hidden bg-amber-600 min-h-[95px]">
-              <Image 
-                src="https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=600&q=80" 
-                alt="Smoothies" 
-                fill 
-                className="object-cover opacity-35" 
-              />
-              <div className="relative z-10">
-                <span className="bg-slate-900 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full w-fit uppercase">
-                  New Vendor
-                </span>
-                <div className="mt-2">
-                  <h3 className="font-heading font-extrabold text-base leading-tight text-white drop-shadow-sm">Tasty Treats</h3>
-                  <p className="text-xs text-amber-100 font-medium">Fresh Smoothies & Shakes</p>
-                </div>
+            <div className="bg-[#FBBF24] rounded-3xl p-4 text-[#1E1B4B] flex flex-col justify-between shadow-sm">
+              <span className="bg-[#1E1B4B] text-white text-[10px] font-body font-bold px-2.5 py-0.5 rounded-full w-fit uppercase">
+                New Vendor
+              </span>
+              <div className="mt-2">
+                <h3 className="font-heading font-extrabold text-base leading-tight text-[#1E1B4B]">Tasty Treats</h3>
+                <p className="text-xs text-[#312E81] font-body font-medium">Fresh Smoothies & Shakes</p>
               </div>
             </div>
 
-            <div className="relative rounded-3xl p-4 shadow-sm border border-slate-200 flex items-center justify-between overflow-hidden bg-slate-900 text-white min-h-[95px]">
-              <Image 
-                src="https://images.unsplash.com/photo-1526367790999-0150786686a2?auto=format&fit=crop&w=600&q=80" 
-                alt="Delivery Rider" 
-                fill 
-                className="object-cover opacity-30" 
-              />
-              <div className="relative z-10">
-                <div className="flex items-center gap-1 text-slate-300 text-xs font-medium">
-                  <Clock size={14} className="text-amber-400" /> Avg. Time
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1 text-[#71717A] text-xs font-body font-medium">
+                  <Clock size={14} className="text-[#312E81]" /> Avg. Time
                 </div>
-                <p className="font-heading font-extrabold text-lg text-white mt-0.5">15-20 Mins</p>
-                <span className="text-[10px] font-bold text-slate-900 bg-amber-400 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                <p className="font-heading font-extrabold text-lg text-[#18181B] mt-0.5">15-20 Mins</p>
+                <span className="text-[10px] font-body font-bold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-full">
                   Fast Campus Riders
                 </span>
               </div>
@@ -219,10 +208,11 @@ export default function Home() {
 
         </section>
 
-        {/* SOLID CATEGORIES */}
+        {/* CATEGORIES SECTION */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-extrabold text-xl md:text-2xl text-slate-900">
+            {/* Section Headings: Plus Jakarta Sans 700 */}
+            <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B]">
               Explore Categories
             </h2>
           </div>
@@ -232,29 +222,31 @@ export default function Home() {
               <Link
                 key={i}
                 href={`/category/${cat.slug}`}
-                className="flex flex-col items-center justify-center min-w-[85px] min-h-[95px] bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 active:scale-95 hover:border-indigo-500 transition-all group"
+                className="flex flex-col items-center justify-center min-w-[85px] min-h-[95px] bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 active:scale-95 hover:border-[#312E81] transition-all group"
               >
+                {/* Active category icon box: Light Lavender Gray (#F4F3FF) */}
                 <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center text-2xl shadow-sm mb-1.5`}>
                   {cat.icon}
                 </div>
-                <span className="text-xs font-bold text-slate-800">{cat.name}</span>
+                {/* Category Names: Plus Jakarta Sans 600-700 */}
+                <span className="text-xs font-heading font-bold text-[#18181B]">{cat.name}</span>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* POPULAR NEAR YOU */}
+        {/* POPULAR NEAR YOU SECTION */}
         <section>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-heading font-extrabold text-xl md:text-2xl text-slate-900">
+              <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B]">
                 Popular Near You
               </h2>
-              <p className="text-xs text-slate-500 font-medium">Click on any product to view details</p>
+              <p className="text-xs text-[#71717A] font-body font-normal">Click on any product to view details</p>
             </div>
             <Link 
               href="/search" 
-              className="text-xs md:text-sm font-bold text-indigo-600 hover:underline flex items-center gap-1"
+              className="text-xs md:text-sm font-body font-semibold text-[#312E81] hover:underline flex items-center gap-1"
             >
               See all <ArrowRight size={14} />
             </Link>
@@ -276,8 +268,8 @@ export default function Home() {
         title={selectedProduct?.vendorName || "Product Details"}
       >
         {selectedProduct && (
-          <div className="space-y-4">
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-100">
+          <div className="space-y-4 font-body">
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#FAFAF7]">
               <Image 
                 src={selectedProduct.image} 
                 alt={selectedProduct.name} 
@@ -287,36 +279,40 @@ export default function Home() {
             </div>
 
             <div>
-              <h3 className="font-heading font-bold text-xl text-slate-900">
+              <span className="text-xs font-body font-medium text-[#71717A] block mb-0.5">
+                {selectedProduct.vendorName}
+              </span>
+              <h3 className="font-heading font-bold text-xl text-[#18181B]">
                 {selectedProduct.name}
               </h3>
-              <p className="font-body font-extrabold text-lg text-indigo-600 mt-1">
+              <p className="font-body font-extrabold text-xl text-[#312E81] mt-1">
                 ₦{selectedProduct.price.toLocaleString()}
               </p>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              <p className="text-sm text-[#71717A] font-body font-normal mt-2 leading-relaxed">
                 {selectedProduct.description}
               </p>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <span className="text-sm font-bold text-slate-700">Quantity</span>
-              <div className="flex items-center gap-3 bg-slate-100 rounded-full p-1">
+              <span className="text-sm font-body font-medium text-[#18181B]">Quantity</span>
+              <div className="flex items-center gap-3 bg-[#F4F3FF] rounded-full p-1">
                 <button 
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-slate-900 shadow-sm font-bold active:scale-95"
+                  className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95"
                 >
                   <Minus size={14} />
                 </button>
-                <span className="font-bold text-sm w-6 text-center">{quantity}</span>
+                <span className="font-body font-bold text-sm w-6 text-center">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-slate-900 text-white rounded-full shadow-sm font-bold active:scale-95"
+                  className="w-8 h-8 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95"
                 >
                   <Plus size={14} />
                 </button>
               </div>
             </div>
 
+            {/* Main Add to Cart Button: Deep Indigo background + white text */}
             <button
               onClick={() => {
                 for (let i = 0; i < quantity; i++) {
@@ -325,7 +321,7 @@ export default function Home() {
                 setSelectedProduct(null);
               }}
               disabled={!selectedProduct.isAvailable}
-              className="w-full h-13 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-full flex items-center justify-center gap-2 active:scale-95 transition-colors disabled:opacity-50"
+              className="w-full h-13 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 active:scale-95 transition-colors disabled:opacity-50"
             >
               <ShoppingBag size={18} />
               Add {quantity} to Cart • ₦{(selectedProduct.price * quantity).toLocaleString()}
@@ -340,19 +336,19 @@ export default function Home() {
         onClose={() => setPendingProduct(null)}
         title="Replace Cart?"
       >
-        <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+        <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body font-normal">
           Your cart currently contains items from another vendor. Would you like to clear your current cart and start a new order from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 font-body">
           <button 
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-slate-900 text-white font-bold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
           <button 
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-slate-100 text-slate-700 font-bold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
           >
             Keep Current Cart
           </button>
