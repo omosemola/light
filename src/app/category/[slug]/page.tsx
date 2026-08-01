@@ -9,60 +9,67 @@ import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 
-// CATEGORY METADATA
-const CATEGORY_DATA: Record<string, { name: string; icon: string; bg: string; description: string; subcategories: string[] }> = {
+// CATEGORY METADATA WITH UNSPLASH HERO IMAGES
+const CATEGORY_DATA: Record<string, { name: string; icon: string; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
   food: {
     name: "Food & Meals",
     icon: "🍔",
-    bg: "bg-orange-500",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     description: "Delicious freshly prepared meals from top campus kitchens and restaurants.",
     subcategories: ["All", "Rice & Meals", "Fast Food", "Pizza & Suya", "Pastries"],
   },
   snacks: {
     name: "Snacks & Treats",
     icon: "🍿",
-    bg: "bg-pink-500",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=1200&q=80",
     description: "Quick bites, popcorn, chips, nuts, and sweet treats for lectures and study sessions.",
     subcategories: ["All", "Chips & Popcorn", "Chocolates", "Biscuits", "Traditional Snacks"],
   },
   drinks: {
     name: "Drinks & Beverages",
     icon: "🥤",
-    bg: "bg-blue-500",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80",
     description: "Chilled juices, sodas, energy drinks, water, and smoothies.",
     subcategories: ["All", "Fresh Juices", "Soft Drinks", "Energy Drinks", "Smoothies", "Water"],
   },
   groceries: {
     name: "Groceries & Provisions",
     icon: "🛒",
-    bg: "bg-emerald-500",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80",
     description: "Dorm essentials, noodles, canned goods, milk, sugar, and daily cooking items.",
     subcategories: ["All", "Noodles & Pasta", "Dairy & Breakfast", "Canned Goods", "Toiletries"],
   },
   pastries: {
     name: "Pastries & Bakery",
     icon: "🥐",
-    bg: "bg-amber-600",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=1200&q=80",
     description: "Freshly baked meat pies, cakes, donuts, sausage rolls, and bread.",
     subcategories: ["All", "Pies & Rolls", "Cakes & Muffins", "Bread", "Donuts"],
   },
   stationery: {
     name: "Stationery & Academics",
     icon: "✏️",
-    bg: "bg-purple-500",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?auto=format&fit=crop&w=1200&q=80",
     description: "Note books, pens, sticky notes, files, calculators, and exam materials.",
     subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Folders", "Exam Essentials"],
   },
   care: {
     name: "Personal Care",
     icon: "🧴",
-    bg: "bg-indigo-600",
+    bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
     description: "Skincare, soaps, hygiene products, perfume, and wellness items.",
     subcategories: ["All", "Skincare", "Bath & Body", "Haircare", "Deodorants"],
   },
 };
 
-// CATEGORY SPECIFIC PRODUCTS MOCK DATA
+// CATEGORY SPECIFIC PRODUCTS UNSPLASH MOCK DATA
 const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price: number; vendorId: string; vendorName: string; image: string; description: string; subcategory: string; isAvailable: boolean }>> = {
   food: [
     {
@@ -71,7 +78,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 3500,
       vendorId: "v1",
       vendorName: "Mama Cass",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
       description: "Authentic Nigerian party Jollof rice served with crispy fried plantain and grilled chicken leg.",
       subcategory: "Rice & Meals",
       isAvailable: true,
@@ -82,7 +89,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 6500,
       vendorId: "v4",
       vendorName: "Pizza Hub",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
       description: "Freshly baked pizza topped with spicy beef suya, onions, and melted mozzarella cheese.",
       subcategory: "Pizza & Suya",
       isAvailable: true,
@@ -93,7 +100,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 4200,
       vendorId: "v1",
       vendorName: "Mama Cass",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
       description: "Seasoned fried rice cooked with mixed vegetables and served with seasoned fried turkey.",
       subcategory: "Rice & Meals",
       isAvailable: true,
@@ -104,7 +111,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 3800,
       vendorId: "v5",
       vendorName: "Campus Bites",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
       description: "Crispy fried chicken fillet topped with mayo, lettuce, and served with golden fries.",
       subcategory: "Fast Food",
       isAvailable: true,
@@ -117,7 +124,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 1500,
       vendorId: "v6",
       vendorName: "Cinema Crunch",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=800&q=80",
       description: "Freshly popped warm butter popcorn.",
       subcategory: "Chips & Popcorn",
       isAvailable: true,
@@ -128,7 +135,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 800,
       vendorId: "v6",
       vendorName: "Cinema Crunch",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=800&q=80",
       description: "Crunchy spicy ripe plantain chips.",
       subcategory: "Chips & Popcorn",
       isAvailable: true,
@@ -141,7 +148,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 1200,
       vendorId: "v2",
       vendorName: "Fresh Squeeze",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80",
       description: "100% natural, freshly squeezed orange juice with no added sugar.",
       subcategory: "Fresh Juices",
       isAvailable: true,
@@ -152,7 +159,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 1800,
       vendorId: "v2",
       vendorName: "Fresh Squeeze",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=800&q=80",
       description: "Blended fresh mango, pineapple, and Greek yogurt.",
       subcategory: "Smoothies",
       isAvailable: true,
@@ -165,7 +172,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 14500,
       vendorId: "v7",
       vendorName: "Campus Mart",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=800&q=80",
       description: "Carton of Indomie Instant Noodles Super Pack 120g.",
       subcategory: "Noodles & Pasta",
       isAvailable: true,
@@ -178,7 +185,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 1200,
       vendorId: "v8",
       vendorName: "Tasty Bakes",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
       description: "Flaky golden crust filled with seasoned minced beef, potatoes, and carrots.",
       subcategory: "Pies & Rolls",
       isAvailable: true,
@@ -191,7 +198,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 2500,
       vendorId: "v3",
       vendorName: "Campus Books",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
       description: "High quality 60-leaf ruled exercise notebooks for campus lectures.",
       subcategory: "Note Books",
       isAvailable: true,
@@ -204,7 +211,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       price: 3200,
       vendorId: "v9",
       vendorName: "PharmaCare",
-      image: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
+      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
       description: "Deep nourishing body lotion for all skin types.",
       subcategory: "Skincare",
       isAvailable: true,
@@ -220,6 +227,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     name: slug.charAt(0).toUpperCase() + slug.slice(1),
     icon: "📦",
     bg: "bg-slate-900",
+    heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     description: "Explore all products in this category on campus.",
     subcategories: ["All"],
   };
@@ -283,24 +291,32 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 pb-32">
-      {/* CATEGORY HEADER BANNER */}
-      <div className={`${category.bg} text-white px-5 pt-8 pb-8 rounded-b-[32px] shadow-md`}>
-        <div className="max-w-5xl mx-auto">
+      {/* CATEGORY HEADER BANNER WITH UNSPLASH BACKGROUND */}
+      <div className="relative bg-slate-900 text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md overflow-hidden">
+        <Image
+          src={category.heroImage}
+          alt={category.name}
+          fill
+          priority
+          className="object-cover opacity-30"
+        />
+
+        <div className="relative z-10 max-w-5xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white active:scale-95 transition-all"
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white active:scale-95 transition-all backdrop-blur-sm"
             >
               <ArrowLeft size={22} />
             </button>
             <div className="flex items-center gap-2">
               <span className="text-3xl">{category.icon}</span>
-              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight drop-shadow-sm">
                 {category.name}
               </h1>
             </div>
           </div>
-          <p className="text-white/80 text-xs md:text-sm font-medium max-w-xl">
+          <p className="text-slate-200 text-xs md:text-sm font-medium max-w-xl">
             {category.description}
           </p>
 
@@ -314,7 +330,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search in ${category.name}...`}
-              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white text-slate-800 text-sm font-medium border border-white/20 shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white/95 text-slate-800 text-sm font-medium border border-white/40 shadow-md focus:outline-none focus:ring-2 focus:ring-slate-900 backdrop-blur-sm"
             />
           </div>
         </div>
