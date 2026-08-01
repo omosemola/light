@@ -1,75 +1,76 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Search, SlidersHorizontal, ArrowUpDown, Minus, Plus, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Search, ArrowUpDown, Minus, Plus, ShoppingBag, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 
-// CATEGORY METADATA WITH UNSPLASH HERO IMAGES
-const CATEGORY_DATA: Record<string, { name: string; icon: string; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
+// CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
+const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
   food: {
     name: "Food & Meals",
-    icon: "🍔",
-    bg: "bg-slate-900",
+    Icon: Utensils,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     description: "Delicious freshly prepared meals from top campus kitchens and restaurants.",
     subcategories: ["All", "Rice & Meals", "Fast Food", "Pizza & Suya", "Pastries"],
   },
   snacks: {
     name: "Snacks & Treats",
-    icon: "🍿",
-    bg: "bg-slate-900",
+    Icon: Cookie,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=1200&q=80",
     description: "Quick bites, popcorn, chips, nuts, and sweet treats for lectures and study sessions.",
     subcategories: ["All", "Chips & Popcorn", "Chocolates", "Biscuits", "Traditional Snacks"],
   },
   drinks: {
     name: "Drinks & Beverages",
-    icon: "🥤",
-    bg: "bg-slate-900",
+    Icon: Coffee,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80",
     description: "Chilled juices, sodas, energy drinks, water, and smoothies.",
     subcategories: ["All", "Fresh Juices", "Soft Drinks", "Energy Drinks", "Smoothies", "Water"],
   },
   groceries: {
     name: "Groceries & Provisions",
-    icon: "🛒",
-    bg: "bg-slate-900",
+    Icon: ShoppingCart,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80",
     description: "Dorm essentials, noodles, canned goods, milk, sugar, and daily cooking items.",
     subcategories: ["All", "Noodles & Pasta", "Dairy & Breakfast", "Canned Goods", "Toiletries"],
   },
   pastries: {
     name: "Pastries & Bakery",
-    icon: "🥐",
-    bg: "bg-slate-900",
+    Icon: Cake,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=1200&q=80",
     description: "Freshly baked meat pies, cakes, donuts, sausage rolls, and bread.",
     subcategories: ["All", "Pies & Rolls", "Cakes & Muffins", "Bread", "Donuts"],
   },
   stationery: {
     name: "Stationery & Academics",
-    icon: "✏️",
-    bg: "bg-slate-900",
+    Icon: BookOpen,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?auto=format&fit=crop&w=1200&q=80",
     description: "Note books, pens, sticky notes, files, calculators, and exam materials.",
     subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Folders", "Exam Essentials"],
   },
   care: {
     name: "Personal Care",
-    icon: "🧴",
-    bg: "bg-slate-900",
+    Icon: HeartPulse,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
     description: "Skincare, soaps, hygiene products, perfume, and wellness items.",
     subcategories: ["All", "Skincare", "Bath & Body", "Haircare", "Deodorants"],
   },
 };
 
-// CATEGORY SPECIFIC PRODUCTS UNSPLASH MOCK DATA
+// CATEGORY SPECIFIC PRODUCTS MOCK DATA
 const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price: number; vendorId: string; vendorName: string; image: string; description: string; subcategory: string; isAvailable: boolean }>> = {
   food: [
     {
@@ -225,13 +226,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const category = CATEGORY_DATA[slug] || {
     name: slug.charAt(0).toUpperCase() + slug.slice(1),
-    icon: "📦",
-    bg: "bg-slate-900",
+    Icon: Utensils,
+    bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     description: "Explore all products in this category on campus.",
     subcategories: ["All"],
   };
 
+  const CategoryIcon = category.Icon;
   const rawProducts = CATEGORY_PRODUCTS[slug] || CATEGORY_PRODUCTS.food;
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -290,9 +292,15 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 pb-32">
-      {/* CATEGORY HEADER BANNER WITH UNSPLASH BACKGROUND */}
-      <div className="relative bg-slate-900 text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-32">
+      {/* CATEGORY HEADER BANNER WITH SCROLL ANIMATION */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false }}
+        transition={{ duration: 0.5 }}
+        className="relative bg-[#1E1B4B] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md overflow-hidden"
+      >
         <Image
           src={category.heroImage}
           alt={category.name}
@@ -309,14 +317,16 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             >
               <ArrowLeft size={22} />
             </button>
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">{category.icon}</span>
-              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight drop-shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FBBF24] text-[#312E81] flex items-center justify-center shadow-md">
+                <CategoryIcon size={22} strokeWidth={2.4} />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-sm">
                 {category.name}
               </h1>
             </div>
           </div>
-          <p className="text-slate-200 text-xs md:text-sm font-medium max-w-xl">
+          <p className="text-slate-200 text-xs md:text-sm font-normal max-w-xl">
             {category.description}
           </p>
 
@@ -330,44 +340,50 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search in ${category.name}...`}
-              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white/95 text-slate-800 text-sm font-medium border border-white/40 shadow-md focus:outline-none focus:ring-2 focus:ring-slate-900 backdrop-blur-sm"
+              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white/95 text-slate-800 text-sm font-medium border border-white/40 shadow-md focus:outline-none focus:ring-2 focus:ring-[#312E81] backdrop-blur-sm"
             />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full mt-6 space-y-6">
         
         {/* SUBCATEGORY PILLS */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
+        >
           {category.subcategories.map((subcat) => (
             <button
               key={subcat}
               onClick={() => setSelectedSubcategory(subcat)}
-              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
+              className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border ${
                 selectedSubcategory === subcat
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                  ? "bg-[#312E81] text-white border-[#312E81] shadow-sm"
+                  : "bg-white text-[#71717A] border-slate-200 hover:border-slate-300"
               }`}
             >
               {subcat}
             </button>
           ))}
-        </div>
+        </motion.div>
 
         {/* PRODUCTS COUNT & SORT BAR */}
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs md:text-sm font-bold text-slate-500">
-            Showing <span className="text-slate-900 font-extrabold">{filteredProducts.length}</span> items
+          <p className="text-xs md:text-sm font-body font-semibold text-[#71717A]">
+            Showing <span className="text-[#18181B] font-extrabold">{filteredProducts.length}</span> items
           </p>
-          <button className="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+          <button className="flex items-center gap-1.5 text-xs font-body font-semibold text-[#18181B] bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm">
             <ArrowUpDown size={14} />
             <span>Sort by: Popular</span>
           </button>
         </div>
 
-        {/* PRODUCTS GRID */}
+        {/* PRODUCTS GRID WITH SCROLL ANIMATION */}
         {filteredProducts.length > 0 ? (
           <ProductGrid
             products={filteredProducts}
@@ -375,11 +391,16 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             onClickProduct={handleOpenDetail}
           />
         ) : (
-          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8">
-            <span className="text-4xl block mb-3">{category.icon}</span>
-            <h3 className="font-heading font-bold text-lg text-slate-800">No items found</h3>
-            <p className="text-xs text-slate-500 mt-1">Try switching subcategories or adjusting your search query.</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: false }}
+            className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8"
+          >
+            <CategoryIcon size={40} className="mx-auto mb-3 text-[#312E81]" />
+            <h3 className="font-heading font-bold text-lg text-[#18181B]">No items found</h3>
+            <p className="text-xs text-[#71717A] mt-1 font-body">Try switching subcategories or adjusting your search query.</p>
+          </motion.div>
         )}
       </div>
 
@@ -390,8 +411,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         title={selectedProduct?.vendorName || "Product Details"}
       >
         {selectedProduct && (
-          <div className="space-y-4">
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-100">
+          <div className="space-y-4 font-body">
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#FAFAF7]">
               <Image
                 src={selectedProduct.image}
                 alt={selectedProduct.name}
@@ -401,33 +422,33 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             </div>
 
             <div>
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">
+              <span className="text-xs font-body font-medium text-[#71717A] block mb-0.5">
                 {selectedProduct.vendorName}
               </span>
-              <h3 className="font-heading font-bold text-xl text-slate-900">
+              <h3 className="font-heading font-bold text-xl text-[#18181B]">
                 {selectedProduct.name}
               </h3>
-              <p className="font-body font-extrabold text-lg text-slate-900 mt-1">
+              <p className="font-body font-extrabold text-xl text-[#312E81] mt-1">
                 ₦{selectedProduct.price.toLocaleString()}
               </p>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              <p className="text-sm text-[#71717A] font-body font-normal mt-2 leading-relaxed">
                 {selectedProduct.description}
               </p>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <span className="text-sm font-bold text-slate-700">Quantity</span>
-              <div className="flex items-center gap-3 bg-slate-100 rounded-full p-1">
+              <span className="text-sm font-body font-medium text-[#18181B]">Quantity</span>
+              <div className="flex items-center gap-3 bg-[#F4F3FF] rounded-full p-1">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-slate-900 shadow-sm font-bold active:scale-95"
+                  className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95"
                 >
                   <Minus size={14} />
                 </button>
-                <span className="font-bold text-sm w-6 text-center">{quantity}</span>
+                <span className="font-body font-bold text-sm w-6 text-center">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-slate-900 text-white rounded-full shadow-sm font-bold active:scale-95"
+                  className="w-8 h-8 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95"
                 >
                   <Plus size={14} />
                 </button>
@@ -442,7 +463,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 setSelectedProduct(null);
               }}
               disabled={!selectedProduct.isAvailable}
-              className="w-full h-13 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-full flex items-center justify-center gap-2 active:scale-95 transition-colors disabled:opacity-50"
+              className="w-full h-13 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 active:scale-95 transition-colors disabled:opacity-50"
             >
               <ShoppingBag size={18} />
               Add {quantity} to Cart • ₦{(selectedProduct.price * quantity).toLocaleString()}
@@ -457,19 +478,19 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         onClose={() => setPendingProduct(null)}
         title="Replace Cart?"
       >
-        <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+        <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body">
           Your cart currently contains items from another vendor. Would you like to clear your current cart and start a new order from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-slate-900 text-white font-bold rounded-full shadow-sm active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-sm active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-slate-100 text-slate-700 font-bold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
           >
             Keep Current Cart
           </button>

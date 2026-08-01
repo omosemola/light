@@ -1,22 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Flame, Sparkles, Clock, ArrowRight, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Search, Flame, Sparkles, Clock, ArrowRight, Minus, Plus, ShoppingBag, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 
-// CATEGORIES DATA
+// CATEGORIES DATA WITH VECTOR LUCIDE ICONS
 const CATEGORIES = [
-  { name: "Food", slug: "food", icon: "🍔", bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Snacks", slug: "snacks", icon: "🍿", bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Drinks", slug: "drinks", icon: "🥤", bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Groceries", slug: "groceries", icon: "🛒", bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Pastries", slug: "pastries", icon: "🥐", bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Stationery", slug: "stationery", icon: "✏️", bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Care", slug: "care", icon: "🧴", bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Food", slug: "food", Icon: Utensils, bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Snacks", slug: "snacks", Icon: Cookie, bg: "bg-amber-50 text-[#D97706]" },
+  { name: "Drinks", slug: "drinks", Icon: Coffee, bg: "bg-blue-50 text-blue-600" },
+  { name: "Groceries", slug: "groceries", Icon: ShoppingCart, bg: "bg-emerald-50 text-emerald-600" },
+  { name: "Pastries", slug: "pastries", Icon: Cake, bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Stationery", slug: "stationery", Icon: BookOpen, bg: "bg-purple-50 text-purple-600" },
+  { name: "Care", slug: "care", Icon: HeartPulse, bg: "bg-pink-50 text-pink-600" },
 ];
 
 const POPULAR_PRODUCTS = [
@@ -111,18 +112,22 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B]">
       
-      {/* HERO HEADER: Midnight Indigo (#1E1B4B) */}
-      <section className="bg-[#1E1B4B] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md">
+      {/* HERO HEADER: Midnight Indigo (#1E1B4B) WITH ANIMATIONS */}
+      <motion.section 
+        initial={{ opacity: 0, y: -20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false }}
+        transition={{ duration: 0.5 }}
+        className="bg-[#1E1B4B] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md"
+      >
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                {/* Popular Badge: Warm Electric Yellow (#FBBF24) + Deep Indigo (#312E81) text */}
-                <span className="bg-[#FBBF24] text-[#312E81] text-[11px] font-heading font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles size={12} /> Campus Active
+                <span className="bg-[#FBBF24] text-[#312E81] text-[11px] font-heading font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <Sparkles size={13} /> Campus Active
                 </span>
               </div>
-              {/* Main Hero Heading: Plus Jakarta Sans 800 */}
               <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white">
                 Hey Alex! 👋
               </h1>
@@ -151,18 +156,23 @@ export default function Home() {
             </div>
           </Link>
         </div>
-      </section>
+      </motion.section>
 
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full -mt-4 z-20 space-y-8 pb-12">
         
-        {/* PROMOTIONAL BENTO GRID */}
+        {/* PROMOTIONAL BENTO GRID WITH SCROLL ANIMATIONS */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Main Hero Bento Card: Deep Indigo (#312E81) */}
-          <div className="md:col-span-2 bg-[#312E81] rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[190px]">
+          {/* Main Hero Bento Card */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: false, margin: "-30px" }}
+            transition={{ duration: 0.5 }}
+            className="md:col-span-2 bg-[#312E81] rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[190px]"
+          >
             <div>
-              {/* Discount Label: Electric Yellow (#FBBF24) */}
               <span className="bg-[#FBBF24] text-[#312E81] px-3 py-1 text-xs font-heading font-extrabold rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm">
                 <Flame size={14} className="fill-[#312E81]" /> Hot Deal
               </span>
@@ -177,12 +187,18 @@ export default function Home() {
                 Order Now <ArrowRight size={16} />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
           {/* Side Bento Cards */}
           <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
             
-            <div className="bg-[#FBBF24] rounded-3xl p-4 text-[#1E1B4B] flex flex-col justify-between shadow-sm">
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: false, margin: "-30px" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-[#FBBF24] rounded-3xl p-4 text-[#1E1B4B] flex flex-col justify-between shadow-sm"
+            >
               <span className="bg-[#1E1B4B] text-white text-[10px] font-body font-bold px-2.5 py-0.5 rounded-full w-fit uppercase">
                 New Vendor
               </span>
@@ -190,9 +206,15 @@ export default function Home() {
                 <h3 className="font-heading font-extrabold text-base leading-tight text-[#1E1B4B]">Tasty Treats</h3>
                 <p className="text-xs text-[#312E81] font-body font-medium">Fresh Smoothies & Shakes</p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: false, margin: "-30px" }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white rounded-3xl p-4 shadow-sm border border-slate-200 flex items-center justify-between"
+            >
               <div>
                 <div className="flex items-center gap-1 text-[#71717A] text-xs font-body font-medium">
                   <Clock size={14} className="text-[#312E81]" /> Avg. Time
@@ -202,41 +224,51 @@ export default function Home() {
                   Fast Campus Riders
                 </span>
               </div>
-            </div>
+            </motion.div>
 
           </div>
 
         </section>
 
-        {/* CATEGORIES SECTION */}
-        <section>
+        {/* CATEGORIES SECTION WITH VECTOR ICONS & SCROLL ANIMATIONS */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-30px" }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center justify-between mb-4">
-            {/* Section Headings: Plus Jakarta Sans 700 */}
             <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B]">
               Explore Categories
             </h2>
           </div>
           
           <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
-            {CATEGORIES.map((cat, i) => (
-              <Link
-                key={i}
-                href={`/category/${cat.slug}`}
-                className="flex flex-col items-center justify-center min-w-[85px] min-h-[95px] bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 active:scale-95 hover:border-[#312E81] transition-all group"
-              >
-                {/* Active category icon box: Light Lavender Gray (#F4F3FF) */}
-                <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center text-2xl shadow-sm mb-1.5`}>
-                  {cat.icon}
-                </div>
-                {/* Category Names: Plus Jakarta Sans 600-700 */}
-                <span className="text-xs font-heading font-bold text-[#18181B]">{cat.name}</span>
-              </Link>
-            ))}
+            {CATEGORIES.map((cat, i) => {
+              const CategoryIcon = cat.Icon;
+              return (
+                <Link
+                  key={i}
+                  href={`/category/${cat.slug}`}
+                  className="flex flex-col items-center justify-center min-w-[90px] min-h-[100px] bg-white rounded-2xl shadow-sm border border-slate-200 shrink-0 active:scale-95 hover:border-[#312E81] transition-all group"
+                >
+                  <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center shadow-sm mb-1.5 group-hover:scale-110 transition-transform`}>
+                    <CategoryIcon size={22} strokeWidth={2.2} />
+                  </div>
+                  <span className="text-xs font-heading font-bold text-[#18181B]">{cat.name}</span>
+                </Link>
+              );
+            })}
           </div>
-        </section>
+        </motion.section>
 
-        {/* POPULAR NEAR YOU SECTION */}
-        <section>
+        {/* POPULAR NEAR YOU SECTION WITH ANIMATIONS */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-40px" }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B]">
@@ -257,7 +289,7 @@ export default function Home() {
             onAddProduct={handleAddProduct}
             onClickProduct={handleOpenDetail} 
           />
-        </section>
+        </motion.section>
 
       </div>
 
@@ -312,7 +344,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Main Add to Cart Button: Deep Indigo background + white text */}
             <button
               onClick={() => {
                 for (let i = 0; i < quantity; i++) {

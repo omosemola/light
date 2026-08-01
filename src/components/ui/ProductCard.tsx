@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, Star, Store } from "lucide-react";
+import { motion } from "framer-motion";
 
 export interface ProductCardProps {
   id: string;
@@ -27,7 +28,13 @@ export function ProductCard({
   onAdd,
 }: ProductCardProps) {
   return (
-    <div className="group relative flex flex-col justify-between bg-white rounded-3xl p-3.5 shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200/80 overflow-hidden hover:-translate-y-1">
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, margin: "-40px" }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="group relative flex flex-col justify-between bg-white rounded-3xl p-3.5 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/80 overflow-hidden hover:-translate-y-1"
+    >
       <Link href={`/product/${id}`} className="block flex-1">
         {/* Image Container */}
         <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#FAFAF7] mb-3">
@@ -94,6 +101,6 @@ export function ProductCard({
           <Plus size={20} strokeWidth={2.5} />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

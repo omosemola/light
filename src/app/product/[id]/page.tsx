@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 
-// MOCK PRODUCTS DATABASE FOR DYNAMIC PRODUCT PAGES
+// MOCK PRODUCTS DATABASE
 const ALL_PRODUCTS: Record<string, {
   id: string;
   name: string;
@@ -209,10 +209,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 pb-36">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-36">
       
-      {/* PRODUCT HERO IMAGE WITH BACK BUTTON & FAVORITE HEART */}
-      <div className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden">
+      {/* HERO PRODUCT IMAGE WITH ANIMATION */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden"
+      >
         <Image
           src={product.image}
           alt={product.name}
@@ -221,13 +226,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           className="object-cover"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#18181B]/80 via-transparent to-[#18181B]/40" />
 
         {/* Floating Top Controls */}
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
           <button
             onClick={() => router.back()}
-            className="w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-900 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
+            className="w-11 h-11 rounded-full bg-white/90 hover:bg-white text-[#18181B] flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
           >
             <ArrowLeft size={22} />
           </button>
@@ -235,7 +240,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <button
             onClick={() => setIsLiked(!isLiked)}
             className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm ${
-              isLiked ? "bg-red-500 text-white" : "bg-white/90 hover:bg-white text-slate-700"
+              isLiked ? "bg-red-500 text-white" : "bg-white/90 hover:bg-white text-[#18181B]"
             }`}
           >
             <Heart size={20} className={isLiked ? "fill-white" : ""} />
@@ -244,97 +249,115 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Stock status overlay */}
         {!product.isAvailable && (
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute inset-0 bg-[#18181B]/70 backdrop-blur-sm flex items-center justify-center">
             <span className="bg-red-500 text-white font-heading font-extrabold text-sm px-4 py-2 rounded-full shadow-lg border border-red-400 uppercase tracking-wider">
               Currently Sold Out
             </span>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* MAIN CONTAINER */}
       <div className="px-5 md:px-8 max-w-4xl mx-auto w-full -mt-8 relative z-20 space-y-6">
         
-        {/* MAIN PRODUCT HEADER CARD */}
-        <div className="bg-white rounded-3xl p-6 shadow-md border border-slate-200/80 space-y-4">
+        {/* MAIN PRODUCT HEADER CARD WITH SCROLL ANIMATION */}
+        <motion.div 
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-3xl p-6 shadow-md border border-slate-200/80 space-y-4"
+        >
           
           {/* Vendor Badge */}
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 bg-indigo-50 px-3.5 py-1.5 rounded-full border border-indigo-100">
-              <Store size={14} className="text-indigo-600" />
-              <span className="text-xs font-extrabold text-indigo-700 uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 bg-[#F4F3FF] px-3.5 py-1.5 rounded-full border border-indigo-100">
+              <Store size={14} className="text-[#312E81]" />
+              <span className="text-xs font-heading font-extrabold text-[#312E81] uppercase tracking-wider">
                 {product.vendorName}
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-              <Star size={14} className="fill-amber-400 text-amber-400" />
-              <span className="text-xs font-extrabold text-slate-800">{product.rating}</span>
-              <span className="text-[11px] font-medium text-slate-500">({product.reviewsCount})</span>
+              <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
+              <span className="text-xs font-bold text-[#18181B] font-body">{product.rating}</span>
+              <span className="text-[11px] font-medium text-[#71717A]">({product.reviewsCount})</span>
             </div>
           </div>
 
           {/* Title & Price */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#18181B] tracking-tight leading-tight">
               {product.name}
             </h1>
             
             <div className="flex items-baseline gap-3 mt-3">
-              <span className="text-3xl font-body font-extrabold text-slate-900">
+              <span className="text-3xl font-body font-extrabold text-[#312E81]">
                 ₦{product.price.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-bold text-[#16A34A] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                 In Stock & Ready
               </span>
             </div>
           </div>
 
           {/* Prep Time & Delivery Info */}
-          <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-xs text-slate-600 font-bold">
+          <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-xs text-[#71717A] font-body font-semibold">
             <div className="flex items-center gap-1.5">
-              <Clock size={16} className="text-indigo-600" />
+              <Clock size={16} className="text-[#312E81]" />
               <span>Prep Time: {product.prepTime}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-emerald-600" />
+              <ShieldCheck size={16} className="text-[#16A34A]" />
               <span>Campus Rider Verified</span>
             </div>
           </div>
 
-        </div>
+        </motion.div>
 
-        {/* DESCRIPTION CARD */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-3">
-          <h3 className="font-heading font-extrabold text-lg text-slate-900">
+        {/* DESCRIPTION CARD WITH SCROLL ANIMATION */}
+        <motion.div 
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-3"
+        >
+          <h3 className="font-heading font-extrabold text-lg text-[#18181B]">
             About this item
           </h3>
-          <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+          <p className="text-[#71717A] text-sm md:text-base leading-relaxed font-body font-normal">
             {product.description}
           </p>
 
           {/* Key Details List */}
           {product.details && product.details.length > 0 && (
             <div className="pt-3 border-t border-slate-100">
-              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-body font-extrabold text-[#71717A] uppercase tracking-wider mb-2">
                 What&apos;s Included / Features
               </h4>
               <ul className="space-y-2">
                 {product.details.map((detail, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-xs md:text-sm font-semibold text-slate-700">
-                    <CheckCircle2 size={16} className="text-indigo-600 shrink-0" />
+                  <li key={idx} className="flex items-center gap-2 text-xs md:text-sm font-body font-semibold text-[#18181B]">
+                    <CheckCircle2 size={16} className="text-[#312E81] shrink-0" />
                     <span>{detail}</span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* RELATED PRODUCTS FROM VENDOR */}
         {relatedProducts.length > 0 && (
-          <div className="space-y-4 pt-4">
-            <h3 className="font-heading font-extrabold text-xl text-slate-900">
+          <motion.div 
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-4 pt-4"
+          >
+            <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
               More from {product.vendorName}
             </h3>
             <ProductGrid
@@ -353,30 +376,30 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 }
               }}
             />
-          </div>
+          </motion.div>
         )}
 
       </div>
 
       {/* STICKY BOTTOM BAR FOR PURCHASING */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 p-4 shadow-2xl z-40">
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 p-4 shadow-2xl z-40 font-body">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           
           {/* Quantity Selector */}
-          <div className="flex items-center gap-3 bg-slate-100 rounded-full p-1.5 border border-slate-200">
+          <div className="flex items-center gap-3 bg-[#F4F3FF] rounded-full p-1.5 border border-indigo-100">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 flex items-center justify-center bg-white rounded-full text-slate-900 shadow-sm font-bold active:scale-95 transition-transform"
+              className="w-10 h-10 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95 transition-transform"
               aria-label="Decrease quantity"
             >
               <Minus size={16} />
             </button>
-            <span className="font-heading font-extrabold text-base w-8 text-center text-slate-900">
+            <span className="font-heading font-extrabold text-base w-8 text-center text-[#18181B]">
               {quantity}
             </span>
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 flex items-center justify-center bg-slate-900 text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
+              className="w-10 h-10 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
               aria-label="Increase quantity"
             >
               <Plus size={16} />
@@ -387,7 +410,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <button
             onClick={handleAddToCart}
             disabled={!product.isAvailable}
-            className="flex-1 h-14 bg-slate-900 hover:bg-indigo-600 text-white font-heading font-extrabold rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-base"
+            className="flex-1 h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-base"
           >
             <ShoppingBag size={20} />
             <span>Add {quantity} to Cart • ₦{(product.price * quantity).toLocaleString()}</span>
@@ -402,19 +425,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         onClose={() => setPendingProduct(null)}
         title="Replace Cart?"
       >
-        <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+        <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body">
           Your cart currently contains items from another vendor. Would you like to clear your current cart and start a new order from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-slate-900 text-white font-bold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-slate-100 text-slate-700 font-bold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
           >
             Keep Current Cart
           </button>
