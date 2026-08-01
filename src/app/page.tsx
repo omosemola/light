@@ -111,18 +111,9 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       
-      {/* RICH HERO HEADER WITH UNSPLASH IMAGE OVERLAY */}
-      <section className="relative text-white px-5 pt-8 pb-12 rounded-b-[36px] shadow-md overflow-hidden bg-slate-900">
-        {/* Background Unsplash Banner Image */}
-        <Image
-          src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80"
-          alt="Campus Marketplace Banner"
-          fill
-          priority
-          className="object-cover opacity-25"
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto">
+      {/* SOLID HERO HEADER */}
+      <section className="bg-slate-900 text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md">
+        <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -130,15 +121,15 @@ export default function Home() {
                   <Sparkles size={12} /> Campus Active
                 </span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight drop-shadow-sm">
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight">
                 Hey Alex! 👋
               </h1>
-              <p className="text-slate-200 text-xs md:text-sm font-medium mt-0.5">
+              <p className="text-slate-300 text-xs md:text-sm font-medium mt-0.5">
                 What are we ordering today?
               </p>
             </div>
             
-            <div className="w-12 h-12 rounded-full border-2 border-white/40 overflow-hidden shadow-md relative">
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 overflow-hidden shadow-md relative">
               <Image
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
                 alt="Profile"
@@ -153,7 +144,7 @@ export default function Home() {
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
               <Search size={22} />
             </div>
-            <div className="w-full h-14 pl-12 pr-4 flex items-center rounded-2xl bg-white/95 text-slate-500 font-medium text-sm md:text-base border border-white/60 shadow-lg hover:bg-white transition-all backdrop-blur-sm">
+            <div className="w-full h-14 pl-12 pr-4 flex items-center rounded-2xl bg-white text-slate-500 font-medium text-sm md:text-base border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
               Search meals, snacks, stationery...
             </div>
           </Link>
