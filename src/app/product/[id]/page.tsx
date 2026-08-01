@@ -209,7 +209,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-36">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-24">
       
       {/* HERO PRODUCT IMAGE WITH ANIMATION */}
       <motion.div 
@@ -315,37 +315,74 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         </motion.div>
 
-        {/* DESCRIPTION CARD WITH SCROLL ANIMATION */}
+        {/* DESCRIPTION & IN-PAGE ADD TO CART CARD WITH SCROLL ANIMATION */}
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-3"
+          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-5"
         >
-          <h3 className="font-heading font-extrabold text-lg text-[#18181B]">
-            About this item
-          </h3>
-          <p className="text-[#71717A] text-sm md:text-base leading-relaxed font-body font-normal">
-            {product.description}
-          </p>
+          <div className="space-y-3">
+            <h3 className="font-heading font-extrabold text-lg text-[#18181B]">
+              About this item
+            </h3>
+            <p className="text-[#71717A] text-sm md:text-base leading-relaxed font-body font-normal">
+              {product.description}
+            </p>
 
-          {/* Key Details List */}
-          {product.details && product.details.length > 0 && (
-            <div className="pt-3 border-t border-slate-100">
-              <h4 className="text-xs font-body font-extrabold text-[#71717A] uppercase tracking-wider mb-2">
-                What&apos;s Included / Features
-              </h4>
-              <ul className="space-y-2">
-                {product.details.map((detail, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-xs md:text-sm font-body font-semibold text-[#18181B]">
-                    <CheckCircle2 size={16} className="text-[#312E81] shrink-0" />
-                    <span>{detail}</span>
-                  </li>
-                ))}
-              </ul>
+            {/* Key Details List */}
+            {product.details && product.details.length > 0 && (
+              <div className="pt-3 border-t border-slate-100">
+                <h4 className="text-xs font-body font-extrabold text-[#71717A] uppercase tracking-wider mb-2">
+                  What&apos;s Included / Features
+                </h4>
+                <ul className="space-y-2">
+                  {product.details.map((detail, idx) => (
+                    <li key={idx} className="flex items-center gap-2 text-xs md:text-sm font-body font-semibold text-[#18181B]">
+                      <CheckCircle2 size={16} className="text-[#312E81] shrink-0" />
+                      <span>{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* IN-PAGE QUANTITY & ADD TO CART CONTROLS (NON-STICKY) */}
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4">
+            {/* Quantity Selector */}
+            <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-3 bg-[#F4F3FF] rounded-full p-1.5 border border-indigo-100">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-10 h-10 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95 transition-transform"
+                aria-label="Decrease quantity"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="font-heading font-extrabold text-base w-8 text-center text-[#18181B]">
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="w-10 h-10 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
+                aria-label="Increase quantity"
+              >
+                <Plus size={16} />
+              </button>
             </div>
-          )}
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!product.isAvailable}
+              className="w-full sm:flex-1 h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all disabled:opacity-50 text-base"
+            >
+              <ShoppingBag size={20} />
+              <span>Add {quantity} to Cart • ₦{(product.price * quantity).toLocaleString()}</span>
+            </button>
+          </div>
+
         </motion.div>
 
         {/* RELATED PRODUCTS FROM VENDOR */}
@@ -379,44 +416,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </motion.div>
         )}
 
-      </div>
-
-      {/* STICKY BOTTOM BAR FOR PURCHASING */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 p-4 shadow-2xl z-40 font-body">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          
-          {/* Quantity Selector */}
-          <div className="flex items-center gap-3 bg-[#F4F3FF] rounded-full p-1.5 border border-indigo-100">
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95 transition-transform"
-              aria-label="Decrease quantity"
-            >
-              <Minus size={16} />
-            </button>
-            <span className="font-heading font-extrabold text-base w-8 text-center text-[#18181B]">
-              {quantity}
-            </span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
-              aria-label="Increase quantity"
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!product.isAvailable}
-            className="flex-1 h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-base"
-          >
-            <ShoppingBag size={20} />
-            <span>Add {quantity} to Cart • ₦{(product.price * quantity).toLocaleString()}</span>
-          </button>
-
-        </div>
       </div>
 
       {/* CONFIRM REPLACEMENT MODAL */}
