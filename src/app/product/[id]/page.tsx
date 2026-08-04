@@ -321,90 +321,79 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       {/* MAIN CONTAINER */}
       <div className="px-5 md:px-8 max-w-4xl mx-auto w-full -mt-8 relative z-20 space-y-6">
         
-        {/* MAIN PRODUCT HEADER CARD */}
+        {/* UNIFIED PRODUCT DETAILS & ACTIONS CARD */}
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5 }}
-          className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-7 shadow-xl shadow-slate-200/40 border border-white space-y-5"
-        >
-          {/* Vendor Badge */}
-          <div className="flex items-center justify-between">
-            <Link href={`/vendor/${product.vendorId}`} className="inline-flex items-center gap-2 bg-[#F4F3FF] hover:bg-[#E0E7FF] px-4 py-2 rounded-full border border-indigo-100 transition-colors">
-              <Store size={14} className="text-[#312E81]" />
-              <span className="text-xs font-heading font-extrabold text-[#312E81] uppercase tracking-wider">
-                {product.vendorName}
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
-              <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
-              <span className="text-xs font-bold text-[#18181B] font-body">{product.rating}</span>
-              <span className="text-[11px] font-medium text-[#71717A]">({reviewsList.length} reviews)</span>
-            </div>
-          </div>
-
-          {/* Title & Price */}
-          <div>
-            <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#18181B] tracking-tight leading-tight">
-              {product.name}
-            </h1>
-            
-            <div className="flex items-baseline gap-3 mt-3">
-              <span className="text-3xl font-body font-extrabold text-[#312E81]">
-                ₦{product.price.toLocaleString()}
-              </span>
-              <span className="text-xs font-bold text-[#16A34A] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                In Stock & Ready
-              </span>
-            </div>
-          </div>
-
-          {/* Prep Time & Delivery Info */}
-          <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-xs text-[#71717A] font-body font-semibold">
-            <div className="flex items-center gap-1.5">
-              <Clock size={16} className="text-[#312E81]" />
-              <span>Prep Time: {product.prepTime}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-[#16A34A]" />
-              <span>Campus Rider Verified</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ELEGANT & BEAUTIFUL "ABOUT THIS ITEM" DIV */}
-        <motion.div 
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-200/90 relative overflow-hidden space-y-6"
+          className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-white space-y-8 relative overflow-hidden"
         >
           {/* Subtle Decorative Background Accent */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#F4F3FF] via-transparent to-transparent rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-[#F4F3FF] via-transparent to-transparent rounded-bl-full pointer-events-none" />
 
-          {/* Header Tag & Section Title */}
-          <div className="space-y-2 relative z-10">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-heading font-extrabold text-[#312E81] uppercase tracking-wider bg-[#F4F3FF] px-3.5 py-1 rounded-full border border-indigo-100 shadow-2xs">
-              <Sparkles size={13} className="text-[#312E81]" /> Item Overview
+          {/* 1. Header Section: Vendor, Rating, Title, Price, Meta */}
+          <div className="space-y-5 relative z-10">
+            {/* Vendor Badge */}
+            <div className="flex items-center justify-between">
+              <Link href={`/vendor/${product.vendorId}`} className="inline-flex items-center gap-2 bg-[#F4F3FF] hover:bg-[#E0E7FF] px-4 py-2 rounded-full border border-indigo-100 transition-colors">
+                <Store size={14} className="text-[#312E81]" />
+                <span className="text-xs font-heading font-extrabold text-[#312E81] uppercase tracking-wider">
+                  {product.vendorName}
+                </span>
+              </Link>
+
+              <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+                <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
+                <span className="text-xs font-bold text-[#18181B] font-body">{product.rating}</span>
+                <span className="text-[11px] font-medium text-[#71717A]">({reviewsList.length} reviews)</span>
+              </div>
             </div>
-            <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] tracking-tight">
-              About this Item
+
+            {/* Title & Price */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#18181B] tracking-tight leading-tight">
+                {product.name}
+              </h1>
+              
+              <div className="flex items-baseline gap-3 mt-3">
+                <span className="text-3xl font-body font-extrabold text-[#312E81]">
+                  ₦{product.price.toLocaleString()}
+                </span>
+                <span className="text-xs font-bold text-[#16A34A] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  In Stock & Ready
+                </span>
+              </div>
+            </div>
+
+            {/* Prep Time & Delivery Info */}
+            <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-xs text-[#71717A] font-body font-semibold">
+              <div className="flex items-center gap-1.5">
+                <Clock size={16} className="text-[#312E81]" />
+                <span>Prep Time: {product.prepTime}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck size={16} className="text-[#16A34A]" />
+                <span>Campus Rider Verified</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Description Section */}
+          <div className="space-y-4 relative z-10 pt-2 border-t border-slate-100/50">
+            <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] tracking-tight flex items-center gap-2">
+              <Sparkles size={16} className="text-[#312E81]" /> About this Item
             </h3>
-          </div>
-
-          {/* Rich Description Body */}
-          <div className="bg-[#FAFAF7] p-5 rounded-2xl border border-slate-200/60 relative z-10">
-            <p className="text-[#18181B] text-sm md:text-base leading-relaxed font-body font-normal">
-              {product.description}
-            </p>
-          </div>
-
-          {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
-          <div className="pt-5 border-t border-slate-100 flex items-center gap-3 relative z-10">
             
+            <div className="bg-[#FAFAF7] p-5 rounded-2xl border border-slate-200/60">
+              <p className="text-[#18181B] text-sm md:text-base leading-relaxed font-body font-normal">
+                {product.description}
+              </p>
+            </div>
+          </div>
+
+          {/* 3. Actions Section (Add to Cart) */}
+          <div className="pt-4 flex items-center gap-3 relative z-10">
             {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON (MODERN ROUNDED-2XL EDGES) */}
             <div className="animated-cart-btn-wrapper flex-1">
               <div className="animated-cart-btn-effect">
@@ -447,7 +436,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             >
               <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>
-
           </div>
         </motion.div>
 
