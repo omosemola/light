@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { ArrowLeft, Star, Clock, Heart, Minus, Plus, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote, Sparkles, Info } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
+import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 
 interface Review {
   id: string;
@@ -372,46 +373,70 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </motion.div>
 
-        {/* DESCRIPTION & IN-PAGE PURCHASING CARD */}
+        {/* ELEGANT & BEAUTIFUL "ABOUT THIS ITEM" DIV */}
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-5"
+          className="bg-white rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-200/90 relative overflow-hidden space-y-6"
         >
-          <div className="space-y-3">
-            <h3 className="font-heading font-extrabold text-lg text-[#18181B]">
+          {/* Subtle Decorative Background Accent */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#F4F3FF] via-transparent to-transparent rounded-bl-full pointer-events-none" />
+
+          {/* Header Tag & Section Title */}
+          <div className="space-y-2 relative z-10">
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-heading font-extrabold text-[#312E81] uppercase tracking-wider bg-[#F4F3FF] px-3.5 py-1 rounded-full border border-indigo-100 shadow-2xs">
+              <Sparkles size={13} className="text-[#312E81]" /> Item Overview
+            </div>
+            <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] tracking-tight">
               About this item
             </h3>
-            <p className="text-[#71717A] text-sm md:text-base leading-relaxed font-body font-normal">
-              {product.description}
-            </p>
-
-            {/* Key Details List */}
-            {product.details && product.details.length > 0 && (
-              <div className="pt-3 border-t border-slate-100">
-                <h4 className="text-xs font-body font-extrabold text-[#71717A] uppercase tracking-wider mb-2">
-                  What&apos;s Included / Features
-                </h4>
-                <ul className="space-y-2">
-                  {product.details.map((detail, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-xs md:text-sm font-body font-semibold text-[#18181B]">
-                      <CheckCircle2 size={16} className="text-[#312E81] shrink-0" />
-                      <span>{detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
 
-          {/* QUANTITY & ADD TO CART CONTROLS */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-3 bg-[#F4F3FF] rounded-full p-1.5 border border-indigo-100">
+          {/* Rich Description Body */}
+          <div className="bg-[#FAFAF7] p-5 rounded-2xl border border-slate-200/60 relative z-10">
+            <p className="text-[#18181B] text-sm md:text-base leading-relaxed font-body font-normal">
+              {product.description}
+            </p>
+          </div>
+
+          {/* Micro-Bento Features Grid */}
+          {product.details && product.details.length > 0 && (
+            <div className="space-y-3 relative z-10 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <Info size={14} className="text-[#312E81]" />
+                <h4 className="text-xs font-heading font-extrabold text-[#71717A] uppercase tracking-wider">
+                  Highlights & Features
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {product.details.map((detail, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-[#F4F3FF]/70 hover:bg-[#F4F3FF] p-3.5 rounded-2xl border border-indigo-100/70 flex items-center gap-3 transition-colors shadow-2xs group"
+                  >
+                    <div className="w-7 h-7 rounded-xl bg-[#312E81] text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-110 transition-transform">
+                      <CheckCircle2 size={16} />
+                    </div>
+                    <span className="text-xs md:text-sm font-body font-bold text-[#18181B]">
+                      {detail}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* QUANTITY & HIGH-CONVERTING "ADD TO CART" BUTTON */}
+          <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4 relative z-10">
+            
+            {/* Quantity Selector */}
+            <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-3 bg-[#F4F3FF] rounded-full p-2 border border-indigo-100 shadow-2xs">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-10 h-10 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95 transition-transform"
+                className="w-11 h-11 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95 transition-transform"
                 aria-label="Decrease quantity"
               >
                 <Minus size={16} />
@@ -421,21 +446,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-10 h-10 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
+                className="w-11 h-11 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
                 aria-label="Increase quantity"
               >
                 <Plus size={16} />
               </button>
             </div>
 
+            {/* STUNNING "ADD TO CART" BUTTON WITH CUSTOM MENU BAR CART ICON */}
             <button
               onClick={handleAddToCart}
               disabled={!product.isAvailable}
-              className="w-full sm:flex-1 h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all disabled:opacity-50 text-base"
+              className="w-full sm:flex-1 h-15 bg-gradient-to-r from-[#312E81] via-[#1E1B4B] to-[#312E81] hover:from-[#1E1B4B] hover:to-[#312E81] text-white font-body font-bold rounded-full flex items-center justify-between px-6 shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 text-sm md:text-base group"
             >
-              <ShoppingBag size={20} />
-              <span>Add {quantity} to Cart • ₦{(product.price * quantity).toLocaleString()}</span>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
+                  <CustomCartIcon size={20} strokeWidth={2.2} />
+                </div>
+                <span className="font-heading font-extrabold tracking-wide">
+                  Add {quantity} to Cart
+                </span>
+              </div>
+
+              <div className="bg-[#FBBF24] text-[#312E81] font-heading font-extrabold px-3.5 py-1.5 rounded-full text-xs md:text-sm shadow-sm group-hover:scale-105 transition-transform">
+                ₦{(product.price * quantity).toLocaleString()}
+              </div>
             </button>
+
           </div>
         </motion.div>
 
