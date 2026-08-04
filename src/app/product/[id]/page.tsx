@@ -1,13 +1,73 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
+
+interface Review {
+  id: string;
+  author: string;
+  avatar: string;
+  hostel: string;
+  rating: number;
+  date: string;
+  comment: string;
+  likes: number;
+  isLiked?: boolean;
+}
+
+// MOCK REVIEWS DATABASE
+const INITIAL_REVIEWS: Record<string, Review[]> = {
+  p1: [
+    {
+      id: "r1",
+      author: "David O.",
+      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80",
+      hostel: "Mellanby Hall",
+      rating: 5,
+      date: "2 hours ago",
+      comment: "Portion size was huge! The chicken leg was properly grilled and the pepper sauce was spicy and authentic. Delivery took under 15 mins.",
+      likes: 14,
+    },
+    {
+      id: "r2",
+      author: "Blessing A.",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+      hostel: "Queen Elizabeth Hall",
+      rating: 5,
+      date: "Yesterday",
+      comment: "Mama Cass never disappoints. Hot Jollof rice right after a 3-hour GST lecture is pure bliss. Will order again!",
+      likes: 8,
+    },
+    {
+      id: "r3",
+      author: "Emmanuel K.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+      hostel: "Tedder Hall",
+      rating: 4,
+      date: "3 days ago",
+      comment: "Food came piping hot and well packaged. Plantains were sweet and perfectly fried.",
+      likes: 5,
+    },
+  ],
+  p2: [
+    {
+      id: "r4",
+      author: "Chidimma N.",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      hostel: "Idia Hall",
+      rating: 5,
+      date: "Yesterday",
+      comment: "Extremely refreshing juice! No sugar added, pure orange pulp. Great for hot afternoon lectures.",
+      likes: 9,
+    },
+  ],
+};
 
 // MOCK PRODUCTS DATABASE
 const ALL_PRODUCTS: Record<string, {
@@ -90,70 +150,6 @@ const ALL_PRODUCTS: Record<string, {
     rating: 4.9,
     reviewsCount: 215,
   },
-  f1: {
-    id: "f1",
-    name: "Jollof Rice with Chicken & Plantain",
-    price: 3500,
-    vendorId: "v1",
-    vendorName: "Mama Cass",
-    vendorRating: 4.9,
-    image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
-    details: ["Includes 1x Jumbo Chicken Leg", "4x Fried Plantain Slices", "Option for Extra Pepper Sauce"],
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 4.9,
-    reviewsCount: 128,
-  },
-  f2: {
-    id: "f2",
-    name: "Spicy Beef Suya Pizza - Medium",
-    price: 6500,
-    vendorId: "v4",
-    vendorName: "Pizza Hub",
-    vendorRating: 4.9,
-    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
-    description: "Freshly baked pizza topped with spicy beef suya, onions, and melted mozzarella cheese.",
-    details: ["Medium 10-inch", "Real Mozzarella", "Freshly Baked"],
-    prepTime: "25 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 4.9,
-    reviewsCount: 215,
-  },
-  f3: {
-    id: "f3",
-    name: "Fried Rice Special with Turkey",
-    price: 4200,
-    vendorId: "v1",
-    vendorName: "Mama Cass",
-    vendorRating: 4.8,
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-    description: "Seasoned fried rice cooked with mixed vegetables and served with seasoned fried turkey.",
-    details: ["Seasoned Fried Turkey", "Sweet Corn & Green Peas", "Moyin Moyin Option"],
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 4.8,
-    reviewsCount: 76,
-  },
-  f4: {
-    id: "f4",
-    name: "Crispy Chicken Burger & Chips",
-    price: 3800,
-    vendorId: "v5",
-    vendorName: "Campus Bites",
-    vendorRating: 4.7,
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
-    description: "Crispy fried chicken fillet topped with mayo, lettuce, and served with golden fries.",
-    details: ["Double Crispy Fillet", "Golden Salted Fries", "Special Sauce"],
-    prepTime: "15 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 4.7,
-    reviewsCount: 88,
-  },
 };
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -164,6 +160,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
+
+  // REVIEWS STATE
+  const [reviewsList, setReviewsList] = useState<Review[]>(
+    INITIAL_REVIEWS[product.id] || INITIAL_REVIEWS.p1
+  );
+  const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
+  const [newRating, setNewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newComment, setNewComment] = useState("");
+  const [studentHostel, setStudentHostel] = useState("Mellanby Hall");
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState(false);
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
@@ -202,6 +209,46 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       });
       setPendingProduct(null);
     }
+  };
+
+  const handleAddReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const newReviewItem: Review = {
+      id: `r-${Date.now()}`,
+      author: "Alex John",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      hostel: studentHostel,
+      rating: newRating,
+      date: "Just now",
+      comment: newComment.trim(),
+      likes: 0,
+    };
+
+    setReviewsList([newReviewItem, ...reviewsList]);
+    setNewComment("");
+    setReviewSuccessMsg(true);
+    setTimeout(() => {
+      setReviewSuccessMsg(false);
+      setIsWriteReviewOpen(false);
+    }, 1500);
+  };
+
+  const handleLikeReview = (reviewId: string) => {
+    setReviewsList(
+      reviewsList.map((rev) => {
+        if (rev.id === reviewId) {
+          const isLiked = !rev.isLiked;
+          return {
+            ...rev,
+            isLiked,
+            likes: isLiked ? rev.likes + 1 : rev.likes - 1,
+          };
+        }
+        return rev;
+      })
+    );
   };
 
   const relatedProducts = Object.values(ALL_PRODUCTS).filter(
@@ -260,7 +307,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       {/* MAIN CONTAINER */}
       <div className="px-5 md:px-8 max-w-4xl mx-auto w-full -mt-8 relative z-20 space-y-6">
         
-        {/* MAIN PRODUCT HEADER CARD WITH SCROLL ANIMATION */}
+        {/* MAIN PRODUCT HEADER CARD */}
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -268,7 +315,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           transition={{ duration: 0.5 }}
           className="bg-white rounded-3xl p-6 shadow-md border border-slate-200/80 space-y-4"
         >
-          
           {/* Vendor Badge */}
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-2 bg-[#F4F3FF] px-3.5 py-1.5 rounded-full border border-indigo-100">
@@ -281,7 +327,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
               <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
               <span className="text-xs font-bold text-[#18181B] font-body">{product.rating}</span>
-              <span className="text-[11px] font-medium text-[#71717A]">({product.reviewsCount})</span>
+              <span className="text-[11px] font-medium text-[#71717A]">({reviewsList.length} reviews)</span>
             </div>
           </div>
 
@@ -312,10 +358,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <span>Campus Rider Verified</span>
             </div>
           </div>
-
         </motion.div>
 
-        {/* DESCRIPTION & IN-PAGE ADD TO CART CARD WITH SCROLL ANIMATION */}
+        {/* DESCRIPTION & IN-PAGE PURCHASING CARD */}
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -349,9 +394,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             )}
           </div>
 
-          {/* IN-PAGE QUANTITY & ADD TO CART CONTROLS (NON-STICKY) */}
+          {/* QUANTITY & ADD TO CART CONTROLS */}
           <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4">
-            {/* Quantity Selector */}
             <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-3 bg-[#F4F3FF] rounded-full p-1.5 border border-indigo-100">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -372,7 +416,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </button>
             </div>
 
-            {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
               disabled={!product.isAvailable}
@@ -382,10 +425,109 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <span>Add {quantity} to Cart • ₦{(product.price * quantity).toLocaleString()}</span>
             </button>
           </div>
+        </motion.div>
+
+        {/* STUDENT REVIEWS & RATINGS SECTION */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-6"
+        >
+          {/* Header & Rating Breakdown Summary */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <MessageSquare size={20} className="text-[#312E81]" />
+                <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
+                  Student Reviews & Feedback
+                </h3>
+              </div>
+              <p className="text-xs text-[#71717A] font-body font-normal">
+                Real feedback from verified students across campus halls
+              </p>
+            </div>
+
+            {/* Score Badge */}
+            <div className="flex items-center gap-4 bg-[#F4F3FF] p-4 rounded-2xl border border-indigo-100">
+              <div className="text-center">
+                <span className="font-heading font-extrabold text-3xl text-[#312E81] block leading-none">
+                  {product.rating}
+                </span>
+                <div className="flex items-center justify-center gap-0.5 mt-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
+                  ))}
+                </div>
+                <span className="text-[10px] font-body font-semibold text-[#71717A] mt-0.5 block">
+                  {reviewsList.length} Ratings
+                </span>
+              </div>
+
+              <button
+                onClick={() => setIsWriteReviewOpen(true)}
+                className="px-4 py-2.5 bg-[#312E81] text-white font-body font-semibold text-xs rounded-full shadow-md hover:bg-[#1E1B4B] active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
+                <span>Write a Review</span>
+              </button>
+            </div>
+          </div>
+
+          {/* REVIEWS LIST */}
+          <div className="space-y-4">
+            {reviewsList.map((rev) => (
+              <div key={rev.id} className="p-4 bg-[#FAFAF7] rounded-2xl border border-slate-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full relative overflow-hidden border border-slate-200 shadow-sm shrink-0">
+                      <Image src={rev.avatar} alt={rev.author} fill className="object-cover" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-heading font-bold text-sm text-[#18181B]">{rev.author}</h4>
+                        <span className="text-[10px] font-body font-semibold bg-emerald-50 text-[#16A34A] px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                          <UserCheck size={10} /> Verified
+                        </span>
+                      </div>
+                      <span className="text-xs font-body font-medium text-[#71717A] block">
+                        {rev.hostel} • {rev.date}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Rating Stars */}
+                  <div className="flex items-center gap-0.5 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                    <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
+                    <span className="text-xs font-bold text-[#18181B]">{rev.rating}.0</span>
+                  </div>
+                </div>
+
+                <p className="text-xs md:text-sm text-[#18181B] font-body font-normal leading-relaxed">
+                  &ldquo;{rev.comment}&rdquo;
+                </p>
+
+                <div className="flex items-center justify-end pt-1">
+                  <button
+                    onClick={() => handleLikeReview(rev.id)}
+                    className={`flex items-center gap-1.5 text-xs font-body font-semibold px-3 py-1 rounded-full border transition-all active:scale-95 ${
+                      rev.isLiked
+                        ? "bg-[#F4F3FF] text-[#312E81] border-indigo-200"
+                        : "bg-white text-[#71717A] border-slate-200 hover:text-[#18181B]"
+                    }`}
+                  >
+                    <ThumbsUp size={12} className={rev.isLiked ? "fill-[#312E81]" : ""} />
+                    <span>Helpful ({rev.likes})</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
 
         </motion.div>
 
-        {/* RELATED PRODUCTS FROM VENDOR */}
+        {/* RELATED PRODUCTS */}
         {relatedProducts.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 24 }}
@@ -417,6 +559,99 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         )}
 
       </div>
+
+      {/* WRITE A REVIEW MODAL */}
+      <Modal
+        isOpen={isWriteReviewOpen}
+        onClose={() => setIsWriteReviewOpen(false)}
+        title="Leave a Student Review"
+      >
+        {reviewSuccessMsg ? (
+          <div className="text-center py-8 space-y-3 font-body">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 text-[#16A34A] flex items-center justify-center mx-auto shadow-sm">
+              <CheckCircle2 size={32} />
+            </div>
+            <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
+              Thank You!
+            </h3>
+            <p className="text-xs text-[#71717A]">Your review has been posted successfully.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleAddReview} className="space-y-5 font-body text-[#18181B]">
+            {/* Interactive Star Rating */}
+            <div className="space-y-2 text-center bg-[#FAFAF7] p-4 rounded-2xl border border-slate-100">
+              <label className="font-heading font-bold text-xs text-[#71717A] uppercase tracking-wider block">
+                Tap to Rate {product.name}
+              </label>
+              <div className="flex items-center justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    onClick={() => setNewRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 active:scale-125 transition-transform"
+                  >
+                    <Star
+                      size={28}
+                      className={`${
+                        star <= (hoverRating || newRating)
+                          ? "fill-[#FBBF24] text-[#FBBF24]"
+                          : "text-slate-300"
+                      } transition-colors`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hostel Location Selector */}
+            <div className="space-y-1.5">
+              <label className="font-heading font-bold text-xs text-[#71717A] uppercase tracking-wider block">
+                Your Campus Hostel / Hall
+              </label>
+              <select
+                value={studentHostel}
+                onChange={(e) => setStudentHostel(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-2xl bg-[#FAFAF7] border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#312E81]"
+              >
+                <option value="Mellanby Hall">Mellanby Hall</option>
+                <option value="Queen Elizabeth Hall">Queen Elizabeth Hall</option>
+                <option value="Tedder Hall">Tedder Hall</option>
+                <option value="Kuti Hall">Kuti Hall</option>
+                <option value="Sultan Bello Hall">Sultan Bello Hall</option>
+                <option value="Idia Hall">Idia Hall</option>
+                <option value="Off-Campus Annex">Off-Campus Annex</option>
+              </select>
+            </div>
+
+            {/* Review Comment Textarea */}
+            <div className="space-y-1.5">
+              <label className="font-heading font-bold text-xs text-[#71717A] uppercase tracking-wider block">
+                Your Feedback & Comments
+              </label>
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your experience regarding portion size, taste, packaging, or delivery speed..."
+                rows={4}
+                required
+                className="w-full p-3.5 rounded-2xl bg-[#FAFAF7] border border-slate-200 text-xs font-normal focus:outline-none focus:ring-2 focus:ring-[#312E81] placeholder-[#71717A]"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full h-13 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform text-sm"
+            >
+              <Send size={16} />
+              Submit Review
+            </button>
+          </form>
+        )}
+      </Modal>
 
       {/* CONFIRM REPLACEMENT MODAL */}
       <Modal
