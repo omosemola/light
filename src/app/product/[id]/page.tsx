@@ -390,7 +390,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <Sparkles size={13} className="text-[#312E81]" /> Item Overview
             </div>
             <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] tracking-tight">
-              About this item
+              About this Item
             </h3>
           </div>
 
@@ -400,34 +400,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {product.description}
             </p>
           </div>
-
-          {/* Micro-Bento Features Grid */}
-          {product.details && product.details.length > 0 && (
-            <div className="space-y-3 relative z-10 pt-2 border-t border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <Info size={14} className="text-[#312E81]" />
-                <h4 className="text-xs font-heading font-extrabold text-[#71717A] uppercase tracking-wider">
-                  Highlights & Features
-                </h4>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {product.details.map((detail, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[#F4F3FF]/70 hover:bg-[#F4F3FF] p-3.5 rounded-2xl border border-indigo-100/70 flex items-center gap-3 transition-colors shadow-2xs group"
-                  >
-                    <div className="w-7 h-7 rounded-xl bg-[#312E81] text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-110 transition-transform">
-                      <CheckCircle2 size={16} />
-                    </div>
-                    <span className="text-xs md:text-sm font-body font-bold text-[#18181B]">
-                      {detail}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
           <div className="pt-5 border-t border-slate-100 flex items-center gap-3 relative z-10">
