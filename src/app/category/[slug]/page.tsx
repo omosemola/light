@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Search, ArrowUpDown, Minus, Plus, ShoppingBag, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, Search, ArrowUpDown, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -48,30 +47,39 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     name: "Pastries & Bakery",
     Icon: Cake,
     bg: "bg-[#1E1B4B]",
-    heroImage: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=1200&q=80",
-    description: "Freshly baked meat pies, cakes, donuts, sausage rolls, and bread.",
-    subcategories: ["All", "Pies & Rolls", "Cakes & Muffins", "Bread", "Donuts"],
+    heroImage: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
+    description: "Freshly baked meat pies, cakes, donuts, and bread.",
+    subcategories: ["All", "Pies & Rolls", "Cakes & Donuts", "Fresh Bread"],
   },
   stationery: {
-    name: "Stationery & Academics",
+    name: "Stationery & Books",
     Icon: BookOpen,
     bg: "bg-[#1E1B4B]",
-    heroImage: "https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?auto=format&fit=crop&w=1200&q=80",
-    description: "Note books, pens, sticky notes, files, calculators, and exam materials.",
-    subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Folders", "Exam Essentials"],
+    heroImage: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80",
+    description: "Lecture exercise books, pens, sticky notes, files, and exam materials.",
+    subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Accessories"],
   },
   care: {
     name: "Personal Care",
     Icon: HeartPulse,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-    description: "Skincare, soaps, hygiene products, perfume, and wellness items.",
-    subcategories: ["All", "Skincare", "Bath & Body", "Haircare", "Deodorants"],
+    description: "Skincare, soaps, hair care, and personal hygiene essentials.",
+    subcategories: ["All", "Skincare", "Soaps & Wash", "Hair Care"],
   },
 };
 
-// CATEGORY SPECIFIC PRODUCTS MOCK DATA
-const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price: number; vendorId: string; vendorName: string; image: string; description: string; subcategory: string; isAvailable: boolean }>> = {
+const CATEGORY_PRODUCTS: Record<string, Array<{
+  id: string;
+  name: string;
+  price: number;
+  vendorId: string;
+  vendorName: string;
+  image: string;
+  description: string;
+  subcategory: string;
+  isAvailable: boolean;
+}>> = {
   food: [
     {
       id: "f1",
@@ -80,7 +88,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
       vendorId: "v1",
       vendorName: "Mama Cass",
       image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-      description: "Authentic Nigerian party Jollof rice served with crispy fried plantain and grilled chicken leg.",
+      description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
       subcategory: "Rice & Meals",
       isAvailable: true,
     },
@@ -121,23 +129,12 @@ const CATEGORY_PRODUCTS: Record<string, Array<{ id: string; name: string; price:
   snacks: [
     {
       id: "s1",
-      name: "Butter Popcorn Large Bucket",
-      price: 1500,
-      vendorId: "v6",
-      vendorName: "Cinema Crunch",
-      image: "https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=800&q=80",
-      description: "Freshly popped warm butter popcorn.",
-      subcategory: "Chips & Popcorn",
-      isAvailable: true,
-    },
-    {
-      id: "s2",
-      name: "Plantain Chips (Spicy) 150g",
+      name: "Golden Plantain Chips 150g",
       price: 800,
-      vendorId: "v6",
-      vendorName: "Cinema Crunch",
-      image: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=800&q=80",
-      description: "Crunchy spicy ripe plantain chips.",
+      vendorId: "v2",
+      vendorName: "Fresh Squeeze",
+      image: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?auto=format&fit=crop&w=800&q=80",
+      description: "Crispy, naturally sweet fried plantain chips sliced thin.",
       subcategory: "Chips & Popcorn",
       isAvailable: true,
     },
@@ -238,9 +235,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("All");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
-  const [quantity, setQuantity] = useState(1);
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
@@ -280,14 +275,6 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         vendorName: pendingProduct.vendorName,
       });
       setPendingProduct(null);
-    }
-  };
-
-  const handleOpenDetail = (productId: string) => {
-    const product = rawProducts.find((p) => p.id === productId);
-    if (product) {
-      setSelectedProduct(product);
-      setQuantity(1);
     }
   };
 
@@ -383,12 +370,11 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
           </button>
         </div>
 
-        {/* PRODUCTS GRID WITH SCROLL ANIMATION */}
+        {/* PRODUCTS GRID WITH SCROLL ANIMATION - LINKS DIRECTLY TO /product/[id] */}
         {filteredProducts.length > 0 ? (
           <ProductGrid
             products={filteredProducts}
             onAddProduct={handleAddProduct}
-            onClickProduct={handleOpenDetail}
           />
         ) : (
           <motion.div 
@@ -404,74 +390,6 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         )}
       </div>
 
-      {/* PRODUCT DETAILS MODAL */}
-      <Modal
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        title={selectedProduct?.vendorName || "Product Details"}
-      >
-        {selectedProduct && (
-          <div className="space-y-4 font-body">
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#FAFAF7]">
-              <Image
-                src={selectedProduct.image}
-                alt={selectedProduct.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-
-            <div>
-              <span className="text-xs font-body font-medium text-[#71717A] block mb-0.5">
-                {selectedProduct.vendorName}
-              </span>
-              <h3 className="font-heading font-bold text-xl text-[#18181B]">
-                {selectedProduct.name}
-              </h3>
-              <p className="font-body font-extrabold text-xl text-[#312E81] mt-1">
-                ₦{selectedProduct.price.toLocaleString()}
-              </p>
-              <p className="text-sm text-[#71717A] font-body font-normal mt-2 leading-relaxed">
-                {selectedProduct.description}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <span className="text-sm font-body font-medium text-[#18181B]">Quantity</span>
-              <div className="flex items-center gap-3 bg-[#F4F3FF] rounded-full p-1">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95"
-                >
-                  <Minus size={14} />
-                </button>
-                <span className="font-body font-bold text-sm w-6 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                for (let i = 0; i < quantity; i++) {
-                  handleAddProduct(selectedProduct.id);
-                }
-                setSelectedProduct(null);
-              }}
-              disabled={!selectedProduct.isAvailable}
-              className="w-full h-13 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 active:scale-95 transition-colors disabled:opacity-50"
-            >
-              <ShoppingBag size={18} />
-              Add {quantity} to Cart • ₦{(selectedProduct.price * quantity).toLocaleString()}
-            </button>
-          </div>
-        )}
-      </Modal>
-
       {/* CONFIRM REPLACEMENT MODAL */}
       <Modal
         isOpen={!!pendingProduct}
@@ -479,12 +397,12 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         title="Replace Cart?"
       >
         <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body">
-          Your cart currently contains items from another vendor. Would you like to clear your current cart and start a new order from <strong>{pendingProduct?.vendorName}</strong>?
+          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-sm active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
