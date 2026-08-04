@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck } from "lucide-react";
+import { ArrowLeft, Star, Clock, Heart, Minus, Plus, ShoppingBag, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,7 +31,7 @@ const INITIAL_REVIEWS: Record<string, Review[]> = {
       hostel: "Mellanby Hall",
       rating: 5,
       date: "2 hours ago",
-      comment: "Portion size was huge! The chicken leg was properly grilled and the pepper sauce was spicy and authentic. Delivery took under 15 mins.",
+      comment: "Portion size was huge! The chicken leg was properly grilled and the pepper sauce was spicy and authentic. Delivery took under 15 mins to Mellanby lodge.",
       likes: 14,
     },
     {
@@ -41,7 +41,7 @@ const INITIAL_REVIEWS: Record<string, Review[]> = {
       hostel: "Queen Elizabeth Hall",
       rating: 5,
       date: "Yesterday",
-      comment: "Mama Cass never disappoints. Hot Jollof rice right after a 3-hour GST lecture is pure bliss. Will order again!",
+      comment: "Mama Cass never disappoints. Hot Jollof rice right after a 3-hour GST lecture is pure bliss. Packaging was clean and leak-proof!",
       likes: 8,
     },
     {
@@ -51,7 +51,7 @@ const INITIAL_REVIEWS: Record<string, Review[]> = {
       hostel: "Tedder Hall",
       rating: 4,
       date: "3 days ago",
-      comment: "Food came piping hot and well packaged. Plantains were sweet and perfectly fried.",
+      comment: "Food came piping hot and well packaged. Plantains were sweet and perfectly fried. Will definitely reorder.",
       likes: 5,
     },
   ],
@@ -165,6 +165,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [reviewsList, setReviewsList] = useState<Review[]>(
     INITIAL_REVIEWS[product.id] || INITIAL_REVIEWS.p1
   );
+  const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [newRating, setNewRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -227,6 +228,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     };
 
     setReviewsList([newReviewItem, ...reviewsList]);
+    setActiveReviewIndex(0); // Jump to newly added review
     setNewComment("");
     setReviewSuccessMsg(true);
     setTimeout(() => {
@@ -249,6 +251,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         return rev;
       })
     );
+  };
+
+  const currentReview = reviewsList[activeReviewIndex] || reviewsList[0];
+
+  const handleNextReview = () => {
+    setActiveReviewIndex((prev) => (prev + 1) % reviewsList.length);
+  };
+
+  const handlePrevReview = () => {
+    setActiveReviewIndex((prev) => (prev - 1 + reviewsList.length) % reviewsList.length);
   };
 
   const relatedProducts = Object.values(ALL_PRODUCTS).filter(
@@ -427,103 +439,149 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </motion.div>
 
-        {/* STUDENT REVIEWS & RATINGS SECTION */}
+        {/* SINGLE REVIEW CAROUSEL TESTIMONIAL CARD */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-6"
+          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-6 relative overflow-hidden"
         >
-          {/* Header & Rating Breakdown Summary */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <MessageSquare size={20} className="text-[#312E81]" />
-                <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
-                  Student Reviews & Feedback
-                </h3>
-              </div>
-              <p className="text-xs text-[#71717A] font-body font-normal">
-                Real feedback from verified students across campus halls
-              </p>
+          {/* Header Bar */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <MessageSquare size={20} className="text-[#312E81]" />
+              <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
+                Student Reviews ({reviewsList.length})
+              </h3>
             </div>
 
-            {/* Score Badge */}
-            <div className="flex items-center gap-4 bg-[#F4F3FF] p-4 rounded-2xl border border-indigo-100">
-              <div className="text-center">
-                <span className="font-heading font-extrabold text-3xl text-[#312E81] block leading-none">
-                  {product.rating}
-                </span>
-                <div className="flex items-center justify-center gap-0.5 mt-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
-                  ))}
-                </div>
-                <span className="text-[10px] font-body font-semibold text-[#71717A] mt-0.5 block">
-                  {reviewsList.length} Ratings
-                </span>
-              </div>
-
-              <button
-                onClick={() => setIsWriteReviewOpen(true)}
-                className="px-4 py-2.5 bg-[#312E81] text-white font-body font-semibold text-xs rounded-full shadow-md hover:bg-[#1E1B4B] active:scale-95 transition-all flex items-center gap-1.5"
-              >
-                <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
-                <span>Write a Review</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setIsWriteReviewOpen(true)}
+              className="px-4 py-2 bg-[#312E81] text-white font-body font-semibold text-xs rounded-full shadow-sm hover:bg-[#1E1B4B] active:scale-95 transition-all flex items-center gap-1.5"
+            >
+              <Star size={13} className="fill-[#FBBF24] text-[#FBBF24]" />
+              <span>Write Review</span>
+            </button>
           </div>
 
-          {/* REVIEWS LIST */}
-          <div className="space-y-4">
-            {reviewsList.map((rev) => (
-              <div key={rev.id} className="p-4 bg-[#FAFAF7] rounded-2xl border border-slate-100 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full relative overflow-hidden border border-slate-200 shadow-sm shrink-0">
-                      <Image src={rev.avatar} alt={rev.author} fill className="object-cover" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-heading font-bold text-sm text-[#18181B]">{rev.author}</h4>
-                        <span className="text-[10px] font-body font-semibold bg-emerald-50 text-[#16A34A] px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                          <UserCheck size={10} /> Verified
+          {/* SINGLE TESTIMONIAL CARD WITH SLIDE ANIMATION */}
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              {currentReview && (
+                <motion.div
+                  key={currentReview.id}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="bg-gradient-to-br from-[#F4F3FF]/90 via-white to-amber-50/40 rounded-3xl p-6 border border-indigo-100/80 shadow-md relative overflow-hidden space-y-4"
+                >
+                  {/* Decorative Background Quote Watermark */}
+                  <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 pointer-events-none rotate-180" />
+
+                  {/* Top Author & Rating Bar */}
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white shadow-md shrink-0">
+                        <Image src={currentReview.avatar} alt={currentReview.author} fill className="object-cover" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-heading font-extrabold text-base text-[#18181B]">
+                            {currentReview.author}
+                          </h4>
+                          <span className="text-[10px] font-body font-extrabold bg-emerald-50 text-[#16A34A] px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                            <UserCheck size={11} /> Verified
+                          </span>
+                        </div>
+                        <span className="text-xs font-body font-medium text-[#71717A]">
+                          {currentReview.hostel} • {currentReview.date}
                         </span>
                       </div>
-                      <span className="text-xs font-body font-medium text-[#71717A] block">
-                        {rev.hostel} • {rev.date}
+                    </div>
+
+                    {/* Gold Star Badge */}
+                    <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-100">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={13}
+                            className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200"}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs font-extrabold text-[#18181B] font-body ml-1">
+                        {currentReview.rating}.0
                       </span>
                     </div>
                   </div>
 
-                  {/* Rating Stars */}
-                  <div className="flex items-center gap-0.5 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                    <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
-                    <span className="text-xs font-bold text-[#18181B]">{rev.rating}.0</span>
+                  {/* Comment Text */}
+                  <p className="text-sm md:text-base text-[#18181B] font-body font-medium leading-relaxed italic relative z-10 pt-1">
+                    &ldquo;{currentReview.comment}&rdquo;
+                  </p>
+
+                  {/* Helpful Button */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 relative z-10">
+                    <span className="text-[11px] font-body font-semibold text-[#71717A]">
+                      Review {activeReviewIndex + 1} of {reviewsList.length}
+                    </span>
+
+                    <button
+                      onClick={() => handleLikeReview(currentReview.id)}
+                      className={`flex items-center gap-1.5 text-xs font-body font-semibold px-3.5 py-1.5 rounded-full border transition-all active:scale-95 ${
+                        currentReview.isLiked
+                          ? "bg-[#312E81] text-white border-[#312E81] shadow-sm"
+                          : "bg-white text-[#71717A] border-slate-200 hover:text-[#18181B]"
+                      }`}
+                    >
+                      <ThumbsUp size={13} className={currentReview.isLiked ? "fill-white" : ""} />
+                      <span>Helpful ({currentReview.likes})</span>
+                    </button>
                   </div>
-                </div>
-
-                <p className="text-xs md:text-sm text-[#18181B] font-body font-normal leading-relaxed">
-                  &ldquo;{rev.comment}&rdquo;
-                </p>
-
-                <div className="flex items-center justify-end pt-1">
-                  <button
-                    onClick={() => handleLikeReview(rev.id)}
-                    className={`flex items-center gap-1.5 text-xs font-body font-semibold px-3 py-1 rounded-full border transition-all active:scale-95 ${
-                      rev.isLiked
-                        ? "bg-[#F4F3FF] text-[#312E81] border-indigo-200"
-                        : "bg-white text-[#71717A] border-slate-200 hover:text-[#18181B]"
-                    }`}
-                  >
-                    <ThumbsUp size={12} className={rev.isLiked ? "fill-[#312E81]" : ""} />
-                    <span>Helpful ({rev.likes})</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* CAROUSEL FOOTER NAV CONTROLS & DOT INDICATORS */}
+          {reviewsList.length > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              {/* Dots */}
+              <div className="flex items-center gap-1.5">
+                {reviewsList.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveReviewIndex(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      idx === activeReviewIndex ? "w-6 bg-[#312E81]" : "w-2 bg-slate-200 hover:bg-slate-300"
+                    }`}
+                    aria-label={`Go to review ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Prev / Next Arrows */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrevReview}
+                  className="w-10 h-10 rounded-full bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                  aria-label="Previous review"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={handleNextReview}
+                  className="w-10 h-10 rounded-full bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                  aria-label="Next review"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
 
         </motion.div>
 
