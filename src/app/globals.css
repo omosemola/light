@@ -32,3 +32,71 @@
     scrollbar-width: none;
   }
 }
+
+/* ANIMATED CONIC BORDER EFFECT FOR ADD TO CART BUTTON */
+.animated-cart-btn-wrapper {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+}
+
+.animated-cart-btn {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  padding: 0 1.25rem;
+  height: 3.75rem;
+  border-radius: 9999px;
+  background: #1E1B4B;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+.animated-cart-btn-effect {
+  pointer-events: none;
+  border-radius: 9999px;
+  width: calc(100% - 1px);
+  height: calc(100% - 1px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: exclude;
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.animated-cart-btn-effect div {
+  background-image: conic-gradient(from 0 at 50% 50%, rgba(255, 255, 255, 0.9) 0deg, rgba(255, 255, 255, 0) 60deg, rgba(255, 255, 255, 0) 310deg, rgba(255, 255, 255, 0.9) 360deg);
+  position: relative;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -moz-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  width: 100%;
+  animation: rotate-demo 2s linear infinite;
+  aspect-ratio: 1;
+}
+
+@keyframes rotate-demo {
+  from {
+    transform: translate(-50%, -50%) scale(1.4) rotate(0turn);
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(1.4) rotate(1turn);
+  }
+}

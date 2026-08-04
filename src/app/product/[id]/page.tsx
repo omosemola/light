@@ -429,7 +429,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* QUANTITY & HIGH-CONVERTING "ADD TO CART" BUTTON */}
+          {/* QUANTITY & ANIMATED CONIC GRADIENT BORDER "ADD TO CART" BUTTON */}
           <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4 relative z-10">
             
             {/* Quantity Selector */}
@@ -453,25 +453,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </button>
             </div>
 
-            {/* STUNNING "ADD TO CART" BUTTON WITH CUSTOM MENU BAR CART ICON */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!product.isAvailable}
-              className="w-full sm:flex-1 h-15 bg-gradient-to-r from-[#312E81] via-[#1E1B4B] to-[#312E81] hover:from-[#1E1B4B] hover:to-[#312E81] text-white font-body font-bold rounded-full flex items-center justify-between px-6 shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 text-sm md:text-base group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
-                  <CustomCartIcon size={20} strokeWidth={2.2} />
-                </div>
-                <span className="font-heading font-extrabold tracking-wide">
-                  Add {quantity} to Cart
-                </span>
+            {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON */}
+            <div className="animated-cart-btn-wrapper sm:flex-1">
+              <div className="animated-cart-btn-effect">
+                <div />
               </div>
 
-              <div className="bg-[#FBBF24] text-[#312E81] font-heading font-extrabold px-3.5 py-1.5 rounded-full text-xs md:text-sm shadow-sm group-hover:scale-105 transition-transform">
-                ₦{(product.price * quantity).toLocaleString()}
-              </div>
-            </button>
+              <button
+                onClick={handleAddToCart}
+                disabled={!product.isAvailable}
+                className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 text-sm md:text-base group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
+                    <CustomCartIcon size={20} strokeWidth={2.2} />
+                  </div>
+                  <span className="font-heading font-extrabold tracking-wide">
+                    Add {quantity} to Cart
+                  </span>
+                </div>
+
+                <div className="bg-[#FBBF24] text-[#312E81] font-heading font-extrabold px-3.5 py-1.5 rounded-full text-xs md:text-sm shadow-sm group-hover:scale-105 transition-transform">
+                  ₦{(product.price * quantity).toLocaleString()}
+                </div>
+              </button>
+            </div>
 
           </div>
         </motion.div>
@@ -760,7 +766,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] text-[#FFFFFF] font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
