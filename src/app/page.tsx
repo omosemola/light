@@ -1,25 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Flame, Sparkles, Clock, ArrowRight, Minus, Plus, ShoppingBag, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
-import Image from "next/image";
+import { Search, Flame, ArrowRight, Clock, Sparkles, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 
-// CATEGORIES DATA WITH VECTOR LUCIDE ICONS
-const CATEGORIES = [
-  { name: "Food", slug: "food", Icon: Utensils, bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Snacks", slug: "snacks", Icon: Cookie, bg: "bg-amber-50 text-[#D97706]" },
-  { name: "Drinks", slug: "drinks", Icon: Coffee, bg: "bg-blue-50 text-blue-600" },
-  { name: "Groceries", slug: "groceries", Icon: ShoppingCart, bg: "bg-emerald-50 text-emerald-600" },
-  { name: "Pastries", slug: "pastries", Icon: Cake, bg: "bg-[#F4F3FF] text-[#312E81]" },
-  { name: "Stationery", slug: "stationery", Icon: BookOpen, bg: "bg-purple-50 text-purple-600" },
-  { name: "Care", slug: "care", Icon: HeartPulse, bg: "bg-pink-50 text-pink-600" },
-];
-
+// POPULAR PRODUCTS MOCK DATA WITH UNSPLASH IMAGERY
 const POPULAR_PRODUCTS = [
   {
     id: "p1",
@@ -28,8 +18,9 @@ const POPULAR_PRODUCTS = [
     vendorId: "v1",
     vendorName: "Mama Cass",
     image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    description: "Authentic Nigerian party Jollof rice served with crispy fried plantain and a piece of grilled chicken leg.",
+    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
     isAvailable: true,
+    rating: 4.9,
   },
   {
     id: "p2",
@@ -38,8 +29,9 @@ const POPULAR_PRODUCTS = [
     vendorId: "v2",
     vendorName: "Fresh Squeeze",
     image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80",
-    description: "100% natural, freshly squeezed orange juice with no added sugar or preservatives.",
+    description: "100% natural, freshly squeezed orange juice with no added sugar.",
     isAvailable: true,
+    rating: 4.8,
   },
   {
     id: "p3",
@@ -50,24 +42,35 @@ const POPULAR_PRODUCTS = [
     image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
     description: "High quality 60-leaf ruled exercise notebooks for campus lectures.",
     isAvailable: false,
+    rating: 4.7,
   },
   {
     id: "p4",
-    name: "Spicy Suya Pizza - Medium",
+    name: "Spicy Beef Suya Pizza - Medium",
     price: 6500,
     vendorId: "v4",
     vendorName: "Pizza Hub",
     image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
     description: "Freshly baked pizza topped with spicy beef suya, onions, and melted mozzarella cheese.",
     isAvailable: true,
+    rating: 4.9,
   },
+];
+
+// CATEGORIES METADATA WITH VECTOR ICONS & CUSTOM BG BADGES
+const CATEGORIES = [
+  { name: "Food", slug: "food", Icon: Utensils, bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Snacks", slug: "snacks", Icon: Cookie, bg: "bg-amber-50 text-amber-700" },
+  { name: "Drinks", slug: "drinks", Icon: Coffee, bg: "bg-blue-50 text-blue-700" },
+  { name: "Groceries", slug: "groceries", Icon: ShoppingCart, bg: "bg-emerald-50 text-emerald-700" },
+  { name: "Pastries", slug: "pastries", Icon: Cake, bg: "bg-[#F4F3FF] text-[#312E81]" },
+  { name: "Stationery", slug: "stationery", Icon: BookOpen, bg: "bg-purple-50 text-purple-700" },
+  { name: "Care", slug: "care", Icon: HeartPulse, bg: "bg-pink-50 text-pink-700" },
 ];
 
 export default function Home() {
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [quantity, setQuantity] = useState(1);
 
   const handleAddProduct = (productId: string) => {
     const product = POPULAR_PRODUCTS.find((p) => p.id === productId);
@@ -98,14 +101,6 @@ export default function Home() {
         vendorName: pendingProduct.vendorName,
       });
       setPendingProduct(null);
-    }
-  };
-
-  const handleOpenDetail = (productId: string) => {
-    const product = POPULAR_PRODUCTS.find((p) => p.id === productId);
-    if (product) {
-      setSelectedProduct(product);
-      setQuantity(1);
     }
   };
 
@@ -262,7 +257,7 @@ export default function Home() {
           </div>
         </motion.section>
 
-        {/* POPULAR NEAR YOU SECTION WITH ANIMATIONS */}
+        {/* POPULAR NEAR YOU SECTION WITH ANIMATIONS - LINKS DIRECTLY TO /product/[id] */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -274,7 +269,7 @@ export default function Home() {
               <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B]">
                 Popular Near You
               </h2>
-              <p className="text-xs text-[#71717A] font-body font-normal">Click on any product to view details</p>
+              <p className="text-xs text-[#71717A] font-body font-normal">Click any item to order</p>
             </div>
             <Link 
               href="/search" 
@@ -287,79 +282,10 @@ export default function Home() {
           <ProductGrid 
             products={POPULAR_PRODUCTS} 
             onAddProduct={handleAddProduct}
-            onClickProduct={handleOpenDetail} 
           />
         </motion.section>
 
       </div>
-
-      {/* PRODUCT DETAILS MODAL */}
-      <Modal
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        title={selectedProduct?.vendorName || "Product Details"}
-      >
-        {selectedProduct && (
-          <div className="space-y-4 font-body">
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#FAFAF7]">
-              <Image 
-                src={selectedProduct.image} 
-                alt={selectedProduct.name} 
-                fill 
-                className="object-cover" 
-              />
-            </div>
-
-            <div>
-              <span className="text-xs font-body font-medium text-[#71717A] block mb-0.5">
-                {selectedProduct.vendorName}
-              </span>
-              <h3 className="font-heading font-bold text-xl text-[#18181B]">
-                {selectedProduct.name}
-              </h3>
-              <p className="font-body font-extrabold text-xl text-[#312E81] mt-1">
-                ₦{selectedProduct.price.toLocaleString()}
-              </p>
-              <p className="text-sm text-[#71717A] font-body font-normal mt-2 leading-relaxed">
-                {selectedProduct.description}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <span className="text-sm font-body font-medium text-[#18181B]">Quantity</span>
-              <div className="flex items-center gap-3 bg-[#F4F3FF] rounded-full p-1">
-                <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95"
-                >
-                  <Minus size={14} />
-                </button>
-                <span className="font-body font-bold text-sm w-6 text-center">{quantity}</span>
-                <button 
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                for (let i = 0; i < quantity; i++) {
-                  handleAddProduct(selectedProduct.id);
-                }
-                setSelectedProduct(null);
-              }}
-              disabled={!selectedProduct.isAvailable}
-              className="w-full h-13 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-body font-semibold rounded-full flex items-center justify-center gap-2 active:scale-95 transition-colors disabled:opacity-50"
-            >
-              <ShoppingBag size={18} />
-              Add {quantity} to Cart • ₦{(selectedProduct.price * quantity).toLocaleString()}
-            </button>
-          </div>
-        )}
-      </Modal>
 
       {/* CONFIRM REPLACEMENT MODAL */}
       <Modal 
@@ -368,16 +294,16 @@ export default function Home() {
         title="Replace Cart?"
       >
         <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body font-normal">
-          Your cart currently contains items from another vendor. Would you like to clear your current cart and start a new order from <strong>{pendingProduct?.vendorName}</strong>?
+          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
-          <button 
+          <button
             onClick={handleReplaceCart}
             className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
-          <button 
+          <button
             onClick={() => setPendingProduct(null)}
             className="w-full h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
           >
@@ -385,6 +311,7 @@ export default function Home() {
           </button>
         </div>
       </Modal>
+
     </div>
   );
 }
