@@ -3,6 +3,7 @@
 import { useState, use } from "react";
 import { ArrowLeft, Star, Clock, Heart, Plus, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote, Sparkles, Info, Edit3 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
@@ -326,18 +327,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5 }}
-          className="bg-white rounded-3xl p-6 shadow-md border border-slate-200/80 space-y-4"
+          className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-7 shadow-xl shadow-slate-200/40 border border-white space-y-5"
         >
           {/* Vendor Badge */}
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 bg-[#F4F3FF] px-3.5 py-1.5 rounded-full border border-indigo-100">
+            <Link href={`/vendor/${product.vendorId}`} className="inline-flex items-center gap-2 bg-[#F4F3FF] hover:bg-[#E0E7FF] px-4 py-2 rounded-full border border-indigo-100 transition-colors">
               <Store size={14} className="text-[#312E81]" />
               <span className="text-xs font-heading font-extrabold text-[#312E81] uppercase tracking-wider">
                 {product.vendorName}
               </span>
-            </div>
+            </Link>
 
-            <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+            <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
               <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
               <span className="text-xs font-bold text-[#18181B] font-body">{product.rating}</span>
               <span className="text-[11px] font-medium text-[#71717A]">({reviewsList.length} reviews)</span>
@@ -404,7 +405,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
           <div className="pt-5 border-t border-slate-100 flex items-center gap-3 relative z-10">
             
-            {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON */}
+            {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON (MODERN ROUNDED-2XL EDGES) */}
             <div className="animated-cart-btn-wrapper flex-1">
               <div className="animated-cart-btn-effect">
                 <div />
@@ -416,24 +417,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 text-sm md:text-base group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
                     <CustomCartIcon size={20} strokeWidth={2.2} />
                   </div>
-                  <span className="font-heading font-extrabold tracking-wide">
-                    Add {quantity > 1 ? `${quantity} ` : ""}to Cart
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-heading font-extrabold tracking-wide">
+                      Add to Cart
+                    </span>
+                    {quantity > 1 && (
+                      <span className="bg-white/20 text-white font-body font-extrabold text-xs px-2 py-0.5 rounded-md">
+                        ×{quantity}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="bg-[#FBBF24] text-[#312E81] font-heading font-extrabold px-3.5 py-1.5 rounded-full text-xs md:text-sm shadow-sm group-hover:scale-105 transition-transform">
+                <div className="bg-[#FBBF24] text-[#312E81] font-heading font-extrabold px-3.5 py-1.5 rounded-xl text-xs md:text-sm shadow-sm group-hover:scale-105 transition-transform">
                   ₦{(product.price * quantity).toLocaleString()}
                 </div>
               </button>
             </div>
 
-            {/* STANDALONE "+" BUTTON IN A CIRCLE ONLY */}
+            {/* STANDALONE "+" BUTTON (MODERN ROUNDED-2XL SQUIRCLE) */}
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-15 h-15 rounded-full bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white border border-indigo-100 flex items-center justify-center shadow-md active:scale-90 transition-all shrink-0 group"
+              className="w-15 h-15 rounded-2xl bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white border border-indigo-100/90 flex items-center justify-center shadow-md active:scale-90 transition-all shrink-0 group"
               title="Increase Quantity"
               aria-label="Increase Quantity"
             >
@@ -463,10 +471,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* REDESIGNED WRITE REVIEW BUTTON */}
             <button
               onClick={() => setIsWriteReviewOpen(true)}
-              className="px-4 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs md:text-sm rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-2 border border-indigo-700/50 group"
+              className="px-3.5 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-2 border border-indigo-700/50 group"
             >
-              <div className="w-6 h-6 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-110 transition-transform">
-                <Edit3 size={13} className="text-[#312E81]" />
+              <div className="w-5 h-5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-xs group-hover:scale-110 transition-transform">
+                <Edit3 size={11} className="text-[#312E81]" />
               </div>
               <span>Write Review</span>
             </button>
@@ -509,17 +517,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </div>
 
                     {/* Gold Star Badge */}
-                    <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-100">
-                      <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full shadow-sm border border-slate-100">
+                      <div className="flex items-center gap-px">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            size={13}
+                            size={10}
                             className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200"}
                           />
                         ))}
                       </div>
-                      <span className="text-xs font-extrabold text-[#18181B] font-body ml-1">
+                      <span className="text-[10px] font-extrabold text-[#18181B] font-body ml-0.5">
                         {currentReview.rating}.0
                       </span>
                     </div>

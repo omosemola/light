@@ -33,7 +33,7 @@
   }
 }
 
-/* ANIMATED CONIC BORDER EFFECT FOR ADD TO CART BUTTON */
+/* ANIMATED CONIC BORDER EFFECT FOR ADD TO CART BUTTON (MODERN ROUNDED-2XL EDGES) */
 .animated-cart-btn-wrapper {
   display: inline-block;
   position: relative;
@@ -52,7 +52,7 @@
   outline-offset: 2px;
   padding: 0 1.25rem;
   height: 3.75rem;
-  border-radius: 9999px;
+  border-radius: 1.25rem;
   background: #1E1B4B;
   color: #fff;
   position: relative;
@@ -61,7 +61,7 @@
 
 .animated-cart-btn-effect {
   pointer-events: none;
-  border-radius: 9999px;
+  border-radius: 1.25rem;
   width: calc(100% - 1px);
   height: calc(100% - 1px);
   position: absolute;
