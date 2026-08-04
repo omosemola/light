@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Star, Clock, Heart, Minus, Plus, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote, Sparkles, Info } from "lucide-react";
+import { ArrowLeft, Star, Clock, Heart, Plus, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote, Sparkles, Info, Edit3 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -429,32 +429,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* QUANTITY & ANIMATED CONIC GRADIENT BORDER "ADD TO CART" BUTTON */}
-          <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4 relative z-10">
+          {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
+          <div className="pt-5 border-t border-slate-100 flex items-center gap-3 relative z-10">
             
-            {/* Quantity Selector */}
-            <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-3 bg-[#F4F3FF] rounded-full p-2 border border-indigo-100 shadow-2xs">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-11 h-11 flex items-center justify-center bg-white rounded-full text-[#18181B] shadow-sm font-bold active:scale-95 transition-transform"
-                aria-label="Decrease quantity"
-              >
-                <Minus size={16} />
-              </button>
-              <span className="font-heading font-extrabold text-base w-8 text-center text-[#18181B]">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-11 h-11 flex items-center justify-center bg-[#312E81] text-white rounded-full shadow-sm font-bold active:scale-95 transition-transform"
-                aria-label="Increase quantity"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-
             {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON */}
-            <div className="animated-cart-btn-wrapper sm:flex-1">
+            <div className="animated-cart-btn-wrapper flex-1">
               <div className="animated-cart-btn-effect">
                 <div />
               </div>
@@ -469,7 +448,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <CustomCartIcon size={20} strokeWidth={2.2} />
                   </div>
                   <span className="font-heading font-extrabold tracking-wide">
-                    Add {quantity} to Cart
+                    Add {quantity > 1 ? `${quantity} ` : ""}to Cart
                   </span>
                 </div>
 
@@ -478,6 +457,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               </button>
             </div>
+
+            {/* STANDALONE "+" BUTTON IN A CIRCLE ONLY */}
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              className="w-15 h-15 rounded-full bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white border border-indigo-100 flex items-center justify-center shadow-md active:scale-90 transition-all shrink-0 group"
+              title="Increase Quantity"
+              aria-label="Increase Quantity"
+            >
+              <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
+            </button>
 
           </div>
         </motion.div>
@@ -499,11 +488,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </h3>
             </div>
 
+            {/* REDESIGNED WRITE REVIEW BUTTON */}
             <button
               onClick={() => setIsWriteReviewOpen(true)}
-              className="px-4 py-2 bg-[#312E81] text-white font-body font-semibold text-xs rounded-full shadow-sm hover:bg-[#1E1B4B] active:scale-95 transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs md:text-sm rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-2 border border-indigo-700/50 group"
             >
-              <Star size={13} className="fill-[#FBBF24] text-[#FBBF24]" />
+              <div className="w-6 h-6 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-110 transition-transform">
+                <Edit3 size={13} className="text-[#312E81]" />
+              </div>
               <span>Write Review</span>
             </button>
           </div>
