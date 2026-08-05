@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
 
@@ -38,13 +39,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[#FAFAF7] text-[#18181B] font-body">
-        <AuthProvider>
-          <TopNav />
-          <main className="flex-1 pb-20 md:pb-0">{children}</main>
-          <BottomNav />
-        </AuthProvider>
+      <body className="min-h-full flex flex-col bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-[#FAFAFA] font-body transition-colors duration-200">
+        <ThemeProvider>
+          <AuthProvider>
+            <TopNav />
+            <main className="flex-1 pb-20 md:pb-0">{children}</main>
+            <BottomNav />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

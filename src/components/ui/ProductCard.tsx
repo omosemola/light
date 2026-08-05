@@ -33,11 +33,11 @@ export function ProductCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: false, margin: "-30px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="group relative flex flex-col justify-between bg-white rounded-3xl p-3.5 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/80 overflow-hidden hover:-translate-y-1.5 cursor-pointer h-full"
+      className="group relative flex flex-col justify-between bg-white dark:bg-zinc-900 rounded-3xl p-3.5 shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/80 dark:border-zinc-800 overflow-hidden hover:-translate-y-1.5 cursor-pointer h-full"
     >
       <div>
         {/* IMAGE CONTAINER WITH OVERLAYS */}
-        <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#FAFAF7] mb-3.5">
+        <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 mb-3.5">
           <Image
             src={image}
             alt={name}
@@ -58,9 +58,9 @@ export function ProductCard({
           </div>
 
           {/* Rating Badge Top-Right Overlay */}
-          <div className="absolute top-2.5 right-2.5 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-slate-100/80">
+          <div className="absolute top-2.5 right-2.5 bg-white/95 dark:bg-zinc-900/90 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-slate-100/80 dark:border-zinc-800">
             <Star size={11} className="fill-[#FBBF24] text-[#FBBF24]" />
-            <span className="text-[11px] font-bold text-[#18181B] font-body">{rating}</span>
+            <span className="text-[11px] font-bold text-[#18181B] dark:text-zinc-100 font-body">{rating}</span>
           </div>
 
           {/* Sold Out Overlay */}
@@ -76,23 +76,23 @@ export function ProductCard({
         {/* PRODUCT DETAILS */}
         <div className="flex flex-col gap-1 px-1">
           {/* Title: Plus Jakarta Sans */}
-          <h3 className="font-heading font-bold text-[#18181B] text-sm md:text-base leading-snug line-clamp-2 group-hover:text-[#312E81] transition-colors">
+          <h3 className="font-heading font-bold text-[#18181B] dark:text-zinc-100 text-sm md:text-base leading-snug line-clamp-2 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
             {name}
           </h3>
         </div>
       </div>
 
       {/* PRICE & EXPLORE FOOTER */}
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 px-1">
+      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800/80 px-1">
         <div className="flex flex-col">
-          <span className="text-[10px] font-body font-semibold text-[#71717A] uppercase tracking-wider">Price</span>
-          <span className="font-body font-extrabold text-lg md:text-xl text-[#312E81]">
+          <span className="text-[10px] font-body font-semibold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">Price</span>
+          <span className="font-body font-extrabold text-lg md:text-xl text-[#312E81] dark:text-indigo-400">
             ₦{price.toLocaleString()}
           </span>
         </div>
 
         {/* Sleek Arrow Indicator replacing old plus button */}
-        <div className="w-8 h-8 rounded-full bg-[#F4F3FF] text-[#312E81] group-hover:bg-[#312E81] group-hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0 shadow-xs">
+        <div className="w-8 h-8 rounded-full bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 group-hover:bg-[#312E81] dark:group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0 shadow-xs border border-indigo-100/50 dark:border-indigo-800/50">
           <ArrowUpRight size={16} strokeWidth={2.5} />
         </div>
       </div>
