@@ -410,7 +410,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-24">
+    <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       
       {/* HERO PRODUCT IMAGE WITH ANIMATION */}
       <motion.div 
@@ -433,7 +433,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
           <button
             onClick={() => router.back()}
-            className="w-11 h-11 rounded-full bg-white/90 hover:bg-white text-[#18181B] flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
+            className="w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
           >
             <ArrowLeft size={22} />
           </button>
@@ -441,7 +441,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <button
             onClick={() => setIsLiked(!isLiked)}
             className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm ${
-              isLiked ? "bg-red-500 text-white" : "bg-white/90 hover:bg-white text-[#18181B]"
+              isLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
             }`}
           >
             <Heart size={20} className={isLiked ? "fill-white" : ""} />
@@ -467,44 +467,44 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5 }}
-          className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-7 shadow-xl shadow-slate-200/40 border border-white space-y-5"
+          className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-[2rem] p-7 shadow-xl shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-5"
         >
           {/* Vendor Badge */}
           <div className="flex items-center justify-between">
-            <Link href={`/vendor/${product.vendorId}`} className="inline-flex items-center gap-2 bg-[#F4F3FF] hover:bg-[#E0E7FF] px-4 py-2 rounded-full border border-indigo-100 transition-colors">
-              <Store size={14} className="text-[#312E81]" />
-              <span className="text-xs font-heading font-extrabold text-[#312E81] uppercase tracking-wider">
+            <Link href={`/vendor/${product.vendorId}`} className="inline-flex items-center gap-2 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#E0E7FF] dark:hover:bg-indigo-900/80 px-4 py-2 rounded-full border border-indigo-100 dark:border-indigo-800/60 transition-colors">
+              <Store size={14} className="text-[#312E81] dark:text-indigo-400" />
+              <span className="text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 uppercase tracking-wider">
                 {product.vendorName}
               </span>
             </Link>
 
-            <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/60 px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-800">
               <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
-              <span className="text-xs font-bold text-[#18181B] font-body">{product.rating}</span>
-              <span className="text-[11px] font-medium text-[#71717A]">({reviewsList.length} reviews)</span>
+              <span className="text-xs font-bold text-[#18181B] dark:text-amber-300 font-body">{product.rating}</span>
+              <span className="text-[11px] font-medium text-[#71717A] dark:text-zinc-400">({reviewsList.length} reviews)</span>
             </div>
           </div>
 
           {/* Title & Price */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#18181B] tracking-tight leading-tight">
+            <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#18181B] dark:text-zinc-100 tracking-tight leading-tight">
               {product.name}
             </h1>
             
             <div className="flex items-baseline gap-3 mt-3">
-              <span className="text-3xl font-body font-extrabold text-[#312E81]">
+              <span className="text-3xl font-body font-extrabold text-[#312E81] dark:text-indigo-400">
                 ₦{product.price.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-[#16A34A] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-bold text-[#16A34A] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                 In Stock & Ready
               </span>
             </div>
           </div>
 
           {/* Prep Time Info */}
-          <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-xs text-[#71717A] font-body font-semibold">
+          <div className="flex items-center gap-4 pt-3 border-t border-slate-100 dark:border-zinc-800 text-xs text-[#71717A] dark:text-zinc-400 font-body font-semibold">
             <div className="flex items-center gap-1.5">
-              <Clock size={16} className="text-[#312E81]" />
+              <Clock size={16} className="text-[#312E81] dark:text-indigo-400" />
               <span>Prep Time: {product.prepTime}</span>
             </div>
           </div>
@@ -516,27 +516,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-200/90 relative overflow-hidden space-y-6"
+          className="bg-white dark:bg-zinc-900 rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-200/90 dark:border-zinc-800 relative overflow-hidden space-y-6"
         >
           {/* Subtle Decorative Background Accent */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#F4F3FF] via-transparent to-transparent rounded-bl-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#F4F3FF] dark:from-indigo-950/30 via-transparent to-transparent rounded-bl-full pointer-events-none" />
 
           {/* Section Title */}
           <div className="relative z-10">
-            <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] tracking-tight">
+            <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100 tracking-tight">
               About this Item
             </h3>
           </div>
 
           {/* Rich Description Body */}
-          <div className="bg-[#FAFAF7] p-5 rounded-2xl border border-slate-200/60 relative z-10">
-            <p className="text-[#18181B] text-sm md:text-base leading-relaxed font-body font-normal">
+          <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-5 rounded-2xl border border-slate-200/60 dark:border-zinc-700/60 relative z-10">
+            <p className="text-[#18181B] dark:text-zinc-200 text-sm md:text-base leading-relaxed font-body font-normal">
               {product.description}
             </p>
           </div>
 
           {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
-          <div className="pt-5 border-t border-slate-100 flex items-center gap-3 relative z-10">
+          <div className="pt-5 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-3 relative z-10">
             
             {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON (MODERN ROUNDED-2XL EDGES) */}
             <div className="animated-cart-btn-wrapper flex-1">
@@ -568,7 +568,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* STANDALONE "+" BUTTON (MODERN ROUNDED-2XL SQUIRCLE) */}
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-15 h-15 rounded-2xl bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white border border-indigo-100/90 flex items-center justify-center shadow-md active:scale-90 transition-all shrink-0 group"
+              className="w-15 h-15 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-md active:scale-90 transition-all shrink-0 group"
               title="Increase Quantity"
               aria-label="Increase Quantity"
             >
@@ -584,13 +584,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-6 relative overflow-hidden"
+          className="bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-zinc-800 space-y-6 relative overflow-hidden"
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
             <div className="flex items-center gap-2">
-              <MessageSquare size={20} className="text-[#312E81]" />
-              <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
+              <MessageSquare size={20} className="text-[#312E81] dark:text-indigo-400" />
+              <h3 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100">
                 Student Reviews ({reviewsList.length})
               </h3>
             </div>
@@ -598,7 +598,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* REDESIGNED WRITE REVIEW BUTTON */}
             <button
               onClick={() => setIsWriteReviewOpen(true)}
-              className="px-3.5 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-2 border border-indigo-700/50 group"
+              className="px-3.5 py-2 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-2 border border-indigo-700/50 group"
             >
               <div className="w-5 h-5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-xs group-hover:scale-110 transition-transform">
                 <Edit3 size={11} className="text-[#312E81]" />
@@ -617,52 +617,52 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -30 }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="bg-gradient-to-br from-[#F4F3FF]/90 via-white to-amber-50/40 rounded-3xl p-6 border border-indigo-100/80 shadow-md relative overflow-hidden space-y-4"
+                  className="bg-gradient-to-br from-[#F4F3FF]/90 dark:from-zinc-800/90 via-white dark:via-zinc-900 to-amber-50/40 dark:to-zinc-800/40 rounded-3xl p-6 border border-indigo-100/80 dark:border-zinc-700/80 shadow-md relative overflow-hidden space-y-4"
                 >
                   {/* Decorative Background Quote Watermark */}
-                  <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 pointer-events-none rotate-180" />
+                  <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 dark:text-white/5 pointer-events-none rotate-180" />
 
                   {/* Top Author & Rating Bar */}
                   <div className="flex items-center justify-between gap-3 relative z-10">
                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                      <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white shadow-md shrink-0">
+                      <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md shrink-0">
                         <Image src={currentReview.avatar} alt={currentReview.author} fill className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-heading font-extrabold text-base text-[#18181B] truncate">
+                        <h4 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 truncate">
                           {currentReview.author}
                         </h4>
-                        <span className="text-xs font-body font-medium text-[#71717A] truncate block">
+                        <span className="text-xs font-body font-medium text-[#71717A] dark:text-zinc-400 truncate block">
                           {currentReview.hostel} • {currentReview.date}
                         </span>
                       </div>
                     </div>
 
                     {/* Gold Star Badge */}
-                    <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-xs border border-slate-100 shrink-0">
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-full shadow-xs border border-slate-100 dark:border-zinc-700 shrink-0">
                       <div className="flex items-center gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
                             size={12}
-                            className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200"}
+                            className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200 dark:text-zinc-600"}
                           />
                         ))}
                       </div>
-                      <span className="text-xs font-extrabold text-[#18181B] font-body ml-0.5">
+                      <span className="text-xs font-extrabold text-[#18181B] dark:text-zinc-100 font-body ml-0.5">
                         {currentReview.rating}.0
                       </span>
                     </div>
                   </div>
 
                   {/* Comment Text */}
-                  <p className="text-sm md:text-base text-[#18181B] font-body font-medium leading-relaxed italic relative z-10 pt-1">
+                  <p className="text-sm md:text-base text-[#18181B] dark:text-zinc-200 font-body font-medium leading-relaxed italic relative z-10 pt-1">
                     &ldquo;{currentReview.comment}&rdquo;
                   </p>
 
                   {/* Helpful Button */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 relative z-10">
-                    <span className="text-[11px] font-body font-semibold text-[#71717A]">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-zinc-700/50 relative z-10">
+                    <span className="text-[11px] font-body font-semibold text-[#71717A] dark:text-zinc-400">
                       Review {activeReviewIndex + 1} of {reviewsList.length}
                     </span>
 
@@ -670,8 +670,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => handleLikeReview(currentReview.id)}
                       className={`flex items-center gap-1.5 text-xs font-body font-semibold px-3.5 py-1.5 rounded-full border transition-all active:scale-95 ${
                         currentReview.isLiked
-                          ? "bg-[#312E81] text-white border-[#312E81] shadow-sm"
-                          : "bg-white text-[#71717A] border-slate-200 hover:text-[#18181B]"
+                          ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                          : "bg-white dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:text-[#18181B] dark:hover:text-zinc-100"
                       }`}
                     >
                       <ThumbsUp size={13} className={currentReview.isLiked ? "fill-white" : ""} />
@@ -693,7 +693,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     key={idx}
                     onClick={() => setActiveReviewIndex(idx)}
                     className={`h-2 rounded-full transition-all duration-300 ${
-                      idx === activeReviewIndex ? "w-6 bg-[#312E81]" : "w-2 bg-slate-200 hover:bg-slate-300"
+                      idx === activeReviewIndex ? "w-6 bg-[#312E81] dark:bg-indigo-500" : "w-2 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600"
                     }`}
                     aria-label={`Go to review ${idx + 1}`}
                   />
@@ -704,14 +704,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrevReview}
-                  className="w-10 h-10 rounded-full bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                  className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
                   aria-label="Previous review"
                 >
                   <ChevronLeft size={18} />
                 </button>
                 <button
                   onClick={handleNextReview}
-                  className="w-10 h-10 rounded-full bg-[#F4F3FF] hover:bg-[#312E81] text-[#312E81] hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                  className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
                   aria-label="Next review"
                 >
                   <ChevronRight size={18} />
@@ -731,7 +731,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             transition={{ duration: 0.5, delay: 0.2 }}
             className="space-y-4 pt-4"
           >
-            <h3 className="font-heading font-extrabold text-xl text-[#18181B]">
+            <h3 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100">
               More from {product.vendorName}
             </h3>
             <ProductGrid

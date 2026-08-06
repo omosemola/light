@@ -279,14 +279,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-32">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       {/* CATEGORY HEADER BANNER WITH SCROLL ANIMATION */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: false }}
         transition={{ duration: 0.5 }}
-        className="relative bg-[#1E1B4B] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md overflow-hidden"
+        className="relative bg-[#1E1B4B] dark:bg-[#121215] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md overflow-hidden border-b dark:border-zinc-800/80"
       >
         <Image
           src={category.heroImage}
@@ -300,7 +300,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white active:scale-95 transition-all backdrop-blur-sm"
+              className="w-10 h-10 rounded-full bg-white/20 dark:bg-zinc-800/80 hover:bg-white/30 flex items-center justify-center text-white active:scale-95 transition-all backdrop-blur-sm"
             >
               <ArrowLeft size={22} />
             </button>
@@ -313,13 +313,13 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               </h1>
             </div>
           </div>
-          <p className="text-slate-200 text-xs md:text-sm font-normal max-w-xl">
+          <p className="text-slate-200 dark:text-zinc-300 text-xs md:text-sm font-normal max-w-xl">
             {category.description}
           </p>
 
           {/* Search bar inside header */}
           <div className="relative mt-6">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 dark:text-zinc-400">
               <Search size={18} />
             </div>
             <input
@@ -327,7 +327,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search in ${category.name}...`}
-              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white/95 text-slate-800 text-sm font-medium border border-white/40 shadow-md focus:outline-none focus:ring-2 focus:ring-[#312E81] backdrop-blur-sm"
+              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white/95 dark:bg-zinc-800/95 text-slate-800 dark:text-zinc-100 text-sm font-medium border border-white/40 dark:border-zinc-700/60 shadow-md focus:outline-none focus:ring-2 focus:ring-[#312E81] dark:focus:ring-indigo-500 backdrop-blur-sm placeholder:text-slate-400 dark:placeholder:text-zinc-500"
             />
           </div>
         </div>
@@ -350,8 +350,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               onClick={() => setSelectedSubcategory(subcat)}
               className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border ${
                 selectedSubcategory === subcat
-                  ? "bg-[#312E81] text-white border-[#312E81] shadow-sm"
-                  : "bg-white text-[#71717A] border-slate-200 hover:border-slate-300"
+                  ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                  : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
               }`}
             >
               {subcat}
@@ -361,10 +361,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
         {/* PRODUCTS COUNT & SORT BAR */}
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs md:text-sm font-body font-semibold text-[#71717A]">
-            Showing <span className="text-[#18181B] font-extrabold">{filteredProducts.length}</span> items
+          <p className="text-xs md:text-sm font-body font-semibold text-[#71717A] dark:text-zinc-400">
+            Showing <span className="text-[#18181B] dark:text-zinc-100 font-extrabold">{filteredProducts.length}</span> items
           </p>
-          <button className="flex items-center gap-1.5 text-xs font-body font-semibold text-[#18181B] bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-sm">
+          <button className="flex items-center gap-1.5 text-xs font-body font-semibold text-[#18181B] dark:text-zinc-200 bg-white dark:bg-zinc-900 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
             <ArrowUpDown size={14} />
             <span>Sort by: Popular</span>
           </button>
@@ -381,11 +381,11 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: false }}
-            className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8"
+            className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 p-8"
           >
-            <CategoryIcon size={40} className="mx-auto mb-3 text-[#312E81]" />
-            <h3 className="font-heading font-bold text-lg text-[#18181B]">No items found</h3>
-            <p className="text-xs text-[#71717A] mt-1 font-body">Try switching subcategories or adjusting your search query.</p>
+            <CategoryIcon size={40} className="mx-auto mb-3 text-[#312E81] dark:text-indigo-400" />
+            <h3 className="font-heading font-bold text-lg text-[#18181B] dark:text-zinc-100">No items found</h3>
+            <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-1 font-body">Try switching subcategories or adjusting your search query.</p>
           </motion.div>
         )}
       </div>
@@ -396,19 +396,19 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         onClose={() => setPendingProduct(null)}
         title="Replace Cart?"
       >
-        <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body">
+        <p className="text-[#71717A] dark:text-zinc-300 text-sm mb-6 leading-relaxed font-body">
           Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
           >
             Keep Current Cart
           </button>
