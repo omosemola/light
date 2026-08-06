@@ -469,32 +469,52 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           transition={{ duration: 0.4 }}
           className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-3"
         >
-          {/* Vendor Badge (ANIMATED PROMINENT LINK WITH STORE ICON & DIRECTION ARROW) */}
-          <div className="flex items-center justify-between gap-2">
-            <Link 
-              href={`/vendor/${product.vendorId}`} 
-              className="group/vendor inline-flex items-center gap-2 bg-gradient-to-r from-[#F4F3FF] via-indigo-50 to-[#F4F3FF] dark:from-indigo-950/90 dark:via-zinc-900 dark:to-indigo-950/90 hover:from-indigo-100 hover:to-indigo-200 dark:hover:from-indigo-900 dark:hover:to-indigo-800 px-3 py-1 rounded-full border border-indigo-200/90 dark:border-indigo-700/80 shadow-2xs hover:shadow-md transition-all duration-300 active:scale-95"
-              title={`Visit ${product.vendorName} store page`}
-            >
-              <div className="w-4.5 h-4.5 rounded-full bg-[#312E81] dark:bg-indigo-600 text-white flex items-center justify-center shadow-2xs group-hover/vendor:scale-110 transition-transform">
-                <Store size={10} className="text-amber-300" />
+          {/* PREMIUM ANIMATED VENDOR PROFILE BANNER CARD */}
+          <Link 
+            href={`/vendor/${product.vendorId}`}
+            className="group/vendor block w-full bg-gradient-to-r from-[#F4F3FF] via-white to-amber-50/50 dark:from-zinc-900 dark:via-zinc-800/90 dark:to-indigo-950/40 rounded-2xl p-3 border border-indigo-100 dark:border-indigo-900/60 shadow-2xs hover:shadow-md transition-all duration-300 active:scale-[0.99] relative overflow-hidden"
+            title={`Visit ${product.vendorName} Official Campus Store`}
+          >
+            {/* Subtle Ambient Background Accent */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-200/30 dark:bg-indigo-600/10 rounded-full blur-xl pointer-events-none group-hover/vendor:scale-150 transition-transform duration-500" />
+
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              {/* Left: Vendor Store Avatar & Details */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-10 h-10 rounded-xl bg-[#312E81] dark:bg-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0 border border-indigo-300/40 group-hover/vendor:scale-105 transition-transform">
+                  <Store size={18} className="text-[#FBBF24]" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-zinc-900 flex items-center justify-center">
+                    <CheckCircle2 size={10} className="text-white fill-emerald-500" />
+                  </div>
+                </div>
+
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-heading font-extrabold text-sm md:text-base text-[#18181B] dark:text-zinc-100 group-hover/vendor:text-[#312E81] dark:group-hover/vendor:text-indigo-300 transition-colors truncate">
+                      {product.vendorName}
+                    </span>
+                    <span className="text-[10px] font-body font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                      Verified Store
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] font-body text-[#71717A] dark:text-zinc-400">
+                    <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-300">
+                      <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" /> {product.rating}
+                    </span>
+                    <span>•</span>
+                    <span>{reviewsList.length} Campus Reviews</span>
+                  </div>
+                </div>
               </div>
 
-              <span className="text-xs font-body font-bold text-[#312E81] dark:text-indigo-200 uppercase tracking-wider underline underline-offset-2 decoration-indigo-400/80 dark:decoration-indigo-500 group-hover/vendor:decoration-[#312E81] transition-all">
-                {product.vendorName}
-              </span>
-
-              <span className="text-[10px] text-[#312E81] dark:text-indigo-300 font-bold flex items-center group-hover/vendor:translate-x-1 transition-transform">
-                Store ↗
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
-              <Star size={13} className="fill-[#FBBF24] text-[#FBBF24]" />
-              <span className="text-xs font-bold text-[#18181B] dark:text-amber-300 font-body">{product.rating}</span>
-              <span className="text-[10px] font-medium text-[#71717A] dark:text-zinc-400">({reviewsList.length})</span>
+              {/* Right: Visit Store Action Button */}
+              <div className="flex items-center gap-1 bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white px-3 py-1.5 rounded-full shadow-xs text-xs font-heading font-extrabold shrink-0 group-hover/vendor:shadow-md transition-all">
+                <span>Visit Store</span>
+                <ChevronRight size={14} className="group-hover/vendor:translate-x-1 transition-transform" />
+              </div>
             </div>
-          </div>
+          </Link>
 
           {/* Title & Price */}
           <div>
