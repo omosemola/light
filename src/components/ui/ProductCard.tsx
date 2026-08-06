@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Store, ArrowUpRight, Plus } from "lucide-react";
+import { Store, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 
 export interface ProductCardProps {
   id: string;
@@ -25,18 +24,8 @@ export function ProductCard({
   image,
   vendorName,
   isAvailable = true,
-  rating = 4.8,
-  onAdd,
   onClick,
 }: ProductCardProps) {
-  const handleQuickAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (onAdd && isAvailable) {
-      onAdd(id);
-    }
-  };
-
   const cardContent = (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -60,17 +49,11 @@ export function ProductCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/20 opacity-70 group-hover:opacity-50 transition-opacity duration-300" />
 
           {/* Vendor Badge Top-Left Translucent Glass */}
-          <div className="absolute top-2.5 left-2.5 bg-black/40 dark:bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/20 shadow-sm max-w-[70%] z-10">
+          <div className="absolute top-2.5 left-2.5 bg-black/40 dark:bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/20 shadow-sm max-w-[85%] z-10">
             <Store size={11} className="text-[#FBBF24] shrink-0" />
             <span className="text-[10px] font-heading font-extrabold text-white truncate tracking-wide">
               {vendorName}
             </span>
-          </div>
-
-          {/* Rating Badge Top-Right Translucent Glass */}
-          <div className="absolute top-2.5 right-2.5 bg-black/40 dark:bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/20 shadow-sm z-10">
-            <Star size={11} className="fill-[#FBBF24] text-[#FBBF24]" />
-            <span className="text-[11px] font-extrabold text-white font-body">{rating}</span>
           </div>
 
           {/* Sold Out Overlay */}
@@ -91,7 +74,7 @@ export function ProductCard({
         </div>
       </div>
 
-      {/* FOOTER PRICE & QUICK ADD BUTTON */}
+      {/* FOOTER PRICE & ARROW INDICATOR */}
       <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800/80 px-1">
         <div className="flex flex-col">
           <span className="text-[9px] font-body font-bold text-[#71717A] dark:text-zinc-400 uppercase tracking-widest">Price</span>
@@ -100,22 +83,9 @@ export function ProductCard({
           </span>
         </div>
 
-        {/* Quick Add Button or Action Pill */}
-        {onAdd ? (
-          <button
-            onClick={handleQuickAdd}
-            disabled={!isAvailable}
-            className="w-9 h-9 rounded-xl bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-950/20 active:scale-90 transition-all duration-200 disabled:opacity-40 shrink-0 group/btn"
-            title="Quick Add to Cart"
-            aria-label="Quick Add to Cart"
-          >
-            <CustomCartIcon size={16} strokeWidth={2.2} className="group-hover/btn:scale-110 transition-transform" />
-          </button>
-        ) : (
-          <div className="w-8 h-8 rounded-xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 group-hover:bg-[#312E81] dark:group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0 shadow-xs border border-indigo-100/50 dark:border-indigo-800/50">
-            <ArrowUpRight size={16} strokeWidth={2.5} />
-          </div>
-        )}
+        <div className="w-8 h-8 rounded-xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 group-hover:bg-[#312E81] dark:group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0 shadow-xs border border-indigo-100/50 dark:border-indigo-800/50">
+          <ArrowUpRight size={16} strokeWidth={2.5} />
+        </div>
       </div>
     </motion.div>
   );
