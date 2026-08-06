@@ -11,37 +11,23 @@ import {
   Star, 
   Settings, 
   LogOut, 
-  Camera, 
   Award, 
   ShoppingBag, 
   Heart, 
   Sun, 
-  Moon, 
-  CheckCircle2, 
-  User, 
-  Mail, 
-  Phone, 
-  Building 
+  Moon 
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { Modal } from "@/components/ui/Modal";
 
-const AVATAR_OPTIONS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80",
-];
-
 export default function ProfilePage() {
   const router = useRouter();
-  const { profile, updateProfile, logoutUser, hasSeenOnboarding } = useUserStore();
+  const { profile, logoutUser, hasSeenOnboarding } = useUserStore();
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -50,15 +36,7 @@ export default function ProfilePage() {
     }
   }, [hasSeenOnboarding, router]);
 
-  // Edit Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [editName, setEditName] = useState(profile.name);
-  const [editEmail, setEditEmail] = useState(profile.email);
-  const [editHostel, setEditHostel] = useState(profile.hostel);
-  const [editPhone, setEditPhone] = useState(profile.phone);
-  const [editAvatar, setEditAvatar] = useState(profile.avatar);
-  const [showSavedToast, setShowSavedToast] = useState(false);
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false);
@@ -71,29 +49,6 @@ export default function ProfilePage() {
     window.location.href = "/welcome";
   };
 
-  const handleOpenEdit = () => {
-    setEditName(profile.name);
-    setEditEmail(profile.email);
-    setEditHostel(profile.hostel);
-    setEditPhone(profile.phone);
-    setEditAvatar(profile.avatar);
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateProfile({
-      name: editName,
-      email: editEmail,
-      hostel: editHostel,
-      phone: editPhone,
-      avatar: editAvatar,
-    });
-    setIsEditModalOpen(false);
-    setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 3000);
-  };
-
   const menuItems = [
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: "14 Recent Orders" },
@@ -104,24 +59,11 @@ export default function ProfilePage() {
     { icon: Settings, label: "Security & Account Settings", href: "/profile/settings" },
   ];
 
+  const userAvatar = profile.name === "Visitor" ? "/visitor-avatar.png" : (profile.avatar || "/visitor-avatar.png");
+
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       
-      {/* SAVED SUCCESS TOAST */}
-      <AnimatePresence>
-        {showSavedToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-2.5 rounded-full shadow-lg border border-emerald-400 flex items-center gap-2 text-xs font-bold font-heading"
-          >
-            <CheckCircle2 size={16} />
-            <span>Profile details updated successfully!</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* PREMIUM PROFILE HERO BANNER */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -140,45 +82,29 @@ export default function ProfilePage() {
               My Profile
             </h1>
             
-            <div className="flex items-center gap-2">
-              {/* THEME SWITCH BUTTON */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/20 backdrop-blur-sm transition-all active:scale-95 flex items-center gap-1.5 text-xs font-semibold px-3"
-                title="Toggle Theme"
-              >
-                {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-indigo-300" />}
-                <span>{isDark ? "Light" : "Dark"}</span>
-              </button>
-
-              {/* EDIT INFO BUTTON */}
-              <button
-                onClick={handleOpenEdit}
-                className="text-xs font-body font-bold bg-[#FBBF24] hover:bg-amber-400 text-[#312E81] px-4 py-2 rounded-full shadow-sm transition-all active:scale-95"
-              >
-                Edit Info
-              </button>
-            </div>
+            {/* THEME SWITCH BUTTON */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/20 backdrop-blur-sm transition-all active:scale-95 flex items-center gap-1.5 text-xs font-semibold px-3.5"
+              title="Toggle Theme"
+            >
+              {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-indigo-300" />}
+              <span>{isDark ? "Light" : "Dark"}</span>
+            </button>
           </div>
           
           <div className="flex items-center gap-4.5">
-            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-[#FBBF24] p-1 shadow-lg shrink-0 bg-white/10">
+            {/* UNCHANGEABLE PROFILE AVATAR CONTAINER */}
+            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-[#FBBF24] p-1 shadow-lg shrink-0 bg-white/10 overflow-hidden">
               <div className="w-full h-full rounded-full overflow-hidden relative">
                 <Image 
-                  src={profile.avatar} 
+                  src={userAvatar} 
                   alt={profile.name}
                   fill
                   priority
                   className="object-cover"
                 />
               </div>
-              <button 
-                onClick={handleOpenEdit}
-                className="absolute bottom-0 right-0 w-7 h-7 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900 shadow-md active:scale-90 transition-transform"
-                aria-label="Change profile photo"
-              >
-                <Camera size={14} />
-              </button>
             </div>
 
             <div className="space-y-1">
@@ -294,108 +220,6 @@ export default function ProfilePage() {
 
       </div>
 
-      {/* EDIT PROFILE MODAL */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Profile Info"
-      >
-        <form onSubmit={handleSaveProfile} className="space-y-4 pt-2 font-body text-[#18181B] dark:text-zinc-100">
-          
-          {/* Avatar selector */}
-          <div className="space-y-2">
-            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block">
-              Choose Profile Picture
-            </label>
-            <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-              {AVATAR_OPTIONS.map((img, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => setEditAvatar(img)}
-                  className={`relative w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 transition-all ${
-                    editAvatar === img ? "border-[#312E81] dark:border-indigo-400 scale-110 shadow-md" : "border-slate-200 dark:border-zinc-700 opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <Image src={img} alt="Avatar" fill className="object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Full Name */}
-          <div className="space-y-1">
-            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 flex items-center gap-1.5">
-              <User size={14} /> Full Name
-            </label>
-            <input
-              type="text"
-              required
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-              placeholder="Your Name"
-            />
-          </div>
-
-          {/* Student Email */}
-          <div className="space-y-1">
-            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 flex items-center gap-1.5">
-              <Mail size={14} /> Student Email
-            </label>
-            <input
-              type="email"
-              required
-              value={editEmail}
-              onChange={(e) => setEditEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-              placeholder="student@uni.edu"
-            />
-          </div>
-
-          {/* Hostel / Residence */}
-          <div className="space-y-1">
-            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 flex items-center gap-1.5">
-              <Building size={14} /> Hostel / Hall of Residence
-            </label>
-            <input
-              type="text"
-              required
-              value={editHostel}
-              onChange={(e) => setEditHostel(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-              placeholder="e.g. Mellanby Hall"
-            />
-          </div>
-
-          {/* Phone Number */}
-          <div className="space-y-1">
-            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 flex items-center gap-1.5">
-              <Phone size={14} /> Phone Number
-            </label>
-            <input
-              type="tel"
-              required
-              value={editPhone}
-              onChange={(e) => setEditPhone(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-              placeholder="+234 800 000 0000"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-3">
-            <button
-              type="submit"
-              className="w-full py-3 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-sm rounded-xl shadow-md transition-all active:scale-[0.98]"
-            >
-              Save Changes
-            </button>
-          </div>
-
-        </form>
-      </Modal>
-
       {/* LOGOUT CONFIRMATION MODAL */}
       <Modal
         isOpen={isLogoutModalOpen}
@@ -404,7 +228,7 @@ export default function ProfilePage() {
       >
         <div className="space-y-4 font-body text-[#18181B] dark:text-zinc-100">
           <p className="text-sm text-[#71717A] dark:text-zinc-300 leading-relaxed">
-            Are you sure you want to log out of your Campus Marketplace account? You will need to log back in to manage your saved items and track orders.
+            Are you sure you want to log out of your Light Marketplace account? You will need to log back in to manage your saved items and track orders.
           </p>
           <div className="flex flex-col gap-3 pt-2 font-semibold text-sm">
             <button
@@ -422,7 +246,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </Modal>
-
     </div>
   );
 }
