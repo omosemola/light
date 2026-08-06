@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Flame, ArrowRight, Clock, Sparkles, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -100,10 +101,17 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { isDark, toggleTheme } = useTheme();
-  const { profile } = useUserStore();
+  const { profile, hasSeenOnboarding } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
+
+  useEffect(() => {
+    if (!hasSeenOnboarding) {
+      router.push("/welcome");
+    }
+  }, [hasSeenOnboarding, router]);
 
   const handleAddProduct = (productId: string) => {
     const product = POPULAR_PRODUCTS.find((p) => p.id === productId);

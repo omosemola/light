@@ -39,7 +39,7 @@ const AVATAR_OPTIONS = [
 ];
 
 export default function ProfilePage() {
-  const { profile, updateProfile } = useUserStore();
+  const { profile, updateProfile, logoutUser } = useUserStore();
   const { isDark, toggleTheme } = useTheme();
 
   // Edit Modal State
@@ -389,7 +389,8 @@ export default function ProfilePage() {
             <button
               onClick={() => {
                 setIsLogoutModalOpen(false);
-                signOut({ callbackUrl: "/" });
+                logoutUser();
+                signOut({ callbackUrl: "/welcome" });
               }}
               className="w-full h-12 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
             >

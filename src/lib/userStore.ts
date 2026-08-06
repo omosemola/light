@@ -13,7 +13,10 @@ export interface UserProfile {
 
 interface UserState {
   profile: UserProfile;
+  hasSeenOnboarding: boolean;
+  setHasSeenOnboarding: (seen: boolean) => void;
   updateProfile: (updated: Partial<UserProfile>) => void;
+  logoutUser: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -28,10 +31,13 @@ export const useUserStore = create<UserState>()(
         points: 450,
         savedStoresCount: 5,
       },
+      hasSeenOnboarding: false,
+      setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
       updateProfile: (updated) =>
         set((state) => ({
           profile: { ...state.profile, ...updated },
         })),
+      logoutUser: () => set({ hasSeenOnboarding: false }),
     }),
     {
       name: "campus-user-storage",

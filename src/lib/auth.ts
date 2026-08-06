@@ -1,10 +1,15 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
 import bcrypt from "bcrypt";
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "mock-google-client-id",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "mock-google-client-secret",
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -63,8 +68,8 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "campus-hub-secret-key-12345",
   pages: {
-    signIn: "/login",
+    signIn: "/welcome",
   },
 };
