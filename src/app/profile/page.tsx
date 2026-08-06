@@ -112,11 +112,11 @@ export default function ProfilePage() {
                 {profile.name}
               </h2>
               {profile.email ? (
-                <p className="text-slate-300 font-body font-normal text-xs md:text-sm">
+                <p className="text-white font-body font-normal text-xs md:text-sm opacity-90">
                   {profile.email}
                 </p>
               ) : null}
-              <span className="inline-block bg-white/10 text-amber-300 border border-white/15 px-2.5 py-0.5 rounded-full text-[11px] font-medium">
+              <span className="inline-block bg-white/10 text-white border border-white/20 px-2.5 py-0.5 rounded-full text-[11px] font-medium">
                 📍 {profile.hostel}
               </span>
             </div>
