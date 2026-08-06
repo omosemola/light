@@ -254,14 +254,14 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] font-body text-[#18181B] pb-32">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200 pb-32">
       
       {/* STICKY SEARCH & FILTER HEADER */}
-      <div className="px-5 pt-6 pb-4 bg-white border-b border-slate-200/80 sticky top-0 md:top-20 z-40 shadow-sm space-y-3">
+      <div className="px-5 pt-6 pb-4 bg-white dark:bg-[#121215] border-b border-slate-200/80 dark:border-zinc-800 sticky top-0 md:top-20 z-40 shadow-sm space-y-3">
         <div className="flex items-center gap-3 max-w-4xl mx-auto">
           <Link 
             href="/" 
-            className="w-10 h-10 rounded-full bg-[#F4F3FF] text-[#312E81] flex items-center justify-center hover:bg-[#312E81] hover:text-white transition-colors shrink-0"
+            className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 flex items-center justify-center hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white transition-colors shrink-0"
             aria-label="Back to home"
           >
             <ArrowLeft size={20} />
@@ -269,7 +269,7 @@ export default function SearchPage() {
 
           {/* Search Input Field */}
           <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-[#71717A]">
+            <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-[#71717A] dark:text-zinc-400">
               <SearchIcon size={18} />
             </div>
             <input
@@ -277,13 +277,13 @@ export default function SearchPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search food, drinks, stationery, vendors..."
-              className="w-full h-12 pl-10 pr-10 rounded-full bg-[#F4F3FF]/70 text-[#18181B] font-body font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#312E81] border border-indigo-100 placeholder-[#71717A]"
+              className="w-full h-12 pl-10 pr-10 rounded-full bg-[#F4F3FF]/70 dark:bg-zinc-800/80 text-[#18181B] dark:text-zinc-100 font-body font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#312E81] dark:focus:ring-indigo-500 border border-indigo-100 dark:border-zinc-700 placeholder-[#71717A] dark:placeholder-zinc-400"
               autoFocus
             />
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="absolute inset-y-0 right-3 flex items-center text-[#71717A] hover:text-[#18181B]"
+                className="absolute inset-y-0 right-3 flex items-center text-[#71717A] dark:text-zinc-400 hover:text-[#18181B] dark:hover:text-zinc-200"
                 aria-label="Clear search"
               >
                 <X size={18} />
@@ -294,7 +294,7 @@ export default function SearchPage() {
           {/* Filter Trigger Button */}
           <button 
             onClick={() => setIsFilterModalOpen(true)}
-            className="relative h-12 px-4 bg-[#312E81] text-white rounded-full font-body font-semibold text-xs flex items-center gap-2 hover:bg-[#1E1B4B] active:scale-95 transition-all shadow-sm shrink-0"
+            className="relative h-12 px-4 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-body font-semibold text-xs flex items-center gap-2 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 active:scale-95 transition-all shadow-sm shrink-0"
           >
             <SlidersHorizontal size={16} />
             <span className="hidden sm:inline">Filters</span>
@@ -316,8 +316,8 @@ export default function SearchPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all ${
                   isSelected
-                    ? "bg-[#312E81] text-white shadow-sm"
-                    : "bg-[#F4F3FF] text-[#71717A] hover:text-[#312E81] hover:bg-indigo-100/50"
+                    ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
+                    : "bg-[#F4F3FF] dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-indigo-100/50 dark:hover:bg-zinc-700"
                 }`}
               >
                 {cat}
@@ -335,9 +335,9 @@ export default function SearchPage() {
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 space-y-3"
+            className="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-zinc-800 space-y-3"
           >
-            <div className="flex items-center gap-2 text-xs font-heading font-extrabold text-[#312E81] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-400 uppercase tracking-wider">
               <Sparkles size={14} className="text-[#FBBF24]" />
               <span>Popular Campus Searches</span>
             </div>
@@ -346,7 +346,7 @@ export default function SearchPage() {
                 <button
                   key={sug}
                   onClick={() => setQuery(sug)}
-                  className="px-3.5 py-1.5 rounded-full bg-[#F4F3FF] text-[#18181B] font-body font-medium text-xs hover:bg-[#312E81] hover:text-white active:scale-95 transition-all border border-indigo-100"
+                  className="px-3.5 py-1.5 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#18181B] dark:text-zinc-200 font-body font-medium text-xs hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white active:scale-95 transition-all border border-indigo-100 dark:border-zinc-700"
                 >
                   {sug}
                 </button>
@@ -357,40 +357,40 @@ export default function SearchPage() {
 
         {/* ACTIVE FILTER CHIPS BAR */}
         {activeFiltersCount > 0 && (
-          <div className="flex items-center justify-between gap-2 flex-wrap bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm text-xs font-body">
+          <div className="flex items-center justify-between gap-2 flex-wrap bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-sm text-xs font-body">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-heading font-bold text-[#71717A]">Active Filters:</span>
+              <span className="font-heading font-bold text-[#71717A] dark:text-zinc-400">Active Filters:</span>
               
               {selectedCategory !== "All" && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] text-[#312E81] font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
                   {selectedCategory}
                   <X size={12} className="cursor-pointer" onClick={() => setSelectedCategory("All")} />
                 </span>
               )}
 
               {selectedVendor !== "All Vendors" && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] text-[#312E81] font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
                   {selectedVendor}
                   <X size={12} className="cursor-pointer" onClick={() => setSelectedVendor("All Vendors")} />
                 </span>
               )}
 
               {maxPrice < 8000 && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] text-[#312E81] font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
                   Under ₦{maxPrice.toLocaleString()}
                   <X size={12} className="cursor-pointer" onClick={() => setMaxPrice(8000)} />
                 </span>
               )}
 
               {inStockOnly && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] text-[#312E81] font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
                   In Stock Only
                   <X size={12} className="cursor-pointer" onClick={() => setInStockOnly(false)} />
                 </span>
               )}
 
               {maxPrepTime !== "All" && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] text-[#312E81] font-semibold px-2.5 py-1 rounded-full border border-indigo-100">
+                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
                   Prep &lt; {maxPrepTime}m
                   <X size={12} className="cursor-pointer" onClick={() => setMaxPrepTime("All")} />
                 </span>
@@ -399,7 +399,7 @@ export default function SearchPage() {
 
             <button
               onClick={handleResetFilters}
-              className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1 shrink-0"
+              className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 shrink-0"
             >
               <RotateCcw size={12} /> Clear All
             </button>
@@ -408,10 +408,10 @@ export default function SearchPage() {
 
         {/* RESULTS HEADER & COUNT */}
         <div className="flex items-center justify-between">
-          <h2 className="font-heading font-extrabold text-xl text-[#18181B] tracking-tight">
+          <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
             {query ? `Results for "${query}"` : "Explore Catalog"}
           </h2>
-          <span className="text-xs font-body font-semibold text-[#71717A]">
+          <span className="text-xs font-body font-semibold text-[#71717A] dark:text-zinc-400">
             {filteredProducts.length} {filteredProducts.length === 1 ? "item" : "items"} found
           </span>
         </div>
@@ -426,15 +426,15 @@ export default function SearchPage() {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-16 bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-4"
+            className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-4"
           >
-            <div className="w-16 h-16 rounded-full bg-[#F4F3FF] text-[#312E81] flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
               <SearchIcon size={32} />
             </div>
-            <h3 className="font-heading font-extrabold text-lg text-[#18181B]">
+            <h3 className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">
               No matching products found
             </h3>
-            <p className="text-xs font-body font-normal text-[#71717A] max-w-sm mx-auto">
+            <p className="text-xs font-body font-normal text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
               Try adjusting your search terms, clearing filters, or browsing other categories.
             </p>
             <button
@@ -442,7 +442,7 @@ export default function SearchPage() {
                 setQuery("");
                 handleResetFilters();
               }}
-              className="px-5 py-2.5 bg-[#312E81] text-white rounded-full font-body font-semibold text-xs shadow-md active:scale-95 transition-transform"
+              className="px-5 py-2.5 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-body font-semibold text-xs shadow-md active:scale-95 transition-transform"
             >
               Reset Search & Filters
             </button>
@@ -457,11 +457,11 @@ export default function SearchPage() {
         onClose={() => setIsFilterModalOpen(false)}
         title="Filter & Sort Products"
       >
-        <div className="space-y-6 font-body text-[#18181B] text-sm">
+        <div className="space-y-6 font-body text-[#18181B] dark:text-zinc-100 text-sm">
           
           {/* SORT BY */}
           <div className="space-y-2">
-            <label className="font-heading font-extrabold text-xs text-[#71717A] uppercase tracking-wider block">
+            <label className="font-heading font-extrabold text-xs text-[#71717A] dark:text-zinc-400 uppercase tracking-wider block">
               Sort By
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -476,8 +476,8 @@ export default function SearchPage() {
                   onClick={() => setSortBy(opt.value)}
                   className={`p-2.5 rounded-2xl text-xs font-semibold text-left flex items-center justify-between border transition-all ${
                     sortBy === opt.value
-                      ? "bg-[#312E81] text-white border-[#312E81] shadow-sm"
-                      : "bg-[#F4F3FF]/50 text-[#18181B] border-indigo-100 hover:bg-indigo-50"
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                      : "bg-[#F4F3FF]/50 dark:bg-zinc-800/50 text-[#18181B] dark:text-zinc-200 border-indigo-100 dark:border-zinc-700 hover:bg-indigo-50 dark:hover:bg-zinc-800"
                   }`}
                 >
                   <span>{opt.label}</span>
@@ -488,12 +488,12 @@ export default function SearchPage() {
           </div>
 
           {/* PRICE RANGE SLIDER */}
-          <div className="space-y-2 pt-3 border-t border-slate-100">
+          <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
             <div className="flex justify-between items-center">
-              <label className="font-heading font-extrabold text-xs text-[#71717A] uppercase tracking-wider">
+              <label className="font-heading font-extrabold text-xs text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">
                 Max Price
               </label>
-              <span className="font-body font-extrabold text-[#312E81]">
+              <span className="font-body font-extrabold text-[#312E81] dark:text-indigo-400">
                 ₦{maxPrice.toLocaleString()}
               </span>
             </div>
@@ -504,17 +504,17 @@ export default function SearchPage() {
               step="500"
               value={maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-[#312E81] cursor-pointer"
+              className="w-full accent-[#312E81] dark:accent-indigo-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[11px] text-[#71717A] font-semibold">
+            <div className="flex justify-between text-[11px] text-[#71717A] dark:text-zinc-400 font-semibold">
               <span>₦500</span>
               <span>₦8,000+</span>
             </div>
           </div>
 
           {/* VENDOR SELECTOR */}
-          <div className="space-y-2 pt-3 border-t border-slate-100">
-            <label className="font-heading font-extrabold text-xs text-[#71717A] uppercase tracking-wider block">
+          <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+            <label className="font-heading font-extrabold text-xs text-[#71717A] dark:text-zinc-400 uppercase tracking-wider block">
               Campus Vendor
             </label>
             <div className="flex flex-wrap gap-2">
@@ -524,8 +524,8 @@ export default function SearchPage() {
                   onClick={() => setSelectedVendor(vendor)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                     selectedVendor === vendor
-                      ? "bg-[#312E81] text-white border-[#312E81]"
-                      : "bg-[#F4F3FF]/50 text-[#71717A] border-indigo-100 hover:text-[#312E81]"
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600"
+                      : "bg-[#F4F3FF]/50 dark:bg-zinc-800/50 text-[#71717A] dark:text-zinc-300 border-indigo-100 dark:border-zinc-700 hover:text-[#312E81] dark:hover:text-indigo-300"
                   }`}
                 >
                   {vendor}
@@ -535,8 +535,8 @@ export default function SearchPage() {
           </div>
 
           {/* PREP TIME FILTER */}
-          <div className="space-y-2 pt-3 border-t border-slate-100">
-            <label className="font-heading font-extrabold text-xs text-[#71717A] uppercase tracking-wider block">
+          <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+            <label className="font-heading font-extrabold text-xs text-[#71717A] dark:text-zinc-400 uppercase tracking-wider block">
               Max Preparation Time
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -550,8 +550,8 @@ export default function SearchPage() {
                   onClick={() => setMaxPrepTime(timeOpt.value)}
                   className={`p-2 rounded-2xl text-xs font-semibold text-center border transition-all ${
                     maxPrepTime === timeOpt.value
-                      ? "bg-[#312E81] text-white border-[#312E81]"
-                      : "bg-[#F4F3FF]/50 text-[#71717A] border-indigo-100 hover:text-[#312E81]"
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600"
+                      : "bg-[#F4F3FF]/50 dark:bg-zinc-800/50 text-[#71717A] dark:text-zinc-300 border-indigo-100 dark:border-zinc-700 hover:text-[#312E81] dark:hover:text-indigo-300"
                   }`}
                 >
                   {timeOpt.label}
@@ -561,32 +561,32 @@ export default function SearchPage() {
           </div>
 
           {/* IN STOCK ONLY TOGGLE */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800">
             <div>
-              <span className="font-heading font-bold text-sm text-[#18181B] block">
+              <span className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100 block">
                 In Stock Items Only
               </span>
-              <span className="text-xs text-[#71717A]">Hide items currently sold out</span>
+              <span className="text-xs text-[#71717A] dark:text-zinc-400">Hide items currently sold out</span>
             </div>
             <input
               type="checkbox"
               checked={inStockOnly}
               onChange={(e) => setInStockOnly(e.target.checked)}
-              className="w-5 h-5 accent-[#312E81] rounded cursor-pointer"
+              className="w-5 h-5 accent-[#312E81] dark:accent-indigo-500 rounded cursor-pointer"
             />
           </div>
 
           {/* ACTION BUTTONS */}
-          <div className="flex gap-3 pt-4 border-t border-slate-100">
+          <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
             <button
               onClick={handleResetFilters}
-              className="w-1/3 h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full text-xs active:scale-95 transition-transform"
+              className="w-1/3 h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full text-xs active:scale-95 transition-transform"
             >
               Reset
             </button>
             <button
               onClick={() => setIsFilterModalOpen(false)}
-              className="w-2/3 h-12 bg-[#312E81] text-white font-semibold rounded-full text-xs shadow-md active:scale-95 transition-transform"
+              className="w-2/3 h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full text-xs shadow-md active:scale-95 transition-transform"
             >
               Apply Filters ({filteredProducts.length})
             </button>
@@ -601,19 +601,19 @@ export default function SearchPage() {
         onClose={() => setPendingProduct(null)}
         title="Replace Cart?"
       >
-        <p className="text-[#71717A] text-sm mb-6 leading-relaxed font-body">
+        <p className="text-[#71717A] dark:text-zinc-300 text-sm mb-6 leading-relaxed font-body">
           Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-[#F4F3FF] text-[#312E81] font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
           >
             Keep Current Cart
           </button>
