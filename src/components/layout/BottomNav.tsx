@@ -23,7 +23,7 @@ export function BottomNav() {
     setIsMounted(true);
   }, []);
 
-  if (isMounted && (!hasSeenOnboarding || pathname === "/welcome" || pathname.startsWith("/vendor") || pathname.startsWith("/admin"))) {
+  if (isMounted && (!hasSeenOnboarding || pathname === "/welcome" || pathname === "/signup" || pathname === "/login" || pathname.startsWith("/vendor") || pathname.startsWith("/admin"))) {
     return null;
   }
 
