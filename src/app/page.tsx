@@ -153,6 +153,7 @@ export default function Home() {
   };
 
   const firstName = profile.name ? profile.name.split(" ")[0] : "Alex";
+  const userAvatar = profile.name === "Visitor" ? "/visitor-avatar.png" : (profile.avatar || "/visitor-avatar.png");
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">
@@ -184,7 +185,7 @@ export default function Home() {
                   👋
                 </motion.span>
               </h1>
-              <p className="text-slate-300 dark:text-zinc-400 text-xs md:text-sm font-normal mt-0.5 font-body">
+              <p className="text-white text-xs md:text-sm font-normal mt-0.5 font-body">
                 What are we ordering today?
               </p>
             </div>
@@ -200,11 +201,12 @@ export default function Home() {
                 {isDark ? <Sun size={18} className="text-amber-400 fill-amber-400/20" /> : <Moon size={18} className="text-amber-300 fill-amber-300/20" />}
               </button>
 
-              <Link href="/profile" className="w-12 h-12 rounded-full border-2 border-white/20 dark:border-zinc-700 overflow-hidden shadow-md relative group hover:border-[#FBBF24] transition-all">
+              <Link href="/profile" className="w-12 h-12 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shadow-md relative group hover:scale-105 transition-all bg-white shrink-0">
                 <Image
-                  src={profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
+                  src={userAvatar}
                   alt={profile.name || "Profile"}
                   fill
+                  priority
                   className="object-cover group-hover:scale-110 transition-transform"
                 />
               </Link>
