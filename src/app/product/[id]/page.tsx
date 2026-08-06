@@ -402,8 +402,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     setActiveReviewIndex((prev) => (prev - 1 + reviewsList.length) % reviewsList.length);
   };
 
-  const relatedProducts = Object.values(ALL_PRODUCTS).filter(
+  const rawRelated = Object.values(ALL_PRODUCTS).filter(
     (p) => p.vendorId === product.vendorId && p.id !== product.id
+  );
+  const relatedProducts = Array.from(
+    new Map(rawRelated.map((p) => [p.id, p])).values()
   );
 
   return (

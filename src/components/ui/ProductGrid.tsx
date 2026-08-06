@@ -17,9 +17,13 @@ export function ProductGrid({ products, onAddProduct, onClickProduct }: ProductG
     );
   }
 
+  const uniqueProducts = Array.from(
+    new Map(products.map((p, idx) => [p.id || `prod-${idx}`, p])).values()
+  );
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 md:gap-6">
-      {products.map((product) => (
+      {uniqueProducts.map((product) => (
         <ProductCard
           key={product.id}
           {...product}
