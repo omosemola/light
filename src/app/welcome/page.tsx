@@ -117,7 +117,7 @@ export default function WelcomePage() {
     });
 
     setIsAuthModalOpen(false);
-    setToastMessage(`Welcome to Campus Hub, ${userName.split(" ")[0]}! 🎉`);
+    setToastMessage(`Welcome to Light Marketplace, ${userName.split(" ")[0]}! 🎉`);
     setTimeout(() => {
       router.push("/");
     }, 1000);
@@ -168,14 +168,14 @@ export default function WelcomePage() {
       {/* TOP BRAND BAR */}
       <header className="relative z-20 px-6 py-6 max-w-6xl mx-auto w-full flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#312E81] to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-950/50 border border-white/20">
-            <Store size={22} />
+          <div className="w-11 h-11 rounded-2xl relative overflow-hidden shadow-lg shadow-indigo-950/50 border border-white/20">
+            <img src="/icon-192x192.png" alt="Light Marketplace" className="w-full h-full object-cover" />
           </div>
           <div>
             <span className="text-xl font-extrabold font-heading text-white tracking-tight block leading-none">
-              Campus<span className="text-[#FBBF24]">Hub</span>
+              Light<span className="text-[#FBBF24]"> Marketplace</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wide">University Marketplace</span>
+            <span className="text-[10px] text-slate-400 font-medium tracking-wide">Campus Marketplace</span>
           </div>
         </div>
       </header>

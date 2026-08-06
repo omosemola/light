@@ -30,12 +30,12 @@ export function TopNav() {
   return (
     <header className="hidden md:flex items-center justify-between px-8 h-20 bg-white dark:bg-[#121215] border-b border-slate-200 dark:border-zinc-800/80 sticky top-0 z-50 shadow-sm font-body transition-colors duration-200">
       <div className="flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-2xl bg-[#312E81] dark:bg-indigo-600 flex items-center justify-center text-white shadow-sm group-hover:bg-[#1E1B4B] dark:group-hover:bg-indigo-500 transition-colors">
-            <Store size={20} />
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-10 h-10 rounded-2xl relative overflow-hidden shadow-sm group-hover:scale-105 transition-transform border border-slate-200 dark:border-zinc-700">
+            <img src="/icon-192x192.png" alt="Light Marketplace" className="w-full h-full object-cover" />
           </div>
           <span className="text-2xl font-extrabold text-[#18181B] dark:text-zinc-100 font-heading tracking-tight">
-            Campus<span className="text-[#312E81] dark:text-indigo-400">Hub</span>
+            Light<span className="text-[#312E81] dark:text-indigo-400"> Marketplace</span>
           </span>
         </Link>
         

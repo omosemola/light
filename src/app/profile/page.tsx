@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   ChevronRight, 
   ClipboardList, 
@@ -39,8 +40,15 @@ const AVATAR_OPTIONS = [
 ];
 
 export default function ProfilePage() {
-  const { profile, updateProfile, logoutUser } = useUserStore();
+  const router = useRouter();
+  const { profile, updateProfile, logoutUser, hasSeenOnboarding } = useUserStore();
   const { isDark, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (!hasSeenOnboarding) {
+      router.push("/welcome");
+    }
+  }, [hasSeenOnboarding, router]);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -51,6 +59,17 @@ export default function ProfilePage() {
   const [editPhone, setEditPhone] = useState(profile.phone);
   const [editAvatar, setEditAvatar] = useState(profile.avatar);
   const [showSavedToast, setShowSavedToast] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLogoutModalOpen(false);
+    logoutUser();
+    try {
+      await signOut({ redirect: false });
+    } catch {
+      // Ignore NextAuth errors
+    }
+    window.location.href = "/welcome";
+  };
 
   const handleOpenEdit = () => {
     setEditName(profile.name);
@@ -389,11 +408,7 @@ export default function ProfilePage() {
           </p>
           <div className="flex flex-col gap-3 pt-2 font-semibold text-sm">
             <button
-              onClick={() => {
-                setIsLogoutModalOpen(false);
-                logoutUser();
-                signOut({ callbackUrl: "/" });
-              }}
+              onClick={handleLogout}
               className="w-full h-12 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <LogOut size={18} /> Yes, Log Out

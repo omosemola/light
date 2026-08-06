@@ -19,13 +19,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Campus Marketplace",
+  title: "Light Marketplace",
   description: "A premium, modern, mobile-first multi-vendor campus marketplace.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "CampusHub",
+    title: "Light Marketplace",
   },
   icons: {
     icon: "/icon.svg",

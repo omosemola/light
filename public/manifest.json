@@ -1,7 +1,7 @@
 {
-  "name": "Campus Marketplace",
-  "short_name": "CampusHub",
-  "description": "A premium, modern, mobile-first multi-vendor campus marketplace.",
+  "name": "Light Marketplace",
+  "short_name": "Light",
+  "description": "A premium, modern, mobile-first campus marketplace.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
