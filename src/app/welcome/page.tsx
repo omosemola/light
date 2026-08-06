@@ -130,7 +130,7 @@ export default function WelcomePage() {
   const currentSlide = ONBOARDING_SLIDES[activeSlide];
 
   return (
-    <div className="min-h-screen bg-[#0F0E17] text-white font-body relative overflow-hidden flex flex-col justify-between selection:bg-[#FBBF24] selection:text-[#18181B]">
+    <div className="min-h-[100dvh] w-full bg-[#0F0E17] text-white font-body relative overflow-hidden flex flex-col justify-between selection:bg-[#FBBF24] selection:text-[#18181B]">
       
       {/* FLOATING AMBIENT GLOW BLOBS */}
       <motion.div

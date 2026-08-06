@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { MainContainer } from "@/components/layout/MainContainer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -45,7 +46,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <TopNav />
-            <main className="flex-1 pb-20 md:pb-0">{children}</main>
+            <MainContainer>{children}</MainContainer>
             <BottomNav />
           </AuthProvider>
         </ThemeProvider>
