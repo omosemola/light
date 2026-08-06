@@ -71,7 +71,7 @@ export function ProductCard({
 
         {/* PRODUCT DETAILS */}
         <div className="px-0.5 space-y-0.5">
-          <h3 className="font-body font-normal text-[#18181B] dark:text-zinc-100 text-xs leading-tight line-clamp-2 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
+          <h3 className="font-body font-bold text-[#18181B] dark:text-zinc-100 text-xs leading-tight line-clamp-2 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
             {name}
           </h3>
         </div>
