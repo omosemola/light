@@ -297,22 +297,14 @@ export default function WelcomePage() {
       {/* BOTTOM ACTION BUTTONS */}
       <footer className="relative z-10 max-w-md md:max-w-xl mx-auto w-full space-y-4 pt-2">
         
-        {/* GET STARTED BUTTON WITH CONIC OUTLINE CSS (ROUNDED-2XL) -> LINKS TO /signup */}
-        <div className="animated-cart-btn-wrapper w-full">
-          <div className="animated-cart-btn-effect">
-            <div />
-          </div>
-
-          <Link
-            href="/signup"
-            className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/25 hover:shadow-indigo-900/40 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 group flex items-center justify-center gap-2 rounded-2xl"
-          >
-            <span className="font-heading font-extrabold tracking-wider text-base text-white">
-              Get Started
-            </span>
-            <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
+        {/* GET STARTED BUTTON WITH SOLID COLOR & REDUCED CORNERS -> LINKS TO /signup */}
+        <Link
+          href="/signup"
+          className="w-full h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-xl shadow-lg shadow-indigo-950/15 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+        >
+          <span>Get Started</span>
+          <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />
+        </Link>
 
         {/* ALREADY HAVE AN ACCOUNT? LOG IN LINK */}
         <div className="text-center font-body text-sm text-[#71717A] pt-1">
