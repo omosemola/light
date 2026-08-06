@@ -10,6 +10,7 @@ import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useUserStore } from "@/lib/userStore";
 
 // POPULAR PRODUCTS MOCK DATA WITH UNSPLASH IMAGERY
 const POPULAR_PRODUCTS = [
@@ -101,6 +102,7 @@ const CATEGORIES = [
 export default function Home() {
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { isDark, toggleTheme } = useTheme();
+  const { profile } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
 
   const handleAddProduct = (productId: string) => {
@@ -135,6 +137,8 @@ export default function Home() {
     }
   };
 
+  const firstName = profile.name ? profile.name.split(" ")[0] : "Alex";
+
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">
       
@@ -150,7 +154,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white flex items-center gap-2">
-                Hey Alex!{" "}
+                Hey {firstName}!{" "}
                 <motion.span
                   className="inline-block origin-[70%_70%]"
                   animate={{ rotate: [0, 16, -8, 16, -4, 10, 0] }}
@@ -181,14 +185,14 @@ export default function Home() {
                 {isDark ? <Sun size={18} className="text-amber-400 fill-amber-400/20" /> : <Moon size={18} className="text-amber-300 fill-amber-300/20" />}
               </button>
 
-              <div className="w-12 h-12 rounded-full border-2 border-white/20 dark:border-zinc-700 overflow-hidden shadow-md relative">
+              <Link href="/profile" className="w-12 h-12 rounded-full border-2 border-white/20 dark:border-zinc-700 overflow-hidden shadow-md relative group hover:border-[#FBBF24] transition-all">
                 <Image
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-                  alt="Profile"
+                  src={profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
+                  alt={profile.name || "Profile"}
                   fill
-                  className="object-cover"
+                  className="object-cover group-hover:scale-110 transition-transform"
                 />
-              </div>
+              </Link>
             </div>
           </div>
 
