@@ -4,35 +4,42 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Zap, Star } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 
-// CORPORATE MEMPHIS FLAT VECTOR ART 1: FOOD & DRINKS
+// CORPORATE MEMPHIS FLAT VECTOR ART 1: FOOD & DRINKS (FLOATING WITHOUT BOX CONTAINER)
 function FoodMemphisIllustration() {
   return (
-    <div className="w-full h-full bg-gradient-to-br from-[#FFF7ED] via-[#F4F3FF] to-[#EFF6FF] flex items-center justify-center relative overflow-hidden p-6">
-      {/* Decorative Geometric Confetti */}
+    <div className="w-full h-full flex items-center justify-center relative p-2">
+      {/* Decorative Floating Geometric Confetti */}
       <motion.div
-        animate={{ rotate: 360, y: [-4, 4, -4] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        className="absolute top-6 left-8 text-[#F43F5E] opacity-70 font-bold text-xl select-none"
+        animate={{ rotate: 360, y: [-6, 6, -6] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute top-2 left-6 text-[#F43F5E] opacity-75 font-bold text-2xl select-none pointer-events-none"
       >
         ✦
       </motion.div>
       <motion.div
-        animate={{ y: [0, -8, 0], scale: [1, 1.1, 1] }}
+        animate={{ y: [0, -10, 0], scale: [1, 1.15, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-10 right-10 text-[#10B981] opacity-70 font-bold text-2xl select-none"
+        className="absolute top-4 right-8 text-[#10B981] opacity-75 font-bold text-2xl select-none pointer-events-none"
       >
         ▲
       </motion.div>
       <motion.div
-        animate={{ x: [-5, 5, -5] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-8 left-12 w-6 h-6 rounded-full border-4 border-[#312E81] opacity-40"
+        animate={{ x: [-6, 6, -6] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-4 left-10 w-7 h-7 rounded-full border-4 border-[#312E81] opacity-40 pointer-events-none"
       />
+      <motion.div
+        animate={{ scale: [0.9, 1.1, 0.9] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-6 right-12 text-[#FBBF24] opacity-80 font-bold text-2xl select-none pointer-events-none"
+      >
+        ★
+      </motion.div>
 
-      {/* Main Corporate Memphis SVG Illustration */}
-      <svg className="w-full h-full max-w-[280px] max-h-[220px]" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Main Floating Corporate Memphis SVG Illustration */}
+      <svg className="w-full h-full max-w-[320px] max-h-[250px] drop-shadow-xl" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Table / Base shadow */}
         <ellipse cx="160" cy="210" rx="120" ry="14" fill="#E2E8F0" opacity="0.6" />
         
@@ -53,45 +60,52 @@ function FoodMemphisIllustration() {
 
         {/* Floating Suya Pizza Slice */}
         <g className="animate-bounce" style={{ animationDuration: '3s' }}>
-          <path d="M60 70 L95 110 L45 115 Z" fill="#F59E0B" />
-          <path d="M60 70 L95 110" stroke="#E11D48" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="65" cy="95" r="5" fill="#E11D48" />
-          <circle cx="78" cy="100" r="4" fill="#E11D48" />
+          <path d="M50 65 L90 105 L40 110 Z" fill="#F59E0B" />
+          <path d="M50 65 L90 105" stroke="#E11D48" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="58" cy="90" r="5" fill="#E11D48" />
+          <circle cx="72" cy="96" r="4" fill="#E11D48" />
         </g>
 
         {/* Floating Noodle/Jollof Bowl */}
         <g>
-          <path d="M220 75 C220 105 270 105 270 75 Z" fill="#10B981" />
-          <path d="M225 75 H265" stroke="#FBBF24" strokeWidth="6" strokeLinecap="round" />
-          <path d="M235 50 L250 70 M250 50 L260 70" stroke="#334155" strokeWidth="3" strokeLinecap="round" />
+          <path d="M225 70 C225 100 275 100 275 70 Z" fill="#10B981" />
+          <path d="M230 70 H270" stroke="#FBBF24" strokeWidth="6" strokeLinecap="round" />
+          <path d="M240 45 L255 65 M255 45 L265 65" stroke="#334155" strokeWidth="3" strokeLinecap="round" />
         </g>
       </svg>
     </div>
   );
 }
 
-// CORPORATE MEMPHIS FLAT VECTOR ART 2: BOOKS & ESSENTIALS
+// CORPORATE MEMPHIS FLAT VECTOR ART 2: BOOKS & ESSENTIALS (FLOATING WITHOUT BOX CONTAINER)
 function SuppliesMemphisIllustration() {
   return (
-    <div className="w-full h-full bg-gradient-to-br from-[#E6F4EA] via-[#F4F3FF] to-[#FFF8E1] flex items-center justify-center relative overflow-hidden p-6">
-      {/* Decorative Geometric Confetti */}
+    <div className="w-full h-full flex items-center justify-center relative p-2">
+      {/* Decorative Floating Geometric Confetti */}
       <motion.div
-        animate={{ y: [0, -10, 0] }}
+        animate={{ y: [0, -12, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-8 left-10 text-[#312E81] opacity-70 font-bold text-2xl select-none"
+        className="absolute top-4 left-8 text-[#312E81] opacity-75 font-bold text-3xl select-none pointer-events-none"
       >
         ●
       </motion.div>
       <motion.div
         animate={{ rotate: -360 }}
         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-8 right-8 text-[#F59E0B] opacity-70 font-bold text-2xl select-none"
+        className="absolute bottom-6 right-8 text-[#F59E0B] opacity-75 font-bold text-2xl select-none pointer-events-none"
       >
         ✦
       </motion.div>
+      <motion.div
+        animate={{ scale: [0.9, 1.1, 0.9] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-6 right-10 text-[#F43F5E] opacity-75 font-bold text-xl select-none pointer-events-none"
+      >
+        ▲
+      </motion.div>
 
-      {/* Main Corporate Memphis SVG Illustration */}
-      <svg className="w-full h-full max-w-[280px] max-h-[220px]" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Main Floating Corporate Memphis SVG Illustration */}
+      <svg className="w-full h-full max-w-[320px] max-h-[250px] drop-shadow-xl" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Ground Shadow */}
         <ellipse cx="160" cy="215" rx="110" ry="12" fill="#CBD5E1" opacity="0.6" />
 
@@ -124,22 +138,29 @@ function SuppliesMemphisIllustration() {
   );
 }
 
-// CORPORATE MEMPHIS FLAT VECTOR ART 3: FAST COURIER & REWARDS
+// CORPORATE MEMPHIS FLAT VECTOR ART 3: FAST COURIER & REWARDS (FLOATING WITHOUT BOX CONTAINER)
 function DeliveryMemphisIllustration() {
   return (
-    <div className="w-full h-full bg-gradient-to-br from-[#EFF6FF] via-[#FFF1F2] to-[#FEF3C7] flex items-center justify-center relative overflow-hidden p-6">
+    <div className="w-full h-full flex items-center justify-center relative p-2">
       {/* Motion Speed Lines */}
       <motion.div
         animate={{ x: [-20, 20, -20] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-        className="absolute top-12 left-6 space-y-2 opacity-50"
+        className="absolute top-10 left-6 space-y-2 opacity-60 pointer-events-none"
       >
-        <div className="w-12 h-1 bg-[#312E81] rounded-full" />
-        <div className="w-8 h-1 bg-[#312E81] rounded-full" />
+        <div className="w-14 h-1.5 bg-[#312E81] rounded-full" />
+        <div className="w-9 h-1.5 bg-[#312E81] rounded-full" />
+      </motion.div>
+      <motion.div
+        animate={{ y: [-4, 4, -4] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-6 left-8 text-[#10B981] font-bold text-2xl select-none opacity-80 pointer-events-none"
+      >
+        ✦
       </motion.div>
 
-      {/* Main Corporate Memphis SVG Illustration */}
-      <svg className="w-full h-full max-w-[280px] max-h-[220px]" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Main Floating Corporate Memphis SVG Illustration */}
+      <svg className="w-full h-full max-w-[320px] max-h-[250px] drop-shadow-xl" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Road Base Shadow */}
         <ellipse cx="160" cy="210" rx="130" ry="10" fill="#94A3B8" opacity="0.4" />
 
@@ -234,41 +255,41 @@ export default function WelcomePage() {
         </div>
       </header>
 
-      {/* MAIN CORPORATE MEMPHIS VECTOR ART HERO CAROUSEL */}
-      <main className="relative z-10 max-w-md md:max-w-xl mx-auto w-full my-auto py-6 space-y-6">
+      {/* MAIN BORDERLESS FLOATING CORPORATE MEMPHIS VECTOR ART HERO */}
+      <main className="relative z-10 max-w-md md:max-w-xl mx-auto w-full my-auto py-4 space-y-4">
         
-        <div className="relative aspect-[4/3] w-full rounded-[2.5rem] overflow-hidden shadow-xl shadow-indigo-950/10 border border-slate-200/80 bg-white">
+        {/* Floating Pill Badge */}
+        <div className="flex justify-center">
+          <span className="bg-white/95 backdrop-blur-md text-[#312E81] font-heading font-extrabold text-[11px] px-4 py-1.5 rounded-full shadow-md border border-slate-200/80 tracking-wider">
+            {slide.badge}
+          </span>
+        </div>
+
+        {/* Floating Vector Graphic Illustration (No card box container!) */}
+        <div className="relative w-full aspect-[4/3] max-h-[290px] flex items-center justify-center my-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSlide}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.04 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 flex flex-col"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 1.05, y: -10 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full h-full flex items-center justify-center"
             >
-              {/* Corporate Memphis Vector Graphic Scene */}
-              <div className="flex-1 w-full relative">
-                <ActiveIllustration />
-              </div>
-
-              {/* Floating Pill Badge inside Card */}
-              <div className="absolute top-5 left-5 z-20">
-                <span className="bg-white/95 backdrop-blur-md text-[#312E81] font-heading font-extrabold text-[11px] px-3.5 py-1.5 rounded-full shadow-md border border-slate-200/60 tracking-wider">
-                  {slide.badge}
-                </span>
-              </div>
+              <ActiveIllustration />
             </motion.div>
           </AnimatePresence>
+        </div>
 
-          {/* Dots Indicator inside card */}
-          <div className="absolute top-5 right-5 z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
+        {/* Carousel Dots Pill */}
+        <div className="flex justify-center">
+          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
             {CHOWDECK_SLIDES.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveSlide(idx)}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === activeSlide ? "w-5 bg-[#312E81]" : "w-2 bg-slate-300 hover:bg-slate-400"
+                  idx === activeSlide ? "w-6 bg-[#312E81]" : "w-2 bg-slate-300 hover:bg-slate-400"
                 }`}
                 aria-label={`Slide ${idx + 1}`}
               />
@@ -276,8 +297,8 @@ export default function WelcomePage() {
           </div>
         </div>
 
-        {/* Minimal Hero Subhead */}
-        <div className="text-center px-2 space-y-2">
+        {/* Hero Title & Description */}
+        <div className="text-center px-2 space-y-2 pt-2">
           <h1 className="font-heading font-extrabold text-2xl md:text-3xl text-[#18181B] tracking-tight leading-tight">
             {slide.title}
           </h1>
