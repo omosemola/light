@@ -612,7 +612,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden"
+          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden mt-[50px]"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
