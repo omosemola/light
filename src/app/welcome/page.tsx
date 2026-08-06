@@ -89,14 +89,31 @@ export default function WelcomePage() {
     setIsAuthModalOpen(true);
   };
 
-  const handleFinishOnboarding = (userEmail = email, userName = name, extraProfile?: Partial<any>) => {
+  const handleVisitorLogin = () => {
+    setIsSubmitting(true);
+    setHasSeenOnboarding(true);
+    updateProfile({
+      name: "Visitor",
+      email: "",
+      hostel: "Campus Guest",
+      phone: "",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+    });
+
+    setIsAuthModalOpen(false);
+    setToastMessage("Welcome, Visitor! 🚀");
+    setTimeout(() => {
+      router.push("/");
+    }, 1000);
+  };
+
+  const handleFinishOnboarding = (userEmail = email, userName = name) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
     updateProfile({
       name: userName || "Alex Johnson",
       email: userEmail || "alex.johnson@gmail.com",
       hostel: hostel || "Mellanby Hall",
-      ...extraProfile,
     });
 
     setIsAuthModalOpen(false);
@@ -104,16 +121,6 @@ export default function WelcomePage() {
     setTimeout(() => {
       router.push("/");
     }, 1000);
-  };
-
-  const handleVisitorDemoLogin = () => {
-    handleFinishOnboarding("visitor@campushub.edu", "Campus Visitor", {
-      hostel: "Visitor / Guest Access",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80",
-      phone: "+234 800 000 0000",
-      points: 100,
-      savedStoresCount: 2,
-    });
   };
 
   const handleGoogleSignIn = async () => {
@@ -277,10 +284,10 @@ export default function WelcomePage() {
             <div className="pt-3 border-t border-white/10">
               <button
                 type="button"
-                onClick={handleVisitorDemoLogin}
+                onClick={handleVisitorLogin}
                 className="text-xs text-slate-400 hover:text-amber-300 font-medium transition-colors"
               >
-                Want a quick preview? <span className="text-[#FBBF24] font-bold underline">1-Click Visitor Demo Login 🚀</span>
+                Want a quick preview? <span className="text-[#FBBF24] font-bold underline">1-Click Demo Login 🚀</span>
               </button>
             </div>
 
@@ -411,7 +418,7 @@ export default function WelcomePage() {
             )}
 
             {/* SUBMIT BUTTON */}
-            <div className="pt-2 space-y-2.5">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -419,14 +426,6 @@ export default function WelcomePage() {
               >
                 <span>{authMode === "signup" ? "Create Account & Enter" : "Sign In to Account"}</span>
                 <ChevronRight size={18} />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleVisitorDemoLogin}
-                className="w-full py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-heading font-bold text-xs hover:bg-amber-100 transition-colors border border-amber-200/60 dark:border-amber-800/60"
-              >
-                Instant Visitor Demo Access 🚀
               </button>
             </div>
 
