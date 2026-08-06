@@ -106,6 +106,15 @@ export default function Home() {
   const { isDark, toggleTheme } = useTheme();
   const { profile, hasSeenOnboarding } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
+  }
 
   if (!hasSeenOnboarding) {
     return <WelcomePage />;

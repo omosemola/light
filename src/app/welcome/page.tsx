@@ -236,7 +236,7 @@ export default function WelcomePage() {
       <header className="relative z-10 max-w-md md:max-w-xl mx-auto w-full flex items-center justify-[flex-start]">
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-2xl relative overflow-hidden border border-slate-200/80 shadow-md">
-            <Image src="/icon-192x192.png" alt="Light Marketplace" fill className="object-cover" priority />
+            <img src="/icon-192x192.png" alt="Light Marketplace" className="w-full h-full object-cover" />
           </div>
           <div>
             <span className="text-xl font-extrabold font-heading text-[#18181B] tracking-tight block leading-none">
