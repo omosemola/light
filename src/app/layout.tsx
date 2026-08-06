@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { MainContainer } from "@/components/layout/MainContainer";
+import { PWAInstallBanner } from "@/components/ui/PWAInstallBanner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,6 +22,18 @@ export const metadata: Metadata = {
   title: "Campus Marketplace",
   description: "A premium, modern, mobile-first multi-vendor campus marketplace.",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CampusHub",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192x192.png",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -48,6 +61,7 @@ export default function RootLayout({
             <TopNav />
             <MainContainer>{children}</MainContainer>
             <BottomNav />
+            <PWAInstallBanner />
           </AuthProvider>
         </ThemeProvider>
       </body>
