@@ -412,12 +412,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       
-      {/* HERO PRODUCT IMAGE WITH ANIMATION */}
+      {/* HERO PRODUCT IMAGE WITH COMPACT HEIGHT & ANIMATION */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden"
+        className="relative w-full aspect-[16/9] md:aspect-[21/8] max-h-[300px] bg-slate-900 overflow-hidden"
       >
         <Image
           src={product.image}
@@ -430,115 +430,123 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="absolute inset-0 bg-gradient-to-t from-[#18181B]/80 via-transparent to-[#18181B]/40" />
 
         {/* Floating Top Controls */}
-        <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
+        <div className="absolute top-4 inset-x-4 flex items-center justify-between max-w-5xl mx-auto z-10">
           <button
             onClick={() => router.back()}
-            className="w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
+            className="w-9 h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-md active:scale-95 transition-all backdrop-blur-sm"
           >
-            <ArrowLeft size={22} />
+            <ArrowLeft size={19} />
           </button>
 
           <button
             onClick={() => setIsLiked(!isLiked)}
-            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm ${
+            className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all backdrop-blur-sm ${
               isLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
             }`}
           >
-            <Heart size={20} className={isLiked ? "fill-white" : ""} />
+            <Heart size={18} className={isLiked ? "fill-white" : ""} />
           </button>
         </div>
 
         {/* Stock status overlay */}
         {!product.isAvailable && (
           <div className="absolute inset-0 bg-[#18181B]/70 backdrop-blur-sm flex items-center justify-center">
-            <span className="bg-red-500 text-white font-heading font-extrabold text-sm px-4 py-2 rounded-full shadow-lg border border-red-400 uppercase tracking-wider">
+            <span className="bg-red-500 text-white font-body font-normal text-xs px-3.5 py-1.5 rounded-full shadow-md border border-red-400 uppercase tracking-wider">
               Currently Sold Out
             </span>
           </div>
         )}
       </motion.div>
 
-      {/* MAIN CONTAINER */}
-      <div className="px-5 md:px-8 max-w-4xl mx-auto w-full -mt-8 relative z-20 space-y-6">
+      {/* MAIN CONTAINER (COMPACT SPACING & HEIGHTS) */}
+      <div className="px-4 md:px-8 max-w-4xl mx-auto w-full -mt-6 relative z-20 space-y-4">
         
         {/* MAIN PRODUCT HEADER CARD */}
         <motion.div 
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
-          transition={{ duration: 0.5 }}
-          className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-[2rem] p-7 shadow-xl shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-5"
+          transition={{ duration: 0.4 }}
+          className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-3"
         >
-          {/* Vendor Badge */}
-          <div className="flex items-center justify-between">
-            <Link href={`/vendor/${product.vendorId}`} className="inline-flex items-center gap-2 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#E0E7FF] dark:hover:bg-indigo-900/80 px-4 py-2 rounded-full border border-indigo-100 dark:border-indigo-800/60 transition-colors">
-              <Store size={14} className="text-[#312E81] dark:text-indigo-400" />
-              <span className="text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 uppercase tracking-wider">
+          {/* Vendor Badge (ANIMATED PROMINENT LINK WITH STORE ICON & DIRECTION ARROW) */}
+          <div className="flex items-center justify-between gap-2">
+            <Link 
+              href={`/vendor/${product.vendorId}`} 
+              className="group/vendor inline-flex items-center gap-2 bg-gradient-to-r from-[#F4F3FF] via-indigo-50 to-[#F4F3FF] dark:from-indigo-950/90 dark:via-zinc-900 dark:to-indigo-950/90 hover:from-indigo-100 hover:to-indigo-200 dark:hover:from-indigo-900 dark:hover:to-indigo-800 px-3 py-1 rounded-full border border-indigo-200/90 dark:border-indigo-700/80 shadow-2xs hover:shadow-md transition-all duration-300 active:scale-95"
+              title={`Visit ${product.vendorName} store page`}
+            >
+              <div className="w-4.5 h-4.5 rounded-full bg-[#312E81] dark:bg-indigo-600 text-white flex items-center justify-center shadow-2xs group-hover/vendor:scale-110 transition-transform">
+                <Store size={10} className="text-amber-300" />
+              </div>
+
+              <span className="text-xs font-body font-bold text-[#312E81] dark:text-indigo-200 uppercase tracking-wider underline underline-offset-2 decoration-indigo-400/80 dark:decoration-indigo-500 group-hover/vendor:decoration-[#312E81] transition-all">
                 {product.vendorName}
+              </span>
+
+              <span className="text-[10px] text-[#312E81] dark:text-indigo-300 font-bold flex items-center group-hover/vendor:translate-x-1 transition-transform">
+                Store ↗
               </span>
             </Link>
 
-            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/60 px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-800">
-              <Star size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
+            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+              <Star size={13} className="fill-[#FBBF24] text-[#FBBF24]" />
               <span className="text-xs font-bold text-[#18181B] dark:text-amber-300 font-body">{product.rating}</span>
-              <span className="text-[11px] font-medium text-[#71717A] dark:text-zinc-400">({reviewsList.length} reviews)</span>
+              <span className="text-[10px] font-medium text-[#71717A] dark:text-zinc-400">({reviewsList.length})</span>
             </div>
           </div>
 
           {/* Title & Price */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#18181B] dark:text-zinc-100 tracking-tight leading-tight">
+            <h1 className="text-xl md:text-2xl font-heading font-extrabold text-[#18181B] dark:text-zinc-100 tracking-tight leading-tight">
               {product.name}
             </h1>
             
-            <div className="flex items-baseline gap-3 mt-3">
-              <span className="text-3xl font-body font-extrabold text-[#312E81] dark:text-indigo-400">
+            <div className="flex items-baseline gap-3 mt-1.5">
+              <span className="text-2xl md:text-3xl font-body font-extrabold text-[#312E81] dark:text-indigo-400">
                 ₦{product.price.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-[#16A34A] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[11px] font-bold text-[#16A34A] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                 In Stock & Ready
               </span>
             </div>
           </div>
 
           {/* Prep Time Info */}
-          <div className="flex items-center gap-4 pt-3 border-t border-slate-100 dark:border-zinc-800 text-xs text-[#71717A] dark:text-zinc-400 font-body font-semibold">
+          <div className="flex items-center gap-4 pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal">
             <div className="flex items-center gap-1.5">
-              <Clock size={16} className="text-[#312E81] dark:text-indigo-400" />
+              <Clock size={15} className="text-[#312E81] dark:text-indigo-400" />
               <span>Prep Time: {product.prepTime}</span>
             </div>
           </div>
         </motion.div>
 
-        {/* ELEGANT & BEAUTIFUL "ABOUT THIS ITEM" DIV */}
+        {/* ELEGANT COMPACT "ABOUT THIS ITEM" DIV */}
         <motion.div 
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white dark:bg-zinc-900 rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-200/90 dark:border-zinc-800 relative overflow-hidden space-y-6"
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/90 dark:border-zinc-800 relative overflow-hidden space-y-3.5"
         >
-          {/* Subtle Decorative Background Accent */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#F4F3FF] dark:from-indigo-950/30 via-transparent to-transparent rounded-bl-full pointer-events-none" />
-
           {/* Section Title */}
           <div className="relative z-10">
-            <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100 tracking-tight">
+            <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
               About this Item
             </h3>
           </div>
 
-          {/* Rich Description Body */}
-          <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-5 rounded-2xl border border-slate-200/60 dark:border-zinc-700/60 relative z-10">
-            <p className="text-[#18181B] dark:text-zinc-200 text-sm md:text-base leading-relaxed font-body font-normal">
+          {/* Description Body */}
+          <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3.5 rounded-xl border border-slate-200/60 dark:border-zinc-700/60 relative z-10">
+            <p className="text-[#18181B] dark:text-zinc-200 text-xs md:text-sm leading-relaxed font-body font-normal">
               {product.description}
             </p>
           </div>
 
           {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
-          <div className="pt-5 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-3 relative z-10">
+          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2.5 relative z-10">
             
-            {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON (MODERN ROUNDED-2XL EDGES) */}
+            {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON */}
             <div className="animated-cart-btn-wrapper flex-1">
               <div className="animated-cart-btn-effect">
                 <div />
@@ -547,32 +555,32 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button
                 onClick={handleAddToCart}
                 disabled={!product.isAvailable}
-                className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/25 hover:shadow-indigo-900/40 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 group flex items-center justify-center gap-3"
+                className="animated-cart-btn font-body font-bold shadow-md shadow-indigo-950/20 hover:shadow-indigo-900/30 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 group flex items-center justify-center gap-2.5 !h-12 !rounded-xl"
               >
-                <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
-                  <CustomCartIcon size={19} strokeWidth={2.2} />
+                <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
+                  <CustomCartIcon size={17} strokeWidth={2.2} />
                 </div>
                 
-                <span className="font-heading font-extrabold tracking-wider text-base text-white">
+                <span className="font-heading font-extrabold tracking-wider text-sm md:text-base text-white">
                   Add to Cart
                 </span>
 
                 {quantity > 1 && (
-                  <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                  <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
                     ×{quantity}
                   </span>
                 )}
               </button>
             </div>
 
-            {/* STANDALONE "+" BUTTON (MODERN ROUNDED-2XL SQUIRCLE) */}
+            {/* STANDALONE "+" BUTTON */}
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-15 h-15 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-md active:scale-90 transition-all shrink-0 group"
+              className="w-12 h-12 rounded-xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group"
               title="Increase Quantity"
               aria-label="Increase Quantity"
             >
-              <Plus size={24} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
+              <Plus size={20} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>
 
           </div>
@@ -580,28 +588,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         {/* SINGLE REVIEW CAROUSEL TESTIMONIAL CARD */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-zinc-800 space-y-6 relative overflow-hidden"
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden"
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
             <div className="flex items-center gap-2">
-              <MessageSquare size={20} className="text-[#312E81] dark:text-indigo-400" />
-              <h3 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100">
+              <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
+              <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] dark:text-zinc-100">
                 Student Reviews ({reviewsList.length})
               </h3>
             </div>
 
-            {/* REDESIGNED WRITE REVIEW BUTTON */}
+            {/* WRITE REVIEW BUTTON */}
             <button
               onClick={() => setIsWriteReviewOpen(true)}
-              className="px-3.5 py-2 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-2 border border-indigo-700/50 group"
+              className="px-3 py-1.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-sm hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-1.5 border border-indigo-700/50 group"
             >
-              <div className="w-5 h-5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-xs group-hover:scale-110 transition-transform">
-                <Edit3 size={11} className="text-[#312E81]" />
+              <div className="w-4.5 h-4.5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-2xs group-hover:scale-110 transition-transform">
+                <Edit3 size={10} className="text-[#312E81]" />
               </div>
               <span>Write Review</span>
             </button>
@@ -613,11 +621,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {currentReview && (
                 <motion.div
                   key={currentReview.id}
-                  initial={{ opacity: 0, x: 30 }}
+                  initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="bg-gradient-to-br from-[#F4F3FF]/90 dark:from-zinc-800/90 via-white dark:via-zinc-900 to-amber-50/40 dark:to-zinc-800/40 rounded-3xl p-6 border border-indigo-100/80 dark:border-zinc-700/80 shadow-md relative overflow-hidden space-y-4"
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="bg-gradient-to-br from-[#F4F3FF]/90 dark:from-zinc-800/90 via-white dark:via-zinc-900 to-amber-50/40 dark:to-zinc-800/40 rounded-xl p-4 border border-indigo-100/80 dark:border-zinc-700/80 shadow-xs relative overflow-hidden space-y-3"
                 >
                   {/* Decorative Background Quote Watermark */}
                   <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 dark:text-white/5 pointer-events-none rotate-180" />
