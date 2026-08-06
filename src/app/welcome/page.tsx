@@ -6,21 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Store, 
   ArrowRight, 
-  Sparkles, 
   CheckCircle2, 
-  ShoppingBag, 
   Lock, 
   Mail, 
   User as UserIcon, 
   Building, 
-  ShieldCheck, 
   ChevronRight,
-  Sun,
-  Moon
+  UserPlus,
+  LogIn
 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
-import { useTheme } from "@/components/providers/ThemeProvider";
+import { Modal } from "@/components/ui/Modal";
 
 function GoogleIcon() {
   return (
@@ -47,38 +44,29 @@ function GoogleIcon() {
 
 const ONBOARDING_SLIDES = [
   {
-    badge: "Instant Hostel Delivery",
     title: "Fresh Campus Food & Drinks Delivered Fast 🍲",
     desc: "Order hot Jollof, spicy suya pizza, cold-pressed fruit juices, and snacks from top campus vendors right to your hostel door.",
-    accentColor: "from-amber-500/20 to-indigo-600/30",
     image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
-    stats: "15-20 Mins Avg. Delivery",
   },
   {
-    badge: "Lecture Supplies & Care",
     title: "Exam Books, Stationery & Daily Essentials 📚",
     desc: "Never run out of lecture notebooks, pens, skincare, or groceries. Everything you need for campus life in one tap.",
-    accentColor: "from-indigo-600/20 to-purple-600/30",
     image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-    stats: "100% Verified Campus Vendors",
   },
   {
-    badge: "Student Rewards",
     title: "Exclusive Promos & Real-Time Order Tracking ⚡",
     desc: "Earn points on every order, enjoy daily student discounts, and track your fast campus rider live from kitchen to room.",
-    accentColor: "from-emerald-500/20 to-amber-500/30",
     image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
-    stats: "Live Rider GPS Tracking",
   },
 ];
 
 export default function WelcomePage() {
   const router = useRouter();
   const { setHasSeenOnboarding, updateProfile } = useUserStore();
-  const { isDark, toggleTheme } = useTheme();
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Form Fields
   const [name, setName] = useState("Alex Johnson");
@@ -96,6 +84,11 @@ export default function WelcomePage() {
     return () => clearInterval(timer);
   }, []);
 
+  const openAuthModal = (mode: "login" | "signup") => {
+    setAuthMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
   const handleFinishOnboarding = (userEmail = email, userName = name) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
@@ -105,6 +98,7 @@ export default function WelcomePage() {
       hostel: hostel || "Mellanby Hall",
     });
 
+    setIsAuthModalOpen(false);
     setToastMessage(`Welcome to Campus Hub, ${userName.split(" ")[0]}! 🎉`);
     setTimeout(() => {
       router.push("/");
@@ -114,10 +108,9 @@ export default function WelcomePage() {
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
-      // Attempt NextAuth Google Provider Sign In
       await signIn("google", { callbackUrl: "/", redirect: false });
     } catch {
-      // Fallback for demonstration preview
+      // Fallback preview
     }
     handleFinishOnboarding("alex.google@gmail.com", "Alex Johnson");
   };
@@ -188,7 +181,7 @@ export default function WelcomePage() {
       <main className="relative z-10 max-w-6xl mx-auto w-full px-5 md:px-8 py-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center flex-1">
         
         {/* LEFT COLUMN: EYE-CATCHING CAROUSEL WITH MOTION */}
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-7 space-y-6">
           <motion.div
             key={activeSlide}
             initial={{ opacity: 0, x: -20 }}
@@ -233,141 +226,50 @@ export default function WelcomePage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: LOGIN & SIGNUP CARD WITH GMAIL AUTH */}
-        <div className="lg:col-span-6 w-full max-w-md mx-auto">
+        {/* RIGHT COLUMN: CLEAN ACTION BUTTONS (CREATE ACCOUNT / SIGN IN) */}
+        <div className="lg:col-span-5 w-full max-w-md mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-[#181824]/90 backdrop-blur-xl border border-white/15 rounded-[32px] p-6 md:p-8 shadow-2xl space-y-6"
+            className="bg-[#181824]/80 backdrop-blur-xl border border-white/15 rounded-[32px] p-6 md:p-8 shadow-2xl space-y-6 text-center"
           >
-            {/* MODE SWITCH TABS */}
-            <div className="grid grid-cols-2 p-1 rounded-2xl bg-white/5 border border-white/10 relative">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-heading font-extrabold text-white">Get Started</h2>
+              <p className="text-xs md:text-sm text-slate-300 font-body">
+                Join thousands of students getting food, snacks, and lecture supplies delivered fast.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              {/* CREATE ACCOUNT BUTTON */}
               <button
-                onClick={() => setAuthMode("signup")}
-                className={`py-2.5 text-xs md:text-sm font-heading font-extrabold rounded-xl transition-all relative z-10 ${
-                  authMode === "signup" ? "text-[#18181B] bg-[#FBBF24] shadow-md" : "text-slate-300 hover:text-white"
-                }`}
+                onClick={() => openAuthModal("signup")}
+                className="w-full py-4 px-6 rounded-2xl bg-[#FBBF24] hover:bg-amber-400 text-[#18181B] font-heading font-extrabold text-sm md:text-base shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all group"
               >
-                Create Account
+                <UserPlus size={19} />
+                <span>Create Account</span>
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
+
+              {/* SIGN IN BUTTON */}
               <button
-                onClick={() => setAuthMode("login")}
-                className={`py-2.5 text-xs md:text-sm font-heading font-extrabold rounded-xl transition-all relative z-10 ${
-                  authMode === "login" ? "text-[#18181B] bg-[#FBBF24] shadow-md" : "text-slate-300 hover:text-white"
-                }`}
+                onClick={() => openAuthModal("login")}
+                className="w-full py-4 px-6 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-heading font-extrabold text-sm md:text-base border border-white/20 shadow-lg flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
               >
-                Student Sign In
+                <LogIn size={19} />
+                <span>Sign In</span>
               </button>
             </div>
 
-            {/* GOOGLE / GMAIL SIGN IN BUTTON */}
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-heading font-bold text-xs md:text-sm shadow-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] border border-slate-200 group"
-              >
-                <GoogleIcon />
-                <span>Continue with Google / Gmail</span>
-              </button>
-
-              <div className="flex items-center gap-3 my-2">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">or email</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-            </div>
-
-            {/* EMAIL / PASSWORD AUTH FORM */}
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              
-              {authMode === "signup" && (
-                <div className="space-y-1">
-                  <label className="text-xs font-heading font-bold text-slate-300 block">Full Name</label>
-                  <div className="relative">
-                    <UserIcon size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Alex Johnson"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-xs font-heading font-bold text-slate-300 block">Email Address</label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="alex.johnson@gmail.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-heading font-bold text-slate-300 block">Password</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
-                  />
-                </div>
-              </div>
-
-              {authMode === "signup" && (
-                <div className="space-y-1">
-                  <label className="text-xs font-heading font-bold text-slate-300 block">Hostel / Campus Hall</label>
-                  <div className="relative">
-                    <Building size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      required
-                      value={hostel}
-                      onChange={(e) => setHostel(e.target.value)}
-                      placeholder="Mellanby Hall"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* SUBMIT BUTTON */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#312E81] via-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-[#312E81] text-white font-heading font-extrabold text-sm shadow-xl shadow-indigo-950/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all border border-indigo-400/30 mt-2"
-              >
-                <span>{authMode === "signup" ? "Get Started & Join Campus" : "Sign In to Account"}</span>
-                <ChevronRight size={18} />
-              </button>
-
-            </form>
-
-            {/* QUICK DEMO PREVIEW AUTOFILL */}
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-body">
-              <span className="text-slate-400">Quick Test Drive?</span>
+            {/* DEMO QUICK PREVIEW LINK */}
+            <div className="pt-3 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => handleFinishOnboarding("alex.johnson@gmail.com", "Alex Johnson")}
-                className="text-[#FBBF24] hover:underline font-bold"
+                className="text-xs text-slate-400 hover:text-amber-300 font-medium transition-colors"
               >
-                1-Click Demo Login 🚀
+                Want a quick preview? <span className="text-[#FBBF24] font-bold underline">1-Click Demo Login 🚀</span>
               </button>
             </div>
 
@@ -380,6 +282,139 @@ export default function WelcomePage() {
       <footer className="relative z-20 py-6 text-center text-xs text-slate-500 font-body">
         Campus Marketplace &copy; {new Date().getFullYear()} — Fast, Verified & Student-Focused.
       </footer>
+
+      {/* SIGN UP / SIGN IN MODAL */}
+      <Modal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        title={authMode === "signup" ? "Create Campus Account" : "Student Sign In"}
+      >
+        <div className="space-y-5 font-body text-[#18181B] dark:text-zinc-100 pt-1">
+          
+          {/* MODE SWITCH TABS */}
+          <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
+            <button
+              onClick={() => setAuthMode("signup")}
+              className={`py-2 text-xs md:text-sm font-heading font-extrabold rounded-xl transition-all ${
+                authMode === "signup" 
+                  ? "text-[#18181B] bg-[#FBBF24] shadow-sm" 
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              Create Account
+            </button>
+            <button
+              onClick={() => setAuthMode("login")}
+              className={`py-2 text-xs md:text-sm font-heading font-extrabold rounded-xl transition-all ${
+                authMode === "login" 
+                  ? "text-[#18181B] bg-[#FBBF24] shadow-sm" 
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              Sign In
+            </button>
+          </div>
+
+          {/* GOOGLE / GMAIL SIGN IN BUTTON */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isSubmitting}
+            className="w-full py-3.5 px-4 rounded-2xl bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-zinc-750 font-heading font-bold text-xs md:text-sm shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] border border-slate-200 dark:border-zinc-700"
+          >
+            <GoogleIcon />
+            <span>Continue with Google / Gmail</span>
+          </button>
+
+          <div className="flex items-center gap-3 my-1">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-zinc-800" />
+            <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">or email</span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-zinc-800" />
+          </div>
+
+          {/* EMAIL / PASSWORD FORM */}
+          <form onSubmit={handleFormSubmit} className="space-y-3.5">
+            
+            {authMode === "signup" && (
+              <div className="space-y-1">
+                <label className="text-xs font-heading font-bold text-slate-700 dark:text-zinc-300 block">Full Name</label>
+                <div className="relative">
+                  <UserIcon size={16} className="absolute left-3.5 top-3.5 text-slate-400 dark:text-zinc-500" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Alex Johnson"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 text-slate-900 dark:text-zinc-100"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-xs font-heading font-bold text-slate-700 dark:text-zinc-300 block">Email Address</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-3.5 text-slate-400 dark:text-zinc-500" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="alex.johnson@gmail.com"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 text-slate-900 dark:text-zinc-100"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-heading font-bold text-slate-700 dark:text-zinc-300 block">Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400 dark:text-zinc-500" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 text-slate-900 dark:text-zinc-100"
+                />
+              </div>
+            </div>
+
+            {authMode === "signup" && (
+              <div className="space-y-1">
+                <label className="text-xs font-heading font-bold text-slate-700 dark:text-zinc-300 block">Hostel / Campus Hall</label>
+                <div className="relative">
+                  <Building size={16} className="absolute left-3.5 top-3.5 text-slate-400 dark:text-zinc-500" />
+                  <input
+                    type="text"
+                    required
+                    value={hostel}
+                    onChange={(e) => setHostel(e.target.value)}
+                    placeholder="Mellanby Hall"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 text-slate-900 dark:text-zinc-100"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* SUBMIT BUTTON */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-xl bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-sm shadow-md flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+              >
+                <span>{authMode === "signup" ? "Create Account & Enter" : "Sign In to Account"}</span>
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </Modal>
 
     </div>
   );
