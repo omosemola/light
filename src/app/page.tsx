@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useUserStore } from "@/lib/userStore";
+import WelcomePage from "@/app/welcome/page";
 
 // POPULAR PRODUCTS MOCK DATA WITH UNSPLASH IMAGERY
 const POPULAR_PRODUCTS = [
@@ -101,17 +102,14 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
-  const router = useRouter();
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { isDark, toggleTheme } = useTheme();
   const { profile, hasSeenOnboarding } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
 
-  useEffect(() => {
-    if (!hasSeenOnboarding) {
-      router.push("/welcome");
-    }
-  }, [hasSeenOnboarding, router]);
+  if (!hasSeenOnboarding) {
+    return <WelcomePage />;
+  }
 
   const handleAddProduct = (productId: string) => {
     const product = POPULAR_PRODUCTS.find((p) => p.id === productId);

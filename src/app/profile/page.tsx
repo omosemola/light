@@ -392,7 +392,7 @@ export default function ProfilePage() {
               onClick={() => {
                 setIsLogoutModalOpen(false);
                 logoutUser();
-                signOut({ callbackUrl: "/welcome" });
+                signOut({ callbackUrl: "/" });
               }}
               className="w-full h-12 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
             >

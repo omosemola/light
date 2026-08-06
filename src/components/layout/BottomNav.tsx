@@ -11,16 +11,19 @@ import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { CustomOrdersIcon } from "@/components/icons/CustomOrdersIcon";
 import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
+import { useUserStore } from "@/lib/userStore";
+
 export function BottomNav() {
   const pathname = usePathname();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
+  const { hasSeenOnboarding } = useUserStore();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (pathname === "/welcome" || pathname.startsWith("/vendor") || pathname.startsWith("/admin")) {
+  if (isMounted && (!hasSeenOnboarding || pathname === "/welcome" || pathname.startsWith("/vendor") || pathname.startsWith("/admin"))) {
     return null;
   }
 
