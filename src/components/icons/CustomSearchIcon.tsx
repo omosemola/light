@@ -26,20 +26,15 @@ export function CustomSearchIcon({
       className={className}
       {...props}
     >
-      {/* Top Search Bar Capsule */}
-      <rect x="2" y="2.5" width="20" height="7.5" rx="3.75" />
-      {/* Miniature magnifying glass inside search bar top-right */}
-      <circle cx="18" cy="6" r="1.2" />
-      <path d="m19 7 1.2 1.2" />
-
-      {/* Main Front Magnifying Glass Lens */}
-      <circle cx="12" cy="13.5" r="5" />
+      {/* Main Lens Circle */}
+      <circle cx="11.5" cy="11.5" r="6.8" strokeWidth={strokeWidth} />
       
-      {/* Inner Lens Reflection Glint */}
-      <path d="M12 10.5a3 3 0 0 1 2.5 1.5" opacity="0.6" />
+      {/* Top-Left Inner Lens Reflection Glint Arc */}
+      <path d="M 8.2 8.2 A 4.8 4.8 0 0 1 11.5 6.2" strokeWidth={strokeWidth * 0.85} />
+      <circle cx="7.5" cy="11.5" r="0.4" fill="currentColor" stroke="none" />
 
-      {/* Magnifying Glass Straight Rounded Handle */}
-      <path d="M12 18.5v4" strokeWidth={strokeWidth * 1.3} />
+      {/* Diagonal Handle to Bottom Right */}
+      <path d="m 16.5 16.5 4.5 4.5" strokeWidth={strokeWidth * 1.25} />
     </svg>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Star, Clock, Heart, Plus, Store, ShieldCheck, CheckCircle2, MessageSquare, ThumbsUp, Send, UserCheck, ChevronLeft, ChevronRight, Quote, Sparkles, Info, Edit3 } from "lucide-react";
+import { ArrowLeft, Star, Clock, Heart, Plus, Store, CheckCircle2, MessageSquare, ThumbsUp, Send, ChevronLeft, ChevronRight, Quote, Info, Edit3 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -361,15 +361,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Prep Time & Delivery Info */}
+          {/* Prep Time Info */}
           <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-xs text-[#71717A] font-body font-semibold">
             <div className="flex items-center gap-1.5">
               <Clock size={16} className="text-[#312E81]" />
               <span>Prep Time: {product.prepTime}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-[#16A34A]" />
-              <span>Campus Rider Verified</span>
             </div>
           </div>
         </motion.div>
@@ -385,11 +381,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {/* Subtle Decorative Background Accent */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#F4F3FF] via-transparent to-transparent rounded-bl-full pointer-events-none" />
 
-          {/* Header Tag & Section Title */}
-          <div className="space-y-2 relative z-10">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-heading font-extrabold text-[#312E81] uppercase tracking-wider bg-[#F4F3FF] px-3.5 py-1 rounded-full border border-indigo-100 shadow-2xs">
-              <Sparkles size={13} className="text-[#312E81]" /> Item Overview
-            </div>
+          {/* Section Title */}
+          <div className="relative z-10">
             <h3 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] tracking-tight">
               About this Item
             </h3>
@@ -414,27 +407,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button
                 onClick={handleAddToCart}
                 disabled={!product.isAvailable}
-                className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 text-sm md:text-base group"
+                className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/25 hover:shadow-indigo-900/40 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 group flex items-center justify-center gap-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white backdrop-blur-sm group-hover:scale-110 transition-transform">
-                    <CustomCartIcon size={20} strokeWidth={2.2} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-heading font-extrabold tracking-wide">
-                      Add to Cart
-                    </span>
-                    {quantity > 1 && (
-                      <span className="bg-white/20 text-white font-body font-extrabold text-xs px-2 py-0.5 rounded-md">
-                        ×{quantity}
-                      </span>
-                    )}
-                  </div>
+                <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
+                  <CustomCartIcon size={19} strokeWidth={2.2} />
                 </div>
+                
+                <span className="font-heading font-extrabold tracking-wider text-base text-white">
+                  Add to Cart
+                </span>
 
-                <div className="bg-[#FBBF24] text-[#312E81] font-heading font-extrabold px-3.5 py-1.5 rounded-xl text-xs md:text-sm shadow-sm group-hover:scale-105 transition-transform">
-                  ₦{(product.price * quantity).toLocaleString()}
-                </div>
+                {quantity > 1 && (
+                  <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                    ×{quantity}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -496,38 +483,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 pointer-events-none rotate-180" />
 
                   {/* Top Author & Rating Bar */}
-                  <div className="flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-3.5">
+                  <div className="flex items-center justify-between gap-3 relative z-10">
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
                       <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white shadow-md shrink-0">
                         <Image src={currentReview.avatar} alt={currentReview.author} fill className="object-cover" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-heading font-extrabold text-base text-[#18181B]">
-                            {currentReview.author}
-                          </h4>
-                          <span className="text-[10px] font-body font-extrabold bg-emerald-50 text-[#16A34A] px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                            <UserCheck size={11} /> Verified
-                          </span>
-                        </div>
-                        <span className="text-xs font-body font-medium text-[#71717A]">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-heading font-extrabold text-base text-[#18181B] truncate">
+                          {currentReview.author}
+                        </h4>
+                        <span className="text-xs font-body font-medium text-[#71717A] truncate block">
                           {currentReview.hostel} • {currentReview.date}
                         </span>
                       </div>
                     </div>
 
                     {/* Gold Star Badge */}
-                    <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-full shadow-sm border border-slate-100">
-                      <div className="flex items-center gap-px">
+                    <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-xs border border-slate-100 shrink-0">
+                      <div className="flex items-center gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            size={10}
+                            size={12}
                             className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200"}
                           />
                         ))}
                       </div>
-                      <span className="text-[10px] font-extrabold text-[#18181B] font-body ml-0.5">
+                      <span className="text-xs font-extrabold text-[#18181B] font-body ml-0.5">
                         {currentReview.rating}.0
                       </span>
                     </div>

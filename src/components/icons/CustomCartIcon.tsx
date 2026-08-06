@@ -22,14 +22,16 @@ export function CustomCartIcon({
       className={className}
       {...props}
     >
-      {/* Top Tote Handle */}
-      <path d="M8 7a4 4 0 0 1 8 0" strokeWidth={strokeWidth * 1.1} />
+      {/* Handle & Angled Open Cart Basket */}
+      <path d="M 2.5 3.5 h 2.8 l 2.4 10 a 1.8 1.8 0 0 0 1.6 1.2 h 9.2 a 1.8 1.8 0 0 0 1.6 -1.2 l 1.8 -6.5 a 1 1 0 0 0 -0.9 -1.3 H 7.2" strokeWidth={strokeWidth} />
       
-      {/* Tote Bag Body */}
-      <path d="M4.5 7.5h15a1 1 0 0 1 1 1.1l-1.5 11a3.5 3.5 0 0 1-3.5 3h-7a3.5 3.5 0 0 1-3.5-3l-1.5-11a1 1 0 0 1 1-1.1Z" strokeWidth={strokeWidth * 1.1} />
+      {/* Inner Top-Right Accent Line */}
+      <path d="M 17.5 7.8 v 2 a 1 1 0 0 1 -1 1" strokeWidth={strokeWidth * 0.85} />
+      <circle cx="17.5" cy="12" r="0.4" fill="currentColor" stroke="none" />
 
-      {/* Center Checkmark */}
-      <path d="m9.5 14.5 2 2 3.5-3.5" strokeWidth={strokeWidth * 1.2} />
+      {/* Solid Circular Wheels */}
+      <circle cx="9.5" cy="19.5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="17.5" cy="19.5" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
