@@ -412,12 +412,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       
-      {/* HERO PRODUCT IMAGE WITH COMPACT HEIGHT & ANIMATION */}
+      {/* HERO PRODUCT IMAGE WITH FULL HEIGHT & ANIMATION */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative w-full aspect-[16/9] md:aspect-[21/8] max-h-[300px] bg-slate-900 overflow-hidden"
+        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden"
       >
         <Image
           src={product.image}
@@ -430,28 +430,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="absolute inset-0 bg-gradient-to-t from-[#18181B]/80 via-transparent to-[#18181B]/40" />
 
         {/* Floating Top Controls */}
-        <div className="absolute top-4 inset-x-4 flex items-center justify-between max-w-5xl mx-auto z-10">
+        <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-md active:scale-95 transition-all backdrop-blur-sm"
+            className="w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
           >
-            <ArrowLeft size={19} />
+            <ArrowLeft size={22} />
           </button>
 
           <button
             onClick={() => setIsLiked(!isLiked)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all backdrop-blur-sm ${
+            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm ${
               isLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
             }`}
           >
-            <Heart size={18} className={isLiked ? "fill-white" : ""} />
+            <Heart size={20} className={isLiked ? "fill-white" : ""} />
           </button>
         </div>
 
         {/* Stock status overlay */}
         {!product.isAvailable && (
           <div className="absolute inset-0 bg-[#18181B]/70 backdrop-blur-sm flex items-center justify-center">
-            <span className="bg-red-500 text-white font-body font-normal text-xs px-3.5 py-1.5 rounded-full shadow-md border border-red-400 uppercase tracking-wider">
+            <span className="bg-red-500 text-white font-heading font-extrabold text-sm px-4 py-2 rounded-full shadow-lg border border-red-400 uppercase tracking-wider">
               Currently Sold Out
             </span>
           </div>
