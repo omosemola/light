@@ -20,7 +20,7 @@ export function TopNav() {
     setIsMounted(true);
   }, []);
 
-  if (pathname.startsWith("/vendor") || pathname.startsWith("/admin")) {
+  if (pathname === "/welcome" || pathname.startsWith("/vendor") || pathname.startsWith("/admin")) {
     return null;
   }
 

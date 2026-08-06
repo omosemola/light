@@ -167,26 +167,6 @@ export default function WelcomePage() {
             <span className="text-[10px] text-slate-400 font-medium tracking-wide">University Marketplace</span>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          {/* THEME TOGGLE */}
-          <button
-            onClick={toggleTheme}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-sm active:scale-90"
-            aria-label="Toggle Theme"
-          >
-            {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-amber-300" />}
-          </button>
-
-          {/* SKIP TO CATALOG BUTTON */}
-          <button
-            onClick={() => handleFinishOnboarding()}
-            className="text-xs font-heading font-extrabold px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-md transition-all active:scale-95 flex items-center gap-1.5"
-          >
-            <span>Skip to App</span>
-            <ArrowRight size={14} />
-          </button>
-        </div>
       </header>
 
       {/* TOAST MESSAGE NOTIFICATION */}
@@ -217,12 +197,6 @@ export default function WelcomePage() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="space-y-5"
           >
-            {/* BADGE */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-[#FBBF24] text-xs font-heading font-extrabold uppercase tracking-wider shadow-sm">
-              <Sparkles size={13} />
-              <span>{currentSlide.badge}</span>
-            </div>
-
             {/* TITLE */}
             <h1 className="text-3xl md:text-5xl font-heading font-extrabold leading-tight text-white tracking-tight">
               {currentSlide.title}
@@ -240,15 +214,7 @@ export default function WelcomePage() {
                 alt={currentSlide.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <span className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/20">
-                  {currentSlide.stats}
-                </span>
-                <span className="text-[11px] font-bold text-amber-300 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 flex items-center gap-1">
-                  <ShieldCheck size={14} /> Verified Student App
-                </span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             </div>
           </motion.div>
 
