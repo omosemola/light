@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 // CORPORATE MEMPHIS FLAT VECTOR ART 1: FOOD & DRINKS (FLOATING WITHOUT BOX CONTAINER)
 function FoodMemphisIllustration() {
@@ -196,19 +196,16 @@ function DeliveryMemphisIllustration() {
 
 const CHOWDECK_SLIDES = [
   {
-    badge: "⚡ FAST HOSTEL DELIVERY",
     title: "Hot Jollof, Suya Pizza & Fresh Juices Delivered 🍲",
     desc: "Order hot meals, cold drinks, and snacks from top campus kitchens delivered directly to your hostel door.",
     Component: FoodMemphisIllustration,
   },
   {
-    badge: "📚 CAMPUS ESSENTIALS",
     title: "Lecture Notebooks, Stationery & Snacks ✏️",
     desc: "Never run out of exam notebooks, pens, skincare, or dorm groceries during intense study sessions.",
     Component: SuppliesMemphisIllustration,
   },
   {
-    badge: "🎉 EXCLUSIVE DISCOUNTS",
     title: "Student Deals & Real-Time Live Tracking 🛵",
     desc: "Earn reward points on every order and watch your fast campus rider bring your package live.",
     Component: DeliveryMemphisIllustration,
@@ -236,7 +233,7 @@ export default function WelcomePage() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-100/50 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
 
       {/* TOP BRAND BAR */}
-      <header className="relative z-10 max-w-md md:max-w-xl mx-auto w-full flex items-center justify-between">
+      <header className="relative z-10 max-w-md md:max-w-xl mx-auto w-full flex items-center justify-[flex-start]">
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-2xl relative overflow-hidden border border-slate-200/80 shadow-md">
             <Image src="/icon-192x192.png" alt="Light Marketplace" fill className="object-cover" priority />
@@ -248,23 +245,11 @@ export default function WelcomePage() {
             <span className="text-[10px] text-[#71717A] font-semibold tracking-wider uppercase">Campus Delivery</span>
           </div>
         </div>
-
-        <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-xs text-xs font-bold text-[#312E81]">
-          <Zap size={14} className="fill-[#FBBF24] text-[#FBBF24]" />
-          <span>Active Campus</span>
-        </div>
       </header>
 
       {/* MAIN BORDERLESS FLOATING CORPORATE MEMPHIS VECTOR ART HERO */}
       <main className="relative z-10 max-w-md md:max-w-xl mx-auto w-full my-auto py-4 space-y-4">
         
-        {/* Floating Pill Badge */}
-        <div className="flex justify-center">
-          <span className="bg-white/95 backdrop-blur-md text-[#312E81] font-heading font-extrabold text-[11px] px-4 py-1.5 rounded-full shadow-md border border-slate-200/80 tracking-wider">
-            {slide.badge}
-          </span>
-        </div>
-
         {/* Floating Vector Graphic Illustration (No card box container!) */}
         <div className="relative w-full aspect-[4/3] max-h-[290px] flex items-center justify-center my-2">
           <AnimatePresence mode="wait">
@@ -312,14 +297,22 @@ export default function WelcomePage() {
       {/* BOTTOM ACTION BUTTONS */}
       <footer className="relative z-10 max-w-md md:max-w-xl mx-auto w-full space-y-4 pt-2">
         
-        {/* GET STARTED BUTTON -> LINKS TO /signup */}
-        <Link
-          href="/signup"
-          className="w-full h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-full shadow-xl shadow-indigo-950/20 hover:shadow-indigo-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
-        >
-          <span>Get Started</span>
-          <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />
-        </Link>
+        {/* GET STARTED BUTTON WITH CONIC OUTLINE CSS (ROUNDED-2XL) -> LINKS TO /signup */}
+        <div className="animated-cart-btn-wrapper w-full">
+          <div className="animated-cart-btn-effect">
+            <div />
+          </div>
+
+          <Link
+            href="/signup"
+            className="animated-cart-btn font-body font-bold shadow-xl shadow-indigo-950/25 hover:shadow-indigo-900/40 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 group flex items-center justify-center gap-2 rounded-2xl"
+          >
+            <span className="font-heading font-extrabold tracking-wider text-base text-white">
+              Get Started
+            </span>
+            <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
 
         {/* ALREADY HAVE AN ACCOUNT? LOG IN LINK */}
         <div className="text-center font-body text-sm text-[#71717A] pt-1">
