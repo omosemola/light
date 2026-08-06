@@ -618,7 +618,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
             <div className="flex items-center gap-2">
               <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
-              <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] dark:text-zinc-100">
+              <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
                 Student Reviews ({reviewsList.length})
               </h3>
             </div>
@@ -635,7 +635,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </button>
           </div>
 
-          {/* SINGLE TESTIMONIAL CARD WITH SLIDE ANIMATION */}
+          {/* SINGLE TESTIMONIAL DISPLAY SITTING DIRECTLY IN PARENT DIV */}
           <div className="relative">
             <AnimatePresence mode="wait">
               {currentReview && (
@@ -645,7 +645,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="bg-gradient-to-br from-[#F4F3FF]/90 dark:from-zinc-800/90 via-white dark:via-zinc-900 to-amber-50/40 dark:to-zinc-800/40 rounded-xl p-4 border border-indigo-100/80 dark:border-zinc-700/80 shadow-xs relative overflow-hidden space-y-3"
+                  className="relative space-y-3 pt-1"
                 >
                   {/* Decorative Background Quote Watermark */}
                   <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 dark:text-white/5 pointer-events-none rotate-180" />
