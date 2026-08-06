@@ -80,7 +80,7 @@ export function ProductCard({
       {/* FOOTER PRICE & HEART FAVORITE BUTTON (REDUCED HEIGHT & NO BOLD TEXTS) */}
       <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-slate-100 dark:border-zinc-800/80 px-0.5">
         <div className="flex flex-col">
-          <span className="text-[9px] font-body font-normal text-[#71717A] dark:text-zinc-400 uppercase tracking-widest">Price</span>
+          <span className="text-[7px] font-body font-normal text-[#71717A] dark:text-zinc-400 uppercase tracking-widest leading-none">Price</span>
           <span className="font-body font-normal text-xs text-[#312E81] dark:text-indigo-400 tracking-tight">
             ₦{price.toLocaleString()}
           </span>
