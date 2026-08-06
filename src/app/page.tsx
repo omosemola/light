@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Flame, ArrowRight, Clock, Sparkles, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
+import { Flame, ArrowRight, Clock, Sparkles, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -9,6 +9,7 @@ import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 // POPULAR PRODUCTS MOCK DATA WITH UNSPLASH IMAGERY
 const POPULAR_PRODUCTS = [
@@ -71,6 +72,7 @@ const CATEGORIES = [
 
 export default function Home() {
   const { addItem, confirmAndReplaceCart } = useCartStore();
+  const { isDark, toggleTheme } = useTheme();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
 
   const handleAddProduct = (productId: string) => {
@@ -132,13 +134,25 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="w-12 h-12 rounded-full border-2 border-white/20 dark:border-zinc-700 overflow-hidden shadow-md relative">
-              <Image
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-                alt="Profile"
-                fill
-                className="object-cover"
-              />
+            <div className="flex items-center gap-3">
+              {/* Light/Dark Mode Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="w-10 h-10 rounded-full bg-white/10 dark:bg-zinc-800/80 backdrop-blur-md border border-white/20 dark:border-zinc-700/80 flex items-center justify-center text-white dark:text-amber-400 hover:bg-white/20 dark:hover:bg-zinc-700 transition-all shadow-sm active:scale-90"
+                aria-label="Toggle light or dark theme"
+                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDark ? <Sun size={18} className="text-amber-400 fill-amber-400/20" /> : <Moon size={18} className="text-amber-300 fill-amber-300/20" />}
+              </button>
+
+              <div className="w-12 h-12 rounded-full border-2 border-white/20 dark:border-zinc-700 overflow-hidden shadow-md relative">
+                <Image
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+                  alt="Profile"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
 
