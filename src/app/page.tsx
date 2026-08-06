@@ -59,15 +59,43 @@ const POPULAR_PRODUCTS = [
   },
 ];
 
-// CATEGORIES METADATA WITH VECTOR ICONS & CUSTOM BG BADGES
+// CATEGORIES METADATA WITH REALISTIC PICTURE THUMBNAILS
 const CATEGORIES = [
-  { name: "Food", slug: "food", Icon: Utensils, bg: "bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400" },
-  { name: "Snacks", slug: "snacks", Icon: Cookie, bg: "bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400" },
-  { name: "Drinks", slug: "drinks", Icon: Coffee, bg: "bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-400" },
-  { name: "Groceries", slug: "groceries", Icon: ShoppingCart, bg: "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400" },
-  { name: "Pastries", slug: "pastries", Icon: Cake, bg: "bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400" },
-  { name: "Stationery", slug: "stationery", Icon: BookOpen, bg: "bg-purple-50 dark:bg-purple-950/80 text-purple-700 dark:text-purple-400" },
-  { name: "Care", slug: "care", Icon: HeartPulse, bg: "bg-pink-50 dark:bg-pink-950/80 text-pink-700 dark:text-pink-400" },
+  { 
+    name: "Food", 
+    slug: "food", 
+    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Snacks", 
+    slug: "snacks", 
+    image: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Drinks", 
+    slug: "drinks", 
+    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Groceries", 
+    slug: "groceries", 
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Pastries", 
+    slug: "pastries", 
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Stationery", 
+    slug: "stationery", 
+    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Care", 
+    slug: "care", 
+    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80" 
+  },
 ];
 
 export default function Home() {
@@ -121,13 +149,21 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="bg-[#FBBF24] text-[#312E81] text-[11px] font-heading font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <Sparkles size={13} /> Campus Active
-                </span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white">
-                Hey Alex! 👋
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white flex items-center gap-2">
+                Hey Alex!{" "}
+                <motion.span
+                  className="inline-block origin-[70%_70%]"
+                  animate={{ rotate: [0, 16, -8, 16, -4, 10, 0] }}
+                  transition={{
+                    duration: 1.4,
+                    repeat: Infinity,
+                    repeatDelay: 2.2,
+                    ease: "easeInOut",
+                  }}
+                  whileInView={{ rotate: [0, 20, -10, 20, -5, 12, 0] }}
+                >
+                  👋
+                </motion.span>
               </h1>
               <p className="text-slate-300 dark:text-zinc-400 text-xs md:text-sm font-normal mt-0.5 font-body">
                 What are we ordering today?
@@ -240,7 +276,7 @@ export default function Home() {
 
         </section>
 
-        {/* CATEGORIES SECTION WITH VECTOR ICONS & SCROLL ANIMATIONS */}
+        {/* CATEGORIES SECTION WITH PICTURE THUMBNAILS & SCROLL ANIMATIONS */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -253,17 +289,22 @@ export default function Home() {
             </h2>
           </div>
           
-          <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
+          <div className="flex gap-3.5 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
             {CATEGORIES.map((cat, i) => {
-              const CategoryIcon = cat.Icon;
               return (
                 <Link
                   key={i}
                   href={`/category/${cat.slug}`}
-                  className="flex flex-col items-center justify-center min-w-[90px] min-h-[100px] bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group"
+                  className="flex flex-col items-center justify-center min-w-[92px] p-2.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group"
                 >
-                  <div className={`w-12 h-12 rounded-xl ${cat.bg} flex items-center justify-center shadow-sm mb-1.5 group-hover:scale-110 transition-transform`}>
-                    <CategoryIcon size={22} strokeWidth={2.2} />
+                  <div className="w-13 h-13 rounded-2xl overflow-hidden relative shadow-sm mb-2 border border-slate-100 dark:border-zinc-700/80 group-hover:scale-108 transition-transform duration-300">
+                    <Image
+                      src={cat.image}
+                      alt={cat.name}
+                      fill
+                      className="object-cover"
+                      sizes="60px"
+                    />
                   </div>
                   <span className="text-xs font-heading font-bold text-[#18181B] dark:text-zinc-200">{cat.name}</span>
                 </Link>

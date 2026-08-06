@@ -21,7 +21,7 @@ export const useUserStore = create<UserState>()(
     (set) => ({
       profile: {
         name: "Alex John",
-        email: "alex.john@student.uni.edu",
+        email: "alex.johnson@gmail.com",
         hostel: "Main Campus (Mellanby Hall)",
         phone: "+234 812 345 6789",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",

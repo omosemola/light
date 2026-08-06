@@ -25,6 +25,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { signOut } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { Modal } from "@/components/ui/Modal";
@@ -43,6 +44,7 @@ export default function ProfilePage() {
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [editName, setEditName] = useState(profile.name);
   const [editEmail, setEditEmail] = useState(profile.email);
   const [editHostel, setEditHostel] = useState(profile.hostel);
@@ -259,7 +261,7 @@ export default function ProfilePage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          onClick={() => alert("You have been logged out.")}
+          onClick={() => setIsLogoutModalOpen(true)}
           className="w-full flex items-center p-4.5 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-red-100 dark:border-red-950/60 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-[0.98] transition-all text-red-600 dark:text-red-400 font-body font-semibold text-sm"
         >
           <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex items-center justify-center mr-4">
@@ -371,6 +373,36 @@ export default function ProfilePage() {
           </div>
 
         </form>
+      </Modal>
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        title="Log Out Account?"
+      >
+        <div className="space-y-4 font-body text-[#18181B] dark:text-zinc-100">
+          <p className="text-sm text-[#71717A] dark:text-zinc-300 leading-relaxed">
+            Are you sure you want to log out of your Campus Marketplace account? You will need to log back in to manage your saved items and track orders.
+          </p>
+          <div className="flex flex-col gap-3 pt-2 font-semibold text-sm">
+            <button
+              onClick={() => {
+                setIsLogoutModalOpen(false);
+                signOut({ callbackUrl: "/" });
+              }}
+              className="w-full h-12 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut size={18} /> Yes, Log Out
+            </button>
+            <button
+              onClick={() => setIsLogoutModalOpen(false)}
+              className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 rounded-full active:scale-95 transition-transform"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </Modal>
 
     </div>
