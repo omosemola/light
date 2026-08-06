@@ -540,37 +540,30 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
           <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2.5 relative z-10">
             
-            {/* ANIMATED CONIC BORDER WRAPPER FOR ADD TO CART BUTTON */}
-            <div className="animated-cart-btn-wrapper flex-1">
-              <div className="animated-cart-btn-effect">
-                <div />
+            <button
+              onClick={handleAddToCart}
+              disabled={!product.isAvailable}
+              className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 group flex-1"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
+                <CustomCartIcon size={17} strokeWidth={2.2} />
               </div>
+              
+              <span className="font-heading font-extrabold tracking-wider text-sm md:text-base text-white">
+                Add to Cart
+              </span>
 
-              <button
-                onClick={handleAddToCart}
-                disabled={!product.isAvailable}
-                className="animated-cart-btn font-body font-bold shadow-md shadow-indigo-950/20 hover:shadow-indigo-900/30 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 group flex items-center justify-center gap-2.5 !h-12 !rounded-xl"
-              >
-                <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
-                  <CustomCartIcon size={17} strokeWidth={2.2} />
-                </div>
-                
-                <span className="font-heading font-extrabold tracking-wider text-sm md:text-base text-white">
-                  Add to Cart
+              {quantity > 1 && (
+                <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                  ×{quantity}
                 </span>
-
-                {quantity > 1 && (
-                  <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
-                    ×{quantity}
-                  </span>
-                )}
-              </button>
-            </div>
+              )}
+            </button>
 
             {/* STANDALONE "+" BUTTON */}
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-12 h-12 rounded-xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group"
+              className="w-14 h-14 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group"
               title="Increase Quantity"
               aria-label="Increase Quantity"
             >
