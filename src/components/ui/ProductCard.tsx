@@ -68,23 +68,23 @@ export function ProductCard({
 
         {/* PRODUCT DETAILS */}
         <div className="px-1 space-y-1">
-          <h3 className="font-heading font-extrabold text-[#18181B] dark:text-zinc-100 text-sm md:text-base leading-snug line-clamp-2 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
+          <h3 className="font-body font-bold text-[#18181B] dark:text-zinc-100 text-xs md:text-sm leading-snug line-clamp-2 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
             {name}
           </h3>
         </div>
       </div>
 
       {/* FOOTER PRICE & ARROW INDICATOR */}
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800/80 px-1">
+      <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-zinc-800/80 px-1">
         <div className="flex flex-col">
           <span className="text-[9px] font-body font-bold text-[#71717A] dark:text-zinc-400 uppercase tracking-widest">Price</span>
-          <span className="font-heading font-extrabold text-lg md:text-xl text-[#312E81] dark:text-indigo-400 tracking-tight">
+          <span className="font-body font-extrabold text-xs text-[#312E81] dark:text-indigo-400 tracking-tight">
             ₦{price.toLocaleString()}
           </span>
         </div>
 
-        <div className="w-8 h-8 rounded-xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 group-hover:bg-[#312E81] dark:group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0 shadow-xs border border-indigo-100/50 dark:border-indigo-800/50">
-          <ArrowUpRight size={16} strokeWidth={2.5} />
+        <div className="w-7.5 h-7.5 rounded-xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 group-hover:bg-[#312E81] dark:group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105 shrink-0 shadow-xs border border-indigo-100/50 dark:border-indigo-800/50">
+          <ArrowUpRight size={15} strokeWidth={2.5} />
         </div>
       </div>
     </motion.div>
