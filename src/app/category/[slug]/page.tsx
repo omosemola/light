@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { ArrowLeft, Search, ArrowUpDown, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse } from "lucide-react";
+import { ArrowLeft, Search, ArrowUpDown, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Dumbbell, Shirt, Gem, Smartphone, Watch, Zap } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -66,6 +66,54 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
     description: "Skincare, soaps, hair care, and personal hygiene essentials.",
     subcategories: ["All", "Skincare", "Soaps & Wash", "Hair Care"],
+  },
+  sports: {
+    name: "Sports & Fitness",
+    Icon: Dumbbell,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=1200&q=80",
+    description: "Football boots, gym resistance bands, sports jerseys, and athletic gear.",
+    subcategories: ["All", "Football & Boots", "Gym Gear", "Jerseys"],
+  },
+  wears: {
+    name: "Fashion & Wears",
+    Icon: Shirt,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80",
+    description: "Trendy hoodies, oversized tees, sneakers, and casual campus wear.",
+    subcategories: ["All", "Hoodies & Jackets", "T-Shirts", "Sneakers"],
+  },
+  jewelries: {
+    name: "Jewelries & Ice",
+    Icon: Gem,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=80",
+    description: "Cuban chains, iced rings, bracelets, and stylish pendants.",
+    subcategories: ["All", "Chains & Necklaces", "Rings", "Bracelets"],
+  },
+  gadgets: {
+    name: "Tech & Gadgets",
+    Icon: Smartphone,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
+    description: "Power banks, wireless earbuds, charging cables, and phone stands.",
+    subcategories: ["All", "Power Banks", "Earbuds", "Cables"],
+  },
+  accessories: {
+    name: "Fashion Accessories",
+    Icon: Watch,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=80",
+    description: "Smartwatches, sunglasses, tote bags, caps, and leather belts.",
+    subcategories: ["All", "Watches", "Sunglasses", "Bags & Caps"],
+  },
+  electronics: {
+    name: "Electronics & Appliances",
+    Icon: Zap,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=1200&q=80",
+    description: "Rechargeable study lamps, electric kettles, room fans, and Bluetooth speakers.",
+    subcategories: ["All", "Study Lamps", "Kettles & Cooking", "Speakers & Audio"],
   },
 };
 
@@ -212,6 +260,84 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
       description: "Deep nourishing body lotion for all skin types.",
       subcategory: "Skincare",
+      isAvailable: true,
+    },
+  ],
+  sports: [
+    {
+      id: "sp1",
+      name: "Nike Pro Turf Football Boots (Size 42-45)",
+      price: 18500,
+      vendorId: "v10",
+      vendorName: "Campus Sports",
+      image: "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=800&q=80",
+      description: "Durable artificial turf boots designed for campus match fixtures.",
+      subcategory: "Football & Boots",
+      isAvailable: true,
+    },
+  ],
+  wears: [
+    {
+      id: "w1",
+      name: "Oversized Vintage Graphic Hoodie",
+      price: 12500,
+      vendorId: "v11",
+      vendorName: "Urban Campus Wears",
+      image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80",
+      description: "Heavyweight fleece lined hoodie designed for lecture comfort.",
+      subcategory: "Hoodies & Jackets",
+      isAvailable: true,
+    },
+  ],
+  jewelries: [
+    {
+      id: "j1",
+      name: "Iced Out Cuban Link Chain 12mm",
+      price: 8500,
+      vendorId: "v12",
+      vendorName: "Ice Drip Jewelry",
+      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80",
+      description: "Stainless steel triple plated Cuban link chain with cz stones.",
+      subcategory: "Chains & Necklaces",
+      isAvailable: true,
+    },
+  ],
+  gadgets: [
+    {
+      id: "g2",
+      name: "Fast Charging 20000mAh Power Bank",
+      price: 13500,
+      vendorId: "v13",
+      vendorName: "Tech Hub Campus",
+      image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=800&q=80",
+      description: "22.5W Fast charge power bank with dual USB-C and LED display.",
+      subcategory: "Power Banks",
+      isAvailable: true,
+    },
+  ],
+  accessories: [
+    {
+      id: "ac1",
+      name: "Smart Watch Series 8 (Full Touch Display)",
+      price: 16000,
+      vendorId: "v13",
+      vendorName: "Tech Hub Campus",
+      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
+      description: "Bluetooth call smartwatch with heart rate & sleep tracker.",
+      subcategory: "Watches",
+      isAvailable: true,
+    },
+  ],
+  electronics: [
+    {
+      id: "el1",
+      name: "Rechargeable LED Desk Study Lamp",
+      price: 5500,
+      vendorId: "v14",
+      vendorName: "Hostel Electronics",
+      image: "https://images.unsplash.com/photo-1534073828943-f801091bb18c?auto=format&fit=crop&w=800&q=80",
+      description: "Multi-level brightness eye protection LED lamp with 12h battery.",
+      subcategory: "Study Lamps",
       isAvailable: true,
     },
   ],

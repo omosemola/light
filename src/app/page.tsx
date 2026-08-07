@@ -99,6 +99,36 @@ const CATEGORIES = [
     slug: "care", 
     image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80" 
   },
+  { 
+    name: "Sports", 
+    slug: "sports", 
+    image: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Wears", 
+    slug: "wears", 
+    image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Jewelries", 
+    slug: "jewelries", 
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Gadgets", 
+    slug: "gadgets", 
+    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Accessories", 
+    slug: "accessories", 
+    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=300&q=80" 
+  },
+  { 
+    name: "Electronics", 
+    slug: "electronics", 
+    image: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=300&q=80" 
+  },
 ];
 
 export default function Home() {
