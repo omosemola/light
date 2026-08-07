@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ChevronRight, 
@@ -18,7 +18,9 @@ import {
   Moon,
   Edit3,
   Camera,
-  Check
+  Check,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,6 +34,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { profile, updateProfile, logoutUser, hasSeenOnboarding } = useUserStore();
   const { isDark, toggleTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!hasSeenOnboarding) {
@@ -70,6 +73,19 @@ export default function ProfilePage() {
     window.location.href = "/welcome";
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setEditAvatar(result);
+        updateProfile({ avatar: result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile({
@@ -95,6 +111,15 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       
+      {/* HIDDEN DEVICE FILE INPUT FOR GALLERY / CAMERA SELECTION */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* PREMIUM PROFILE HERO BANNER */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -151,14 +176,16 @@ export default function ProfilePage() {
                 />
               </div>
 
-              {/* EDIT CAMERA OVERLAY FOR REAL USER ACCOUNTS */}
+              {/* EDIT CAMERA OVERLAY FOR REAL USER ACCOUNTS - TRIGGERS DEVICE GALLERY/CAMERA */}
               {!isVisitor && (
                 <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full"
-                  title="Change Profile Avatar"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-0.5 transition-opacity rounded-full"
+                  title="Pick picture from phone / device"
                 >
-                  <Camera size={18} />
+                  <Camera size={20} />
+                  <span className="text-[9px] font-bold">Upload</span>
                 </button>
               )}
             </div>
@@ -284,6 +311,27 @@ export default function ProfilePage() {
           title="Edit Profile Info"
         >
           <form onSubmit={handleSaveProfile} className="space-y-3.5 font-body text-[#18181B] dark:text-zinc-100">
+            
+            {/* DEVICE GALLERY & CAMERA PICKER UI */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block">
+                Profile Avatar Photo
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shrink-0 bg-white shadow-xs">
+                  <Image src={editAvatar || userAvatar} alt="Avatar preview" fill className="object-cover rounded-full" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-10 px-4 bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#E0E7FF] dark:hover:bg-zinc-700 text-[#312E81] dark:text-indigo-300 font-heading font-extrabold text-xs rounded-xl border border-indigo-100 dark:border-zinc-700 flex items-center gap-2 active:scale-95 transition-all"
+                >
+                  <Upload size={15} /> Choose Photo from Phone / Device
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
                 Full Name
@@ -338,7 +386,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                Avatar Image URL
+                Or Enter Avatar Image URL
               </label>
               <input 
                 type="url" 
