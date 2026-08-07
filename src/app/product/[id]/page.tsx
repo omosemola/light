@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
+import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 
@@ -299,6 +300,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   // REVIEWS STATE
   const [reviewsList, setReviewsList] = useState<Review[]>(
@@ -469,21 +471,32 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           transition={{ duration: 0.4 }}
           className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-3"
         >
-          {/* VENDOR LINK (SITTING DIRECTLY IN PARENT CARD WITH REDUCED SIZES) */}
-          <div className="flex items-center justify-between gap-2">
-            <Link 
-              href={`/vendor/${product.vendorId}`}
-              className="group/vendor inline-flex items-center gap-1.5 text-xs font-body font-semibold text-[#312E81] dark:text-indigo-300 hover:text-[#1E1B4B] dark:hover:text-white transition-colors"
-              title={`Visit ${product.vendorName} Store`}
-            >
-              <Store size={13} className="text-[#312E81] dark:text-indigo-400 group-hover/vendor:scale-110 transition-transform shrink-0" />
-              <span className="underline underline-offset-2 decoration-indigo-300 dark:decoration-indigo-600 group-hover/vendor:decoration-[#312E81]">
-                {product.vendorName}
-              </span>
-              <span className="text-[10px] text-[#71717A] dark:text-zinc-400 font-normal group-hover/vendor:translate-x-0.5 transition-transform">
-                (Store ↗)
-              </span>
-            </Link>
+          {/* VENDOR LINK & CHAT MERCHANT BUTTON */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Link 
+                href={`/vendor/${product.vendorId}`}
+                className="group/vendor inline-flex items-center gap-1.5 text-xs font-body font-semibold text-[#312E81] dark:text-indigo-300 hover:text-[#1E1B4B] dark:hover:text-white transition-colors"
+                title={`Visit ${product.vendorName} Store`}
+              >
+                <Store size={13} className="text-[#312E81] dark:text-indigo-400 group-hover/vendor:scale-110 transition-transform shrink-0" />
+                <span className="underline underline-offset-2 decoration-indigo-300 dark:decoration-indigo-600 group-hover/vendor:decoration-[#312E81]">
+                  {product.vendorName}
+                </span>
+                <span className="text-[10px] text-[#71717A] dark:text-zinc-400 font-normal group-hover/vendor:translate-x-0.5 transition-transform">
+                  (Store ↗)
+                </span>
+              </Link>
+
+              <button
+                onClick={() => setIsChatModalOpen(true)}
+                className="px-2.5 py-1 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-300 hover:text-white font-heading font-extrabold text-[10px] md:text-xs rounded-full border border-indigo-100 dark:border-indigo-800 transition-all flex items-center gap-1 shadow-2xs group"
+                title={`Chat directly with ${product.vendorName}`}
+              >
+                <MessageSquare size={11} className="group-hover:scale-110 transition-transform" />
+                <span>Chat Merchant</span>
+              </button>
+            </div>
 
             <div className="flex items-center gap-1 text-[11px] font-body text-[#71717A] dark:text-zinc-400">
               <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
@@ -867,6 +880,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </button>
         </div>
       </Modal>
+
+      {/* MERCHANT CHAT MODAL DRAWER */}
+      <MerchantChatModal
+        isOpen={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+        vendor={{
+          id: product.vendorId,
+          name: product.vendorName,
+          avatar: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
+          phone: "+234 812 345 9900",
+        }}
+        initialProductContext={product.name}
+      />
 
     </div>
   );
