@@ -3,7 +3,7 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --font-heading: var(--font-plus-jakarta-sans), sans-serif;
+  --font-heading: var(--font-quicksand), sans-serif;
   --font-body: var(--font-plus-jakarta-sans), sans-serif;
 }
 

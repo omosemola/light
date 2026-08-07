@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Quicksand, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -8,8 +8,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { PWAInstallBanner } from "@/components/ui/PWAInstallBanner";
 
-const inter = Inter({
-  variable: "--font-inter",
+const quicksand = Quicksand({
+  variable: "--font-quicksand",
   subsets: ["latin"],
 });
 
@@ -52,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
+      className={`${quicksand.variable} ${plusJakartaSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-[#FAFAFA] font-body transition-colors duration-200">

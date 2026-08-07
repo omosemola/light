@@ -302,7 +302,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // REVIEWS STATE
   const [reviewsList, setReviewsList] = useState<Review[]>(
-    INITIAL_REVIEWS[product.id] || INITIAL_REVIEWS.p1
+    INITIAL_REVIEWS[product.id] || INITIAL_REVIEWS.p1 || []
   );
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
