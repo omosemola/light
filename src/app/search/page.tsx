@@ -207,7 +207,9 @@ export default function SearchPage() {
         product.description.toLowerCase().includes(q);
 
       // Category match
-      const matchesCategory = selectedCategory === "All" || product.category.toLowerCase() === selectedCategory.toLowerCase();
+      const matchesCategory = selectedCategory === "All" || 
+        product.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+        selectedCategory.toLowerCase().includes(product.category.toLowerCase());
 
       // Vendor match
       const matchesVendor = selectedVendor === "All Vendors" || product.vendorName === selectedVendor;
@@ -336,15 +338,15 @@ export default function SearchPage() {
           </button>
         </div>
 
-        {/* Quick Category Pills */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-4xl mx-auto pt-1">
+        {/* Quick Category Pills - Smooth horizontal scroll */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-4xl mx-auto pt-1 pb-0.5 px-0.5">
           {CATEGORY_OPTIONS.map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all ${
+                className={`px-4 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap shrink-0 transition-all ${
                   isSelected
                     ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
                     : "bg-[#F4F3FF] dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-indigo-100/50 dark:hover:bg-zinc-700"
@@ -513,6 +515,28 @@ export default function SearchPage() {
                 >
                   <span>{opt.label}</span>
                   {sortBy === opt.value && <Check size={14} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* CATEGORY SELECTOR */}
+          <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+            <label className="font-heading font-extrabold text-xs text-[#71717A] dark:text-zinc-400 uppercase tracking-wider block">
+              Product Category
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORY_OPTIONS.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    selectedCategory === cat
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-xs"
+                      : "bg-[#F4F3FF]/50 dark:bg-zinc-800/50 text-[#71717A] dark:text-zinc-300 border-indigo-100 dark:border-zinc-700 hover:text-[#312E81] dark:hover:text-indigo-300"
+                  }`}
+                >
+                  {cat}
                 </button>
               ))}
             </div>
