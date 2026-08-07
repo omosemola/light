@@ -42,6 +42,8 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
+  const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
+
   const handleFinishSignup = (userEmail = email, userName = name) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
@@ -49,6 +51,8 @@ export default function SignupPage() {
       name: userName || "Alex Johnson",
       email: userEmail || "alex.johnson@gmail.com",
       hostel: hostel || "Main Campus (Mellanby Hall)",
+      avatar: DEFAULT_HUMAN_AVATAR,
+      isVisitor: false,
     });
 
     setToastMessage(`Account created! Welcome to Light, ${(userName || "Student").split(" ")[0]}! 🎉`);
@@ -66,6 +70,7 @@ export default function SignupPage() {
       hostel: "Campus Guest",
       phone: "",
       avatar: "/visitor-avatar.png",
+      isVisitor: true,
     });
 
     setToastMessage("Welcome, Visitor! 🚀");

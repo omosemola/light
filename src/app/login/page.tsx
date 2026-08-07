@@ -40,12 +40,16 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
+  const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
+
   const handleFinishLogin = (userEmail = email) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
     updateProfile({
       name: userEmail.includes("@") ? userEmail.split("@")[0].replace(".", " ") : "Alex Johnson",
       email: userEmail || "alex.johnson@gmail.com",
+      avatar: DEFAULT_HUMAN_AVATAR,
+      isVisitor: false,
     });
 
     setToastMessage("Welcome back to Light Marketplace! 🚀");
@@ -63,6 +67,7 @@ export default function LoginPage() {
       hostel: "Campus Guest",
       phone: "",
       avatar: "/visitor-avatar.png",
+      isVisitor: true,
     });
 
     setToastMessage("Welcome, Visitor! 🚀");

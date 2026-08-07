@@ -49,8 +49,15 @@ export default function ProfilePage() {
   const [editPhone, setEditPhone] = useState(profile.phone);
   const [editAvatar, setEditAvatar] = useState(profile.avatar);
 
+  const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
   const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
-  const userAvatar = isVisitor ? "/visitor-avatar.png" : (profile.avatar || "/visitor-avatar.png");
+  const userAvatar = isVisitor
+    ? "/visitor-avatar.png"
+    : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
+
+  const displayHostel = isVisitor
+    ? "Campus Guest"
+    : (profile.hostel && profile.hostel !== "Campus Guest" ? profile.hostel : "Main Campus (Mellanby Hall)");
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false);
@@ -166,7 +173,7 @@ export default function ProfilePage() {
                 </p>
               ) : null}
               <span className="inline-block bg-white/10 text-white border border-white/20 px-2.5 py-0.5 rounded-full text-[11px] font-medium">
-                📍 {profile.hostel}
+                📍 {displayHostel}
               </span>
             </div>
           </div>
