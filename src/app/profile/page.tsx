@@ -15,7 +15,10 @@ import {
   ShoppingBag, 
   Heart, 
   Sun, 
-  Moon 
+  Moon,
+  Edit3,
+  Camera,
+  Check
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +30,7 @@ import { Modal } from "@/components/ui/Modal";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { profile, logoutUser, hasSeenOnboarding } = useUserStore();
+  const { profile, updateProfile, logoutUser, hasSeenOnboarding } = useUserStore();
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -37,6 +40,17 @@ export default function ProfilePage() {
   }, [hasSeenOnboarding, router]);
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Edit Profile Form State
+  const [editName, setEditName] = useState(profile.name);
+  const [editEmail, setEditEmail] = useState(profile.email);
+  const [editHostel, setEditHostel] = useState(profile.hostel);
+  const [editPhone, setEditPhone] = useState(profile.phone);
+  const [editAvatar, setEditAvatar] = useState(profile.avatar);
+
+  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
+  const userAvatar = isVisitor ? "/visitor-avatar.png" : (profile.avatar || "/visitor-avatar.png");
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false);
@@ -49,6 +63,18 @@ export default function ProfilePage() {
     window.location.href = "/welcome";
   };
 
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile({
+      name: editName,
+      email: editEmail,
+      hostel: editHostel,
+      phone: editPhone,
+      avatar: editAvatar,
+    });
+    setIsEditModalOpen(false);
+  };
+
   const menuItems = [
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: "14 Recent Orders" },
@@ -58,8 +84,6 @@ export default function ProfilePage() {
     { icon: HelpCircle, label: "Help & Campus Support", href: "/support" },
     { icon: Settings, label: "Security & Account Settings", href: "/profile/settings" },
   ];
-
-  const userAvatar = profile.name === "Visitor" ? "/visitor-avatar.png" : (profile.avatar || "/visitor-avatar.png");
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
@@ -82,20 +106,34 @@ export default function ProfilePage() {
               My Profile
             </h1>
             
-            {/* THEME SWITCH BUTTON */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/20 backdrop-blur-sm transition-all active:scale-95 flex items-center gap-1.5 text-xs font-semibold px-3.5"
-              title="Toggle Theme"
-            >
-              {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-indigo-300" />}
-              <span>{isDark ? "Light" : "Dark"}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* EDIT INFO BUTTON (ONLY FOR REAL USER ACCOUNTS, HIDDEN FOR VISITORS) */}
+              {!isVisitor && (
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-heading font-extrabold text-xs rounded-full border border-white/20 backdrop-blur-sm transition-all active:scale-95 flex items-center gap-1.5 shadow-sm"
+                  title="Edit Account Info"
+                >
+                  <Edit3 size={13} className="text-[#FBBF24]" />
+                  <span>Edit Info</span>
+                </button>
+              )}
+
+              {/* THEME SWITCH BUTTON */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/20 backdrop-blur-sm transition-all active:scale-95 flex items-center gap-1.5 text-xs font-semibold px-3.5"
+                title="Toggle Theme"
+              >
+                {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-indigo-300" />}
+                <span>{isDark ? "Light" : "Dark"}</span>
+              </button>
+            </div>
           </div>
           
           <div className="flex items-center gap-4.5">
-            {/* UNCHANGEABLE PROFILE AVATAR CONTAINER */}
-            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-[#FBBF24] p-1 shadow-lg shrink-0 bg-white/10 overflow-hidden">
+            {/* PROFILE AVATAR CONTAINER (EXACTLY MATCHING HOMEPAGE HIGHLIGHT & SIZING) */}
+            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-[#FBBF24] p-0.5 shadow-md shrink-0 bg-white overflow-hidden group">
               <div className="w-full h-full rounded-full overflow-hidden relative">
                 <Image 
                   src={userAvatar} 
@@ -105,6 +143,17 @@ export default function ProfilePage() {
                   className="object-cover"
                 />
               </div>
+
+              {/* EDIT CAMERA OVERLAY FOR REAL USER ACCOUNTS */}
+              {!isVisitor && (
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full"
+                  title="Change Profile Avatar"
+                >
+                  <Camera size={18} />
+                </button>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -219,6 +268,98 @@ export default function ProfilePage() {
         </motion.button>
 
       </div>
+
+      {/* EDIT PROFILE MODAL (REAL USER ACCOUNTS) */}
+      {!isVisitor && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="Edit Profile Info"
+        >
+          <form onSubmit={handleSaveProfile} className="space-y-3.5 font-body text-[#18181B] dark:text-zinc-100">
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Full Name
+              </label>
+              <input 
+                type="text" 
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Email Address
+              </label>
+              <input 
+                type="email" 
+                required
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Hostel / Campus Residence
+              </label>
+              <input 
+                type="text" 
+                required
+                value={editHostel}
+                onChange={(e) => setEditHostel(e.target.value)}
+                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Phone Number
+              </label>
+              <input 
+                type="tel" 
+                required
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Avatar Image URL
+              </label>
+              <input 
+                type="url" 
+                value={editAvatar}
+                onChange={(e) => setEditAvatar(e.target.value)}
+                placeholder="https://..."
+                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+              />
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="submit"
+                className="flex-1 h-11 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs rounded-xl shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Check size={16} /> Save Changes
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 h-11 bg-slate-100 dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 font-heading font-bold text-xs rounded-xl active:scale-95 transition-transform"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* LOGOUT CONFIRMATION MODAL */}
       <Modal

@@ -9,6 +9,7 @@ export interface UserProfile {
   avatar: string;
   points: number;
   savedStoresCount: number;
+  isVisitor?: boolean;
 }
 
 interface UserState {

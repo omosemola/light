@@ -18,13 +18,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
 
-  useEffect(() => {
-    setMounted(true);
-    const savedTheme = (localStorage.getItem("campus_theme") as Theme) || "light";
-    setThemeState(savedTheme);
-    applyTheme(savedTheme);
-  }, []);
-
   const applyTheme = (newTheme: Theme) => {
     let dark = false;
     if (newTheme === "system") {
@@ -40,6 +33,30 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.classList.remove("dark");
     }
   };
+
+  useEffect(() => {
+    setMounted(true);
+    const savedTheme = (localStorage.getItem("campus_theme") as Theme) || "light";
+    setThemeState(savedTheme);
+    applyTheme(savedTheme);
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      const currentTheme = (localStorage.getItem("campus_theme") as Theme) || "light";
+      if (currentTheme === "system") {
+        const isSystemDark = e.matches;
+        setIsDark(isSystemDark);
+        if (isSystemDark) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
