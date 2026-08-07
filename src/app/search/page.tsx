@@ -451,11 +451,12 @@ export default function SearchPage() {
 
       </div>
 
-      {/* RICH FILTER MODAL DRAWER */}
+      {/* RICH 70% PAGE HEIGHT FILTER MODAL DRAWER */}
       <Modal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         title="Filter & Sort Products"
+        isBottomSheet
       >
         <div className="space-y-6 font-body text-[#18181B] dark:text-zinc-100 text-sm">
           
