@@ -258,8 +258,15 @@ export default function SignupPage() {
       </motion.div>
 
       {/* Footer copyright */}
-      <div className="text-center text-xs text-[#71717A] font-body max-w-md mx-auto w-full pt-4">
-        By continuing, you agree to Light Marketplace&apos;s Terms & Privacy Policy.
+      <div className="text-center text-xs text-[#71717A] dark:text-zinc-400 font-body max-w-md mx-auto w-full pt-4">
+        By continuing, you agree to Light Marketplace&apos;s{" "}
+        <Link href="/terms" className="font-heading font-bold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B] transition-colors">
+          Terms of Service
+        </Link>{" "}
+        &{" "}
+        <Link href="/privacy" className="font-heading font-bold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B] transition-colors">
+          Privacy Policy
+        </Link>.
       </div>
     </div>
   );

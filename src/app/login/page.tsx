@@ -222,8 +222,15 @@ export default function LoginPage() {
       </motion.div>
 
       {/* Footer copyright */}
-      <div className="text-center text-xs text-[#71717A] font-body max-w-md mx-auto w-full pt-4">
-        Light Marketplace • Campus Food & Provisioning
+      <div className="text-center text-xs text-[#71717A] dark:text-zinc-400 font-body max-w-md mx-auto w-full pt-4">
+        Light Marketplace • View our{" "}
+        <Link href="/terms" className="font-heading font-bold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B] transition-colors">
+          Terms
+        </Link>{" "}
+        &{" "}
+        <Link href="/privacy" className="font-heading font-bold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B] transition-colors">
+          Privacy Policy
+        </Link>.
       </div>
     </div>
   );
