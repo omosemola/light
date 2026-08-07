@@ -131,25 +131,55 @@ const SEARCH_CATALOG: Product[] = [
     reviewsCount: 150,
   },
   {
-    id: "d2",
-    name: "Chilled Iced Hibiscus Zobo 50cl",
-    price: 1000,
-    vendorId: "v2",
-    vendorName: "Fresh Squeeze",
+    id: "g1",
+    name: "Indomie Super Pack (Carton of 40)",
+    price: 14500,
+    vendorId: "v7",
+    vendorName: "Campus Mart",
+    vendorRating: 4.7,
+    image: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=800&q=80",
+    description: "Carton of Indomie Instant Noodles Super Pack 120g.",
+    prepTime: "10 mins",
+    isAvailable: true,
+    category: "Groceries",
+    rating: 4.7,
+    reviewsCount: 34,
+  },
+  {
+    id: "pas1",
+    name: "Jumbo Beef Meat Pie",
+    price: 1200,
+    vendorId: "v8",
+    vendorName: "Tasty Bakes",
     vendorRating: 4.9,
-    image: "https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=800&q=80",
-    description: "Traditional refreshing Zobo drink infused with ginger, pineapple, and cloves.",
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+    description: "Flaky golden crust filled with seasoned minced beef, potatoes, and carrots.",
     prepTime: "5 mins",
     isAvailable: true,
-    category: "Drinks",
+    category: "Pastries",
     rating: 4.9,
-    reviewsCount: 110,
+    reviewsCount: 145,
+  },
+  {
+    id: "c1",
+    name: "Moisturizing Cocoa Butter Lotion 400ml",
+    price: 3200,
+    vendorId: "v9",
+    vendorName: "PharmaCare",
+    vendorRating: 4.8,
+    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
+    description: "Deep nourishing body lotion for all skin types.",
+    prepTime: "10 mins",
+    isAvailable: true,
+    category: "Care",
+    rating: 4.8,
+    reviewsCount: 29,
   },
 ];
 
-const CATEGORY_OPTIONS = ["All", "Food", "Snacks", "Drinks", "Groceries", "Stationery"];
-const VENDOR_OPTIONS = ["All Vendors", "Mama Cass", "Pizza Hub", "Fresh Squeeze", "Campus Books", "Campus Bites"];
-const POPULAR_SUGGESTIONS = ["Jollof Rice", "Suya Pizza", "Orange Juice", "Mama Cass", "Burger & Chips", "Notebooks"];
+const CATEGORY_OPTIONS = ["All", "Food", "Snacks", "Drinks", "Groceries", "Pastries", "Stationery", "Care"];
+const VENDOR_OPTIONS = ["All Vendors", "Mama Cass", "Fresh Squeeze", "Campus Books", "Pizza Hub", "Campus Bites", "Campus Mart", "Tasty Bakes", "PharmaCare"];
+const POPULAR_SUGGESTIONS = ["Jollof Rice", "Suya Pizza", "Orange Juice", "Meat Pie", "Indomie Noodles", "Mama Cass", "Notebooks", "Body Lotion"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
