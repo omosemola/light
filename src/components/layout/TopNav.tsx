@@ -34,8 +34,8 @@ export function TopNav() {
           <div className="w-10 h-10 rounded-2xl relative overflow-hidden shadow-sm group-hover:scale-105 transition-transform border border-slate-200 dark:border-zinc-700 bg-white p-1">
             <img src="/logo.png" alt="Lightson Marketplace" className="w-full h-full object-contain" />
           </div>
-          <span className="text-2xl font-extrabold text-[#18181B] dark:text-zinc-100 font-heading tracking-tight">
-            Lightson<span className="text-[#F59E0B] dark:text-amber-400"> Marketplace</span>
+          <span className="text-2xl font-extrabold text-[#7E22CE] dark:text-purple-400 font-heading tracking-tight">
+            Lights<span className="text-[#F59E0B] dark:text-amber-400">on</span> <span className="text-[#7E22CE] dark:text-purple-300">Marketplace</span>
           </span>
         </Link>
         

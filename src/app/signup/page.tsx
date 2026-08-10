@@ -123,8 +123,8 @@ export default function SignupPage() {
           <div className="w-9 h-9 rounded-xl relative overflow-hidden border border-slate-200 shadow-sm bg-white p-0.5">
             <img src="/logo.png" alt="Lightson Marketplace" className="w-full h-full object-contain" />
           </div>
-          <span className="font-heading font-extrabold text-lg tracking-tight">
-            Lightson<span className="text-[#F59E0B]"> Marketplace</span>
+          <span className="font-heading font-extrabold text-lg tracking-tight text-[#7E22CE] dark:text-purple-400">
+            Lights<span className="text-[#F59E0B] dark:text-amber-400">on</span> <span className="text-[#7E22CE] dark:text-purple-300">Marketplace</span>
           </span>
         </div>
       </div>

@@ -239,8 +239,8 @@ export default function WelcomePage() {
             <img src="/logo.png" alt="Lightson Marketplace" className="w-full h-full object-contain" />
           </div>
           <div>
-            <span className="text-xl font-extrabold font-heading text-[#18181B] tracking-tight block leading-none">
-              Lightson<span className="text-[#F59E0B]"> Marketplace</span>
+            <span className="text-xl font-extrabold font-heading text-[#7E22CE] tracking-tight block leading-none">
+              Lights<span className="text-[#F59E0B]">on</span> <span className="text-[#7E22CE]">Marketplace</span>
             </span>
             <span className="text-[10px] text-[#71717A] font-semibold tracking-wider uppercase">Campus Delivery</span>
           </div>
