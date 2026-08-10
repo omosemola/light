@@ -35,7 +35,7 @@ export default function CartPage() {
   }
 
   const subtotal = getTotal();
-  const fee = 200; // Campus delivery service fee
+  const fee = 500; // Fixed Vendor Delivery Fee
   const total = subtotal + fee;
 
   return (
@@ -130,7 +130,7 @@ export default function CartPage() {
             <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-[#71717A] dark:text-zinc-400 font-normal">
-            <span>Hostel Delivery Fee</span>
+            <span>Vendor Delivery Fee (Fixed)</span>
             <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{fee.toLocaleString()}</span>
           </div>
         </div>

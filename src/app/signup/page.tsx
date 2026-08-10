@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Mail, Lock, Building, CheckCircle2, UserPlus } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 
@@ -38,7 +38,8 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [hostel, setHostel] = useState("Main Campus (Mellanby Hall)");
+  const [hostel, setHostel] = useState("Mellanby Hall");
+  const [addressDetail, setAddressDetail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -50,7 +51,8 @@ export default function SignupPage() {
     updateProfile({
       name: userName || "Alex Johnson",
       email: userEmail || "alex.johnson@gmail.com",
-      hostel: hostel || "Main Campus (Mellanby Hall)",
+      hostel: hostel || "Mellanby Hall",
+      addressDetail: addressDetail || "Room B12, Block C",
       avatar: DEFAULT_HUMAN_AVATAR,
       isVisitor: false,
     });
@@ -227,15 +229,41 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Hostel / Location
+              Hostel / Hall of Residence
             </label>
             <div className="relative">
-              <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
+              <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <select
                 value={hostel}
                 onChange={(e) => setHostel(e.target.value)}
-                placeholder="e.g. Mellanby Hall"
+                className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all appearance-none cursor-pointer"
+              >
+                <option value="Mellanby Hall">Mellanby Hall</option>
+                <option value="Tedder Hall">Tedder Hall</option>
+                <option value="Kuti Hall">Kuti Hall</option>
+                <option value="Sultan Bello Hall">Sultan Bello Hall</option>
+                <option value="Queen Elizabeth II Hall">Queen Elizabeth II Hall</option>
+                <option value="Alexander Brown Hall">Alexander Brown Hall</option>
+                <option value="Independence Hall">Independence Hall</option>
+                <option value="Nnamdi Azikiwe Hall">Nnamdi Azikiwe Hall</option>
+                <option value="Obafemi Awolowo Hall">Obafemi Awolowo Hall</option>
+                <option value="Off-Campus / Private Residence">Off-Campus / Private Residence</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+              Room / Street / Detailed Address
+            </label>
+            <div className="relative">
+              <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                required
+                value={addressDetail}
+                onChange={(e) => setAddressDetail(e.target.value)}
+                placeholder="e.g. Room B12, Block C or 12 Abadina Street"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>

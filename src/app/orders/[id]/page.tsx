@@ -345,41 +345,41 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        {/* COURIER RIDER CARD */}
+        {/* VENDOR DIRECT SELF-DELIVERY CARD */}
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="relative w-12 h-12 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-xs">
-              <Image src={order.courier.avatar} alt={order.courier.name} fill className="object-cover" />
+            <div className="relative w-12 h-12 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-xs p-0.5">
+              <Image src={order.vendorAvatar} alt={order.vendorName} fill className="object-cover" />
             </div>
 
             <div>
               <div className="flex items-center gap-1.5">
                 <h4 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100">
-                  {order.courier.name}
+                  {order.vendorName} Dispatch
                 </h4>
                 <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  Student Rider
+                  Store Self-Delivery
                 </span>
               </div>
               <p className="text-xs font-medium text-[#71717A] dark:text-zinc-400">
-                ⭐ {order.courier.rating} • {order.courier.deliveriesCount} Hostel Deliveries
+                Directly delivered by vendor • Fixed ₦500 Delivery Fee
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <a
-              href={`tel:${order.courier.phone}`}
+              href={`tel:${order.vendorPhone}`}
               className="w-10 h-10 rounded-2xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white flex items-center justify-center transition-colors shadow-2xs"
-              title="Call Courier Rider"
+              title="Call Store Delivery Team"
             >
               <Phone size={18} />
             </a>
 
             <button
-              onClick={handleOpenCourierChat}
+              onClick={handleOpenMerchantChat}
               className="w-10 h-10 rounded-2xl bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white flex items-center justify-center transition-colors shadow-md active:scale-95"
-              title="Chat Courier Rider"
+              title="Chat Live with Store"
             >
               <MessageSquare size={18} />
             </button>

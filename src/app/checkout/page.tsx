@@ -15,9 +15,10 @@ import {
   Store, 
   CheckCircle2, 
   Loader2,
-  Banknote
+  Banknote,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { createLiveOrder } from "@/actions/orders";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"paystack" | "cash">("paystack");
 
   const [formData, setFormData] = useState({
-    location: profile.hostel || "Main Campus (Mellanby Hall)",
+    location: profile.hostel ? `${profile.hostel}${profile.addressDetail ? `, ${profile.addressDetail}` : ""}` : "Mellanby Hall, Block B Room 14",
     phone: profile.phone || "+234 812 345 6789",
     instructions: "",
   });
@@ -44,7 +45,7 @@ export default function CheckoutPage() {
   }, [isMounted, items.length, isProcessing, router]);
 
   const subtotal = getTotal();
-  const fee = 200; // Campus delivery service fee
+  const fee = 500; // Fixed Vendor Delivery Fee
   const total = subtotal + fee;
 
   if (!isMounted || items.length === 0) {
@@ -55,11 +56,27 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate Paystack initialization and payment processing
-    setTimeout(() => {
-      clearCart();
+    const res = await createLiveOrder({
+      userEmail: profile.email,
+      userName: profile.name,
+      totalAmount: total,
+      deliveryLocation: formData.location,
+      deliveryInstructions: formData.instructions,
+      paymentMethod: paymentMethod === "paystack" ? "Paystack (Card/Transfer)" : "Pay on Arrival",
+      paymentReference: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      items: items.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    });
+
+    clearCart();
+    if (res.success && res.order) {
+      router.push(`/orders/${res.order.id}?success=true`);
+    } else {
       router.push("/orders?success=true");
-    }, 2200);
+    }
   };
 
   return (
@@ -275,7 +292,7 @@ export default function CheckoutPage() {
               <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{subtotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-[#71717A] dark:text-zinc-400">
-              <span>Hostel Delivery Fee</span>
+              <span>Vendor Delivery Fee (Fixed)</span>
               <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{fee.toLocaleString()}</span>
             </div>
           </div>

@@ -34,6 +34,27 @@ const QUICK_PRESETS = [
   "Can I request extra cutlery/sauce?",
 ];
 
+const playNotificationChime = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    // Audio autoplay fail silent
+  }
+};
+
 export function MerchantChatModal({
   isOpen,
   onClose,
@@ -128,6 +149,9 @@ export function MerchantChatModal({
         } else if (lower.includes("custom") || lower.includes("sauce") || lower.includes("cutlery") || lower.includes("extra")) {
           merchantReply = `Noted! Please specify your preferences in the order notes during checkout, and we will package it accordingly. 🎁`;
         }
+
+        // Trigger sound chime & notification
+        playNotificationChime();
 
         setMessages((prev) => [
           ...prev,
