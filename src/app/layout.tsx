@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     title: "Lightson Marketplace",
   },
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   formatDetection: {
     telephone: false,
