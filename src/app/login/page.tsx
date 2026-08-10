@@ -116,10 +116,8 @@ export default function LoginPage() {
           <ArrowLeft size={20} />
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl relative overflow-hidden border border-slate-200 shadow-sm bg-white p-0.5">
-            <img src="/logo.png" alt="Lightson Marketplace" className="w-full h-full object-contain" />
-          </div>
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Lightson Marketplace" className="h-11 w-auto object-contain" />
           <span className="font-heading font-extrabold text-lg tracking-tight text-[#7E22CE] dark:text-purple-400">
             Lights<span className="text-[#F59E0B] dark:text-amber-400">on</span> <span className="text-[#7E22CE] dark:text-purple-300">Marketplace</span>
           </span>
