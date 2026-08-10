@@ -1,6 +1,6 @@
 {
-  "name": "Light Marketplace",
-  "short_name": "Light",
+  "name": "Lightson Marketplace",
+  "short_name": "Lightson",
   "description": "A premium, modern, mobile-first campus marketplace.",
   "start_url": "/",
   "display": "standalone",

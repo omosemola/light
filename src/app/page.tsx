@@ -102,7 +102,7 @@ const CATEGORIES = [
   { 
     name: "Sports", 
     slug: "sports", 
-    image: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=300&q=80" 
+    image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=300&q=80" 
   },
   { 
     name: "Wears", 

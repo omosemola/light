@@ -424,7 +424,7 @@ export default function ProfilePage() {
       >
         <div className="space-y-4 font-body text-[#18181B] dark:text-zinc-100">
           <p className="text-sm text-[#71717A] dark:text-zinc-300 leading-relaxed">
-            Are you sure you want to log out of your Light Marketplace account? You will need to log back in to manage your saved items and track orders.
+            Are you sure you want to log out of your Lightson Marketplace account? You will need to log back in to manage your saved items and track orders.
           </p>
           <div className="flex flex-col gap-3 pt-2 font-semibold text-sm">
             <button

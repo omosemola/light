@@ -235,12 +235,12 @@ export default function WelcomePage() {
       {/* TOP BRAND BAR */}
       <header className="relative z-10 max-w-md md:max-w-xl mx-auto w-full flex items-center justify-[flex-start]">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl relative overflow-hidden border border-slate-200/80 shadow-md">
-            <img src="/icon-192x192.png" alt="Light Marketplace" className="w-full h-full object-cover" />
+          <div className="w-10 h-10 rounded-2xl relative overflow-hidden border border-slate-200/80 shadow-md bg-white p-1">
+            <img src="/logo.png" alt="Lightson Marketplace" className="w-full h-full object-contain" />
           </div>
           <div>
             <span className="text-xl font-extrabold font-heading text-[#18181B] tracking-tight block leading-none">
-              Light<span className="text-[#312E81]"> Marketplace</span>
+              Lightson<span className="text-[#F59E0B]"> Marketplace</span>
             </span>
             <span className="text-[10px] text-[#71717A] font-semibold tracking-wider uppercase">Campus Delivery</span>
           </div>

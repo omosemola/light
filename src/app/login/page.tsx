@@ -52,7 +52,7 @@ export default function LoginPage() {
       isVisitor: false,
     });
 
-    setToastMessage("Welcome back to Light Marketplace! 🚀");
+    setToastMessage("Welcome back to Lightson Marketplace! 🚀");
     setTimeout(() => {
       window.location.href = "/";
     }, 1000);
@@ -117,11 +117,11 @@ export default function LoginPage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl relative overflow-hidden border border-slate-200 shadow-sm">
-            <img src="/icon-192x192.png" alt="Light Marketplace" className="w-full h-full object-cover" />
+          <div className="w-9 h-9 rounded-xl relative overflow-hidden border border-slate-200 shadow-sm bg-white p-0.5">
+            <img src="/logo.png" alt="Lightson Marketplace" className="w-full h-full object-contain" />
           </div>
           <span className="font-heading font-extrabold text-lg tracking-tight">
-            Light<span className="text-[#312E81]"> Marketplace</span>
+            Lightson<span className="text-[#F59E0B]"> Marketplace</span>
           </span>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function LoginPage() {
 
       {/* Footer copyright */}
       <div className="text-center text-xs text-[#71717A] dark:text-zinc-400 font-body max-w-md mx-auto w-full pt-4">
-        Light Marketplace • View our{" "}
+        Lightson Marketplace • View our{" "}
         <Link href="/terms" className="font-heading font-bold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B] transition-colors">
           Terms
         </Link>{" "}

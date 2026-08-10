@@ -48,7 +48,7 @@ export default function TermsPage() {
               Terms & Privacy Policy
             </h1>
             <p className="text-xs text-slate-300 dark:text-zinc-400 font-normal mt-0.5">
-              Last Updated: August 2026 • Light Marketplace Governance Protocol
+              Last Updated: August 2026 • Lightson Marketplace Governance Protocol
             </p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function TermsPage() {
                 1. Campus Marketplace Operations
               </h2>
               <p>
-                Light Marketplace operates as a multi-vendor platform dedicated to connecting verified campus food vendors, student bakeries, stationery outlets, and campus service providers directly with university students. By creating an account, you agree to provide accurate hostel address details for room-to-room order delivery.
+                Lightson Marketplace operates as a multi-vendor platform dedicated to connecting verified campus food vendors, student bakeries, stationery outlets, and campus service providers directly with university students. By creating an account, you agree to provide accurate hostel address details for room-to-room order delivery.
               </p>
             </section>
 

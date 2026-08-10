@@ -71,7 +71,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     name: "Sports & Fitness",
     Icon: Dumbbell,
     bg: "bg-[#1E1B4B]",
-    heroImage: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80",
     description: "Football boots, gym resistance bands, sports jerseys, and athletic gear.",
     subcategories: ["All", "Football & Boots", "Gym Gear", "Jerseys"],
   },
