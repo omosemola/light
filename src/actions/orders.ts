@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { sendEmail, generateOrderEmailHTML } from "@/lib/email";
 
 export interface CreateOrderInput {
   userId?: string;
@@ -102,6 +103,25 @@ export async function createLiveOrder(input: CreateOrderInput) {
     revalidatePath("/vendor/dashboard");
     revalidatePath("/admin/dashboard");
     revalidatePath("/orders");
+
+    // 4. Send Order Confirmation Email to Student
+    if (input.userEmail) {
+      const emailHtml = generateOrderEmailHTML({
+        customerName: input.userName || "Campus Student",
+        orderId: order.id.slice(-6).toUpperCase(),
+        statusTitle: "Order Received 📦",
+        statusDesc: `Your order from ${order.store.name} has been placed successfully and sent to the kitchen.`,
+        storeName: order.store.name,
+        deliveryLocation: order.deliveryLocation,
+        totalAmount: order.totalAmount,
+      });
+
+      sendEmail({
+        to: input.userEmail,
+        subject: `Order Confirmed (#${order.id.slice(-6).toUpperCase()}) - Lightson Marketplace`,
+        html: emailHtml,
+      }).catch((e) => console.error("Failed to send order email:", e));
+    }
 
     return { success: true, order };
   } catch (error: any) {

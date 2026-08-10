@@ -18,7 +18,10 @@ import {
   ExternalLink,
   Upload,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Volume2,
+  VolumeX,
+  BellRing
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -61,19 +64,63 @@ export default function VendorDashboardPage() {
     }
   };
 
-  const fetchDashboard = async () => {
-    setLoading(true);
+  const [isAlarmMuted, setIsAlarmMuted] = useState(false);
+  const prevPendingCountRef = useRef<number>(0);
+
+  const playVendorOrderAlarm = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      
+      const playTone = (freq: number, startSec: number, durationSec: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startSec);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + startSec);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startSec + durationSec);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + startSec);
+        osc.stop(ctx.currentTime + startSec + durationSec);
+      };
+
+      // Ring two alternating alarm chimes (Ding-Dong Alarm)
+      playTone(880, 0, 0.25);
+      playTone(1174.66, 0.25, 0.4);
+      playTone(880, 0.7, 0.25);
+      playTone(1174.66, 0.95, 0.4);
+    } catch {
+      // Audio autoplay restriction silent fail
+    }
+  };
+
+  const fetchDashboard = async (isPoll = false) => {
+    if (!isPoll) setLoading(true);
     const res = await getVendorDashboardData();
     if (res.success && res.store) {
       setStoreData(res.store);
       setMetrics(res.metrics);
+
+      // Check if new pending orders arrived
+      const currentPending = res.metrics?.pendingOrdersCount || 0;
+      if (isPoll && currentPending > 0 && currentPending > prevPendingCountRef.current && !isAlarmMuted) {
+        playVendorOrderAlarm();
+      }
+      prevPendingCountRef.current = currentPending;
     }
-    setLoading(false);
+    if (!isPoll) setLoading(false);
   };
 
+  // Poll every 8 seconds for live incoming student orders
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+    fetchDashboard(false);
+    const interval = setInterval(() => {
+      fetchDashboard(true);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [isAlarmMuted]);
 
   const handleToggleStore = async () => {
     if (!storeData) return;
@@ -174,6 +221,23 @@ export default function VendorDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                const nextMute = !isAlarmMuted;
+                setIsAlarmMuted(nextMute);
+                if (!nextMute) playVendorOrderAlarm();
+              }}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs ${
+                isAlarmMuted
+                  ? "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300"
+                  : "bg-amber-500 text-white hover:bg-amber-600 animate-pulse"
+              }`}
+              title="Toggle Order Alarm Sound"
+            >
+              {isAlarmMuted ? <VolumeX className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}
+              <span>{isAlarmMuted ? "Alarm Muted" : "Order Alarm Active"}</span>
+            </button>
+
             <Link
               href={`/vendor/${storeData?.id}`}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition"

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { sendEmail, generateOrderEmailHTML } from "@/lib/email";
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
@@ -86,10 +87,48 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: newStatus },
+      include: {
+        user: true,
+        store: true,
+      },
     });
 
     revalidatePath("/vendor/dashboard");
     revalidatePath(`/orders/${orderId}`);
+
+    // Send transactional status update email
+    if (updatedOrder.user?.email) {
+      let statusTitle = `Order Update: ${newStatus}`;
+      let statusDesc = `Your order status has been updated to ${newStatus}.`;
+
+      if (newStatus === OrderStatus.ACCEPTED || newStatus === OrderStatus.PREPARING) {
+        statusTitle = "Kitchen Preparing Meal 👨‍🍳";
+        statusDesc = `${updatedOrder.store.name} has accepted your order and is packaging your meal.`;
+      } else if (newStatus === OrderStatus.OUT_FOR_DELIVERY) {
+        statusTitle = "Out for Self-Delivery 🛵";
+        statusDesc = `${updatedOrder.store.name}'s self-delivery team is en route to your hostel location (${updatedOrder.deliveryLocation}).`;
+      } else if (newStatus === OrderStatus.DELIVERED) {
+        statusTitle = "Order Delivered 🎉";
+        statusDesc = `Your meal from ${updatedOrder.store.name} has been delivered to ${updatedOrder.deliveryLocation}. Enjoy your food!`;
+      }
+
+      const emailHtml = generateOrderEmailHTML({
+        customerName: updatedOrder.user.name || "Campus Student",
+        orderId: updatedOrder.id.slice(-6).toUpperCase(),
+        statusTitle,
+        statusDesc,
+        storeName: updatedOrder.store.name,
+        deliveryLocation: updatedOrder.deliveryLocation,
+        totalAmount: updatedOrder.totalAmount,
+      });
+
+      sendEmail({
+        to: updatedOrder.user.email,
+        subject: `Order Update: ${statusTitle} (#${updatedOrder.id.slice(-6).toUpperCase()})`,
+        html: emailHtml,
+      }).catch((e) => console.error("Failed to send status update email:", e));
+    }
+
     return { success: true, order: updatedOrder };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to update order status" };
