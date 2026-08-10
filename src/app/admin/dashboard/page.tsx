@@ -91,33 +91,33 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-        {/* METRICS CARDS */}
+        {/* CLICKABLE METRICS CARDS */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <motion.div onClick={() => setActiveTab("orders")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-emerald-500 transition-all active:scale-[0.98]">
             <DollarSign className="w-5 h-5 text-emerald-400 mb-2" />
             <span className="text-[11px] font-medium text-slate-400 uppercase">Gross Sales (GMV)</span>
             <h3 className="text-xl font-extrabold text-white mt-0.5">₦{metrics?.totalGMV?.toLocaleString() || 0}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <motion.div onClick={() => setActiveTab("stores")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-blue-500 transition-all active:scale-[0.98]">
             <Store className="w-5 h-5 text-blue-400 mb-2" />
             <span className="text-[11px] font-medium text-slate-400 uppercase">Active Vendors</span>
             <h3 className="text-xl font-extrabold text-white mt-0.5">{metrics?.totalStores || 0}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <motion.div onClick={() => setActiveTab("orders")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-purple-500 transition-all active:scale-[0.98]">
             <ShoppingBag className="w-5 h-5 text-purple-400 mb-2" />
             <span className="text-[11px] font-medium text-slate-400 uppercase">Total Orders</span>
             <h3 className="text-xl font-extrabold text-white mt-0.5">{metrics?.totalOrders || 0}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <motion.div onClick={() => setActiveTab("stores")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-indigo-500 transition-all active:scale-[0.98]">
             <Users className="w-5 h-5 text-indigo-400 mb-2" />
             <span className="text-[11px] font-medium text-slate-400 uppercase">Total Users</span>
             <h3 className="text-xl font-extrabold text-white mt-0.5">{metrics?.totalUsers || 0}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <motion.div onClick={() => setActiveTab("tickets")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-amber-500 transition-all active:scale-[0.98]">
             <HelpCircle className="w-5 h-5 text-amber-400 mb-2" />
             <span className="text-[11px] font-medium text-slate-400 uppercase">Open Tickets</span>
             <h3 className="text-xl font-extrabold text-amber-400 mt-0.5">{metrics?.openTicketsCount || 0}</h3>

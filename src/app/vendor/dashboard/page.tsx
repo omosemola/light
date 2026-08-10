@@ -21,11 +21,13 @@ import {
   Image as ImageIcon,
   Volume2,
   VolumeX,
-  BellRing
+  BellRing,
+  MessageSquare
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { 
   getVendorDashboardData, 
   updateOrderStatus, 
@@ -39,9 +41,11 @@ export default function VendorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
-  const [selectedTab, setSelectedTab] = useState<"orders" | "products">("orders");
+  const [selectedTab, setSelectedTab] = useState<"orders" | "products" | "chats">("orders");
   const [orderFilter, setOrderFilter] = useState<string>("ALL");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [vendorChatStudent, setVendorChatStudent] = useState<any>(null);
+  const [isVendorChatOpen, setIsVendorChatOpen] = useState(false);
 
   // Add Product Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -262,9 +266,9 @@ export default function VendorDashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-        {/* METRICS CARDS */}
+        {/* CLICKABLE METRICS CARDS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <motion.div onClick={() => setSelectedTab("orders")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-emerald-500 transition-all active:scale-[0.98]">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-2">
               <DollarSign className="w-5 h-5" />
             </div>
@@ -272,7 +276,7 @@ export default function VendorDashboardPage() {
             <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">₦{metrics?.totalRevenue?.toLocaleString() || "0"}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <motion.div onClick={() => setSelectedTab("orders")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-amber-500 transition-all active:scale-[0.98]">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-2">
               <Clock className="w-5 h-5" />
             </div>
@@ -280,7 +284,7 @@ export default function VendorDashboardPage() {
             <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{metrics?.pendingOrdersCount || 0}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <motion.div onClick={() => setSelectedTab("products")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-blue-500 transition-all active:scale-[0.98]">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-2">
               <Package className="w-5 h-5" />
             </div>
@@ -288,37 +292,48 @@ export default function VendorDashboardPage() {
             <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{metrics?.totalProducts || 0}</h3>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center mb-2">
-              <CheckCircle2 className="w-5 h-5" />
+          <motion.div onClick={() => setSelectedTab("chats")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-indigo-500 transition-all active:scale-[0.98]">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-2">
+              <MessageSquare className="w-5 h-5" />
             </div>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Completed Orders</span>
-            <h3 className="text-2xl font-black text-teal-600 dark:text-teal-400 mt-0.5">{metrics?.completedOrdersCount || 0}</h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Customer Chats</span>
+            <h3 className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{storeData?.orders?.length || 0}</h3>
           </motion.div>
         </div>
 
         {/* SECTION TABS */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setSelectedTab("orders")}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition shrink-0 cursor-pointer ${
                 selectedTab === "orders"
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              Order Processing ({storeData?.orders?.length || 0})
+              📦 Order Processing ({storeData?.orders?.length || 0})
             </button>
             <button
               onClick={() => setSelectedTab("products")}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
+              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition shrink-0 cursor-pointer ${
                 selectedTab === "products"
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              Product Inventory ({storeData?.products?.length || 0})
+              🍔 Product Inventory ({storeData?.products?.length || 0})
+            </button>
+            <button
+              onClick={() => setSelectedTab("chats")}
+              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                selectedTab === "chats"
+                  ? "bg-[#312E81] text-white dark:bg-indigo-600 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60"
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Customer Live Chats</span>
             </button>
           </div>
 
@@ -510,7 +525,68 @@ export default function VendorDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* CUSTOMER LIVE CHATS TAB */}
+        {selectedTab === "chats" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-indigo-500" />
+                Active Student Live Chats ({storeData?.orders?.length || 0})
+              </h3>
+              <span className="text-xs text-slate-500">Tap a chat to reply live to the customer</span>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {storeData?.orders?.length > 0 ? (
+                storeData.orders.map((ord: any) => (
+                  <div key={ord.id} className="py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-slate-800 text-[#312E81] dark:text-indigo-400 font-extrabold flex items-center justify-center text-base border border-indigo-100 dark:border-slate-700 shrink-0">
+                        {ord.user?.name ? ord.user.name[0].toUpperCase() : "S"}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white">{ord.user?.name || "Campus Student"}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">📍 {ord.deliveryLocation}</p>
+                        <p className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 mt-0.5">Order #ORD-{ord.id.slice(-6).toUpperCase()} • ₦{ord.totalAmount.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setVendorChatStudent({
+                          id: ord.user?.id || `user-${ord.id}`,
+                          name: ord.user?.name || "Campus Student",
+                          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+                          phone: ord.user?.email || "+234 812 345 6789",
+                        });
+                        setIsVendorChatOpen(true);
+                      }}
+                      className="px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 shrink-0"
+                    >
+                      <MessageSquare size={14} /> Reply Live
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 text-center text-slate-500 font-medium">
+                  No active student chats yet.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* VENDOR LIVE CHAT MODAL */}
+      {isVendorChatOpen && vendorChatStudent && (
+        <MerchantChatModal
+          isOpen={isVendorChatOpen}
+          onClose={() => setIsVendorChatOpen(false)}
+          vendor={vendorChatStudent}
+          initialProductContext={`Order #${vendorChatStudent.id.slice(-6).toUpperCase()}`}
+        />
+      )}
 
       {/* ADD PRODUCT MODAL */}
       <AnimatePresence>
