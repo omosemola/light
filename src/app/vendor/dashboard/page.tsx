@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { 
   ShoppingBag, 
   Clock, 
@@ -15,7 +15,10 @@ import {
   AlertCircle,
   TrendingUp,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Upload,
+  Camera,
+  Image as ImageIcon
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -41,10 +44,22 @@ export default function VendorDashboardPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProductName, setNewProductName] = useState("");
   const [newProductPrice, setNewProductPrice] = useState("");
+  const [newProductImage, setNewProductImage] = useState("");
   const [newProductDesc, setNewProductDesc] = useState("");
   const [newProductCategory, setNewProductCategory] = useState("");
-  const [newProductImage, setNewProductImage] = useState("");
   const [submittingProduct, setSubmittingProduct] = useState(false);
+  const productFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProductFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProductImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -470,13 +485,40 @@ export default function VendorDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold mb-1">Image URL</label>
+                  <label className="block font-semibold mb-1">Product Photo</label>
+
+                  {/* Phone Photo Upload Button */}
                   <input
-                    type="url"
+                    type="file"
+                    ref={productFileInputRef}
+                    onChange={handleProductFileSelect}
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => productFileInputRef.current?.click()}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    >
+                      <Camera className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>Select Photo from Phone</span>
+                    </button>
+                  </div>
+
+                  {newProductImage && (
+                    <div className="relative w-full h-28 rounded-xl overflow-hidden mb-2 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                      <Image src={newProductImage} alt="Preview" fill className="object-cover" />
+                    </div>
+                  )}
+
+                  <input
+                    type="text"
                     value={newProductImage}
                     onChange={(e) => setNewProductImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Or paste image URL (https://...)"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-xs"
                   />
                 </div>
 

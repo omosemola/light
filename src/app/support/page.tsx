@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronLeft, MessageSquare, Plus, Ticket } from "lucide-react";
+import { useState, useRef } from "react";
+import { ChevronLeft, MessageSquare, Plus, Ticket, Camera, Upload, X, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
@@ -16,8 +17,21 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("Order Issue");
   const [message, setMessage] = useState("");
+  const [ticketAttachment, setTicketAttachment] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const ticketFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTicketFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTicketAttachment(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [ticketsList, setTicketsList] = useState([
     { id: "TK-9021", subject: "Missing Item in Order", status: "In Progress", date: "2 hrs ago", type: "active" },
@@ -193,6 +207,39 @@ export default function SupportPage() {
                   placeholder="Describe what happened..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Attach Photo / Screenshot (Optional)</label>
+                <input
+                  type="file"
+                  ref={ticketFileInputRef}
+                  onChange={handleTicketFileSelect}
+                  accept="image/*"
+                  className="hidden"
+                />
+                
+                <button
+                  type="button"
+                  onClick={() => ticketFileInputRef.current?.click()}
+                  className="w-full py-2.5 px-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                  <Camera className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Select Screenshot/Photo from Phone</span>
+                </button>
+
+                {ticketAttachment && (
+                  <div className="relative mt-2 w-full h-24 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
+                    <Image src={ticketAttachment} alt="Attachment Preview" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setTicketAttachment(null)}
+                      className="absolute top-2 right-2 p-1 bg-black/60 text-white rounded-full hover:bg-black/80"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 pt-2">
