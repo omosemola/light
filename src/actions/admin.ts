@@ -42,6 +42,14 @@ export async function getAdminDashboardData() {
       orderBy: { createdAt: "desc" },
     });
 
+    const users = await prisma.user.findMany({
+      include: {
+        store: { select: { id: true, name: true } },
+        _count: { select: { orders: true, tickets: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
     const categories = await prisma.category.findMany({
       include: {
         _count: { select: { products: true } },
@@ -59,6 +67,7 @@ export async function getAdminDashboardData() {
         openTicketsCount: tickets.filter((t) => t.status === TicketStatus.OPEN).length,
       },
       stores,
+      users,
       recentOrders,
       tickets,
       categories,

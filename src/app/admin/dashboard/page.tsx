@@ -17,14 +17,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { getAdminDashboardData, updateSupportTicketStatus } from "@/actions/admin";
-import { TicketStatus } from "@prisma/client";
+import { getAdminDashboardData, updateSupportTicketStatus, updateUserRole } from "@/actions/admin";
+import { TicketStatus, Role } from "@prisma/client";
 
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [adminData, setAdminData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"stores" | "orders" | "tickets">("stores");
+  const [activeTab, setActiveTab] = useState<"stores" | "users" | "orders" | "tickets">("stores");
   const [ticketUpdating, setTicketUpdating] = useState<string | null>(null);
+  const [roleUpdating, setRoleUpdating] = useState<string | null>(null);
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -51,6 +52,20 @@ export default function AdminDashboardPage() {
       }));
     }
     setTicketUpdating(null);
+  };
+
+  const handleRoleChange = async (userId: string, role: Role) => {
+    setRoleUpdating(userId);
+    const res = await updateUserRole(userId, role);
+    if (res.success) {
+      setAdminData((prev: any) => ({
+        ...prev,
+        users: prev.users.map((u: any) =>
+          u.id === userId ? { ...u, role } : u
+        ),
+      }));
+    }
+    setRoleUpdating(null);
   };
 
   if (loading) {
@@ -111,9 +126,9 @@ export default function AdminDashboardPage() {
             <h3 className="text-xl font-extrabold text-white mt-0.5">{metrics?.totalOrders || 0}</h3>
           </motion.div>
 
-          <motion.div onClick={() => setActiveTab("stores")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-indigo-500 transition-all active:scale-[0.98]">
+          <motion.div onClick={() => setActiveTab("users")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 cursor-pointer hover:border-indigo-500 transition-all active:scale-[0.98]">
             <Users className="w-5 h-5 text-indigo-400 mb-2" />
-            <span className="text-[11px] font-medium text-slate-400 uppercase">Total Users</span>
+            <span className="text-[11px] font-medium text-slate-400 uppercase">All Users</span>
             <h3 className="text-xl font-extrabold text-white mt-0.5">{metrics?.totalUsers || 0}</h3>
           </motion.div>
 
@@ -125,30 +140,38 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* TABS */}
-        <div className="flex items-center gap-3 border-b border-slate-800 pb-4 mb-6">
+        <div className="flex items-center gap-3 border-b border-slate-800 pb-4 mb-6 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("stores")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === "stores" ? "bg-emerald-500 text-white" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+              activeTab === "stores" ? "bg-emerald-500 text-white shadow-xs" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
             }`}
           >
-            Vendor Stores ({adminData?.stores?.length || 0})
+            🏪 Vendor Stores ({adminData?.stores?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+              activeTab === "users" ? "bg-indigo-600 text-white shadow-xs" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
+            }`}
+          >
+            👥 Users Directory ({adminData?.users?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab("orders")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === "orders" ? "bg-emerald-500 text-white" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+              activeTab === "orders" ? "bg-purple-600 text-white shadow-xs" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
             }`}
           >
-            Recent Orders ({adminData?.recentOrders?.length || 0})
+            📦 Recent Orders ({adminData?.recentOrders?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab("tickets")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === "tickets" ? "bg-emerald-500 text-white" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+              activeTab === "tickets" ? "bg-amber-600 text-white shadow-xs" : "bg-slate-900 text-slate-400 hover:bg-slate-800"
             }`}
           >
-            Support Tickets ({adminData?.tickets?.length || 0})
+            🎫 Support Tickets ({adminData?.tickets?.length || 0})
           </button>
         </div>
 
@@ -184,6 +207,72 @@ export default function AdminDashboardPage() {
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${st.isOpen ? "bg-emerald-950 text-emerald-300" : "bg-rose-950 text-rose-300"}`}>
                           {st.isOpen ? "ACTIVE / OPEN" : "CLOSED"}
                         </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* USERS TAB */}
+        {activeTab === "users" && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-extrabold">
+                  <tr>
+                    <th className="p-4">User Name</th>
+                    <th className="p-4">Email Address</th>
+                    <th className="p-4">System Role</th>
+                    <th className="p-4">Associated Store</th>
+                    <th className="p-4">Orders Placed</th>
+                    <th className="p-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {adminData?.users?.map((u: any) => (
+                    <tr key={u.id} className="hover:bg-slate-800/50 transition">
+                      <td className="p-4 font-bold text-white flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-extrabold flex items-center justify-center border border-indigo-500/30">
+                          {u.name ? u.name[0].toUpperCase() : "U"}
+                        </div>
+                        {u.name || "Campus Student"}
+                      </td>
+                      <td className="p-4 text-slate-300 font-mono">{u.email}</td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          u.role === "ADMIN" 
+                            ? "bg-purple-950 text-purple-300 border border-purple-800" 
+                            : u.role === "VENDOR" 
+                            ? "bg-emerald-950 text-emerald-300 border border-emerald-800" 
+                            : "bg-slate-800 text-slate-300"
+                        }`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="p-4 font-semibold text-slate-300">
+                        {u.store ? (
+                          <Link href={`/vendor/${u.store.id}`} className="text-emerald-400 hover:underline inline-flex items-center gap-1">
+                            {u.store.name} <ExternalLink size={12} />
+                          </Link>
+                        ) : (
+                          <span className="text-slate-500">None (Student)</span>
+                        )}
+                      </td>
+                      <td className="p-4 font-semibold text-slate-300">{u._count?.orders || 0}</td>
+                      <td className="p-4">
+                        <select
+                          value={u.role}
+                          disabled={roleUpdating === u.id}
+                          onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
+                          className="bg-slate-950 border border-slate-700 text-slate-200 text-xs px-2.5 py-1 rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="STUDENT">STUDENT</option>
+                          <option value="VENDOR">VENDOR</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
                       </td>
                     </tr>
                   ))}
