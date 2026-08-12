@@ -93,6 +93,11 @@ export default function SignupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!/^[a-zA-Z0-9]+$/.test(password)) {
+      setToastMessage("Password can only contain letters (A-Z, a-z) & numbers (0-9)!");
+      setTimeout(() => setToastMessage(""), 3000);
+      return;
+    }
     handleFinishSignup();
   };
 
@@ -220,11 +225,12 @@ export default function SignupPage() {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                onChange={(e) => setPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                placeholder="e.g. Pass1234"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
+            <span className="text-[11px] text-[#71717A] mt-1 block">Only uppercase, lowercase letters & numbers allowed (A-Z, a-z, 0-9)</span>
           </div>
 
           <div>
