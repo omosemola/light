@@ -57,7 +57,7 @@ export const useUserStore = create<UserState>()(
         }),
     }),
     {
-      name: "campus-user-storage",
+      name: "lightson-user-app-storage-v3",
     }
   )
 );
