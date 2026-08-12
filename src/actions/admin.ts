@@ -6,55 +6,60 @@ import { revalidatePath } from "next/cache";
 
 export async function getAdminDashboardData() {
   try {
-    const totalUsers = await prisma.user.count();
-    const totalStores = await prisma.store.count();
-    const totalOrders = await prisma.order.count();
-    const totalProducts = await prisma.product.count();
-
-    const orders = await prisma.order.findMany({
-      select: { totalAmount: true, status: true },
-    });
+    const [
+      totalUsers,
+      totalStores,
+      totalOrders,
+      totalProducts,
+      orders,
+      stores,
+      recentOrders,
+      tickets,
+      users,
+      categories,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.store.count(),
+      prisma.order.count(),
+      prisma.product.count(),
+      prisma.order.findMany({ select: { totalAmount: true, status: true } }),
+      prisma.store.findMany({
+        include: {
+          user: { select: { email: true, name: true } },
+          _count: { select: { products: true, orders: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.order.findMany({
+        take: 10,
+        include: {
+          user: { select: { name: true, email: true } },
+          store: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.supportTicket.findMany({
+        include: {
+          user: { select: { name: true, email: true } },
+          order: { select: { id: true, totalAmount: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.findMany({
+        include: {
+          store: { select: { id: true, name: true } },
+          _count: { select: { orders: true, tickets: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.category.findMany({
+        include: {
+          _count: { select: { products: true } },
+        },
+      }),
+    ]);
 
     const totalGMV = orders.reduce((acc, order) => acc + order.totalAmount, 0);
-
-    const stores = await prisma.store.findMany({
-      include: {
-        user: { select: { email: true, name: true } },
-        _count: { select: { products: true, orders: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const recentOrders = await prisma.order.findMany({
-      take: 10,
-      include: {
-        user: { select: { name: true, email: true } },
-        store: { select: { name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const tickets = await prisma.supportTicket.findMany({
-      include: {
-        user: { select: { name: true, email: true } },
-        order: { select: { id: true, totalAmount: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const users = await prisma.user.findMany({
-      include: {
-        store: { select: { id: true, name: true } },
-        _count: { select: { orders: true, tickets: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const categories = await prisma.category.findMany({
-      include: {
-        _count: { select: { products: true } },
-      },
-    });
 
     return {
       success: true,
