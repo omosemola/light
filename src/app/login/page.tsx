@@ -78,11 +78,8 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
-    try {
-      await signIn("google", { callbackUrl: "/", redirect: false });
-    } catch {
-      // Fallback preview
-    }
+    // Simulate network delay for realistic preview
+    await new Promise((resolve) => setTimeout(resolve, 800));
     handleFinishLogin("alex.google@gmail.com");
   };
 
