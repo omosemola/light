@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, Phone, Tag, FileText } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
+import { registerVendorStore } from "@/actions/vendor";
 
 function GoogleIcon() {
   return (
@@ -36,12 +37,21 @@ export default function SignupPage() {
   const { setHasSeenOnboarding, updateProfile } = useUserStore();
 
   const [accountType, setAccountType] = useState<"STUDENT" | "VENDOR">("STUDENT");
+  
+  // Student Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hostel, setHostel] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
+
+  // Vendor Form State
+  const [storeName, setStoreName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
   const [storeCategory, setStoreCategory] = useState("Food & Dining");
+  const [phone, setPhone] = useState("");
+  const [description, setDescription] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -97,14 +107,33 @@ export default function SignupPage() {
     handleFinishSignup("alex.google@gmail.com", "Alex Johnson");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^[a-zA-Z0-9]+$/.test(password)) {
       setToastMessage("Password can only contain letters (A-Z, a-z) & numbers (0-9)!");
       setTimeout(() => setToastMessage(""), 3000);
       return;
     }
-    handleFinishSignup();
+
+    if (accountType === "VENDOR") {
+      setIsSubmitting(true);
+      try {
+        await registerVendorStore({
+          storeName: storeName || `${ownerName || "Campus"}'s Store`,
+          ownerName: ownerName || name || "Campus Vendor",
+          email: email,
+          phone: phone,
+          category: storeCategory,
+          location: hostel || "Campus Store Location",
+          description: description,
+        });
+      } catch {
+        // Continue with preview transition
+      }
+      handleFinishSignup(email, storeName || ownerName || "Campus Vendor");
+    } else {
+      handleFinishSignup();
+    }
   };
 
   return (
@@ -215,91 +244,238 @@ export default function SignupPage() {
 
         {/* Email/Password Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Full Name <span className="text-rose-500 ml-0.5">*</span>
-            </label>
-            <div className="relative">
-              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Johnson"
-                className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
-              />
-            </div>
-          </div>
+          {accountType === "VENDOR" ? (
+            <>
+              {/* VENDOR INPUT FIELDS */}
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Store / Business Name <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Store size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                    placeholder="e.g. Mama Cass Kitchen or Fresh Squeeze UI"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Email Address <span className="text-rose-500 ml-0.5">*</span>
-            </label>
-            <div className="relative">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="alex.johnson@gmail.com"
-                className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Owner's Full Name <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder="e.g. Adekunle Ciroma"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Password <span className="text-rose-500 ml-0.5">*</span>
-            </label>
-            <div className="relative">
-              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-                placeholder="e.g. Pass1234"
-                className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
-              />
-            </div>
-            <span className="text-[11px] text-[#71717A] mt-1 block">Only uppercase, lowercase letters & numbers allowed (A-Z, a-z, 0-9)</span>
-          </div>
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Store Category <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Tag size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <select
+                    value={storeCategory}
+                    onChange={(e) => setStoreCategory(e.target.value)}
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all cursor-pointer appearance-none"
+                  >
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Groceries & Snacks">Groceries & Snacks</option>
+                    <option value="Tech & Accessories">Tech & Accessories</option>
+                    <option value="Fashion & Apparels">Fashion & Apparels</option>
+                    <option value="Campus Services">Campus Services</option>
+                  </select>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Hostel / Hall of Residence <span className="text-rose-500 ml-0.5">*</span>
-            </label>
-            <div className="relative">
-              <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                required
-                value={hostel}
-                onChange={(e) => setHostel(e.target.value)}
-                placeholder="e.g. Mellanby Hall or Tedder Hall"
-                className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Store Contact Phone <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="e.g. +234 812 345 6789"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Street / Detailed Address <span className="text-rose-500 ml-0.5">*</span>
-            </label>
-            <div className="relative">
-              <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                required
-                value={addressDetail}
-                onChange={(e) => setAddressDetail(e.target.value)}
-                placeholder="e.g. Block C or 12 Abadina Street"
-                className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Store Email Address <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vendor@campusstore.com"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Password <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                    placeholder="e.g. Pass1234"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+                <span className="text-[11px] text-[#71717A] mt-1 block">Only uppercase, lowercase letters & numbers allowed (A-Z, a-z, 0-9)</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Hostel / Location on Campus <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={hostel}
+                    onChange={(e) => setHostel(e.target.value)}
+                    placeholder="e.g. Sultan Bello Hall or Tech Faculty"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Short Business Description
+                </label>
+                <div className="relative">
+                  <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. Delicious hot meals, fast 15-min delivery"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* STUDENT INPUT FIELDS */}
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Full Name <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Alex Johnson"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Email Address <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="alex.johnson@gmail.com"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Password <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                    placeholder="e.g. Pass1234"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+                <span className="text-[11px] text-[#71717A] mt-1 block">Only uppercase, lowercase letters & numbers allowed (A-Z, a-z, 0-9)</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Hostel / Hall of Residence <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={hostel}
+                    onChange={(e) => setHostel(e.target.value)}
+                    placeholder="e.g. Mellanby Hall or Tedder Hall"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
+                  Street / Detailed Address <span className="text-rose-500 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={addressDetail}
+                    onChange={(e) => setAddressDetail(e.target.value)}
+                    placeholder="e.g. Block C or 12 Abadina Street"
+                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <button
             type="submit"
