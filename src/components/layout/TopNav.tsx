@@ -32,8 +32,8 @@ export function TopNav() {
       <div className="flex items-center gap-8">
         <Link href="/" className="flex items-center gap-3 group">
           <img src="/logo.png" alt="Lightson Marketplace" className="h-12 w-auto object-contain group-hover:scale-105 transition-transform" />
-          <span className="text-2xl font-extrabold text-[#7E22CE] dark:text-purple-400 font-heading tracking-tight">
-            Lights<span className="text-[#F59E0B] dark:text-amber-400">on</span> <span className="text-[#7E22CE] dark:text-purple-300">Marketplace</span>
+          <span className="text-2xl font-extrabold text-[#242278] dark:text-indigo-300 font-heading tracking-tight">
+            Lights<span className="text-[#F5A623]">on</span> <span className="text-[#242278] dark:text-indigo-300">Marketplace</span>
           </span>
         </Link>
         
