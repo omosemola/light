@@ -27,7 +27,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
 
-        // Public routes that never require authentication
+        // Public routes that never require NextAuth server token
         if (
           path === "/" ||
           path.startsWith("/login") ||
@@ -36,6 +36,11 @@ export default withAuth(
           path.startsWith("/category") ||
           path.startsWith("/product") ||
           path.startsWith("/search") ||
+          path.startsWith("/orders") ||
+          path.startsWith("/profile") ||
+          path.startsWith("/cart") ||
+          path.startsWith("/checkout") ||
+          path.startsWith("/support") ||
           path.startsWith("/api/auth") ||
           path.startsWith("/api/paystack/webhook") ||
           path.startsWith("/_next") ||
@@ -57,9 +62,5 @@ export const config = {
   matcher: [
     "/admin/dashboard/:path*",
     "/vendor/dashboard/:path*",
-    "/checkout/:path*",
-    "/orders/:path*",
-    "/profile/:path*",
-    "/support/:path*",
   ],
 };

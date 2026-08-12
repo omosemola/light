@@ -70,6 +70,6 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "campus-hub-secret-key-12345",
   pages: {
-    signIn: "/welcome",
+    signIn: "/login",
   },
 };
