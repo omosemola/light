@@ -32,15 +32,9 @@ import { Modal } from "@/components/ui/Modal";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { profile, updateProfile, logoutUser, hasSeenOnboarding } = useUserStore();
+  const { profile, updateProfile, logoutUser } = useUserStore();
   const { isDark, toggleTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!hasSeenOnboarding) {
-      router.push("/welcome");
-    }
-  }, [hasSeenOnboarding, router]);
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

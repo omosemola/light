@@ -34,13 +34,27 @@ export const useUserStore = create<UserState>()(
         points: 450,
         savedStoresCount: 5,
       },
-      hasSeenOnboarding: false,
+      hasSeenOnboarding: true,
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
       updateProfile: (updated) =>
         set((state) => ({
           profile: { ...state.profile, ...updated },
         })),
-      logoutUser: () => set({ hasSeenOnboarding: false }),
+      logoutUser: () =>
+        set({
+          profile: {
+            name: "Visitor",
+            email: "",
+            hostel: "Campus Guest",
+            addressDetail: "",
+            phone: "",
+            avatar: "/visitor-avatar.png",
+            points: 0,
+            savedStoresCount: 0,
+            isVisitor: true,
+          },
+          hasSeenOnboarding: true,
+        }),
     }),
     {
       name: "campus-user-storage",
