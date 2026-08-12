@@ -355,23 +355,6 @@ export default function SignupPage() {
 
               <div>
                 <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-                  Hostel / Location on Campus <span className="text-rose-500 ml-0.5">*</span>
-                </label>
-                <div className="relative">
-                  <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    value={hostel}
-                    onChange={(e) => setHostel(e.target.value)}
-                    placeholder="e.g. Sultan Bello Hall or Tech Faculty"
-                    className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
                   Short Business Description
                 </label>
                 <div className="relative">

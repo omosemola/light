@@ -639,20 +639,6 @@ export default function ProfilePage() {
 
           <div>
             <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-              Hostel / Location on Campus <span className="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              required
-              placeholder="e.g. Sultan Bello Hall or Tech Faculty"
-              value={vendorLocation}
-              onChange={(e) => setVendorLocation(e.target.value)}
-              className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
               Short Business Description
             </label>
             <textarea 
