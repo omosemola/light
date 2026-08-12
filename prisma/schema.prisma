@@ -46,6 +46,7 @@ model User {
   store         Store?
   orders        Order[]
   tickets       SupportTicket[]
+  reviews       Review[]
 }
 
 model Store {
@@ -66,6 +67,7 @@ model Store {
   
   products            Product[]
   orders              Order[]
+  reviews             Review[]
 }
 
 model Category {
@@ -113,6 +115,7 @@ model Order {
   
   items           OrderItem[]
   tickets         SupportTicket[]
+  review          Review?
 }
 
 model OrderItem {
@@ -139,4 +142,18 @@ model SupportTicket {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderId     String?
   order       Order?       @relation(fields: [orderId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @default(5)
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId   String?  @unique
+  order     Order?   @relation(fields: [orderId], references: [id])
 }

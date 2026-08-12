@@ -18,10 +18,13 @@ import {
   ChevronRight, 
   AlertCircle, 
   Sparkles,
-  Bike
+  Bike,
+  Star
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
+import { submitStudentReview } from "@/actions/reviews";
+import { useUserStore } from "@/lib/userStore";
 
 interface OrderDetail {
   id: string;
@@ -142,6 +145,30 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
     avatar: order.vendorAvatar,
     phone: order.vendorPhone,
   });
+  const { profile } = useUserStore();
+  const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [isReviewSubmitted, setIsReviewSubmitted] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingReview(true);
+    const res = await submitStudentReview({
+      userEmail: profile.email,
+      userName: profile.name,
+      storeId: order.vendorId,
+      orderId: id,
+      rating,
+      comment: reviewComment,
+    });
+
+    if (res.success) {
+      setIsReviewSubmitted(true);
+    }
+    setIsSubmittingReview(false);
+  };
 
   // Countdown timer simulation
   useEffect(() => {
@@ -445,6 +472,76 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
               <span className="text-[#312E81] dark:text-indigo-400">₦{order.total.toLocaleString()}</span>
             </div>
           </div>
+        </div>
+
+        {/* STUDENT MEAL REVIEW & RATING CARD */}
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
+            <Star size={18} className="text-amber-500 fill-amber-500" />
+            <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+              Rate Your Meal & Delivery
+            </h3>
+          </div>
+
+          {isReviewSubmitted ? (
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-center space-y-1">
+              <CheckCircle2 size={28} className="text-emerald-600 dark:text-emerald-400 mx-auto" />
+              <h4 className="font-heading font-extrabold text-sm text-emerald-900 dark:text-emerald-200">
+                Thank you for your feedback! ⭐
+              </h4>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                Your <strong>{rating}-Star rating</strong> for <strong>{order.vendorName}</strong> has been saved and published.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleReviewSubmit} className="space-y-4">
+              <div className="flex flex-col items-center justify-center p-3 bg-[#FAFAF7] dark:bg-zinc-800/80 rounded-2xl border border-slate-200/80 dark:border-zinc-700/80">
+                <span className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 mb-2">
+                  How was your order from {order.vendorName}?
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="p-1 transition-transform active:scale-125 focus:outline-none"
+                    >
+                      <Star
+                        size={28}
+                        className={`transition-colors ${
+                          (hoverRating || rating) >= star
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-slate-300 dark:text-zinc-600"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <textarea
+                  rows={2}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share a short review about the food taste, packaging, or delivery speed (optional)..."
+                  className="w-full p-3 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs text-[#18181B] dark:text-zinc-100 resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingReview}
+                className="w-full h-12 bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-sm rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <span>{isSubmittingReview ? "Submitting Review..." : "Submit Store Rating ⭐"}</span>
+              </button>
+            </form>
+          )}
         </div>
 
         {/* SUPPORT / HELP BANNER */}
