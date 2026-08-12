@@ -52,7 +52,7 @@ export default function SignupPage() {
       name: userName || "Alex Johnson",
       email: userEmail || "alex.johnson@gmail.com",
       hostel: hostel || "Mellanby Hall",
-      addressDetail: addressDetail || "Room B12, Block C",
+      addressDetail: addressDetail || "Block C, Abadina Street",
       avatar: DEFAULT_HUMAN_AVATAR,
       isVisitor: false,
     });
@@ -254,7 +254,7 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Room / Street / Detailed Address
+              Street / Detailed Address
             </label>
             <div className="relative">
               <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -263,7 +263,7 @@ export default function SignupPage() {
                 required
                 value={addressDetail}
                 onChange={(e) => setAddressDetail(e.target.value)}
-                placeholder="e.g. Room B12, Block C or 12 Abadina Street"
+                placeholder="e.g. Block C or 12 Abadina Street"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
