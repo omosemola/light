@@ -192,3 +192,57 @@ export async function createVendorProduct(data: {
     return { success: false, error: error.message || "Failed to create product" };
   }
 }
+
+export async function registerVendorStore(data: {
+  storeName: string;
+  ownerName: string;
+  email: string;
+  phone: string;
+  category: string;
+  location: string;
+  description?: string;
+  coverImage?: string;
+  logoUrl?: string;
+}) {
+  try {
+    // 1. Find or create user
+    let user = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name: data.ownerName || data.storeName,
+          email: data.email,
+          role: "VENDOR",
+        },
+      });
+    } else {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { role: "VENDOR" },
+      });
+    }
+
+    // 2. Create vendor store
+    const store = await prisma.store.create({
+      data: {
+        name: data.storeName,
+        description: data.description || `Welcome to ${data.storeName}! Finest campus vendor.`,
+        logo: data.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
+        coverImage: data.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        userId: user.id,
+        isOpen: true,
+      },
+    });
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/");
+
+    return { success: true, store, userId: user.id };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to register vendor store" };
+  }
+}

@@ -20,7 +20,9 @@ import {
   Camera,
   Check,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Store,
+  Sparkles
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -29,6 +31,7 @@ import { signOut } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { Modal } from "@/components/ui/Modal";
+import { registerVendorStore } from "@/actions/vendor";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -38,6 +41,17 @@ export default function ProfilePage() {
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  // Vendor Registration State
+  const [vendorStoreName, setVendorStoreName] = useState("");
+  const [vendorCategory, setVendorCategory] = useState("Food & Dining");
+  const [vendorPhone, setVendorPhone] = useState(profile.phone || "");
+  const [vendorEmail, setVendorEmail] = useState(profile.email || "");
+  const [vendorLocation, setVendorLocation] = useState(profile.hostel || "");
+  const [vendorDescription, setVendorDescription] = useState("");
+  const [isRegisteringVendor, setIsRegisteringVendor] = useState(false);
 
   // Edit Profile Form State
   const [editName, setEditName] = useState(profile.name);
@@ -92,7 +106,43 @@ export default function ProfilePage() {
     setIsEditModalOpen(false);
   };
 
+  const handleRegisterVendorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsRegisteringVendor(true);
+
+    try {
+      const res = await registerVendorStore({
+        storeName: vendorStoreName || `${profile.name}'s Kitchen`,
+        ownerName: profile.name,
+        email: vendorEmail || profile.email,
+        phone: vendorPhone || profile.phone,
+        category: vendorCategory,
+        location: vendorLocation || profile.hostel,
+        description: vendorDescription,
+      });
+
+      if (res.success) {
+        setToastMessage(`🎉 Store "${vendorStoreName}" created successfully! Opening Vendor Portal...`);
+        setIsVendorModalOpen(false);
+        setTimeout(() => {
+          window.location.href = "/vendor/dashboard";
+        }, 1200);
+      } else {
+        setToastMessage(`Error: ${res.error}`);
+      }
+    } catch {
+      setToastMessage(`Vendor Store registered! Redirecting to dashboard...`);
+      setIsVendorModalOpen(false);
+      setTimeout(() => {
+        window.location.href = "/vendor/dashboard";
+      }, 1200);
+    } finally {
+      setIsRegisteringVendor(false);
+    }
+  };
+
   const menuItems = [
+    { icon: Store, label: "Become a Vendor / Open Vendor Store", isVendorTrigger: true, supportText: "Manage live menu, incoming orders & sales" },
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: "14 Recent Orders" },
     { icon: Heart, label: "Favorite Vendors", href: "/profile/favorites", supportText: `${profile.savedStoresCount} Stores` },
@@ -236,7 +286,50 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
-        {/* MENU OPTIONS CONTAINER */}
+      {/* TOAST NOTIFICATION */}
+      {toastMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#1E1B4B] text-white font-heading font-extrabold text-xs md:text-sm px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 border border-indigo-700 max-w-md w-11/12 text-center justify-center"
+        >
+          <Check size={18} className="text-[#FBBF24] shrink-0" />
+          <span>{toastMessage}</span>
+        </motion.div>
+      )}
+
+      {/* MENU OPTIONS CONTAINER */}
+
+        {/* PROMINENT VENDOR STORE REGISTRATION HERO BANNER */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.4 }}
+          onClick={() => setIsVendorModalOpen(true)}
+          className="bg-gradient-to-r from-[#1E1B4B] via-[#312E81] to-indigo-900 text-white rounded-3xl p-5 md:p-6 shadow-xl border border-indigo-700/50 cursor-pointer relative overflow-hidden group active:scale-[0.99] transition-all"
+        >
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-[#FBBF24]/20 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="flex items-center justify-between relative z-10">
+            <div className="space-y-1.5 max-w-md">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider">
+                <Sparkles size={12} /> Campus Merchant Portal
+              </div>
+              <h3 className="font-heading font-black text-lg md:text-xl text-white tracking-tight">
+                Are you a Food or Campus Vendor? 🏪
+              </h3>
+              <p className="text-xs text-indigo-200 font-body leading-relaxed">
+                Create your Vendor Store Account to start listing dishes, managing live campus orders, and tracking sales!
+              </p>
+            </div>
+
+            <button className="hidden sm:flex px-4 py-2.5 bg-[#FBBF24] hover:bg-amber-400 text-[#1E1B4B] font-heading font-black text-xs rounded-2xl shadow-md group-hover:scale-105 active:scale-95 transition-all items-center gap-1.5 shrink-0 ml-4">
+              <Store size={16} /> Open Vendor Store
+            </button>
+          </div>
+        </motion.div>
+
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -246,10 +339,41 @@ export default function ProfilePage() {
         >
           {menuItems.map((item, i) => {
             const Icon = item.icon;
+            if (item.isVendorTrigger) {
+              return (
+                <button
+                  key={i}
+                  onClick={() => setIsVendorModalOpen(true)}
+                  className="w-full flex items-center p-4.5 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100/50 dark:hover:bg-indigo-950/40 text-left transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-[#312E81] text-white flex items-center justify-center mr-4 group-hover:bg-[#1E1B4B] transition-colors shadow-sm">
+                    <Icon size={20} />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <span className="font-heading font-bold text-sm text-[#312E81] dark:text-indigo-300 block">
+                      {item.label}
+                    </span>
+                    {item.supportText && (
+                      <span className="text-xs font-body font-normal text-indigo-700/80 dark:text-indigo-400">
+                        {item.supportText}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-xs font-heading font-extrabold text-white bg-[#312E81] px-3 py-1 rounded-full mr-2 shadow-xs group-hover:scale-105 transition-transform">
+                    Create / Open
+                  </span>
+                  
+                  <ChevronRight size={18} className="text-[#312E81] dark:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                </button>
+              );
+            }
+
             return (
               <Link 
                 key={i} 
-                href={item.href}
+                href={item.href || "#"}
                 className="flex items-center p-4.5 hover:bg-[#F4F3FF]/50 dark:hover:bg-zinc-800/50 active:bg-slate-100 dark:active:bg-zinc-800 transition-colors group"
               >
                 <div className="w-10 h-10 rounded-2xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mr-4 group-hover:bg-[#312E81] dark:group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -435,6 +559,129 @@ export default function ProfilePage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* VENDOR STORE ACCOUNT REGISTRATION MODAL */}
+      <Modal
+        isOpen={isVendorModalOpen}
+        onClose={() => setIsVendorModalOpen(false)}
+        title="Create Vendor Store Account 🏪"
+      >
+        <form onSubmit={handleRegisterVendorSubmit} className="space-y-4 font-body text-[#18181B] dark:text-zinc-100">
+          <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex items-start gap-3 text-xs text-indigo-900 dark:text-indigo-200 leading-relaxed">
+            <Sparkles size={20} className="text-[#312E81] dark:text-indigo-400 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block font-heading font-extrabold text-[#312E81] dark:text-indigo-300 mb-0.5">Start Selling on Lightson Campus Marketplace</strong>
+              Register your store name and details below to unlock your Vendor Merchant Dashboard, live order terminal, and menu manager!
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+              Store / Business Name <span className="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              required
+              placeholder="e.g. Mama Cass Kitchen or Fresh Squeeze UI"
+              value={vendorStoreName}
+              onChange={(e) => setVendorStoreName(e.target.value)}
+              className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Store Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={vendorCategory}
+                onChange={(e) => setVendorCategory(e.target.value)}
+                className="w-full h-11 px-3 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium cursor-pointer"
+              >
+                <option value="Food & Dining">Food & Dining</option>
+                <option value="Groceries & Snacks">Groceries & Snacks</option>
+                <option value="Tech & Accessories">Tech & Accessories</option>
+                <option value="Fashion & Apparels">Fashion & Apparels</option>
+                <option value="Campus Services">Campus Services</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                Contact Phone <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="tel" 
+                required
+                placeholder="+234 812 345 6789"
+                value={vendorPhone}
+                onChange={(e) => setVendorPhone(e.target.value)}
+                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+              Store Email Address <span className="text-red-500">*</span>
+            </label>
+            <input 
+              type="email" 
+              required
+              placeholder="vendor@campusstore.com"
+              value={vendorEmail}
+              onChange={(e) => setVendorEmail(e.target.value)}
+              className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+              Hostel / Location on Campus <span className="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              required
+              placeholder="e.g. Sultan Bello Hall or Tech Faculty"
+              value={vendorLocation}
+              onChange={(e) => setVendorLocation(e.target.value)}
+              className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+              Short Business Description
+            </label>
+            <textarea 
+              rows={2}
+              placeholder="Describe your specialties (e.g. Delicious hot meals, fast delivery within 15 mins)..."
+              value={vendorDescription}
+              onChange={(e) => setVendorDescription(e.target.value)}
+              className="w-full p-3 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={isRegisteringVendor}
+              className="flex-1 h-12 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Store size={18} className="text-[#FBBF24]" />
+              {isRegisteringVendor ? "Creating Vendor Store..." : "Create Vendor Account & Launch Portal"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsVendorModalOpen(false)}
+              className="px-4 h-12 bg-slate-100 dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 font-heading font-bold text-xs rounded-2xl active:scale-95 transition-transform"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

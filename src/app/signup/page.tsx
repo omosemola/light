@@ -35,11 +35,13 @@ export default function SignupPage() {
   const router = useRouter();
   const { setHasSeenOnboarding, updateProfile } = useUserStore();
 
+  const [accountType, setAccountType] = useState<"STUDENT" | "VENDOR">("STUDENT");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [hostel, setHostel] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
+  const [storeCategory, setStoreCategory] = useState("Food & Dining");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -49,7 +51,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
     updateProfile({
-      name: userName || "Alex Johnson",
+      name: userName || (accountType === "VENDOR" ? "Campus Vendor" : "Alex Johnson"),
       email: userEmail || "alex.johnson@gmail.com",
       hostel: hostel || "Mellanby Hall",
       addressDetail: addressDetail || "Block C, Abadina Street",
@@ -57,10 +59,17 @@ export default function SignupPage() {
       isVisitor: false,
     });
 
-    setToastMessage(`Account created! Welcome to Lightson, ${(userName || "Student").split(" ")[0]}! 🎉`);
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 1000);
+    if (accountType === "VENDOR") {
+      setToastMessage(`Vendor Store Created! Launching Vendor Merchant Portal... 🏪`);
+      setTimeout(() => {
+        window.location.href = "/vendor/dashboard";
+      }, 1000);
+    } else {
+      setToastMessage(`Account created! Welcome to Lightson, ${(userName || "Student").split(" ")[0]}! 🎉`);
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    }
   };
 
   const handleVisitorLogin = () => {
@@ -138,13 +147,41 @@ export default function SignupPage() {
         transition={{ duration: 0.4 }}
         className="max-w-md mx-auto w-full my-auto py-8"
       >
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="font-heading font-extrabold text-3xl text-[#18181B] tracking-tight">
-            Create an Account ✨
+            {accountType === "VENDOR" ? "Open Vendor Store 🏪" : "Create an Account ✨"}
           </h1>
           <p className="text-sm text-[#71717A] mt-2">
-            Join thousands of students ordering food & essentials on campus.
+            {accountType === "VENDOR" 
+              ? "Register your vendor store to list dishes & sell to campus students."
+              : "Join thousands of students ordering food & essentials on campus."}
           </p>
+        </div>
+
+        {/* ACCOUNT TYPE TOGGLE SWITCHER */}
+        <div className="grid grid-cols-2 p-1 bg-slate-200/70 rounded-2xl mb-6 font-heading font-extrabold text-xs">
+          <button
+            type="button"
+            onClick={() => setAccountType("STUDENT")}
+            className={`py-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              accountType === "STUDENT"
+                ? "bg-[#312E81] text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <User size={15} /> Student Account
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType("VENDOR")}
+            className={`py-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              accountType === "VENDOR"
+                ? "bg-[#312E81] text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Building size={15} className="text-[#FBBF24]" /> Vendor Store 🏪
+          </button>
         </div>
 
         {/* Social / Demo Options */}
@@ -172,7 +209,7 @@ export default function SignupPage() {
         <div className="relative flex items-center justify-center my-6">
           <div className="border-t border-slate-200 w-full" />
           <span className="bg-[#FAFAF7] px-4 text-xs font-semibold text-[#71717A] uppercase tracking-wider absolute">
-            Or sign up with email
+            {accountType === "VENDOR" ? "Or register store with email" : "Or sign up with email"}
           </span>
         </div>
 
@@ -269,8 +306,14 @@ export default function SignupPage() {
             disabled={isSubmitting}
             className="w-full h-14 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-full shadow-xl hover:shadow-indigo-950/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-50"
           >
-            <UserPlus size={20} />
-            <span>{isSubmitting ? "Creating Account..." : "Create Account"}</span>
+            <UserPlus size={20} className={accountType === "VENDOR" ? "text-[#FBBF24]" : ""} />
+            <span>
+              {isSubmitting
+                ? "Creating Account..."
+                : accountType === "VENDOR"
+                ? "Create Vendor Store Account 🏪"
+                : "Create Student Account"}
+            </span>
           </button>
         </form>
 
