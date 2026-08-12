@@ -163,8 +163,8 @@ export default function SignupPage() {
 
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Lightson Marketplace" className="h-11 w-auto object-contain" />
-          <span className="font-heading font-extrabold text-lg tracking-tight text-[#242278] dark:text-indigo-300">
-            Lights<span className="text-[#F5A623]">on</span> <span className="text-[#242278] dark:text-indigo-300">Marketplace</span>
+          <span className="font-heading font-extrabold text-lg tracking-tight text-[#312E81] dark:text-indigo-300">
+            Lightson Marketplace
           </span>
         </div>
       </div>

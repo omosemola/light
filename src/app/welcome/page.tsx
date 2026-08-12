@@ -237,8 +237,8 @@ export default function WelcomePage() {
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Lightson Marketplace" className="h-12 w-auto object-contain" />
           <div>
-            <span className="text-xl font-extrabold font-heading text-[#242278] dark:text-indigo-300 tracking-tight block leading-none">
-              Lights<span className="text-[#F5A623]">on</span> <span className="text-[#242278] dark:text-indigo-300">Marketplace</span>
+            <span className="text-xl font-extrabold font-heading text-[#312E81] dark:text-indigo-300 tracking-tight block leading-none">
+              Lightson Marketplace
             </span>
             <span className="text-[10px] text-[#71717A] font-semibold tracking-wider uppercase">Campus Delivery</span>
           </div>
