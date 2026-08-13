@@ -52,10 +52,10 @@ export function PWAInstallBanner() {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Lightson Marketplace" className="w-14 h-14 object-contain shrink-0" />
+            <img src="/logo.png?v=2" alt="Lightson Marketplace" className="w-14 h-14 object-contain shrink-0" />
             <div>
-              <h4 className="font-heading font-extrabold text-sm text-white flex items-center gap-1.5">
-                Install Lightson App 💡
+              <h4 className="font-heading font-black text-sm text-white flex items-center gap-1.5">
+                Install Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> App 💡
               </h4>
               <p className="text-xs text-slate-300 dark:text-zinc-400 font-body mt-0.5">
                 Fast offline access, push notifications & instant ordering.

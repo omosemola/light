@@ -31,9 +31,9 @@ export function TopNav() {
     <header className="hidden md:flex items-center justify-between px-8 h-20 bg-white dark:bg-[#121215] border-b border-slate-200 dark:border-zinc-800/80 sticky top-0 z-50 shadow-sm font-body transition-colors duration-200">
       <div className="flex items-center gap-8">
         <Link href="/" className="flex items-center gap-3 group">
-          <img src="/logo.png" alt="Lightson Marketplace" className="h-12 w-auto object-contain group-hover:scale-105 transition-transform" />
-          <span className="text-2xl font-extrabold text-[#312E81] dark:text-indigo-300 font-heading tracking-tight">
-            Lightson Marketplace
+          <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-12 w-auto object-contain group-hover:scale-105 transition-transform" />
+          <span className="text-2xl font-black text-[#312E81] dark:text-indigo-300 font-heading tracking-tight">
+            Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace
           </span>
         </Link>
         

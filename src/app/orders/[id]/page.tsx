@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { submitStudentReview } from "@/actions/reviews";
+import { getLiveOrderById } from "@/actions/orders";
 import { useUserStore } from "@/lib/userStore";
 
 interface OrderDetail {
@@ -37,7 +38,7 @@ interface OrderDetail {
   deliveryFee: number;
   serviceFee: number;
   paymentMethod: string;
-  paymentStatus: "PAID" | "PENDING";
+  paymentStatus: "PAID" | "PENDING" | "CANCELLED";
   hostelAddress: string;
   date: string;
   etaMins: number;
@@ -55,7 +56,27 @@ interface OrderDetail {
     quantity: number;
     image: string;
   }>;
+  status?: string;
 }
+
+const mapStatusToStage = (status: string) => {
+  switch (status) {
+    case "PENDING":
+    case "ACCEPTED":
+      return 1;
+    case "PREPARING":
+      return 2;
+    case "READY_FOR_DELIVERY":
+    case "OUT_FOR_DELIVERY":
+      return 3;
+    case "DELIVERED":
+      return 4;
+    case "CANCELLED":
+      return 0;
+    default:
+      return 2;
+  }
+};
 
 const MOCK_ORDERS: Record<string, OrderDetail> = {
   "ORD-9821-XT": {
@@ -135,8 +156,57 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
   const { id } = use(params);
   const router = useRouter();
 
-  const order = MOCK_ORDERS[id] || MOCK_ORDERS["ORD-9821-XT"];
+  const fallbackOrder = MOCK_ORDERS[id] || MOCK_ORDERS["ORD-9821-XT"];
+  const [dbOrder, setDbOrder] = useState<any>(null);
   const [currentStage, setCurrentStage] = useState(2); // Default to Kitchen Preparing
+
+  const fetchLiveOrder = async () => {
+    const res = await getLiveOrderById(id);
+    if (res.success && res.order) {
+      setDbOrder(res.order);
+      const stage = mapStatusToStage(res.order.status);
+      if (stage !== 0) {
+        setCurrentStage(stage);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveOrder();
+    const interval = setInterval(() => {
+      fetchLiveOrder();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [id]);
+
+  const order: OrderDetail = dbOrder
+    ? {
+        id: dbOrder.id.length > 10 ? dbOrder.id.slice(-6).toUpperCase() : dbOrder.id,
+        vendorId: dbOrder.storeId,
+        vendorName: dbOrder.store?.name || "Campus Vendor",
+        vendorAvatar: dbOrder.store?.logo || fallbackOrder.vendorAvatar,
+        vendorPhone: dbOrder.store?.user?.phone || "+234 812 345 9900",
+        total: dbOrder.totalAmount,
+        subtotal: Math.max(0, dbOrder.totalAmount - 500),
+        deliveryFee: 400,
+        serviceFee: 100,
+        paymentMethod: dbOrder.paymentReference ? "Paystack (Card/Transfer)" : "Pay on Delivery",
+        paymentStatus: dbOrder.status === "CANCELLED" ? "CANCELLED" : "PAID",
+        hostelAddress: dbOrder.deliveryLocation,
+        date: new Date(dbOrder.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        etaMins: dbOrder.status === "DELIVERED" ? 0 : 15,
+        courier: fallbackOrder.courier,
+        items: dbOrder.items?.map((it: any) => ({
+          id: it.id,
+          name: it.product?.name || "Food Item",
+          price: it.price,
+          quantity: it.quantity,
+          image: it.product?.image || "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
+        })) || fallbackOrder.items,
+        status: dbOrder.status,
+      }
+    : fallbackOrder;
+
   const [etaSeconds, setEtaSeconds] = useState(order.etaMins * 60);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatVendor, setChatVendor] = useState({

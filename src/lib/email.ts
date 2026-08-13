@@ -83,7 +83,7 @@ export function generateOrderEmailHTML({
       <body>
         <div class="container">
           <div class="header">
-            <h1 class="brand-title">Lightson Marketplace</h1>
+            <h1 class="brand-title">Lights<span style="color: #F5A623;">on</span> Marketplace</h1>
           </div>
           <div class="body-content">
             <div class="status-badge">${statusTitle.toUpperCase()}</div>

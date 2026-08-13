@@ -571,7 +571,7 @@ export default function ProfilePage() {
           <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex items-start gap-3 text-xs text-indigo-900 dark:text-indigo-200 leading-relaxed">
             <Sparkles size={20} className="text-[#312E81] dark:text-indigo-400 shrink-0 mt-0.5" />
             <div>
-              <strong className="block font-heading font-extrabold text-[#312E81] dark:text-indigo-300 mb-0.5">Start Selling on Lightson Campus Marketplace</strong>
+              <strong className="block font-heading font-black text-[#312E81] dark:text-indigo-300 mb-0.5">Start Selling on Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Campus Marketplace</strong>
               Register your store name and details below to unlock your Vendor Merchant Dashboard, live order terminal, and menu manager!
             </div>
           </div>

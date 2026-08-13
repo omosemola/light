@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-lg font-black tracking-tight text-white">Lightson Super Admin Portal</h1>
+              <h1 className="text-lg font-black tracking-tight text-white">Lights<span className="text-[#F5A623]">on</span> Super Admin Portal</h1>
               <p className="text-xs text-slate-400">Campus Marketplace Management & Analytics</p>
             </div>
           </div>

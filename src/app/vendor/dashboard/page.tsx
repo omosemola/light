@@ -469,6 +469,16 @@ export default function VendorDashboardPage() {
                           Mark Delivered
                         </button>
                       )}
+
+                      {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+                        <button
+                          onClick={() => handleStatusChange(order.id, "CANCELLED")}
+                          disabled={updatingId === order.id}
+                          className="px-2 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold transition"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))}

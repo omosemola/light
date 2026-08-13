@@ -114,9 +114,9 @@ export default function LoginPage() {
         </button>
 
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Lightson Marketplace" className="h-11 w-auto object-contain" />
-          <span className="font-heading font-extrabold text-lg tracking-tight text-[#312E81] dark:text-indigo-300">
-            Lightson Marketplace
+          <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-11 w-auto object-contain" />
+          <span className="font-heading font-black text-lg tracking-tight text-[#312E81] dark:text-indigo-300">
+            Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace
           </span>
         </div>
       </div>
