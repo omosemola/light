@@ -48,6 +48,14 @@ export function TopNav() {
       </div>
 
       <nav className="flex items-center gap-4 font-body">
+        <Link
+          href="/vendor/register"
+          className="hidden lg:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 hover:bg-[#F4F3FF] dark:hover:bg-zinc-800 transition-all border border-slate-200/80 dark:border-zinc-700/80"
+        >
+          <Store size={14} className="text-[#F5A623]" />
+          <span>Sell on Lightson</span>
+        </Link>
+
         {/* THEME TOGGLE BUTTON */}
         <button
           onClick={toggleTheme}

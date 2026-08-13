@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { getAdminDashboardData, updateSupportTicketStatus, updateUserRole } from "@/actions/admin";
+import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
 
 export default function AdminDashboardPage() {
@@ -34,6 +35,17 @@ export default function AdminDashboardPage() {
       setAdminData(res);
     }
     setLoading(false);
+  };
+
+  const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
+    const nextStatus = !currentIsOpen;
+    setAdminData((prev: any) => ({
+      ...prev,
+      stores: prev.stores.map((s: any) =>
+        s.id === storeId ? { ...s, isOpen: nextStatus } : s
+      ),
+    }));
+    await toggleStoreOpenStatus(storeId, nextStatus);
   };
 
   useEffect(() => {
@@ -204,9 +216,17 @@ export default function AdminDashboardPage() {
                       <td className="p-4 font-semibold text-slate-300">{st._count?.orders || 0}</td>
                       <td className="p-4 font-bold text-amber-400">★ {st.rating}</td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${st.isOpen ? "bg-emerald-950 text-emerald-300" : "bg-rose-950 text-rose-300"}`}>
-                          {st.isOpen ? "ACTIVE / OPEN" : "CLOSED"}
-                        </span>
+                        <button
+                          onClick={() => handleToggleStoreStatus(st.id, st.isOpen)}
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold cursor-pointer transition-all active:scale-95 border ${
+                            st.isOpen
+                              ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
+                              : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
+                          }`}
+                          title="Click to toggle store live status"
+                        >
+                          {st.isOpen ? "✓ ACTIVE & LIVE" : "✕ SUSPENDED / OFF"}
+                        </button>
                       </td>
                     </tr>
                   ))}
