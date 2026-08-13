@@ -154,13 +154,13 @@ export default function VendorRegistrationPage() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden md:inline text-xs text-[#71717A] dark:text-zinc-400 font-medium">
-              Looking for student food ordering?
+          <div className="flex items-center gap-2.5">
+            <span className="hidden md:inline text-[11px] text-[#71717A] dark:text-zinc-400">
+              Student food ordering?
             </span>
             <Link
               href="/signup"
-              className="px-4 py-2 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 hover:bg-indigo-100 text-xs font-heading font-extrabold transition-all border border-indigo-100 dark:border-zinc-700"
+              className="px-3 py-1 rounded-full bg-[#F4F3FF] dark:bg-zinc-800/80 hover:bg-indigo-100 dark:hover:bg-zinc-700 text-[#312E81] dark:text-indigo-300 text-[11px] font-heading font-bold transition-all border border-indigo-100 dark:border-zinc-700/80 shadow-2xs"
             >
               Student Sign-Up
             </Link>
