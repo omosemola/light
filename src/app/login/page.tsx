@@ -113,9 +113,9 @@ export default function LoginPage() {
           <ArrowLeft size={20} />
         </button>
 
-        <div className="flex items-center gap-3">
-          <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-11 w-auto object-contain" />
-          <span className="font-heading font-black text-lg tracking-tight text-[#312E81] dark:text-indigo-300">
+        <div className="flex items-center gap-3.5">
+          <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-13 w-auto object-contain" />
+          <span className="font-heading font-[900] text-xl md:text-2xl tracking-tight text-[#1E1B4B] dark:text-indigo-200">
             Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace
           </span>
         </div>
