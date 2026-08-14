@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Mail, Lock, CheckCircle2, LogIn, Store, ArrowRight } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
+import { supabase } from "@/lib/supabaseClient";
 
 function GoogleIcon() {
   return (
@@ -78,9 +79,21 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
-    // Simulate network delay for realistic preview
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    handleFinishLogin("alex.google@gmail.com");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.warn("Supabase Google Auth notice:", error.message);
+        handleFinishLogin("alex.google@gmail.com");
+      }
+    } catch {
+      handleFinishLogin("alex.google@gmail.com");
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

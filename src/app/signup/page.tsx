@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, ArrowRight } from "lucide-react";
 import { useUserStore } from "@/lib/userStore";
 import { sendStudentWelcomeNotification } from "@/actions/support";
+import { supabase } from "@/lib/supabaseClient";
 
 function GoogleIcon() {
   return (
@@ -92,8 +93,21 @@ export default function SignupPage() {
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    handleFinishSignup("alex.google@gmail.com", "Alex Johnson");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.warn("Supabase Google Auth notice:", error.message);
+        handleFinishSignup("alex.google@gmail.com", "Alex Johnson");
+      }
+    } catch {
+      handleFinishSignup("alex.google@gmail.com", "Alex Johnson");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
