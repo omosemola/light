@@ -236,6 +236,73 @@ export async function createVendorProduct(data: {
   }
 }
 
+export async function updateVendorProduct(data: {
+  productId: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  categoryId?: string;
+  isAvailable?: boolean;
+}) {
+  try {
+    const product = await prisma.product.update({
+      where: { id: data.productId },
+      data: {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        ...(data.image ? { image: data.image } : {}),
+        categoryId: data.categoryId || null,
+        ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
+      },
+    });
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/");
+    return { success: true, product };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update product" };
+  }
+}
+
+export async function deleteVendorProduct(productId: string) {
+  try {
+    await prisma.product.delete({
+      where: { id: productId },
+    });
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to delete product" };
+  }
+}
+
+export async function updateStoreSchedule(storeId: string, data: {
+  estimatedDelivery?: string;
+  description?: string;
+  isOpen?: boolean;
+}) {
+  try {
+    const updatedStore = await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        ...(data.estimatedDelivery ? { estimatedDelivery: data.estimatedDelivery } : {}),
+        ...(data.description ? { description: data.description } : {}),
+        ...(data.isOpen !== undefined ? { isOpen: data.isOpen } : {}),
+      },
+    });
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/");
+    return { success: true, store: updatedStore };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update store schedule" };
+  }
+}
+
 export async function registerVendorStore(data: {
   storeName: string;
   ownerName: string;
