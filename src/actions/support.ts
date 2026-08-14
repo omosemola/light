@@ -3,6 +3,28 @@
 import { prisma } from "@/lib/prisma";
 import { TicketStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { sendEmail, generateStudentWelcomeEmail } from "@/lib/email";
+
+export async function sendStudentWelcomeNotification(data: { email: string; name?: string }) {
+  try {
+    if (!data.email) return { success: false };
+
+    const emailHtml = generateStudentWelcomeEmail({
+      studentName: data.name || "Student",
+    });
+
+    await sendEmail({
+      to: data.email,
+      subject: "Welcome to Lightson Marketplace! 🎓",
+      html: emailHtml,
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error sending student welcome email:", error);
+    return { success: false, error: error.message };
+  }
+}
 
 export async function createLiveSupportTicket(data: {
   userEmail?: string;
@@ -52,6 +74,26 @@ export async function createLiveSupportTicket(data: {
 
     revalidatePath("/admin/dashboard");
     revalidatePath("/support");
+
+    // Send admin notification
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+    sendEmail({
+      to: adminEmail,
+      subject: `[LIGHTSON SUPPORT] New Ticket: ${data.subject} (${data.category})`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px;">
+          <h2>⚠️ New Support Ticket</h2>
+          <p><strong>From:</strong> ${data.userName || "User"} (${data.userEmail || "No email"})</p>
+          <p><strong>Category:</strong> ${data.category}</p>
+          <p><strong>Subject:</strong> ${data.subject}</p>
+          ${data.orderId ? `<p><strong>Order ID:</strong> #${data.orderId}</p>` : ""}
+          <div style="background: #f4f4f5; padding: 12px; border-radius: 8px; margin: 12px 0;">
+            ${data.message}
+          </div>
+          <a href="https://campuslightson.com/admin/dashboard" style="display: inline-block; background: #1E1B4B; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none;">View in Admin Panel</a>
+        </div>
+      `,
+    }).catch((e) => console.error("Failed to notify admin of support ticket:", e));
 
     return { success: true, ticket };
   } catch (error: any) {

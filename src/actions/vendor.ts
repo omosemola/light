@@ -3,7 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { sendEmail, generateOrderEmailHTML } from "@/lib/email";
+import { 
+  sendEmail, 
+  generateStudentStatusUpdateEmail, 
+  generateVendorWelcomeEmail, 
+  generateAdminNewVendorEmail 
+} from "@/lib/email";
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
@@ -112,7 +117,7 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
         statusDesc = `Your meal from ${updatedOrder.store.name} has been delivered to ${updatedOrder.deliveryLocation}. Enjoy your food!`;
       }
 
-      const emailHtml = generateOrderEmailHTML({
+      const emailHtml = generateStudentStatusUpdateEmail({
         customerName: updatedOrder.user.name || "Campus Student",
         orderId: updatedOrder.id.slice(-6).toUpperCase(),
         statusTitle,
@@ -124,7 +129,7 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 
       sendEmail({
         to: updatedOrder.user.email,
-        subject: `Order Update: ${statusTitle} (#${updatedOrder.id.slice(-6).toUpperCase()})`,
+        subject: `Order Update: ${statusTitle} (#${updatedOrder.id.slice(-6).toUpperCase()}) - ${updatedOrder.store.name}`,
         html: emailHtml,
       }).catch((e) => console.error("Failed to send status update email:", e));
     }
@@ -244,9 +249,37 @@ export async function registerVendorStore(data: {
       },
     });
 
-    revalidatePath("/vendor/dashboard");
-    revalidatePath("/admin/dashboard");
-    revalidatePath("/");
+    // 3. Send Onboarding Welcome Email to Vendor
+    if (data.email) {
+      const vendorWelcomeHtml = generateVendorWelcomeEmail({
+        ownerName: data.ownerName || data.storeName,
+        storeName: data.storeName,
+        category: data.category,
+      });
+
+      sendEmail({
+        to: data.email,
+        subject: `Welcome to Lightson Marketplace, ${data.storeName}! 🏪`,
+        html: vendorWelcomeHtml,
+      }).catch((e) => console.error("Failed to send vendor welcome email:", e));
+    }
+
+    // 4. Send New Vendor Application Alert to Admin
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+    const adminNoticeHtml = generateAdminNewVendorEmail({
+      storeName: data.storeName,
+      ownerName: data.ownerName,
+      email: data.email,
+      phone: data.phone,
+      category: data.category,
+      location: data.location,
+    });
+
+    sendEmail({
+      to: adminEmail,
+      subject: `[LIGHTSON ADMIN] New Vendor Registered: ${data.storeName} (${data.category})`,
+      html: adminNoticeHtml,
+    }).catch((e) => console.error("Failed to send admin vendor alert email:", e));
 
     return { success: true, store, userId: user.id };
   } catch (error: any) {

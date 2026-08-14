@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, ArrowRight } from "lucide-react";
 import { useUserStore } from "@/lib/userStore";
+import { sendStudentWelcomeNotification } from "@/actions/support";
 
 function GoogleIcon() {
   return (
@@ -57,6 +58,13 @@ export default function SignupPage() {
       avatar: DEFAULT_HUMAN_AVATAR,
       isVisitor: false,
     });
+
+    if (userEmail) {
+      sendStudentWelcomeNotification({
+        email: userEmail,
+        name: userName || "Student",
+      }).catch((e) => console.error("Welcome email failed:", e));
+    }
 
     setToastMessage(`Account created! Welcome to Lightson, ${(userName || "Student").split(" ")[0]}! 🎉`);
     setTimeout(() => {

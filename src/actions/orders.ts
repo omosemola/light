@@ -3,7 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { sendEmail, generateOrderEmailHTML } from "@/lib/email";
+import { 
+  sendEmail, 
+  generateStudentOrderReceiptEmail, 
+  generateVendorNewOrderAlertEmail, 
+  generateAdminPlatformOrderAlertEmail 
+} from "@/lib/email";
 
 export interface CreateOrderInput {
   userId?: string;
@@ -92,7 +97,12 @@ export async function createLiveOrder(input: CreateOrderInput) {
         },
       },
       include: {
-        store: true,
+        store: {
+          include: {
+            user: true,
+          },
+        },
+        user: true,
         items: {
           include: { product: true },
         },
@@ -104,24 +114,73 @@ export async function createLiveOrder(input: CreateOrderInput) {
     revalidatePath("/admin/dashboard");
     revalidatePath("/orders");
 
-    // 4. Send Order Confirmation Email to Student
-    if (input.userEmail) {
-      const emailHtml = generateOrderEmailHTML({
-        customerName: input.userName || "Campus Student",
-        orderId: order.id.slice(-6).toUpperCase(),
-        statusTitle: "Order Received 📦",
-        statusDesc: `Your order from ${order.store.name} has been placed successfully and sent to the kitchen.`,
+    // Format item details for email templates
+    const orderItemsForEmail = order.items.map((it) => ({
+      name: it.product?.name || "Campus Item",
+      quantity: it.quantity,
+      price: it.price,
+    }));
+
+    const displayOrderId = order.id.slice(-6).toUpperCase();
+
+    // 4. Send Order Confirmation Receipt to Student
+    if (input.userEmail || order.user?.email) {
+      const studentEmail = input.userEmail || order.user?.email;
+      if (studentEmail) {
+        const studentHtml = generateStudentOrderReceiptEmail({
+          customerName: input.userName || order.user?.name || "Campus Student",
+          orderId: displayOrderId,
+          storeName: order.store.name,
+          deliveryLocation: order.deliveryLocation,
+          deliveryInstructions: order.deliveryInstructions,
+          items: orderItemsForEmail,
+          totalAmount: order.totalAmount,
+        });
+
+        sendEmail({
+          to: studentEmail,
+          subject: `Order Confirmed (#${displayOrderId}) - ${order.store.name}`,
+          html: studentHtml,
+        }).catch((e) => console.error("Failed to send student receipt email:", e));
+      }
+    }
+
+    // 5. Send Urgent New Order Alert to Vendor (Store Owner)
+    const vendorEmail = order.store.user?.email;
+    if (vendorEmail) {
+      const vendorHtml = generateVendorNewOrderAlertEmail({
         storeName: order.store.name,
+        orderId: displayOrderId,
+        customerName: input.userName || order.user?.name || "Campus Student",
+        customerPhone: order.user?.phone || null,
         deliveryLocation: order.deliveryLocation,
+        deliveryInstructions: order.deliveryInstructions,
+        items: orderItemsForEmail,
         totalAmount: order.totalAmount,
       });
 
       sendEmail({
-        to: input.userEmail,
-        subject: `Order Confirmed (#${order.id.slice(-6).toUpperCase()}) - Lightson Marketplace`,
-        html: emailHtml,
-      }).catch((e) => console.error("Failed to send order email:", e));
+        to: vendorEmail,
+        subject: `🚨 NEW ORDER #${displayOrderId} - ${order.store.name} Kitchen Alert!`,
+        html: vendorHtml,
+      }).catch((e) => console.error("Failed to send vendor alert email:", e));
     }
+
+    // 6. Send Transaction Notification to Admin
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+    const adminHtml = generateAdminPlatformOrderAlertEmail({
+      orderId: displayOrderId,
+      storeName: order.store.name,
+      customerName: input.userName || order.user?.name || "Campus Student",
+      totalAmount: order.totalAmount,
+      deliveryLocation: order.deliveryLocation,
+    });
+
+    sendEmail({
+      to: adminEmail,
+      subject: `[LIGHTSON ADMIN] New Order #${displayOrderId} - ₦${order.totalAmount.toLocaleString()}`,
+      html: adminHtml,
+    }).catch((e) => console.error("Failed to send admin order notification:", e));
 
     return { success: true, order };
   } catch (error: any) {
