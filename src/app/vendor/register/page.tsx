@@ -63,6 +63,7 @@ export default function VendorRegistrationPage() {
   const [ownerName, setOwnerName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [category, setCategory] = useState("Hot Meals & Fast Food");
 
   // Step 2: Store Operations & Location
@@ -93,8 +94,8 @@ export default function VendorRegistrationPage() {
     e.preventDefault();
     setErrorMessage("");
     if (currentStep === 1) {
-      if (!storeName || !ownerName || !email || !phone) {
-        setErrorMessage("Please fill in all required contact and business fields.");
+      if (!storeName || !ownerName || !email || !phone || !password) {
+        setErrorMessage("Please fill in all required contact, business, and password fields.");
         return;
       }
       setCurrentStep(2);
@@ -122,6 +123,7 @@ export default function VendorRegistrationPage() {
         ownerName,
         email,
         phone,
+        password,
         category,
         location,
         description: description || `Official ${storeName} store on campus. Fresh meals and quick hostel delivery.`,
@@ -378,6 +380,23 @@ export default function VendorRegistrationPage() {
                         className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
+                      Merchant Account Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Create password for logging in (e.g. Pass1234)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+                    />
+                    <span className="text-[11px] text-[#71717A] dark:text-zinc-500 mt-1 block">
+                      You will use this password and your email ({email || "store email"}) to log into the Merchant Terminal.
+                    </span>
                   </div>
 
                   <div className="pt-4">

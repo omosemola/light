@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Mail, Lock, CheckCircle2, LogIn } from "lucide-react";
+import { ArrowLeft, Mail, Lock, CheckCircle2, LogIn, Store, ArrowRight } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 
@@ -212,8 +212,33 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* VENDOR MERCHANT TERMINAL SHORTCUT CARD */}
+        <div className="mt-8 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-800/60 rounded-3xl flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#F5A623] text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Store size={20} />
+            </div>
+            <div>
+              <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 flex items-center gap-1.5">
+                Campus Store Vendor?
+              </span>
+              <span className="text-[11px] text-[#71717A] dark:text-zinc-400 font-medium block">
+                Access your Merchant Kitchen Terminal
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/vendor/dashboard"
+            className="px-3.5 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap shrink-0"
+          >
+            <span>Terminal</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
         {/* Link to Signup */}
-        <div className="text-center mt-8 pt-4 border-t border-slate-200/60 font-body text-sm text-[#71717A]">
+        <div className="text-center mt-6 pt-4 border-t border-slate-200/60 font-body text-sm text-[#71717A]">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="font-heading font-extrabold text-[#312E81] hover:underline">
             Get Started

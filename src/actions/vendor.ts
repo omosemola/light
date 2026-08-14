@@ -198,6 +198,7 @@ export async function registerVendorStore(data: {
   ownerName: string;
   email: string;
   phone: string;
+  password?: string;
   category: string;
   location: string;
   description?: string;
@@ -215,13 +216,19 @@ export async function registerVendorStore(data: {
         data: {
           name: data.ownerName || data.storeName,
           email: data.email,
+          phone: data.phone,
+          password: data.password || null,
           role: "VENDOR",
         },
       });
     } else {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { role: "VENDOR" },
+        data: { 
+          role: "VENDOR",
+          phone: data.phone || user.phone,
+          password: data.password || user.password,
+        },
       });
     }
 
