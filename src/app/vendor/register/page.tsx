@@ -21,18 +21,22 @@ import {
   Phone,
   Mail,
   MapPin,
-  Landmark
+  Landmark,
+  Eye,
+  EyeOff,
+  Lock
 } from "lucide-react";
 import { registerVendorStore } from "@/actions/vendor";
 
 const CAMPUS_CATEGORIES = [
-  "Hot Meals, Food & Dining",
-  "Campus Groceries, Snacks & Provisions",
-  "Stationery, Books & Exam Materials",
-  "Tech, Gadgets & Phone Accessories",
-  "Campus Fashion, Footwear & Thrift",
-  "Health, Beauty & Personal Care",
-  "Campus Services (Printing, Laundry, Barbering)"
+  "Campus Hot Kitchen & Meals",
+  "Cafeteria & Snacks Combos",
+  "Provisions & Hostel Groceries",
+  "Tech, Gadgets & Accessories",
+  "Fashion, Wears & Campus Merch",
+  "Stationery, Books & Print Services",
+  "Beauty, Skincare & Personal Care",
+  "Laundry & Hostel Errands",
 ];
 
 const NIGERIAN_BANKS = [
@@ -63,6 +67,7 @@ export default function VendorRegistrationPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [category, setCategory] = useState("Hot Meals, Food & Dining");
 
   // Step 2: Store Operations & Location
@@ -381,13 +386,23 @@ export default function VendorRegistrationPage() {
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
                       Merchant Account Password <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full h-12 pl-4 pr-12 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                     <span className="text-[11px] text-[#71717A] dark:text-zinc-500 mt-1 block">
                       You will use this password and your email ({email || "store email"}) to log into the Merchant Terminal.
                     </span>
