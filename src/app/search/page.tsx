@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Star, Clock, Store, RotateCcw, Check } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
+import { searchLiveCatalog } from "@/actions/marketplace";
 
 interface Product {
   id: string;
@@ -558,6 +559,7 @@ const POPULAR_SUGGESTIONS = ["Power Bank", "Graphic Hoodie", "Cuban Chain", "Sma
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [catalog, setCatalog] = useState<Product[]>(SEARCH_CATALOG);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedVendor, setSelectedVendor] = useState("All Vendors");
   const [maxPrice, setMaxPrice] = useState<number>(8000);
@@ -570,9 +572,50 @@ export default function SearchPage() {
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
+  useEffect(() => {
+    let active = true;
+    async function performLiveSearch() {
+      if (!query.trim()) return;
+      try {
+        const res = await searchLiveCatalog(query);
+        if (active && res.success && res.products.length > 0) {
+          const liveResults: Product[] = res.products.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            vendorId: p.storeId,
+            vendorName: p.store?.name || "Campus Vendor",
+            vendorRating: p.store?.rating || 4.9,
+            image: p.image,
+            description: p.description || "",
+            prepTime: "15-20 mins",
+            isAvailable: p.isAvailable,
+            category: p.category?.name || "Food",
+            rating: 4.9,
+            reviewsCount: 15,
+          }));
+
+          // Merge live results with unique IDs
+          setCatalog((prev) => {
+            const existingIds = new Set(liveResults.map((r) => r.id));
+            return [...liveResults, ...prev.filter((p) => !existingIds.has(p.id))];
+          });
+        }
+      } catch (err) {
+        console.error("Error during live search:", err);
+      }
+    }
+
+    const timer = setTimeout(performLiveSearch, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
   // FILTER LOGIC
   const filteredProducts = useMemo(() => {
-    return SEARCH_CATALOG.filter((product) => {
+    return catalog.filter((product) => {
       // Search query match (Name, Vendor, Description, Category)
       const q = query.toLowerCase().trim();
       const matchesQuery = !q || 
@@ -629,7 +672,7 @@ export default function SearchPage() {
   };
 
   const handleAddProduct = (productId: string) => {
-    const product = SEARCH_CATALOG.find((p) => p.id === productId);
+    const product = catalog.find((p) => p.id === productId) || SEARCH_CATALOG.find((p) => p.id === productId);
     if (!product) return;
 
     const result = addItem({

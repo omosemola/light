@@ -31,6 +31,7 @@ import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { Modal } from "@/components/ui/Modal";
 import { registerVendorStore } from "@/actions/vendor";
+import { getUserOrders } from "@/actions/orders";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -58,6 +59,29 @@ export default function ProfilePage() {
   const [editHostel, setEditHostel] = useState(profile.hostel);
   const [editPhone, setEditPhone] = useState(profile.phone);
   const [editAvatar, setEditAvatar] = useState(profile.avatar);
+
+  const [userOrdersCount, setUserOrdersCount] = useState<number>(0);
+
+  useEffect(() => {
+    let active = true;
+    async function loadStats() {
+      if (profile.email) {
+        try {
+          const res = await getUserOrders(profile.email);
+          if (active && res.success && res.orders) {
+            setUserOrdersCount(res.orders.length);
+          }
+        } catch (e) {
+          console.error("Error loading user orders count:", e);
+        }
+      }
+    }
+
+    loadStats();
+    return () => {
+      active = false;
+    };
+  }, [profile.email]);
 
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
   const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
@@ -264,7 +288,7 @@ export default function ProfilePage() {
             <div className="w-8 h-8 rounded-full bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mb-1">
               <ShoppingBag size={16} />
             </div>
-            <span className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">14</span>
+            <span className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">{userOrdersCount}</span>
             <span className="text-[10px] font-body font-semibold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">Orders</span>
           </Link>
 

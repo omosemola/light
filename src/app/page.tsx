@@ -13,6 +13,7 @@ import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useUserStore } from "@/lib/userStore";
 import WelcomePage from "@/app/welcome/page";
+import { getLiveHomepageData } from "@/actions/marketplace";
 
 // POPULAR PRODUCTS MOCK DATA WITH UNSPLASH IMAGERY
 const POPULAR_PRODUCTS = [
@@ -137,9 +138,27 @@ export default function Home() {
   const { profile, hasSeenOnboarding } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [products, setProducts] = useState<any[]>(POPULAR_PRODUCTS);
 
   useEffect(() => {
     setIsMounted(true);
+    let isCurrent = true;
+
+    async function loadLiveProducts() {
+      try {
+        const res = await getLiveHomepageData();
+        if (isCurrent && res.success && res.products.length > 0) {
+          setProducts(res.products);
+        }
+      } catch (e) {
+        console.error("Error loading live homepage products:", e);
+      }
+    }
+
+    loadLiveProducts();
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   if (!isMounted) {
@@ -151,7 +170,7 @@ export default function Home() {
   }
 
   const handleAddProduct = (productId: string) => {
-    const product = POPULAR_PRODUCTS.find((p) => p.id === productId);
+    const product = products.find((p) => p.id === productId) || POPULAR_PRODUCTS.find((p) => p.id === productId);
     if (!product) return;
 
     const result = addItem({
@@ -391,7 +410,7 @@ export default function Home() {
           </div>
 
           <ProductGrid 
-            products={POPULAR_PRODUCTS} 
+            products={products} 
             onAddProduct={handleAddProduct}
           />
         </motion.section>

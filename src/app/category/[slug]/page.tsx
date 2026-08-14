@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useMemo } from "react";
+import { useState, use, useMemo, useEffect } from "react";
 import { ArrowLeft, Search, ArrowUpDown, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Dumbbell, Shirt, Gem, Smartphone, Watch, Zap } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
+import { getLiveCategoryProducts } from "@/actions/marketplace";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -797,7 +798,39 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   };
 
   const CategoryIcon = category.Icon;
-  const rawProducts = CATEGORY_PRODUCTS[slug] || CATEGORY_PRODUCTS.food;
+  const defaultProducts = CATEGORY_PRODUCTS[slug] || CATEGORY_PRODUCTS.food;
+  const [rawProducts, setRawProducts] = useState(defaultProducts);
+
+  useEffect(() => {
+    let active = true;
+    async function loadCategoryProducts() {
+      try {
+        const res = await getLiveCategoryProducts(slug);
+        if (active && res.success && res.products.length > 0) {
+          const formatted = res.products.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            image: p.image,
+            description: p.description || "",
+            isAvailable: p.isAvailable,
+            rating: 4.8,
+            vendorId: p.storeId,
+            vendorName: p.store?.name || "Campus Vendor",
+            subcategory: "All",
+          }));
+          setRawProducts(formatted);
+        }
+      } catch (err) {
+        console.error("Error loading category products:", err);
+      }
+    }
+
+    loadCategoryProducts();
+    return () => {
+      active = false;
+    };
+  }, [slug]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("All");

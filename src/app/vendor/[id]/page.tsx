@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { 
   ArrowLeft, 
   Star, 
@@ -25,6 +25,7 @@ import { useCartStore } from "@/lib/store";
 import { useUserStore } from "@/lib/userStore";
 import { Modal } from "@/components/ui/Modal";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
+import { getLiveStoreById } from "@/actions/marketplace";
 
 // MOCK VENDORS DATABASE
 const VENDORS_DATA: Record<string, {
@@ -348,7 +349,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { profile, updateProfile } = useUserStore();
 
-  const vendor = VENDORS_DATA[id] || {
+  const defaultVendor = VENDORS_DATA[id] || {
     id: id,
     name: "Campus Vendor",
     category: "Campus Marketplace Merchant",
@@ -362,9 +363,67 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
     description: "Quality goods and fast delivery to all student hostels.",
     phone: "+234 800 000 0000",
     ordersCount: 500,
-    products: VENDORS_DATA.v1.products,
-    reviews: VENDORS_DATA.v1.reviews,
+    products: VENDORS_DATA.v1?.products || [],
+    reviews: VENDORS_DATA.v1?.reviews || [],
   };
+
+  const [vendor, setVendor] = useState(defaultVendor);
+
+  useEffect(() => {
+    let active = true;
+    async function loadLiveStore() {
+      try {
+        const res = await getLiveStoreById(id);
+        if (active && res.success && res.store) {
+          const dbStore = res.store;
+          setVendor({
+            id: dbStore.id,
+            name: dbStore.name,
+            category: "Campus Verified Store",
+            rating: dbStore.rating || 4.9,
+            reviewsCount: dbStore._count?.reviews || 10,
+            location: "University Campus",
+            prepTime: dbStore.estimatedDelivery || "20-30 mins",
+            isOpen: dbStore.isOpen,
+            avatar: dbStore.logo || defaultVendor.avatar,
+            coverImage: dbStore.coverImage || defaultVendor.coverImage,
+            description: dbStore.description || defaultVendor.description,
+            phone: dbStore.user?.phone || defaultVendor.phone,
+            ordersCount: (dbStore._count?.orders || 0) + 120,
+            products: dbStore.products && dbStore.products.length > 0
+              ? dbStore.products.map((p: any) => ({
+                  id: p.id,
+                  name: p.name,
+                  price: p.price,
+                  image: p.image,
+                  description: p.description || "",
+                  isAvailable: p.isAvailable,
+                  rating: 4.8,
+                  category: "Items",
+                }))
+              : defaultVendor.products,
+            reviews: dbStore.reviews && dbStore.reviews.length > 0
+              ? dbStore.reviews.map((r: any) => ({
+                  id: r.id,
+                  author: r.user?.name || "Student",
+                  avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+                  rating: r.rating,
+                  date: new Date(r.createdAt).toLocaleDateString(),
+                  comment: r.comment || "",
+                }))
+              : defaultVendor.reviews,
+          });
+        }
+      } catch (err) {
+        console.error("Error loading live store:", err);
+      }
+    }
+
+    loadLiveStore();
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");

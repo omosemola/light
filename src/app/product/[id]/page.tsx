@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { ArrowLeft, Star, Clock, Heart, Plus, Store, CheckCircle2, MessageSquare, ThumbsUp, Send, ChevronLeft, ChevronRight, Quote, Info, Edit3 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
+import { getLiveProductById } from "@/actions/marketplace";
 
 interface Review {
   id: string;
@@ -696,7 +697,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const router = useRouter();
 
-  const product = ALL_PRODUCTS[id] || ALL_PRODUCTS.p1;
+  const defaultProduct = ALL_PRODUCTS[id] || ALL_PRODUCTS.p1;
+  const [product, setProduct] = useState(defaultProduct);
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
@@ -704,8 +706,44 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // REVIEWS STATE
   const [reviewsList, setReviewsList] = useState<Review[]>(
-    INITIAL_REVIEWS[product.id] || INITIAL_REVIEWS.p1 || []
+    INITIAL_REVIEWS[defaultProduct.id] || INITIAL_REVIEWS.p1 || []
   );
+
+  useEffect(() => {
+    let active = true;
+    async function loadLiveProduct() {
+      try {
+        const res = await getLiveProductById(id);
+        if (active && res.success && res.product) {
+          const p = res.product;
+          setProduct({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            image: p.image || defaultProduct.image,
+            description: p.description || defaultProduct.description,
+            vendorId: p.storeId,
+            vendorName: p.store?.name || defaultProduct.vendorName,
+            vendorRating: p.store?.rating || 4.9,
+            details: defaultProduct.details || ["Freshly prepared on campus", "Fast delivery to all student hostels"],
+            prepTime: p.store?.estimatedDelivery || "15-20 mins",
+            isAvailable: p.isAvailable,
+            category: p.category?.name?.toLowerCase() || "food",
+            rating: p.store?.rating || 4.9,
+            reviewsCount: p.store?.reviews?.length || 20,
+          });
+        }
+      } catch (err) {
+        console.error("Error loading live product:", err);
+      }
+    }
+
+    loadLiveProduct();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [newRating, setNewRating] = useState(5);
