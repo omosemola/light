@@ -301,7 +301,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
   ],
   groceries: [
     {
-      id: "g1",
+      id: "gr1",
       name: "Indomie Super Pack (Carton of 40)",
       price: 14500,
       vendorId: "v7",
@@ -312,7 +312,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g2",
+      id: "gr2",
       name: "Peak Evaporated Milk Tins (Pack of 6)",
       price: 4200,
       vendorId: "v7",
@@ -323,7 +323,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g3",
+      id: "gr3",
       name: "Milo Energy Food Drink 500g Refill",
       price: 3800,
       vendorId: "v7",
@@ -334,7 +334,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g4",
+      id: "gr4",
       name: "Golden Penny Semovita 2kg Bag",
       price: 3600,
       vendorId: "v7",
@@ -345,7 +345,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g5",
+      id: "gr5",
       name: "Morning Fresh Antibacterial Dish Soap 1L",
       price: 2200,
       vendorId: "v7",
@@ -645,7 +645,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
   ],
   gadgets: [
     {
-      id: "g2",
+      id: "gd1",
       name: "Fast Charging 20,000mAh Power Bank with LED",
       price: 13500,
       vendorId: "v13",
@@ -656,7 +656,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g3",
+      id: "gd2",
       name: "Wireless ANC Bluetooth Earbuds (30h Playtime)",
       price: 9800,
       vendorId: "v13",
@@ -667,7 +667,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g4",
+      id: "gd3",
       name: "Braided 65W 3-in-1 Fast Charging Cable (Type-C / Lightning / Micro)",
       price: 2500,
       vendorId: "v13",
@@ -678,7 +678,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       isAvailable: true,
     },
     {
-      id: "g5",
+      id: "gd4",
       name: "Adjustable Aluminum Phone & Tablet Desk Stand",
       price: 3200,
       vendorId: "v13",
