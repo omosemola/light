@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useMemo } from "react";
 import { ArrowLeft, Search, ArrowUpDown, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Dumbbell, Shirt, Gem, Smartphone, Watch, Zap } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -173,6 +173,17 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       subcategory: "Fast Food",
       isAvailable: true,
     },
+    {
+      id: "f5",
+      name: "Egusi Soup with Pounded Yam & Beef",
+      price: 3800,
+      vendorId: "v1",
+      vendorName: "Mama Cass",
+      image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+      description: "Rich melon seed egusi soup garnished with pumpkin leaves and served with smooth pounded yam.",
+      subcategory: "Rice & Meals",
+      isAvailable: true,
+    },
   ],
   snacks: [
     {
@@ -184,6 +195,50 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       image: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?auto=format&fit=crop&w=800&q=80",
       description: "Crispy, naturally sweet fried plantain chips sliced thin.",
       subcategory: "Chips & Popcorn",
+      isAvailable: true,
+    },
+    {
+      id: "s2",
+      name: "Gourmet Sweet & Butter Popcorn",
+      price: 1200,
+      vendorId: "v2",
+      vendorName: "Fresh Squeeze",
+      image: "https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=800&q=80",
+      description: "Freshly popped cinema-style sweet and butter coated popcorn.",
+      subcategory: "Chips & Popcorn",
+      isAvailable: true,
+    },
+    {
+      id: "s3",
+      name: "Crunchy Roasted Groundnuts 250g",
+      price: 1000,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80",
+      description: "Locally roasted salted groundnuts, perfect pairing for snacks and drinking garri.",
+      subcategory: "Traditional Snacks",
+      isAvailable: true,
+    },
+    {
+      id: "s4",
+      name: "Cadbury Dairy Milk & Snickers Duo",
+      price: 1500,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=800&q=80",
+      description: "Creamy milk chocolate bar paired with caramel peanut Snickers.",
+      subcategory: "Chocolates",
+      isAvailable: true,
+    },
+    {
+      id: "s5",
+      name: "Spicy Crunchy Chin Chin Jar 500g",
+      price: 1800,
+      vendorId: "v8",
+      vendorName: "Tasty Bakes",
+      image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80",
+      description: "Traditional crunchy golden fried chin chin in a sealed storage tub.",
+      subcategory: "Traditional Snacks",
       isAvailable: true,
     },
   ],
@@ -210,6 +265,39 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       subcategory: "Smoothies",
       isAvailable: true,
     },
+    {
+      id: "d3",
+      name: "Monster Energy Drink 500ml Can",
+      price: 1500,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=800&q=80",
+      description: "Ice cold carbonated energy boost for late-night study and exams.",
+      subcategory: "Energy Drinks",
+      isAvailable: true,
+    },
+    {
+      id: "d4",
+      name: "Chilled Coca-Cola & Sprite 50cl (Pack of 2)",
+      price: 900,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=800&q=80",
+      description: "Chilled classic soft drinks in convenient plastic bottles.",
+      subcategory: "Soft Drinks",
+      isAvailable: true,
+    },
+    {
+      id: "d5",
+      name: "Eva Natural Spring Water 75cl (Pack of 6)",
+      price: 1500,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80",
+      description: "Pure bottled hydration delivered directly to your hostel room.",
+      subcategory: "Water",
+      isAvailable: true,
+    },
   ],
   groceries: [
     {
@@ -221,6 +309,50 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       image: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=800&q=80",
       description: "Carton of Indomie Instant Noodles Super Pack 120g.",
       subcategory: "Noodles & Pasta",
+      isAvailable: true,
+    },
+    {
+      id: "g2",
+      name: "Peak Evaporated Milk Tins (Pack of 6)",
+      price: 4200,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80",
+      description: "Rich creamy full cream milk tins for morning tea and breakfast cereals.",
+      subcategory: "Dairy & Breakfast",
+      isAvailable: true,
+    },
+    {
+      id: "g3",
+      name: "Milo Energy Food Drink 500g Refill",
+      price: 3800,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=800&q=80",
+      description: "Nourishing chocolate malt energy drink with vitamins and minerals.",
+      subcategory: "Dairy & Breakfast",
+      isAvailable: true,
+    },
+    {
+      id: "g4",
+      name: "Golden Penny Semovita 2kg Bag",
+      price: 3600,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80",
+      description: "Fortified premium wheat semovita for wholesome campus swallow meals.",
+      subcategory: "Noodles & Pasta",
+      isAvailable: true,
+    },
+    {
+      id: "g5",
+      name: "Morning Fresh Antibacterial Dish Soap 1L",
+      price: 2200,
+      vendorId: "v7",
+      vendorName: "Campus Mart",
+      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+      description: "Super degreasing dishwashing liquid for quick hostel kitchen cleanup.",
+      subcategory: "Toiletries",
       isAvailable: true,
     },
   ],
@@ -236,29 +368,139 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       subcategory: "Pies & Rolls",
       isAvailable: true,
     },
+    {
+      id: "pas2",
+      name: "Glazed Ring Donuts (Box of 4)",
+      price: 2800,
+      vendorId: "v8",
+      vendorName: "Tasty Bakes",
+      image: "https://images.unsplash.com/photo-1527515862127-a4fc05baf7a5?auto=format&fit=crop&w=800&q=80",
+      description: "Fluffy yeast donuts topped with vanilla glaze and chocolate drizzle.",
+      subcategory: "Cakes & Donuts",
+      isAvailable: true,
+    },
+    {
+      id: "pas3",
+      name: "Freshly Baked Gourmet Butter Bread",
+      price: 1400,
+      vendorId: "v8",
+      vendorName: "Tasty Bakes",
+      image: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=800&q=80",
+      description: "Soft, sweet, and aromatic loaf of sliced butter bread baked fresh daily.",
+      subcategory: "Fresh Bread",
+      isAvailable: true,
+    },
+    {
+      id: "pas4",
+      name: "Spicy Chicken Sausage Roll (Pack of 3)",
+      price: 1800,
+      vendorId: "v8",
+      vendorName: "Tasty Bakes",
+      image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80",
+      description: "Crispy pastry rolls stuffed with spiced chicken sausage filling.",
+      subcategory: "Pies & Rolls",
+      isAvailable: true,
+    },
   ],
   stationery: [
     {
       id: "st1",
-      name: "A4 Note Book 60 Leaves (Pack of 5)",
+      name: "A4 Ruled Note Books 60 Leaves (Pack of 5)",
       price: 2500,
       vendorId: "v3",
       vendorName: "Campus Books",
       image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-      description: "High quality 60-leaf ruled exercise notebooks for campus lectures.",
+      description: "High quality 60-leaf ruled exercise notebooks for university lectures and revision.",
       subcategory: "Note Books",
+      isAvailable: true,
+    },
+    {
+      id: "st2",
+      name: "Schneider & Pilot Black Gel Pens (Pack of 10)",
+      price: 1800,
+      vendorId: "v3",
+      vendorName: "Campus Books",
+      image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=800&q=80",
+      description: "Smooth flowing 0.7mm quick-dry black ink pens for exams and fast note taking.",
+      subcategory: "Pens & Pencils",
+      isAvailable: true,
+    },
+    {
+      id: "st3",
+      name: "Casio FX-991ES Plus Scientific Calculator",
+      price: 12500,
+      vendorId: "v3",
+      vendorName: "Campus Books",
+      image: "https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48f?auto=format&fit=crop&w=800&q=80",
+      description: "Original natural textbook display calculator for Engineering, Sciences, and Math courses.",
+      subcategory: "Files & Accessories",
+      isAvailable: true,
+    },
+    {
+      id: "st4",
+      name: "Fluorescent Highlighter Markers (Set of 6)",
+      price: 1600,
+      vendorId: "v3",
+      vendorName: "Campus Books",
+      image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?auto=format&fit=crop&w=800&q=80",
+      description: "Assorted neon colors for highlighting lecture textbooks and notes without bleed-through.",
+      subcategory: "Pens & Pencils",
+      isAvailable: true,
+    },
+    {
+      id: "st5",
+      name: "Clear Document Holder & Exam Clipboard",
+      price: 1200,
+      vendorId: "v3",
+      vendorName: "Campus Books",
+      image: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=800&q=80",
+      description: "Rigid plastic transparent clipboard with metal grip clamp for exams and coursework.",
+      subcategory: "Files & Accessories",
       isAvailable: true,
     },
   ],
   care: [
     {
       id: "c1",
-      name: "Moisturizing Cocoa Butter Lotion 400ml",
+      name: "Moisturizing Cocoa Butter Body Lotion 400ml",
       price: 3200,
       vendorId: "v9",
       vendorName: "PharmaCare",
       image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
-      description: "Deep nourishing body lotion for all skin types.",
+      description: "Deep nourishing body lotion for all skin types, restores dry campus skin.",
+      subcategory: "Skincare",
+      isAvailable: true,
+    },
+    {
+      id: "c2",
+      name: "Dettol Cool Antibacterial Body Wash 500ml",
+      price: 3400,
+      vendorId: "v9",
+      vendorName: "PharmaCare",
+      image: "https://images.unsplash.com/photo-1608248597359-2144d03e5c94?auto=format&fit=crop&w=800&q=80",
+      description: "Refreshing menthol scented shower gel with 100% germ protection.",
+      subcategory: "Soaps & Wash",
+      isAvailable: true,
+    },
+    {
+      id: "c3",
+      name: "Oral-B Complete Clean Toothpaste + Brush Set",
+      price: 1800,
+      vendorId: "v9",
+      vendorName: "PharmaCare",
+      image: "https://images.unsplash.com/photo-1559591937-e1032b492025?auto=format&fit=crop&w=800&q=80",
+      description: "Pro-Expert oral care protection with medium-bristle ergonomic toothbrush.",
+      subcategory: "Soaps & Wash",
+      isAvailable: true,
+    },
+    {
+      id: "c4",
+      name: "Nivea Men / Women Roll-On Deodorant 50ml",
+      price: 2400,
+      vendorId: "v9",
+      vendorName: "PharmaCare",
+      image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=800&q=80",
+      description: "48-hour anti-perspirant protection with zero white marks on clothing.",
       subcategory: "Skincare",
       isAvailable: true,
     },
@@ -266,26 +508,92 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
   sports: [
     {
       id: "sp1",
-      name: "Nike Pro Turf Football Boots (Size 42-45)",
+      name: "Nike Pro Turf Football Boots (Size 40-45)",
       price: 18500,
       vendorId: "v10",
       vendorName: "Campus Sports",
       image: "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=800&q=80",
-      description: "Durable artificial turf boots designed for campus match fixtures.",
+      description: "Durable artificial turf rubber cleats designed for hostel match fixtures.",
       subcategory: "Football & Boots",
+      isAvailable: true,
+    },
+    {
+      id: "sp2",
+      name: "Heavy Duty Latex Resistance Bands (Set of 5)",
+      price: 5500,
+      vendorId: "v10",
+      vendorName: "Campus Sports",
+      image: "https://images.unsplash.com/photo-1598289431512-b97b0917affc?auto=format&fit=crop&w=800&q=80",
+      description: "Color-coded workout resistance loops for dorm fitness, stretching, and strength.",
+      subcategory: "Gym Gear",
+      isAvailable: true,
+    },
+    {
+      id: "sp3",
+      name: "Club Fan Jersey - Breathable Polyester",
+      price: 7500,
+      vendorId: "v10",
+      vendorName: "Campus Sports",
+      image: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=800&q=80",
+      description: "Premium moisture-wicking football jersey with embroidered club badge.",
+      subcategory: "Jerseys",
+      isAvailable: true,
+    },
+    {
+      id: "sp4",
+      name: "Non-Slip Yoga & Floor Exercise Mat (6mm)",
+      price: 6800,
+      vendorId: "v10",
+      vendorName: "Campus Sports",
+      image: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&w=800&q=80",
+      description: "High-density cushioned mat with carrying strap for room workouts.",
+      subcategory: "Gym Gear",
       isAvailable: true,
     },
   ],
   wears: [
     {
       id: "w1",
-      name: "Oversized Vintage Graphic Hoodie",
+      name: "Oversized Vintage Graphic Streetwear Hoodie",
       price: 12500,
       vendorId: "v11",
       vendorName: "Urban Campus Wears",
       image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80",
-      description: "Heavyweight fleece lined hoodie designed for lecture comfort.",
+      description: "Heavyweight fleece lined hoodie designed for cozy lectures and cool evenings.",
       subcategory: "Hoodies & Jackets",
+      isAvailable: true,
+    },
+    {
+      id: "w2",
+      name: "240GSM Heavy Cotton Boxy Tee",
+      price: 6500,
+      vendorId: "v11",
+      vendorName: "Urban Campus Wears",
+      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80",
+      description: "Thick drop-shoulder unisex cotton t-shirt with ribbed collar.",
+      subcategory: "T-Shirts",
+      isAvailable: true,
+    },
+    {
+      id: "w3",
+      name: "Classic Campus Slip-On Slides",
+      price: 5200,
+      vendorId: "v11",
+      vendorName: "Urban Campus Wears",
+      image: "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?auto=format&fit=crop&w=800&q=80",
+      description: "Cushioned EVA foam slides for walking around the hostel and campus.",
+      subcategory: "Sneakers",
+      isAvailable: true,
+    },
+    {
+      id: "w4",
+      name: "High-Top Canvas Street Sneakers",
+      price: 14000,
+      vendorId: "v11",
+      vendorName: "Urban Campus Wears",
+      image: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=800&q=80",
+      description: "Durable vulcanized rubber sole skate sneakers with contrast stitching.",
+      subcategory: "Sneakers",
       isAvailable: true,
     },
   ],
@@ -297,21 +605,87 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       vendorId: "v12",
       vendorName: "Ice Drip Jewelry",
       image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80",
-      description: "Stainless steel triple plated Cuban link chain with cz stones.",
+      description: "Stainless steel triple plated Cuban link chain with prong-set CZ stones.",
       subcategory: "Chains & Necklaces",
+      isAvailable: true,
+    },
+    {
+      id: "j2",
+      name: "Titanium Steel Minimalist Ring Set (Pack of 3)",
+      price: 3800,
+      vendorId: "v12",
+      vendorName: "Ice Drip Jewelry",
+      image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80",
+      description: "Waterproof non-tarnish band rings in matte black, silver, and gold finish.",
+      subcategory: "Rings",
+      isAvailable: true,
+    },
+    {
+      id: "j3",
+      name: "Layered Pearl & Stainless Steel Choker",
+      price: 4500,
+      vendorId: "v12",
+      vendorName: "Ice Drip Jewelry",
+      image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80",
+      description: "Modern freshwater-style pearl necklace with magnetic clasp.",
+      subcategory: "Chains & Necklaces",
+      isAvailable: true,
+    },
+    {
+      id: "j4",
+      name: "Braided Leather Magnetic Bracelet",
+      price: 3200,
+      vendorId: "v12",
+      vendorName: "Ice Drip Jewelry",
+      image: "https://images.unsplash.com/photo-1611591475152-4c09a15cfa69?auto=format&fit=crop&w=800&q=80",
+      description: "Genuine woven leather wristband with brushed stainless steel clasp.",
+      subcategory: "Bracelets",
       isAvailable: true,
     },
   ],
   gadgets: [
     {
       id: "g2",
-      name: "Fast Charging 20000mAh Power Bank",
+      name: "Fast Charging 20,000mAh Power Bank with LED",
       price: 13500,
       vendorId: "v13",
       vendorName: "Tech Hub Campus",
       image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=800&q=80",
-      description: "22.5W Fast charge power bank with dual USB-C and LED display.",
+      description: "22.5W Fast charge power bank with dual USB-C, QuickCharge 3.0, and digital battery indicator.",
       subcategory: "Power Banks",
+      isAvailable: true,
+    },
+    {
+      id: "g3",
+      name: "Wireless ANC Bluetooth Earbuds (30h Playtime)",
+      price: 9800,
+      vendorId: "v13",
+      vendorName: "Tech Hub Campus",
+      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80",
+      description: "Noise cancelling earbuds with deep bass and instant Bluetooth 5.3 pairing.",
+      subcategory: "Earbuds",
+      isAvailable: true,
+    },
+    {
+      id: "g4",
+      name: "Braided 65W 3-in-1 Fast Charging Cable (Type-C / Lightning / Micro)",
+      price: 2500,
+      vendorId: "v13",
+      vendorName: "Tech Hub Campus",
+      image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=800&q=80",
+      description: "Reinforced nylon braided multi-connector charging cable.",
+      subcategory: "Cables",
+      isAvailable: true,
+    },
+    {
+      id: "g5",
+      name: "Adjustable Aluminum Phone & Tablet Desk Stand",
+      price: 3200,
+      vendorId: "v13",
+      vendorName: "Tech Hub Campus",
+      image: "https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&w=800&q=80",
+      description: "Foldable metal desktop cradle for hands-free online lectures and video calls.",
+      subcategory: "Cables",
       isAvailable: true,
     },
   ],
@@ -323,21 +697,87 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       vendorId: "v13",
       vendorName: "Tech Hub Campus",
       image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
-      description: "Bluetooth call smartwatch with heart rate & sleep tracker.",
+      description: "Bluetooth call smartwatch with heart rate, sleep monitor, and notification sync.",
       subcategory: "Watches",
+      isAvailable: true,
+    },
+    {
+      id: "ac2",
+      name: "Polarized UV400 Vintage Aviator Sunglasses",
+      price: 4200,
+      vendorId: "v12",
+      vendorName: "Ice Drip Jewelry",
+      image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80",
+      description: "UV-blocking tinted sunglasses with lightweight metallic frame and protective case.",
+      subcategory: "Sunglasses",
+      isAvailable: true,
+    },
+    {
+      id: "ac3",
+      name: "Heavy Duty Canvas Campus Tote Bag with Zipper",
+      price: 4500,
+      vendorId: "v11",
+      vendorName: "Urban Campus Wears",
+      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+      description: "Spacious aesthetic tote bag that easily fits laptops, notebooks, and provisions.",
+      subcategory: "Bags & Caps",
+      isAvailable: true,
+    },
+    {
+      id: "ac4",
+      name: "Embroidered 100% Cotton Baseball Cap",
+      price: 3500,
+      vendorId: "v11",
+      vendorName: "Urban Campus Wears",
+      image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80",
+      description: "Structured 6-panel unisex dad hat with adjustable brass buckle strap.",
+      subcategory: "Bags & Caps",
       isAvailable: true,
     },
   ],
   electronics: [
     {
       id: "el1",
-      name: "Rechargeable LED Desk Study Lamp",
+      name: "Rechargeable LED Desk Study Lamp (12h Battery)",
       price: 5500,
       vendorId: "v14",
       vendorName: "Hostel Electronics",
       image: "https://images.unsplash.com/photo-1534073828943-f801091bb18c?auto=format&fit=crop&w=800&q=80",
-      description: "Multi-level brightness eye protection LED lamp with 12h battery.",
+      description: "Multi-level touch brightness eye-protection desk lamp with long battery life during blackouts.",
       subcategory: "Study Lamps",
+      isAvailable: true,
+    },
+    {
+      id: "el2",
+      name: "2.0L Stainless Steel Fast Boiling Electric Kettle",
+      price: 8500,
+      vendorId: "v14",
+      vendorName: "Hostel Electronics",
+      image: "https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80",
+      description: "Automatic shut-off rapid boil water kettle for morning tea, coffee, and noodles.",
+      subcategory: "Kettles & Cooking",
+      isAvailable: true,
+    },
+    {
+      id: "el3",
+      name: "Portable Bluetooth 5.0 Room Speaker with Heavy Bass",
+      price: 8500,
+      vendorId: "v14",
+      vendorName: "Hostel Electronics",
+      image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&q=80",
+      description: "Compact wireless stereo sound speaker with FM radio and TF card slot.",
+      subcategory: "Speakers & Audio",
+      isAvailable: true,
+    },
+    {
+      id: "el4",
+      name: "6-Way Surge Protector Power Extension Strip (3M Cord)",
+      price: 4800,
+      vendorId: "v14",
+      vendorName: "Hostel Electronics",
+      image: "https://images.unsplash.com/photo-1558611848-73f7eb4001a1?auto=format&fit=crop&w=800&q=80",
+      description: "Individual switch power extension board with surge protection for laptops and phones.",
+      subcategory: "Kettles & Cooking",
       isAvailable: true,
     },
   ],
@@ -361,16 +801,28 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("All");
+  const [sortBy, setSortBy] = useState<"popular" | "price-asc" | "price-desc" | "name">("popular");
   const [pendingProduct, setPendingProduct] = useState<any>(null);
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
-  const filteredProducts = rawProducts.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.vendorName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSubcat = selectedSubcategory === "All" || product.subcategory === selectedSubcategory;
-    return matchesSearch && matchesSubcat;
-  });
+  const filteredProducts = useMemo(() => {
+    const list = rawProducts.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            product.vendorName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSubcat = selectedSubcategory === "All" || product.subcategory === selectedSubcategory;
+      return matchesSearch && matchesSubcat;
+    });
+
+    if (sortBy === "price-asc") {
+      return [...list].sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-desc") {
+      return [...list].sort((a, b) => b.price - a.price);
+    } else if (sortBy === "name") {
+      return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return list;
+  }, [rawProducts, searchQuery, selectedSubcategory, sortBy]);
 
   const handleAddProduct = (productId: string) => {
     const product = rawProducts.find((p) => p.id === productId);
@@ -490,10 +942,19 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
           <p className="text-xs md:text-sm font-body font-semibold text-[#71717A] dark:text-zinc-400">
             Showing <span className="text-[#18181B] dark:text-zinc-100 font-extrabold">{filteredProducts.length}</span> items
           </p>
-          <button className="flex items-center gap-1.5 text-xs font-body font-semibold text-[#18181B] dark:text-zinc-200 bg-white dark:bg-zinc-900 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
-            <ArrowUpDown size={14} />
-            <span>Sort by: Popular</span>
-          </button>
+          <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-zinc-800 shadow-xs">
+            <ArrowUpDown size={13} className="text-[#71717A] dark:text-zinc-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="text-xs font-body font-bold text-[#18181B] dark:text-zinc-200 bg-transparent focus:outline-none cursor-pointer"
+            >
+              <option value="popular">Sort: Popular 🔥</option>
+              <option value="price-asc">Price: Low to High ₦</option>
+              <option value="price-desc">Price: High to Low ₦</option>
+              <option value="name">Name: A to Z</option>
+            </select>
+          </div>
         </div>
 
         {/* PRODUCTS GRID WITH SCROLL ANIMATION - LINKS DIRECTLY TO /product/[id] */}

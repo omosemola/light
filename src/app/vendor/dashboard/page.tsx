@@ -76,27 +76,30 @@ export default function VendorDashboardPage() {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
       
-      const playTone = (freq: number, startSec: number, durationSec: number) => {
+      const playTone = (freq: number, startSec: number, durationSec: number, gainVal = 0.35) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = "triangle";
+        osc.type = "sine";
         osc.frequency.setValueAtTime(freq, ctx.currentTime + startSec);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime + startSec);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startSec + durationSec);
+        gain.gain.setValueAtTime(gainVal, ctx.currentTime + startSec);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startSec + durationSec);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(ctx.currentTime + startSec);
         osc.stop(ctx.currentTime + startSec + durationSec);
       };
 
-      // Ring two alternating alarm chimes (Ding-Dong Alarm)
-      playTone(880, 0, 0.25);
-      playTone(1174.66, 0.25, 0.4);
-      playTone(880, 0.7, 0.25);
-      playTone(1174.66, 0.95, 0.4);
+      // Rich 4-Stage Kitchen POS Alarm Chime (Chowdeck / Toast POS Style)
+      playTone(784, 0, 0.2, 0.4);      // G5
+      playTone(1046.5, 0.18, 0.25, 0.4); // C6
+      playTone(1318.5, 0.38, 0.35, 0.45); // E6
+      playTone(1567.98, 0.6, 0.5, 0.5);  // G6
     } catch {
-      // Audio autoplay restriction silent fail
+      // Audio restriction fallback
     }
   };
 
@@ -266,6 +269,50 @@ export default function VendorDashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+        {/* LIVE INCOMING ORDERS SOUND ALARM BANNER */}
+        {metrics?.pendingOrdersCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-6 p-4 md:p-5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4 border border-amber-400"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 animate-bounce">
+                <BellRing className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-base md:text-lg font-heading font-black tracking-tight flex items-center gap-2">
+                  🚨 {metrics.pendingOrdersCount} NEW INCOMING {metrics.pendingOrdersCount === 1 ? "ORDER" : "ORDERS"} WAITING!
+                </h2>
+                <p className="text-xs text-amber-100 font-medium">
+                  Fresh student orders awaiting kitchen or store confirmation.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={playVendorOrderAlarm}
+                className="px-3.5 py-2 bg-white/20 hover:bg-white/30 text-white text-xs font-heading font-extrabold rounded-xl backdrop-blur-md border border-white/30 transition-all flex items-center gap-1.5 active:scale-95"
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>Test Alarm Chime</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTab("orders");
+                  setOrderFilter("PENDING");
+                }}
+                className="px-4 py-2 bg-white text-amber-700 hover:bg-amber-50 font-heading font-black text-xs rounded-xl shadow-md transition-all active:scale-95"
+              >
+                View Orders ➔
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* CLICKABLE METRICS CARDS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <motion.div onClick={() => setSelectedTab("orders")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:border-emerald-500 transition-all active:scale-[0.98]">
