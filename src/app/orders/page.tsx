@@ -1,23 +1,21 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { 
   CheckCircle2, 
   ClipboardList, 
-  Clock, 
-  MapPin, 
-  Package, 
-  ShoppingBag, 
   ChevronRight, 
-  Bike, 
   RotateCcw,
-  Store,
-  ArrowLeft
+  Loader2,
+  ShoppingBag,
+  Store
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useUserStore } from "@/lib/userStore";
+import { getUserOrders } from "@/actions/orders";
 
 interface OrderSummaryItem {
   id: string;
@@ -25,52 +23,44 @@ interface OrderSummaryItem {
   vendorName: string;
   vendorAvatar: string;
   total: number;
-  status: "PREPARING" | "OUT_FOR_DELIVERY" | "DELIVERED";
+  status: string;
   itemsSummary: string;
   date: string;
   etaMins?: number;
 }
 
-const ORDERS_LIST: OrderSummaryItem[] = [
-  {
-    id: "ORD-9821-XT",
-    vendorId: "v1",
-    vendorName: "Mama Cass",
-    vendorAvatar: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-    total: 4000,
-    status: "PREPARING",
-    itemsSummary: "1x Jollof Rice with Chicken & Plantain",
-    date: "Today, 12:45 PM",
-    etaMins: 14,
-  },
-  {
-    id: "ORD-7714-AB",
-    vendorId: "v4",
-    vendorName: "Pizza Hub",
-    vendorAvatar: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=300&q=80",
-    total: 7000,
-    status: "DELIVERED",
-    itemsSummary: "1x Spicy Beef Suya Pizza - Medium",
-    date: "Yesterday, 7:15 PM",
-  },
-  {
-    id: "ORD-4521-MK",
-    vendorId: "v2",
-    vendorName: "Fresh Squeeze",
-    vendorAvatar: "https://images.unsplash.com/photo-1546173159-315724a31696?auto=format&fit=crop&w=300&q=80",
-    total: 2200,
-    status: "DELIVERED",
-    itemsSummary: "1x Cold Pressed Orange Juice + 1x Plantain Chips",
-    date: "Aug 5, 2026",
-  },
-];
-
 function OrdersContent() {
   const searchParams = useSearchParams();
   const isSuccess = searchParams.get("success") === "true";
+  const { profile } = useUserStore();
+  
+  const [orders, setOrders] = useState<OrderSummaryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
 
-  const filteredOrders = ORDERS_LIST.filter((ord) => {
+  useEffect(() => {
+    let mounted = true;
+    async function loadOrders() {
+      setLoading(true);
+      try {
+        const res = await getUserOrders(profile?.email);
+        if (mounted && res.success && res.orders) {
+          setOrders(res.orders as OrderSummaryItem[]);
+        }
+      } catch (err) {
+        console.error("Failed to load user orders:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadOrders();
+    return () => {
+      mounted = false;
+    };
+  }, [profile?.email]);
+
+  const filteredOrders = orders.filter((ord) => {
     if (activeFilter === "ACTIVE") return ord.status !== "DELIVERED";
     if (activeFilter === "COMPLETED") return ord.status === "DELIVERED";
     return true;
@@ -115,7 +105,14 @@ function OrdersContent() {
 
       {/* ORDERS LIST */}
       <div className="space-y-4">
-        {filteredOrders.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200/80 dark:border-zinc-800 shadow-sm flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-[#312E81] dark:text-indigo-400 animate-spin" />
+            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+              Loading your orders...
+            </p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
           filteredOrders.map((order) => (
             <motion.div
               key={order.id}
@@ -133,7 +130,7 @@ function OrdersContent() {
                       {order.vendorName}
                     </h3>
                     <p className="text-[11px] font-body text-[#71717A] dark:text-zinc-400">
-                      Order #{order.id} • {order.date}
+                      Order #{order.id.slice(-6).toUpperCase()} • {order.date}
                     </p>
                   </div>
                 </div>
@@ -179,18 +176,20 @@ function OrdersContent() {
           ))
         ) : (
           <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-3">
-            <ClipboardList size={40} className="text-[#71717A] dark:text-zinc-600 mx-auto mb-1" />
+            <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 mx-auto flex items-center justify-center mb-1">
+              <ShoppingBag size={28} />
+            </div>
             <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-              No Orders Found
+              No Orders Placed Yet
             </h3>
             <p className="text-xs font-body text-[#71717A] dark:text-zinc-400 max-w-xs mx-auto">
-              You haven&apos;t placed any orders in this category yet.
+              When you place an order for campus food, snacks, groceries, or gadgets, your live tracking details will appear here.
             </p>
             <Link
               href="/"
-              className="inline-block px-5 py-2.5 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-heading font-bold text-xs shadow-md active:scale-95 transition-all mt-2"
+              className="inline-block px-6 py-3 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-heading font-bold text-xs shadow-md active:scale-95 transition-all mt-3"
             >
-              Explore Campus Marketplace
+              Explore Campus Marketplace ➔
             </Link>
           </div>
         )}

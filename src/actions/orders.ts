@@ -217,3 +217,63 @@ export async function getLiveOrderById(orderId: string) {
     return { success: false, error: error.message || "Failed to fetch order" };
   }
 }
+
+export async function getUserOrders(userEmail?: string) {
+  try {
+    if (!userEmail) {
+      return { success: true, orders: [] };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+      include: {
+        orders: {
+          include: {
+            store: true,
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!user || !user.orders || user.orders.length === 0) {
+      return { success: true, orders: [] };
+    }
+
+    const orders = user.orders.map((order) => {
+      const itemsSummary = order.items
+        .map((it) => `${it.quantity}x ${it.product?.name || "Campus Item"}`)
+        .join(" + ");
+
+      const isDelivered = order.status === OrderStatus.DELIVERED;
+
+      return {
+        id: order.id,
+        vendorId: order.store.id,
+        vendorName: order.store.name,
+        vendorAvatar: order.store.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
+        total: order.totalAmount,
+        status: order.status,
+        itemsSummary: itemsSummary || "Campus Order",
+        date: new Date(order.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          hour12: true,
+        }),
+        etaMins: isDelivered ? undefined : 15,
+      };
+    });
+
+    return { success: true, orders };
+  } catch (error: any) {
+    console.error("Error fetching user orders:", error);
+    return { success: false, error: error.message || "Failed to load orders", orders: [] };
+  }
+}
