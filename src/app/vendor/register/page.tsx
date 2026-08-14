@@ -27,13 +27,13 @@ import {
 import { registerVendorStore } from "@/actions/vendor";
 
 const CAMPUS_CATEGORIES = [
-  "Hot Meals & Fast Food",
-  "Campus Bakery & Pastries",
-  "Smoothies, Boba & Drinks",
-  "Shawarma & Grills (Suya)",
-  "Stationery & Exam Essentials",
-  "Groceries & Dorm Provisions",
-  "Tech & Gadgets"
+  "Hot Meals, Food & Dining",
+  "Campus Groceries, Snacks & Provisions",
+  "Stationery, Books & Exam Materials",
+  "Tech, Gadgets & Phone Accessories",
+  "Campus Fashion, Footwear & Thrift",
+  "Health, Beauty & Personal Care",
+  "Campus Services (Printing, Laundry, Barbering)"
 ];
 
 const NIGERIAN_BANKS = [
@@ -64,7 +64,7 @@ export default function VendorRegistrationPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [category, setCategory] = useState("Hot Meals & Fast Food");
+  const [category, setCategory] = useState("Hot Meals, Food & Dining");
 
   // Step 2: Store Operations & Location
   const [location, setLocation] = useState("");
@@ -101,7 +101,7 @@ export default function VendorRegistrationPage() {
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (!location) {
-        setErrorMessage("Please specify your kitchen or campus store location.");
+        setErrorMessage("Please specify your store, kitchen, or campus dispatch location.");
         return;
       }
       setCurrentStep(3);
@@ -126,7 +126,7 @@ export default function VendorRegistrationPage() {
         password,
         category,
         location,
-        description: description || `Official ${storeName} store on campus. Fresh meals and quick hostel delivery.`,
+        description: description || `Official ${storeName} store on campus. Quick student orders and fast hostel delivery.`,
         logoUrl: logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
         coverImage: coverImageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
       });
@@ -158,7 +158,7 @@ export default function VendorRegistrationPage() {
 
           <div className="flex items-center gap-2.5">
             <span className="hidden md:inline text-[11px] text-[#71717A] dark:text-zinc-400">
-              Student food ordering?
+              Looking to order items?
             </span>
             <Link
               href="/signup"
@@ -178,16 +178,16 @@ export default function VendorRegistrationPage() {
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-amber-300 font-heading font-extrabold text-xs">
             <Sparkles size={14} className="text-[#F5A623]" />
-            <span>Official Campus Merchant Partner Program</span>
+            <span>Campus Merchant Partner Program</span>
           </div>
 
           <h1 className="text-3xl md:text-5xl font-heading font-[900] tracking-tight leading-tight">
-            Grow Your Campus Food Brand with <br className="hidden sm:inline" />
-            <span className="text-[#F5A623]">Lights</span>on Merchant Portal
+            Grow Your Campus Store & Brand on <br className="hidden sm:inline" />
+            <span className="text-[#F5A623]">Lights</span>on Marketplace
           </h1>
 
           <p className="text-sm md:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Receive incoming student orders with instant sound alarms, manage your live menu inventory, and enjoy automated daily payouts directly into your bank account.
+            Sell food, groceries, stationery, tech gadgets, fashion, and campus services. Receive instant student orders, manage live stock, and enjoy automated daily bank payouts.
           </p>
 
           {/* METRIC PILLS */}
@@ -197,12 +197,12 @@ export default function VendorRegistrationPage() {
               <span className="text-[11px] text-slate-300 font-semibold">Campus Students</span>
             </div>
             <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-2xl border border-white/10 text-center">
-              <span className="block text-xl font-heading font-black text-emerald-300">₦0 Setup</span>
-              <span className="text-[11px] text-slate-300 font-semibold">Free Registration</span>
+              <span className="block text-xl font-heading font-black text-emerald-300">All Categories</span>
+              <span className="text-[11px] text-slate-300 font-semibold">Food, Tech, Books & More</span>
             </div>
             <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-2xl border border-white/10 text-center">
               <span className="block text-xl font-heading font-black text-indigo-300">Live POS</span>
-              <span className="text-[11px] text-slate-300 font-semibold">Kitchen Order Terminal</span>
+              <span className="text-[11px] text-slate-300 font-semibold">Instant Order Terminal</span>
             </div>
             <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-2xl border border-white/10 text-center">
               <span className="block text-xl font-heading font-black text-amber-300">Daily Bank</span>
@@ -404,14 +404,14 @@ export default function VendorRegistrationPage() {
                       type="submit"
                       className="w-full h-13 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-sm rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                      <span>Continue to Kitchen Setup</span>
+                      <span>Continue to Store Setup</span>
                       <ArrowRight size={18} />
                     </button>
                   </div>
                 </motion.form>
               )}
 
-              {/* STEP 2: KITCHEN & LOCATION */}
+              {/* STEP 2: STORE OPERATIONS & LOCATION */}
               {currentStep === 2 && (
                 <motion.form
                   initial={{ opacity: 0, x: 20 }}
@@ -421,12 +421,12 @@ export default function VendorRegistrationPage() {
                 >
                   <div>
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                      Campus Kitchen / Outlet Location <span className="text-red-500">*</span>
+                      Campus Store / Outlet / Dispatch Location <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Sub Commercial Hub, Mellanby Cafeteria, Tedder Block A"
+                      placeholder="e.g. Sub Commercial Hub, Mellanby Cafeteria, Kuti Hall, Block C"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -435,16 +435,16 @@ export default function VendorRegistrationPage() {
 
                   <div>
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                      Average Preparation & Packaging Time
+                      Average Packaging & Dispatch Time
                     </label>
                     <select
                       value={estimatedPrepTime}
                       onChange={(e) => setEstimatedPrepTime(e.target.value)}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-semibold text-[#18181B] dark:text-zinc-100"
                     >
-                      <option value="15-25 mins">15-25 mins (Fast Snacks / Drinks)</option>
-                      <option value="25-40 mins">25-40 mins (Cooked Hot Meals / Rice)</option>
-                      <option value="35-50 mins">35-50 mins (Specialty Grills / Pizza)</option>
+                      <option value="10-20 mins">10-20 mins (Groceries, Books, Tech & Snacks)</option>
+                      <option value="20-35 mins">20-35 mins (Hot Meals & Custom Orders)</option>
+                      <option value="35-60 mins">35-60 mins (Specialty Items & Campus Services)</option>
                     </select>
                   </div>
 
@@ -454,7 +454,7 @@ export default function VendorRegistrationPage() {
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Specializing in hot smokey Jollof rice, chicken, and chilled mocktails..."
+                      placeholder="e.g. Quality student essentials, stationery, snacks, tech accessories, and fast hostel delivery..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       className="w-full p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium resize-none"

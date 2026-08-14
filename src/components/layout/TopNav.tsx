@@ -42,7 +42,7 @@ export function TopNav() {
             <CustomSearchIcon size={18} />
           </div>
           <div className="w-full h-11 pl-11 pr-4 rounded-full bg-[#FAFAF7] dark:bg-zinc-800/80 flex items-center text-sm font-medium text-[#71717A] dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors border border-slate-200 dark:border-zinc-700/60">
-            Search food, vendors, or products
+            Search food, groceries, books, tech, or vendors...
           </div>
         </Link>
       </div>

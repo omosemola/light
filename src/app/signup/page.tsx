@@ -282,10 +282,10 @@ export default function SignupPage() {
             </div>
             <div>
               <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 flex items-center gap-1.5">
-                Are you a campus food vendor? <Sparkles size={13} className="text-[#F5A623]" />
+                Are you a campus store or vendor? <Sparkles size={13} className="text-[#F5A623]" />
               </span>
               <span className="text-[11px] text-[#71717A] dark:text-zinc-400 font-medium block">
-                Open a kitchen & sell to 10,000+ students.
+                Sell food, groceries, books, tech, fashion & campus essentials.
               </span>
             </div>
           </div>

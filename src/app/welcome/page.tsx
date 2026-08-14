@@ -196,18 +196,18 @@ function DeliveryMemphisIllustration() {
 
 const CHOWDECK_SLIDES = [
   {
-    title: "Hot Jollof, Suya Pizza & Fresh Juices Delivered 🍲",
-    desc: "Order hot meals, cold drinks, and snacks from top campus kitchens delivered directly to your hostel door.",
+    title: "Fresh Food, Groceries & Campus Essentials 🛍️",
+    desc: "Order hot meals, dorm provisions, drinks, and snacks from top verified campus vendors delivered to your room.",
     Component: FoodMemphisIllustration,
   },
   {
-    title: "Lecture Notebooks, Stationery & Snacks ✏️",
-    desc: "Never run out of exam notebooks, pens, skincare, or dorm groceries during intense study sessions.",
+    title: "Stationery, Tech Gadgets & Study Materials 📚",
+    desc: "Get lecture notebooks, pens, phone chargers, power banks, skincare, and dorm essentials in minutes.",
     Component: SuppliesMemphisIllustration,
   },
   {
-    title: "Student Deals & Real-Time Live Tracking 🛵",
-    desc: "Earn reward points on every order and watch your fast campus rider bring your package live.",
+    title: "Fast Room Delivery & Live Order Tracking 🛵",
+    desc: "Track your campus courier in real time from checkout to your hostel door with zero stress.",
     Component: DeliveryMemphisIllustration,
   },
 ];
