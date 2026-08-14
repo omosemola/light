@@ -80,17 +80,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        console.warn("Supabase Google Auth notice:", error.message);
-        handleFinishLogin("alex.google@gmail.com");
-      }
+      await signIn("google", { callbackUrl: "/" });
     } catch {
       handleFinishLogin("alex.google@gmail.com");
     }
