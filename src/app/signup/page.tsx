@@ -201,7 +201,6 @@ export default function SignupPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Johnson"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium text-[#18181B] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
@@ -218,7 +217,6 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="alex.johnson@gmail.com"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium text-[#18181B] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
@@ -235,7 +233,6 @@ export default function SignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-                placeholder="e.g. Pass1234"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium text-[#18181B] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
@@ -253,7 +250,6 @@ export default function SignupPage() {
                 required
                 value={hostel}
                 onChange={(e) => setHostel(e.target.value)}
-                placeholder="e.g. Mellanby Hall, Tedder Hall, Queen Idia"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium text-[#18181B] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
@@ -270,7 +266,6 @@ export default function SignupPage() {
                 required
                 value={addressDetail}
                 onChange={(e) => setAddressDetail(e.target.value)}
-                placeholder="e.g. Block C Room 14"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium text-[#18181B] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>

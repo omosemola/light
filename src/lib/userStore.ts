@@ -25,14 +25,15 @@ export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       profile: {
-        name: "Alex John",
-        email: "alex.johnson@gmail.com",
-        hostel: "Mellanby Hall",
-        addressDetail: "Block B, Room 14",
-        phone: "+234 812 345 6789",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-        points: 450,
-        savedStoresCount: 5,
+        name: "Visitor",
+        email: "",
+        hostel: "",
+        addressDetail: "",
+        phone: "",
+        avatar: "/visitor-avatar.png",
+        points: 0,
+        savedStoresCount: 0,
+        isVisitor: true,
       },
       hasSeenOnboarding: true,
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
@@ -45,7 +46,7 @@ export const useUserStore = create<UserState>()(
           profile: {
             name: "Visitor",
             email: "",
-            hostel: "Campus Guest",
+            hostel: "",
             addressDetail: "",
             phone: "",
             avatar: "/visitor-avatar.png",
@@ -57,7 +58,7 @@ export const useUserStore = create<UserState>()(
         }),
     }),
     {
-      name: "lightson-user-app-storage-v3",
+      name: "lightson-user-app-storage-v4",
     }
   )
 );

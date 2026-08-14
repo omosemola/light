@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { X, Send, Image as ImageIcon, Phone, ShieldCheck, CheckCheck, Store } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUserStore } from "@/lib/userStore";
+import { sendChatMessageNotification } from "@/actions/chat";
 
 export interface MerchantChatVendor {
   id: string;
@@ -116,6 +118,8 @@ export function MerchantChatModal({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  const { profile } = useUserStore();
+
   const handleSendMessage = (textToSend = inputText) => {
     const text = textToSend.trim();
     if (!text && !selectedImage) return;
@@ -132,6 +136,16 @@ export function MerchantChatModal({
     setMessages((prev) => [...prev, userMsg]);
     setInputText("");
     setSelectedImage(null);
+
+    // Send email notification to Vendor
+    sendChatMessageNotification({
+      senderType: "student",
+      senderName: profile.name || "Campus Student",
+      senderEmail: profile.email,
+      storeId: vendor.id,
+      storeName: vendor.name,
+      messageText: text,
+    }).catch((err) => console.error("Chat email notification error:", err));
 
     // Simulate Merchant Typing & Auto Reply
     setTimeout(() => {
@@ -152,6 +166,16 @@ export function MerchantChatModal({
 
         // Trigger sound chime & notification
         playNotificationChime();
+
+        // Send email notification to Student
+        sendChatMessageNotification({
+          senderType: "vendor",
+          senderName: vendor.name,
+          storeId: vendor.id,
+          storeName: vendor.name,
+          recipientEmail: profile.email,
+          messageText: merchantReply,
+        }).catch((err) => console.error("Chat reply email notification error:", err));
 
         setMessages((prev) => [
           ...prev,

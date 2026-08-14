@@ -313,7 +313,6 @@ export default function VendorRegistrationPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Mama Cass Kitchen, Pizza Hub, Fresh Bites"
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -328,7 +327,6 @@ export default function VendorRegistrationPage() {
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Samuel Adeleke"
                         value={ownerName}
                         onChange={(e) => setOwnerName(e.target.value)}
                         className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -359,7 +357,6 @@ export default function VendorRegistrationPage() {
                       <input
                         type="email"
                         required
-                        placeholder="e.g. orders@mamacass.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -373,7 +370,6 @@ export default function VendorRegistrationPage() {
                       <input
                         type="tel"
                         required
-                        placeholder="e.g. +234 812 345 6789"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -388,7 +384,6 @@ export default function VendorRegistrationPage() {
                     <input
                       type="password"
                       required
-                      placeholder="Create password for logging in (e.g. Pass1234)"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -425,7 +420,6 @@ export default function VendorRegistrationPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Sub Commercial Hub, Mellanby Cafeteria, Kuti Hall, Block C"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -453,7 +447,6 @@ export default function VendorRegistrationPage() {
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Quality student essentials, stationery, snacks, tech accessories, and fast hostel delivery..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       className="w-full p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium resize-none"
@@ -546,7 +539,6 @@ export default function VendorRegistrationPage() {
                       type="text"
                       maxLength={10}
                       required
-                      placeholder="0123456789"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-mono font-bold tracking-wider"
@@ -559,7 +551,6 @@ export default function VendorRegistrationPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Mama Cass Catering Services"
                       value={accountName}
                       onChange={(e) => setAccountName(e.target.value)}
                       className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"

@@ -186,7 +186,7 @@ function OrdersContent() {
               When you place an order for campus food, snacks, groceries, or gadgets, your live tracking details will appear here.
             </p>
             <Link
-              href="/"
+              href="/search"
               className="inline-block px-6 py-3 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-heading font-bold text-xs shadow-md active:scale-95 transition-all mt-3"
             >
               Explore Campus Marketplace ➔

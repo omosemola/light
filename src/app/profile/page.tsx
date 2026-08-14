@@ -33,6 +33,31 @@ import { Modal } from "@/components/ui/Modal";
 import { registerVendorStore } from "@/actions/vendor";
 import { getUserOrders } from "@/actions/orders";
 
+const ABSTRACT_AVATARS = [
+  {
+    id: "sunset-mesh",
+    name: "Sunset Mesh",
+    url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "cyber-fluid",
+    name: "Cyber Fluid",
+    url: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "cosmic-orb",
+    name: "Cosmic Orb",
+    url: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "emerald-prism",
+    name: "Emerald Prism",
+    url: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?auto=format&fit=crop&w=400&q=80",
+  },
+];
+
+const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
+
 export default function ProfilePage() {
   const router = useRouter();
   const { profile, updateProfile, logoutUser } = useUserStore();
@@ -83,15 +108,14 @@ export default function ProfilePage() {
     };
   }, [profile.email]);
 
-  const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
   const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
-  const userAvatar = isVisitor
-    ? "/visitor-avatar.png"
-    : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
+  const userAvatar = profile.avatar && profile.avatar !== "/visitor-avatar.png"
+    ? profile.avatar
+    : DEFAULT_HUMAN_AVATAR;
 
-  const displayHostel = isVisitor
-    ? "Campus Guest"
-    : (profile.hostel && profile.hostel !== "Campus Guest" ? profile.hostel : "Main Campus (Mellanby Hall)");
+  const displayHostel = profile.hostel && profile.hostel.trim() && profile.hostel !== "Campus Guest" && profile.hostel !== "Main Campus (Mellanby Hall)"
+    ? profile.hostel
+    : "";
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false);
@@ -115,6 +139,15 @@ export default function ProfilePage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const openEditModal = () => {
+    setEditName(profile.name);
+    setEditEmail(profile.email);
+    setEditHostel(profile.hostel === "Campus Guest" ? "" : profile.hostel || "");
+    setEditPhone(profile.phone || "");
+    setEditAvatar(profile.avatar || "");
+    setIsEditModalOpen(true);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -165,9 +198,9 @@ export default function ProfilePage() {
   };
 
   const menuItems = [
-    { icon: Store, label: "Become a Vendor / Open Vendor Store", isVendorTrigger: true, supportText: "Manage live menu, incoming orders & sales" },
+    { icon: Store, label: "Become a Vendor / Open Vendor Store", href: "/vendor/register", supportText: "Manage live menu, incoming orders & sales", isVendorTrigger: true },
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
-    { icon: ClipboardList, label: "Order History", href: "/orders", supportText: "14 Recent Orders" },
+    { icon: ClipboardList, label: "Order History", href: "/orders", supportText: userOrdersCount === 0 ? "No orders placed yet" : `${userOrdersCount} ${userOrdersCount === 1 ? "Order" : "Orders"}` },
     { icon: Heart, label: "Favorite Vendors", href: "/profile/favorites", supportText: `${profile.savedStoresCount} Stores` },
     { icon: Bell, label: "Notifications & Alerts", href: "/profile/notifications", badge: "2 New" },
     { icon: Star, label: "My Reviews & Ratings", href: "/profile/reviews" },
@@ -209,7 +242,7 @@ export default function ProfilePage() {
               {/* EDIT INFO BUTTON (ONLY FOR REAL USER ACCOUNTS, HIDDEN FOR VISITORS) */}
               {!isVisitor && (
                 <button
-                  onClick={() => setIsEditModalOpen(true)}
+                  onClick={openEditModal}
                   className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-heading font-extrabold text-xs rounded-full border border-white/20 backdrop-blur-sm transition-all active:scale-95 flex items-center gap-1.5 shadow-sm"
                   title="Edit Account Info"
                 >
@@ -266,9 +299,11 @@ export default function ProfilePage() {
                   {profile.email}
                 </p>
               ) : null}
-              <span className="inline-block bg-white/10 text-white border border-white/20 px-2.5 py-0.5 rounded-full text-[11px] font-medium">
-                📍 {displayHostel}
-              </span>
+              {displayHostel ? (
+                <span className="inline-block bg-white/10 text-white border border-white/20 px-2.5 py-0.5 rounded-full text-[11px] font-medium">
+                  📍 {displayHostel}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -324,34 +359,35 @@ export default function ProfilePage() {
       {/* MENU OPTIONS CONTAINER */}
 
         {/* PROMINENT VENDOR STORE REGISTRATION HERO BANNER */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.4 }}
-          onClick={() => setIsVendorModalOpen(true)}
-          className="bg-gradient-to-r from-[#1E1B4B] via-[#312E81] to-indigo-900 text-white rounded-3xl p-5 md:p-6 shadow-xl border border-indigo-700/50 cursor-pointer relative overflow-hidden group active:scale-[0.99] transition-all"
-        >
-          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-[#FBBF24]/20 rounded-full blur-2xl pointer-events-none" />
-          
-          <div className="flex items-center justify-between relative z-10">
-            <div className="space-y-1.5 max-w-md">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider">
-                <Store size={12} /> Campus Merchant Portal
+        <Link href="/vendor/register">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.4 }}
+            className="bg-gradient-to-r from-[#1E1B4B] via-[#312E81] to-indigo-900 text-white rounded-3xl p-5 md:p-6 shadow-xl border border-indigo-700/50 cursor-pointer relative overflow-hidden group active:scale-[0.99] transition-all"
+          >
+            <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-[#FBBF24]/20 rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between relative z-10">
+              <div className="space-y-1.5 max-w-md">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider">
+                  <Store size={12} /> Campus Merchant Portal
+                </div>
+                <h3 className="font-heading font-black text-lg md:text-xl text-white tracking-tight">
+                  Are you a Campus Store or Vendor? 🏪
+                </h3>
+                <p className="text-xs text-indigo-200 font-body leading-relaxed">
+                  Create your Vendor Store Account to start listing products, managing live campus orders, and tracking sales!
+                </p>
               </div>
-              <h3 className="font-heading font-black text-lg md:text-xl text-white tracking-tight">
-                Are you a Campus Store or Vendor? 🏪
-              </h3>
-              <p className="text-xs text-indigo-200 font-body leading-relaxed">
-                Create your Vendor Store Account to start listing products, managing live campus orders, and tracking sales!
-              </p>
-            </div>
 
-            <button className="hidden sm:flex px-4 py-2.5 bg-[#FBBF24] hover:bg-amber-400 text-[#1E1B4B] font-heading font-black text-xs rounded-2xl shadow-md group-hover:scale-105 active:scale-95 transition-all items-center gap-1.5 shrink-0 ml-4">
-              <Store size={16} /> Open Vendor Store
-            </button>
-          </div>
-        </motion.div>
+              <div className="hidden sm:flex px-4 py-2.5 bg-[#FBBF24] hover:bg-amber-400 text-[#1E1B4B] font-heading font-black text-xs rounded-2xl shadow-md group-hover:scale-105 active:scale-95 transition-all items-center gap-1.5 shrink-0 ml-4">
+                <Store size={16} /> Open Vendor Store
+              </div>
+            </div>
+          </motion.div>
+        </Link>
 
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
@@ -364,9 +400,9 @@ export default function ProfilePage() {
             const Icon = item.icon;
             if (item.isVendorTrigger) {
               return (
-                <button
+                <Link
                   key={i}
-                  onClick={() => setIsVendorModalOpen(true)}
+                  href="/vendor/register"
                   className="w-full flex items-center p-4.5 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100/50 dark:hover:bg-indigo-950/40 text-left transition-colors group"
                 >
                   <div className="w-10 h-10 rounded-2xl bg-[#312E81] text-white flex items-center justify-center mr-4 group-hover:bg-[#1E1B4B] transition-colors shadow-sm">
@@ -389,7 +425,7 @@ export default function ProfilePage() {
                   </span>
                   
                   <ChevronRight size={18} className="text-[#312E81] dark:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
-                </button>
+                </Link>
               );
             }
 
@@ -453,23 +489,60 @@ export default function ProfilePage() {
         >
           <form onSubmit={handleSaveProfile} className="space-y-3.5 font-body text-[#18181B] dark:text-zinc-100">
             
-            {/* DEVICE GALLERY & CAMERA PICKER UI */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block">
+            {/* PROFILE AVATAR WITH 4 ABSTRACT PRESETS & DEVICE UPLOAD */}
+            <div className="space-y-3 pb-1 border-b border-slate-100 dark:border-zinc-800">
+              <label className="text-xs font-heading font-extrabold uppercase text-[#71717A] dark:text-zinc-400 block tracking-wider">
                 Profile Avatar Photo
               </label>
-              <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shrink-0 bg-white shadow-xs">
+
+              <div className="flex items-center gap-3.5">
+                <div className="relative w-14 h-14 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shrink-0 bg-white shadow-sm">
                   <Image src={editAvatar || userAvatar} alt="Avatar preview" fill className="object-cover rounded-full" />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-10 px-4 bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#E0E7FF] dark:hover:bg-zinc-700 text-[#312E81] dark:text-indigo-300 font-heading font-extrabold text-xs rounded-xl border border-indigo-100 dark:border-zinc-700 flex items-center gap-2 active:scale-95 transition-all"
+                  className="h-10 px-4 bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#E0E7FF] dark:hover:bg-zinc-700 text-[#312E81] dark:text-indigo-300 font-heading font-extrabold text-xs rounded-xl border border-indigo-100 dark:border-zinc-700 flex items-center gap-2 active:scale-95 transition-all shadow-xs"
                 >
-                  <Upload size={15} /> Choose Photo from Phone / Device
+                  <Upload size={15} /> Upload Photo from Device
                 </button>
+              </div>
+
+              {/* 4 ABSTRACT AVATAR PRESETS */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[11px] font-heading font-bold text-[#71717A] dark:text-zinc-400 block">
+                  Or choose an abstract avatar:
+                </span>
+                <div className="grid grid-cols-4 gap-2">
+                  {ABSTRACT_AVATARS.map((item) => {
+                    const isSelected = editAvatar === item.url;
+                    return (
+                      <button
+                        type="button"
+                        key={item.id}
+                        onClick={() => setEditAvatar(item.url)}
+                        className={`relative rounded-2xl p-1.5 border-2 transition-all flex flex-col items-center group overflow-hidden ${
+                          isSelected
+                            ? "border-[#312E81] dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 shadow-xs scale-102"
+                            : "border-slate-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-zinc-600 bg-slate-50/50 dark:bg-zinc-800/40"
+                        }`}
+                      >
+                        <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-2xs">
+                          <Image src={item.url} alt={item.name} fill className="object-cover group-hover:scale-105 transition-transform duration-200" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-[#312E81]/40 backdrop-blur-[1px] flex items-center justify-center">
+                              <Check size={16} className="text-white drop-shadow" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-heading font-bold mt-1 text-[#18181B] dark:text-zinc-200 truncate w-full text-center">
+                          {item.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -505,7 +578,6 @@ export default function ProfilePage() {
               </label>
               <input 
                 type="text" 
-                required
                 value={editHostel}
                 onChange={(e) => setEditHostel(e.target.value)}
                 className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
@@ -518,22 +590,8 @@ export default function ProfilePage() {
               </label>
               <input 
                 type="tel" 
-                required
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
-                className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                Or Enter Avatar Image URL
-              </label>
-              <input 
-                type="url" 
-                value={editAvatar}
-                onChange={(e) => setEditAvatar(e.target.value)}
-                placeholder="https://..."
                 className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"
               />
             </div>

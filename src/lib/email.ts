@@ -486,7 +486,6 @@ export function generateAdminPlatformOrderAlertEmail({
           .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e4e4e7; padding: 24px; }
         </style>
       </head>
-      <body>
         <div class="container">
           <h3 style="margin-top: 0; color: ${BRAND_NAVY};">📦 New Campus Marketplace Order (#${orderId})</h3>
           <p style="font-size: 13px; color: #52525b;">
@@ -499,6 +498,133 @@ export function generateAdminPlatformOrderAlertEmail({
   `;
 }
 
+export function generateChatMessageEmailForVendor({
+  studentName,
+  studentEmail,
+  storeName,
+  messageText,
+  storeId,
+}: {
+  studentName: string;
+  studentEmail?: string;
+  storeName: string;
+  messageText: string;
+  storeId: string;
+}) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <style>
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
+          .header { background-color: #0F172A; color: #ffffff; padding: 32px 24px; text-align: center; }
+          .brand-title { font-size: 24px; font-weight: 900; margin: 0; }
+          .brand-accent { color: #F59E0B; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #FEF3C7; color: #92400E; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 16px; }
+          .chat-box { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #F59E0B; border-radius: 12px; padding: 18px; margin: 20px 0; font-size: 15px; color: #1E293B; line-height: 1.5; }
+          .btn { display: block; width: 100%; box-sizing: border-box; background-color: #F59E0B; color: #0F172A; text-align: center; padding: 15px 24px; border-radius: 14px; text-decoration: none; font-weight: 900; font-size: 14px; margin-top: 24px; }
+          .footer { text-align: center; padding: 20px; font-size: 11px; color: #71717a; border-top: 1px solid #f4f4f5; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Merchant Services</h1>
+            <p style="margin: 6px 0 0; font-size: 13px; color: #94A3B8;">Customer Inquiry • ${storeName}</p>
+          </div>
+          <div class="content">
+            <span class="badge">💬 New Student Message</span>
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 10px; color: #0F172A;">
+              ${studentName} sent a message to your store
+            </h2>
+            <p style="font-size: 13px; color: #64748B; margin: 0;">
+              ${studentEmail ? `Student Contact: ${studentEmail}` : "Campus Student Customer"}
+            </p>
+            
+            <div class="chat-box">
+              "${messageText}"
+            </div>
+
+            <a href="https://campuslightson.com/vendor/dashboard" class="btn">
+              Open Vendor Dashboard to Reply ➔
+            </a>
+          </div>
+          <div class="footer">
+            Lightson Campus Marketplace • Instant Vendor Messaging
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export function generateChatMessageEmailForStudent({
+  storeName,
+  studentName,
+  messageText,
+  storeId,
+}: {
+  storeName: string;
+  studentName: string;
+  messageText: string;
+  storeId: string;
+}) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <style>
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
+          .header { background-color: #1E1B4B; color: #ffffff; padding: 32px 24px; text-align: center; }
+          .brand-title { font-size: 24px; font-weight: 900; margin: 0; }
+          .brand-accent { color: #F59E0B; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #EEF2FF; color: #3730A3; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 16px; }
+          .chat-box { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #312E81; border-radius: 12px; padding: 18px; margin: 20px 0; font-size: 15px; color: #1E293B; line-height: 1.5; }
+          .btn { display: block; width: 100%; box-sizing: border-box; background-color: #312E81; color: #ffffff; text-align: center; padding: 15px 24px; border-radius: 14px; text-decoration: none; font-weight: 900; font-size: 14px; margin-top: 24px; }
+          .footer { text-align: center; padding: 20px; font-size: 11px; color: #71717a; border-top: 1px solid #f4f4f5; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Campus Marketplace</h1>
+            <p style="margin: 6px 0 0; font-size: 13px; color: #C7D2FE;">Merchant Response • ${storeName}</p>
+          </div>
+          <div class="content">
+            <span class="badge">💬 Store Response</span>
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 10px; color: #1E1B4B;">
+              ${storeName} replied to your message
+            </h2>
+            <p style="font-size: 13px; color: #64748B; margin: 0;">
+              Hello ${studentName || "there"}, you have a new response from the vendor!
+            </p>
+            
+            <div class="chat-box">
+              "${messageText}"
+            </div>
+
+            <a href="https://campuslightson.com/vendor/${storeId}" class="btn">
+              View Store & Chat on Lightson ➔
+            </a>
+          </div>
+          <div class="footer">
+            Lightson Campus Marketplace • Safe & Swift Campus Ordering
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
 // Backward compatibility alias
 export const generateOrderEmailHTML = generateStudentStatusUpdateEmail;
+
 

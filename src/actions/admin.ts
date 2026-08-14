@@ -111,3 +111,59 @@ export async function updateUserRole(userId: string, role: Role) {
     return { success: false, error: error.message || "Failed to update user role" };
   }
 }
+
+export async function deleteUserAccount(userId: string) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { store: true },
+      });
+
+      if (!user) {
+        throw new Error("User not found in database");
+      }
+
+      if (user.store) {
+        await tx.orderItem.deleteMany({
+          where: { product: { storeId: user.store.id } },
+        });
+        await tx.review.deleteMany({
+          where: { storeId: user.store.id },
+        });
+        await tx.product.deleteMany({
+          where: { storeId: user.store.id },
+        });
+        await tx.order.deleteMany({
+          where: { storeId: user.store.id },
+        });
+        await tx.store.delete({
+          where: { id: user.store.id },
+        });
+      }
+
+      await tx.orderItem.deleteMany({
+        where: { order: { userId } },
+      });
+      await tx.order.deleteMany({
+        where: { userId },
+      });
+      await tx.supportTicket.deleteMany({
+        where: { userId },
+      });
+      await tx.review.deleteMany({
+        where: { userId },
+      });
+
+      await tx.user.delete({
+        where: { id: userId },
+      });
+    });
+
+    revalidatePath("/admin/dashboard");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting user:", error);
+    return { success: false, error: error.message || "Failed to delete user account" };
+  }
+}

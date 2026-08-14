@@ -24,7 +24,7 @@ export default function CartPage() {
           Looks like you haven&apos;t added any delicious meals or campus essentials to your cart yet.
         </p>
         <Link 
-          href="/"
+          href="/search"
           className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center gap-2 group"
         >
           <span>Start Shopping</span>

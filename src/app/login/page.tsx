@@ -226,16 +226,16 @@ export default function LoginPage() {
                 Campus Store Vendor?
               </span>
               <span className="text-[11px] text-[#71717A] dark:text-zinc-400 font-medium block">
-                Access your Merchant Kitchen Terminal
+                Sign in to your Merchant Kitchen POS
               </span>
             </div>
           </div>
 
           <Link
-            href="/vendor/dashboard"
-            className="px-3.5 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap shrink-0"
+            href="/vendor/login"
+            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-heading font-black text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap shrink-0"
           >
-            <span>Terminal</span>
+            <span>Vendor Sign In</span>
             <ArrowRight size={13} />
           </Link>
         </div>

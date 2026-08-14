@@ -220,12 +220,18 @@ export async function getLiveOrderById(orderId: string) {
 
 export async function getUserOrders(userEmail?: string) {
   try {
-    if (!userEmail) {
+    if (!userEmail || !userEmail.trim()) {
       return { success: true, orders: [] };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: cleanEmail,
+          mode: "insensitive",
+        },
+      },
       include: {
         orders: {
           include: {
