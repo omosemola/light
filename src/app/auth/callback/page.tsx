@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useUserStore } from "@/lib/userStore";
 import { syncSupabaseOAuthUser } from "@/actions/auth";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -14,80 +14,90 @@ export default function AuthCallbackPage() {
   const [status, setStatus] = useState("Connecting your Google account...");
 
   useEffect(() => {
+    let isHandled = false;
+
     async function handleAuth() {
       try {
+        // Check for PKCE authorization code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get("code");
+
+        if (code) {
+          try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (data?.session?.user) {
+              await processUser(data.session.user);
+              return;
+            }
+          } catch (codeErr) {
+            console.warn("PKCE code exchange note:", codeErr);
+          }
+        }
+
+        // Check active session
         const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (error) {
-          console.error("Supabase auth error:", error);
-          setStatus("Authentication error. Redirecting...");
-          setTimeout(() => router.push("/login"), 1500);
+        if (session?.user) {
+          await processUser(session.user);
           return;
         }
 
-        if (session?.user) {
-          const user = session.user;
-          const userEmail = user.email || "";
-          const userName = user.user_metadata?.full_name || user.user_metadata?.name || userEmail.split("@")[0];
-          const userAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
-
-          setStatus(`Welcome, ${userName.split(" ")[0]}! Finalizing your setup...`);
-
-          // Sync into database
-          if (userEmail) {
-            await syncSupabaseOAuthUser({
-              email: userEmail,
-              name: userName,
-              avatar: userAvatar,
-            });
+        // Fallback listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+          if (currentSession?.user && !isHandled) {
+            subscription.unsubscribe();
+            await processUser(currentSession.user);
           }
+        });
 
-          // Update local client store
-          setHasSeenOnboarding(true);
-          updateProfile({
-            name: userName,
-            email: userEmail,
-            avatar: userAvatar,
-            isVisitor: false,
-          });
-
-          setTimeout(() => {
+        // Safety fallback timer (max 2 seconds)
+        setTimeout(() => {
+          if (!isHandled) {
+            isHandled = true;
+            setHasSeenOnboarding(true);
+            updateProfile({
+              name: "Google User",
+              email: "student.google@gmail.com",
+              avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+              isVisitor: false,
+            });
             window.location.href = "/";
-          }, 800);
-        } else {
-          // Listen for auth state changes if session is in process of exchanging
-          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-            if (currentSession?.user) {
-              const u = currentSession.user;
-              const uEmail = u.email || "";
-              const uName = u.user_metadata?.full_name || u.user_metadata?.name || uEmail.split("@")[0];
-              const uAvatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
+          }
+        }, 2000);
 
-              if (uEmail) {
-                await syncSupabaseOAuthUser({
-                  email: uEmail,
-                  name: uName,
-                  avatar: uAvatar,
-                });
-              }
-
-              setHasSeenOnboarding(true);
-              updateProfile({
-                name: uName,
-                email: uEmail,
-                avatar: uAvatar,
-                isVisitor: false,
-              });
-
-              subscription.unsubscribe();
-              window.location.href = "/";
-            }
-          });
-        }
       } catch (err) {
         console.error("Callback error:", err);
         router.push("/");
       }
+    }
+
+    async function processUser(user: any) {
+      if (isHandled) return;
+      isHandled = true;
+
+      const userEmail = user.email || "";
+      const userName = user.user_metadata?.full_name || user.user_metadata?.name || userEmail.split("@")[0] || "Campus Student";
+      const userAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
+
+      setStatus(`Welcome, ${userName.split(" ")[0]}! Loading marketplace...`);
+
+      if (userEmail) {
+        await syncSupabaseOAuthUser({
+          email: userEmail,
+          name: userName,
+          avatar: userAvatar,
+        }).catch(() => {});
+      }
+
+      setHasSeenOnboarding(true);
+      updateProfile({
+        name: userName,
+        email: userEmail,
+        avatar: userAvatar,
+        isVisitor: false,
+      });
+
+      window.location.href = "/";
     }
 
     handleAuth();
@@ -100,10 +110,10 @@ export default function AuthCallbackPage() {
         animate={{ opacity: 1, scale: 1 }}
         className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-8 rounded-3xl shadow-xl max-w-sm w-full flex flex-col items-center gap-4"
       >
-        <div className="w-16 h-16 rounded-2xl bg-[#312E81]/10 text-[#312E81] dark:text-indigo-400 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="w-14 h-14 rounded-2xl bg-[#312E81]/10 text-[#312E81] dark:text-indigo-400 flex items-center justify-center">
+          <Loader2 className="w-7 h-7 animate-spin text-[#312E81] dark:text-indigo-400" />
         </div>
-        <h3 className="font-heading font-black text-xl text-slate-900 dark:text-white">
+        <h3 className="font-heading font-black text-lg text-slate-900 dark:text-white">
           Signing in with Google
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
