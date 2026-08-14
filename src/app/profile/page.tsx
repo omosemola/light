@@ -21,8 +21,7 @@ import {
   Check,
   Upload,
   Image as ImageIcon,
-  Store,
-  Sparkles
+  Store
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -314,13 +313,13 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1.5 max-w-md">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider">
-                <Sparkles size={12} /> Campus Merchant Portal
+                <Store size={12} /> Campus Merchant Portal
               </div>
               <h3 className="font-heading font-black text-lg md:text-xl text-white tracking-tight">
-                Are you a Food or Campus Vendor? 🏪
+                Are you a Campus Store or Vendor? 🏪
               </h3>
               <p className="text-xs text-indigo-200 font-body leading-relaxed">
-                Create your Vendor Store Account to start listing dishes, managing live campus orders, and tracking sales!
+                Create your Vendor Store Account to start listing products, managing live campus orders, and tracking sales!
               </p>
             </div>
 
@@ -569,7 +568,7 @@ export default function ProfilePage() {
       >
         <form onSubmit={handleRegisterVendorSubmit} className="space-y-4 font-body text-[#18181B] dark:text-zinc-100">
           <div className="p-3.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex items-start gap-3 text-xs text-indigo-900 dark:text-indigo-200 leading-relaxed">
-            <Sparkles size={20} className="text-[#312E81] dark:text-indigo-400 shrink-0 mt-0.5" />
+            <Store size={20} className="text-[#312E81] dark:text-indigo-400 shrink-0 mt-0.5" />
             <div>
               <strong className="block font-heading font-black text-[#312E81] dark:text-indigo-300 mb-0.5">Start Selling on Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Campus Marketplace</strong>
               Register your store name and details below to unlock your Vendor Merchant Dashboard, live order terminal, and menu manager!

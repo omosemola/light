@@ -14,9 +14,9 @@ function FoodMemphisIllustration() {
       <motion.div
         animate={{ rotate: 360, y: [-6, 6, -6] }}
         transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute top-2 left-6 text-[#F43F5E] opacity-75 font-bold text-2xl select-none pointer-events-none"
+        className="absolute top-2 left-6 text-[#F43F5E] opacity-75 font-bold text-xl select-none pointer-events-none"
       >
-        ✦
+        ●
       </motion.div>
       <motion.div
         animate={{ y: [0, -10, 0], scale: [1, 1.15, 1] }}
@@ -92,9 +92,9 @@ function SuppliesMemphisIllustration() {
       <motion.div
         animate={{ rotate: -360 }}
         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-6 right-8 text-[#F59E0B] opacity-75 font-bold text-2xl select-none pointer-events-none"
+        className="absolute bottom-6 right-8 text-[#F59E0B] opacity-75 font-bold text-xl select-none pointer-events-none"
       >
-        ✦
+        ▲
       </motion.div>
       <motion.div
         animate={{ scale: [0.9, 1.1, 0.9] }}
@@ -154,9 +154,9 @@ function DeliveryMemphisIllustration() {
       <motion.div
         animate={{ y: [-4, 4, -4] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-6 left-8 text-[#10B981] font-bold text-2xl select-none opacity-80 pointer-events-none"
+        className="absolute bottom-6 left-8 text-[#10B981] font-bold text-xl select-none opacity-80 pointer-events-none"
       >
-        ✦
+        ●
       </motion.div>
 
       {/* Main Floating Corporate Memphis SVG Illustration */}

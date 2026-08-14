@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Send, Image as ImageIcon, Phone, ShieldCheck, CheckCheck, Sparkles, Store } from "lucide-react";
+import { X, Send, Image as ImageIcon, Phone, ShieldCheck, CheckCheck, Store } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 

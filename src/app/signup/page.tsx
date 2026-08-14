@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, ArrowRight } from "lucide-react";
 import { useUserStore } from "@/lib/userStore";
 
 function GoogleIcon() {
@@ -282,7 +282,7 @@ export default function SignupPage() {
             </div>
             <div>
               <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 flex items-center gap-1.5">
-                Are you a campus store or vendor? <Sparkles size={13} className="text-[#F5A623]" />
+                Are you a campus store or vendor?
               </span>
               <span className="text-[11px] text-[#71717A] dark:text-zinc-400 font-medium block">
                 Sell food, groceries, books, tech, fashion & campus essentials.

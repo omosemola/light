@@ -17,7 +17,6 @@ import {
   Store, 
   ChevronRight, 
   AlertCircle, 
-  Sparkles,
   Bike,
   Star
 } from "lucide-react";
@@ -323,7 +322,7 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between relative z-10">
             <div>
               <span className="inline-flex items-center gap-1.5 bg-[#FBBF24] text-[#312E81] font-heading font-extrabold text-[10px] uppercase px-3 py-0.5 rounded-full mb-1.5">
-                <Sparkles size={12} /> Estimated Arrival
+                <Clock size={12} /> Estimated Arrival
               </span>
               <h2 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
                 {currentStage === 4 ? "Arrived 🎉" : `${formatTimer(etaSeconds)} mins`}

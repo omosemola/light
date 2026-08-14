@@ -16,7 +16,6 @@ import {
   Building2, 
   Camera, 
   ShieldCheck, 
-  Sparkles,
   ArrowRight,
   Clock,
   Phone,
@@ -177,7 +176,7 @@ export default function VendorRegistrationPage() {
 
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-amber-300 font-heading font-extrabold text-xs">
-            <Sparkles size={14} className="text-[#F5A623]" />
+            <ShieldCheck size={14} className="text-[#F5A623]" />
             <span>Campus Merchant Partner Program</span>
           </div>
 
@@ -581,7 +580,7 @@ export default function VendorRegistrationPage() {
                       disabled={isSubmitting}
                       className="flex-1 h-13 bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-extrabold text-sm rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      <Sparkles size={18} />
+                      <CheckCircle2 size={18} />
                       <span>{isSubmitting ? "Launching Your Store..." : "Complete Store Registration 🎉"}</span>
                     </button>
                   </div>

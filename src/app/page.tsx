@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Flame, ArrowRight, Clock, Sparkles, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Sun, Moon } from "lucide-react";
+import { Flame, ArrowRight, Clock, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";

@@ -12,7 +12,6 @@ import {
   ChevronRight, 
   Bike, 
   RotateCcw,
-  Sparkles,
   Store,
   ArrowLeft
 } from "lucide-react";

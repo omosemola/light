@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Star, Clock, Store, RotateCcw, Check, Sparkles } from "lucide-react";
+import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Star, Clock, Store, RotateCcw, Check } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
@@ -460,7 +460,7 @@ export default function SearchPage() {
             className="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-zinc-800 space-y-3"
           >
             <div className="flex items-center gap-2 text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-400 uppercase tracking-wider">
-              <Sparkles size={14} className="text-[#FBBF24]" />
+              <SearchIcon size={14} className="text-[#312E81] dark:text-indigo-400" />
               <span>Popular Campus Searches</span>
             </div>
             <div className="flex flex-wrap gap-2 pt-1">

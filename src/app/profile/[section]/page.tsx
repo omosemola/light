@@ -16,7 +16,7 @@ import {
   Sun, 
   Store,
   ChevronRight,
-  Sparkles,
+  Monitor,
   Lock
 } from "lucide-react";
 import Link from "next/link";
@@ -347,7 +347,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                       : "bg-[#FAFAF7] dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-[#71717A] dark:text-zinc-300"
                   }`}
                 >
-                  <Sparkles size={24} className="text-purple-500" />
+                  <Monitor size={24} className="text-purple-500" />
                   <span className="text-xs font-heading">Auto System</span>
                 </button>
               </div>

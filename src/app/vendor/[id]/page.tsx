@@ -14,8 +14,7 @@ import {
   Search, 
   CheckCircle2, 
   Share2, 
-  Award,
-  Sparkles
+  Award
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -577,7 +576,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
         {/* PRODUCTS GRID */}
         <div className="space-y-4">
           <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
-            <Sparkles size={18} className="text-[#312E81] dark:text-indigo-400" /> Available Products ({filteredProducts.length})
+            <Store size={18} className="text-[#312E81] dark:text-indigo-400" /> Available Products ({filteredProducts.length})
           </h2>
 
           {filteredProducts.length === 0 ? (
