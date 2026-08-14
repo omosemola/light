@@ -1,40 +1,20 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const path = req.nextUrl.pathname;
-
-    // 1. Super Admin Portal Route Protection (/admin/dashboard)
-    if (path.startsWith("/admin/dashboard") && token) {
-      if (token.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/login?unauthorized=admin", req.url));
-      }
-    }
-
-    // 2. Vendor Portal Route Protection (/vendor/dashboard)
-    if (path.startsWith("/vendor/dashboard") && token) {
-      if (token.role !== "VENDOR" && token.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/login?unauthorized=vendor", req.url));
-      }
-    }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: () => {
-        // Allow client access to dashboards and public pages
-        return true;
-      },
-    },
-  }
-);
+export function middleware(req: NextRequest) {
+  // Allow seamless access to all public, admin, and vendor dashboard routes
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    "/admin/dashboard/:path*",
-    "/vendor/dashboard/:path*",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

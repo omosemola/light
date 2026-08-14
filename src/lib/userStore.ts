@@ -11,6 +11,7 @@ export interface UserProfile {
   points: number;
   savedStoresCount: number;
   isVisitor?: boolean;
+  role?: string;
 }
 
 interface UserState {

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Sparkles } from "lucide-react";
+import { useUserStore } from "@/lib/userStore";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { updateProfile } = useUserStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -15,24 +17,28 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [toastMessage, setToastMessage] = useState("");
 
-  const handleAdminAuth = (e?: React.FormEvent) => {
+  const handleAdminAuth = (e?: React.FormEvent, adminEmail = email) => {
     if (e) e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg("");
 
-    // Simulate / Process Admin Auth
+    updateProfile({
+      email: adminEmail || "admin@campuslightson.com",
+      name: "Platform Super Admin",
+      role: "ADMIN",
+      isVisitor: false,
+    });
+
+    setToastMessage("Access granted! Opening Admin Command Center...");
     setTimeout(() => {
-      setToastMessage("Access granted! Opening Admin Command Center...");
-      setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 900);
-    }, 600);
+      window.location.href = "/admin/dashboard";
+    }, 500);
   };
 
   const handleDemoAdminLogin = () => {
     setEmail("admin@campuslightson.com");
     setPassword("AdminMaster2026");
-    handleAdminAuth();
+    handleAdminAuth(undefined, "admin@campuslightson.com");
   };
 
   return (
