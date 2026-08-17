@@ -24,7 +24,10 @@ import {
   Landmark,
   Eye,
   EyeOff,
-  Lock
+  Lock,
+  X,
+  FileText,
+  Scale
 } from "lucide-react";
 import { registerVendorStore } from "@/actions/vendor";
 
@@ -60,6 +63,7 @@ export default function VendorRegistrationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showMerchantTermsModal, setShowMerchantTermsModal] = useState(false);
 
   // Step 1: Owner & Business Info
   const [storeName, setStoreName] = useState("");
@@ -599,11 +603,132 @@ export default function VendorRegistrationPage() {
       </main>
 
       {/* FOOTER NOTICE */}
-      <footer className="text-center text-xs text-[#71717A] dark:text-zinc-500 mt-12 max-w-md mx-auto px-4 space-y-2">
+      <footer className="text-center text-xs text-[#71717A] dark:text-zinc-500 mt-12 max-w-lg mx-auto px-4 space-y-2">
         <p>
-          By creating a vendor account, you agree to Lights<span className="text-[#F5A623]">on</span> Marketplace Merchant Terms & Fast Campus Delivery standard protocol.
+          By creating a vendor account, you agree to the{" "}
+          <button
+            type="button"
+            onClick={() => setShowMerchantTermsModal(true)}
+            className="font-heading font-extrabold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B] dark:hover:text-indigo-300 transition-colors cursor-pointer"
+          >
+            Merchant Terms & Fast Campus Delivery standard protocol
+          </button>.
         </p>
       </footer>
+
+      {/* INTERACTIVE MERCHANT TERMS & FAST DELIVERY PROTOCOL MODAL */}
+      <AnimatePresence>
+        {showMerchantTermsModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 w-full max-w-2xl rounded-3xl p-6 md:p-8 shadow-2xl my-8 max-h-[85vh] flex flex-col font-body"
+            >
+              {/* MODAL HEADER */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                    <Store size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base md:text-lg font-heading font-black text-slate-900 dark:text-white leading-tight">
+                      Merchant Terms & Delivery Protocol
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">Official Campus Merchant Standard Agreement</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowMerchantTermsModal(false)}
+                  className="w-9 h-9 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-all cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* MODAL SCROLLABLE CONTENT */}
+              <div className="overflow-y-auto py-4 space-y-6 text-xs md:text-sm text-[#71717A] dark:text-zinc-300 pr-2">
+                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                  <ShieldCheck size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs leading-relaxed">
+                    All merchants operating on Lightson Marketplace commit to fast campus hostel deliveries, hygienic food preparation, and transparent daily bank settlements.
+                  </p>
+                </div>
+
+                {/* 1. KITCHEN HYGIENE & QUALITY */}
+                <div className="space-y-1.5">
+                  <h4 className="font-heading font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                    <Building2 size={16} className="text-indigo-600 dark:text-indigo-400" />
+                    1. Kitchen Hygiene & Inventory Quality
+                  </h4>
+                  <p className="text-xs leading-relaxed">
+                    All food items must be freshly cooked and packed in sanitized, food-grade disposable containers. Out-of-stock items must be paused immediately on your POS terminal to avoid student order cancellations.
+                  </p>
+                </div>
+
+                {/* 2. FAST CAMPUS DELIVERY SLA */}
+                <div className="space-y-1.5">
+                  <h4 className="font-heading font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                    <Bike size={16} className="text-amber-600 dark:text-amber-400" />
+                    2. Fast Campus Delivery Protocol (SLA)
+                  </h4>
+                  <ul className="text-xs space-y-1.5 list-disc pl-5 marker:text-amber-500">
+                    <li><strong>2-Minute Response:</strong> Acknowledge and accept incoming student orders within 2 minutes of the POS alarm.</li>
+                    <li><strong>15-20 Min Prep Time:</strong> Package and mark meals &quot;Ready for Delivery&quot; swiftly.</li>
+                    <li><strong>Tamper-Proof Seals:</strong> Food containers must have tamper-evident stickers to guarantee student safety.</li>
+                    <li><strong>Hostel Room Drop:</strong> Delivery runners check in at hostel porter lodges and alert students upon arrival via Call/SMS.</li>
+                  </ul>
+                </div>
+
+                {/* 3. SETTLEMENTS */}
+                <div className="space-y-1.5">
+                  <h4 className="font-heading font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                    <DollarSign size={16} className="text-emerald-600 dark:text-emerald-400" />
+                    3. Automated Daily Bank Settlements
+                  </h4>
+                  <p className="text-xs leading-relaxed">
+                    Earnings are credited automatically to your registered Nigerian NUBAN bank account via Paystack Subaccount splits. No hidden fees or monthly software subscription charges.
+                  </p>
+                </div>
+
+                {/* 4. RATINGS */}
+                <div className="space-y-1.5">
+                  <h4 className="font-heading font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-indigo-600 dark:text-indigo-400" />
+                    4. Rating Standards (4.0+ Stars)
+                  </h4>
+                  <p className="text-xs leading-relaxed">
+                    Merchants must maintain at least a 4.0-star customer satisfaction score. Courteous communication on the integrated live chat is mandatory.
+                  </p>
+                </div>
+              </div>
+
+              {/* MODAL FOOTER */}
+              <div className="pt-4 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 shrink-0">
+                <Link
+                  href="/terms?tab=merchant"
+                  target="_blank"
+                  className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 underline hover:text-[#1E1B4B]"
+                >
+                  View Full Legal Governance Page ➔
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setShowMerchantTermsModal(false)}
+                  className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                  I Understand & Agree
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
