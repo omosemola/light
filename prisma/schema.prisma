@@ -50,6 +50,7 @@ model User {
   tickets       SupportTicket[]
   reviews       Review[]
   notifications Notification[]
+  chatMessages  ChatMessage[]
 }
 
 model Store {
@@ -74,6 +75,7 @@ model Store {
   products            Product[]
   orders              Order[]
   reviews             Review[]
+  chatMessages        ChatMessage[]
 }
 
 model Category {
@@ -122,6 +124,7 @@ model Order {
   items           OrderItem[]
   tickets         SupportTicket[]
   review          Review?
+  chatMessages    ChatMessage[]
 }
 
 model OrderItem {
@@ -183,4 +186,25 @@ model Notification {
 
   userId    String
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  text        String
+  image       String?
+  senderType  String   // "STUDENT" | "VENDOR"
+  senderName  String
+  senderEmail String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([userId, storeId])
 }

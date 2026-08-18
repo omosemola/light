@@ -17,6 +17,7 @@ export async function getVendorDashboardData(vendorUserId?: string) {
     let store = await prisma.store.findFirst({
       where: vendorUserId ? { userId: vendorUserId } : {},
       include: {
+        user: { select: { email: true, phone: true, name: true } },
         products: {
           include: {
             category: true,
@@ -31,6 +32,19 @@ export async function getVendorDashboardData(vendorUserId?: string) {
                 product: true,
               },
             },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        chatMessages: {
+          include: {
+            user: { select: { name: true, email: true, image: true } },
+            order: { select: { id: true, totalAmount: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        reviews: {
+          include: {
+            user: { select: { name: true, image: true } },
           },
           orderBy: { createdAt: "desc" },
         },
