@@ -40,14 +40,6 @@ import { useTheme } from "@/components/providers/ThemeProvider";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
-import { 
-  getStudentChatThreads, 
-  getConversationMessages, 
-  saveChatMessage, 
-  markStudentThreadAsRead, 
-  StudentChatThreadItem, 
-  ChatMessageRecord 
-} from "@/actions/chat";
 
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -181,193 +173,13 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     }
   };
 
-  // STUDENT LIVE CHATS STATE (DATABASE BACKED & INSTANT CACHE)
-  const [studentChatThreads, setStudentChatThreads] = useState<StudentChatThreadItem[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("cached_student_chats");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return [];
-  });
-  const [activeStudentThread, setActiveStudentThread] = useState<StudentChatThreadItem | null>(null);
-  const [studentThreadMessages, setStudentThreadMessages] = useState<ChatMessageRecord[]>([]);
-  const [studentReplyText, setStudentReplyText] = useState("");
-  const [isSendingStudentReply, setIsSendingStudentReply] = useState(false);
-  const [isLoadingStudentChats, setIsLoadingStudentChats] = useState(false);
-  const [isLoadingStudentMessages, setIsLoadingStudentMessages] = useState(false);
-  const studentChatMessagesEndRef = useRef<HTMLDivElement>(null);
-  const prevVendorMsgCountRef = useRef<number>(0);
-
-  const playStudentMessageChime = useCallback(() => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
-      if (ctx.state === "suspended") ctx.resume();
-      
-      const playTone = (freq: number, startSec: number, durationSec: number, gainVal = 0.35) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + startSec);
-        gain.gain.setValueAtTime(gainVal, ctx.currentTime + startSec);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startSec + durationSec);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + startSec);
-        osc.stop(ctx.currentTime + startSec + durationSec);
-      };
-
-      playTone(587.33, 0, 0.18, 0.35); // D5
-      playTone(880, 0.16, 0.3, 0.4);   // A5
-    } catch {
-      // Audio fallback
-    }
-  }, []);
-
-  const fetchStudentChats = useCallback(async (isPoll = false) => {
-    if (!profile.email) return;
-    if (!isPoll && studentChatThreads.length === 0) setIsLoadingStudentChats(true);
-    try {
-      const res = await getStudentChatThreads(profile.email);
-      if (res.success && res.threads) {
-        setStudentChatThreads(res.threads);
-        try {
-          sessionStorage.setItem("cached_student_chats", JSON.stringify(res.threads));
-        } catch {}
-        const totalUnread = res.threads.reduce((acc, t) => acc + t.unreadCount, 0);
-        if (isPoll && totalUnread > prevVendorMsgCountRef.current) {
-          playStudentMessageChime();
-        }
-        prevVendorMsgCountRef.current = totalUnread;
-      }
-    } catch (e) {
-      console.error("Error fetching student chat threads:", e);
-    } finally {
-      if (!isPoll) setIsLoadingStudentChats(false);
-    }
-  }, [profile.email, playStudentMessageChime, studentChatThreads.length]);
-
-  useEffect(() => {
-    if ((section === "chats" || section === "messages") && profile.email) {
-      fetchStudentChats(false);
-      const interval = setInterval(() => {
-        fetchStudentChats(true);
-      }, 4000);
-      return () => clearInterval(interval);
-    }
-  }, [section, profile.email, fetchStudentChats]);
-
-  // Load and poll active conversation messages
-  useEffect(() => {
-    if (!activeStudentThread || !profile.email) return;
-    let active = true;
-
-    async function loadActiveMessages(isPoll = false) {
-      if (!activeStudentThread || !profile.email) return;
-      if (!isPoll) setIsLoadingStudentMessages(true);
-      try {
-        const res = await getConversationMessages(activeStudentThread.storeId, profile.email);
-        if (active && res.success && res.messages) {
-          setStudentThreadMessages(res.messages);
-        }
-      } catch (e) {
-        console.error("Error loading active conversation messages:", e);
-      } finally {
-        if (!isPoll) setIsLoadingStudentMessages(false);
-      }
-    }
-
-    loadActiveMessages(false);
-    const interval = setInterval(() => {
-      loadActiveMessages(true);
-    }, 3500);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [activeStudentThread?.storeId, profile.email]);
-
-  useEffect(() => {
-    studentChatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [studentThreadMessages]);
-
-  const handleSelectStudentThread = async (thread: StudentChatThreadItem) => {
-    setActiveStudentThread(thread);
-    if (profile.email) {
-      await markStudentThreadAsRead(thread.storeId, profile.email);
-      setStudentChatThreads((prev) =>
-        prev.map((t) => (t.storeId === thread.storeId ? { ...t, unreadCount: 0 } : t))
-      );
-    }
-  };
-
-  const handleSendStudentReply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!studentReplyText.trim() || !activeStudentThread || !profile.email) return;
-
-    const textToSend = studentReplyText.trim();
-    setStudentReplyText("");
-    setIsSendingStudentReply(true);
-
-    const tempId = `temp-${Date.now()}`;
-    const optimisticMsg: ChatMessageRecord = {
-      id: tempId,
-      text: textToSend,
-      image: null,
-      senderType: "STUDENT",
-      senderName: profile.name || "Campus Student",
-      senderEmail: profile.email,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    setStudentThreadMessages((prev) => [...prev, optimisticMsg]);
-
-    try {
-      const res = await saveChatMessage({
-        storeId: activeStudentThread.storeId,
-        senderType: "STUDENT",
-        senderName: profile.name || "Campus Student",
-        senderEmail: profile.email,
-        text: textToSend,
-      });
-
-      if (res.success && res.message) {
-        setStudentThreadMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? (res.message as any) : m))
-        );
-        setStudentChatThreads((prev) =>
-          prev.map((t) =>
-            t.storeId === activeStudentThread.storeId
-              ? { ...t, lastMessage: textToSend, lastMessageAt: new Date().toISOString() }
-              : t
-          )
-        );
-      }
-    } catch (e) {
-      console.error("Error sending student message:", e);
-    } finally {
-      setIsSendingStudentReply(false);
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
       
       {/* HEADER BAR */}
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800 px-5 py-4 flex items-center justify-between">
         <button
-          onClick={() => {
-            if (activeStudentThread) {
-              setActiveStudentThread(null);
-            } else {
-              router.push("/profile");
-            }
-          }}
+          onClick={() => router.push("/profile")}
           className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 text-[#18181B] dark:text-zinc-100 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
         >
           <ArrowLeft size={20} />
@@ -805,248 +617,34 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
           </div>
         )}
 
-        {/* SECTION: LIVE VENDOR CHATS (SYNCED WITH DATABASE) */}
+        {/* SECTION: LIVE VENDOR CHATS (COMING SOON IN V2) */}
         {(section === "chats" || section === "messages") && (
-          <div className="space-y-4">
-            {activeStudentThread ? (
-              /* ACTIVE CHAT CONVERSATION VIEW */
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-5 md:p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setActiveStudentThread(null)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-heading font-bold text-slate-700 dark:text-zinc-200 transition cursor-pointer"
-                    >
-                      ← All Chats
-                    </button>
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 shrink-0">
-                        <Image
-                          src={activeStudentThread.storeLogo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=80"}
-                          alt={activeStudentThread.storeName}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 flex items-center gap-1.5">
-                          <span>{activeStudentThread.storeName}</span>
-                          <ShieldCheck size={14} className="text-emerald-500" />
-                        </h3>
-                        <p className="text-[11px] text-[#71717A] dark:text-zinc-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                          <span>Direct Kitchen / Store Chat</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {activeStudentThread.storePhone && (
-                      <a
-                        href={`tel:${activeStudentThread.storePhone}`}
-                        className="p-2 rounded-xl text-slate-600 dark:text-zinc-300 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                        title="Call Store"
-                      >
-                        <Phone size={17} />
-                      </a>
-                    )}
-                    <Link
-                      href={`/vendor/${activeStudentThread.storeId}`}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-[#312E81] dark:hover:text-indigo-300 text-xs font-heading font-bold transition flex items-center gap-1"
-                      title="Visit Storefront"
-                    >
-                      <ExternalLink size={13} />
-                      <span className="hidden sm:inline">Storefront</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* MESSAGES LIST CONTAINER */}
-                <div className="h-[380px] overflow-y-auto p-4 rounded-2xl bg-[#FAFAF7] dark:bg-[#0A0A0C] border border-slate-100 dark:border-zinc-800/80 space-y-3">
-                  {isLoadingStudentMessages ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#71717A] dark:text-zinc-400 space-y-2">
-                      <div className="w-6 h-6 border-2 border-[#312E81] border-t-transparent rounded-full animate-spin" />
-                      <p>Loading conversation messages from database...</p>
-                    </div>
-                  ) : studentThreadMessages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#71717A] dark:text-zinc-400 space-y-1">
-                      <MessageSquare size={30} className="text-slate-300 dark:text-zinc-700" />
-                      <p>No messages sent yet. Ask a question below!</p>
-                    </div>
-                  ) : (
-                    studentThreadMessages.map((msg) => {
-                      const isStudent = msg.senderType === "STUDENT";
-                      const timeFormatted = new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`flex flex-col ${isStudent ? "items-end" : "items-start"}`}
-                        >
-                          <div
-                            className={`max-w-[80%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-2xs ${
-                              isStudent
-                                ? "bg-[#312E81] text-white rounded-br-xs font-medium"
-                                : "bg-white dark:bg-zinc-800 text-[#18181B] dark:text-zinc-100 rounded-bl-xs border border-slate-200/80 dark:border-zinc-700/80 font-medium"
-                            }`}
-                          >
-                            {!isStudent && (
-                              <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 block mb-1">
-                                {activeStudentThread.storeName}
-                              </span>
-                            )}
-                            {msg.image && (
-                              <div className="relative w-44 h-28 rounded-xl overflow-hidden mb-2 border border-black/10">
-                                <Image src={msg.image} alt="Attachment" fill className="object-cover" />
-                              </div>
-                            )}
-                            <p className="whitespace-pre-wrap">{msg.text}</p>
-                          </div>
-                          <div className="flex items-center gap-1 mt-1 text-[10px] text-[#A1A1AA] dark:text-zinc-500 px-1">
-                            <span>{timeFormatted}</span>
-                            {isStudent && <CheckCheck size={12} className="text-indigo-400" />}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                  <div ref={studentChatMessagesEndRef} />
-                </div>
-
-                {/* REPLY INPUT FORM */}
-                <form onSubmit={handleSendStudentReply} className="flex items-center gap-2 pt-1">
-                  <input
-                    type="text"
-                    value={studentReplyText}
-                    onChange={(e) => setStudentReplyText(e.target.value)}
-                    placeholder={`Message ${activeStudentThread.storeName}...`}
-                    className="flex-1 px-4 py-3 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl text-xs font-medium text-[#18181B] dark:text-zinc-100 focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!studentReplyText.trim() || isSendingStudentReply}
-                    className="px-5 py-3 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-40 cursor-pointer active:scale-95 shrink-0"
-                  >
-                    <Send size={15} />
-                    <span>{isSendingStudentReply ? "Sending..." : "Send"}</span>
-                  </button>
-                </form>
-              </div>
-            ) : (
-              /* ALL THREADS LIST VIEW */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
-                      <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
-                      <span>Live Vendor Chats</span>
-                    </h2>
-                    <p className="text-xs text-[#71717A] dark:text-zinc-400">
-                      Direct messaging with campus stores and food kitchens.
-                    </p>
-                  </div>
-                  <span className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-full">
-                    {studentChatThreads.length} {studentChatThreads.length === 1 ? "Conversation" : "Conversations"}
-                  </span>
-                </div>
-
-                {isLoadingStudentChats && studentChatThreads.length === 0 ? (
-                  <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-2">
-                    <div className="w-8 h-8 border-2 border-[#312E81] border-t-transparent rounded-full animate-spin mx-auto" />
-                    <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body">Loading your vendor chats from database...</p>
-                  </div>
-                ) : studentChatThreads.length === 0 ? (
-                  <div className="text-center py-14 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-3">
-                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
-                      <MessageSquare size={26} />
-                    </div>
-                    <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">
-                      No vendor chats yet
-                    </h3>
-                    <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
-                      Have questions about food availability, delivery time, or custom portion orders? Tap &ldquo;Chat with Vendor&rdquo; on any campus vendor or food page to start chatting!
-                    </p>
-                    <div className="flex items-center justify-center gap-2 pt-1">
-                      <Link
-                        href="/"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white text-xs font-heading font-bold rounded-xl shadow-xs transition-all"
-                      >
-                        <span>Browse Campus Vendors</span>
-                      </Link>
-                      <Link
-                        href="/orders"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[#18181B] dark:text-zinc-100 text-xs font-heading font-bold rounded-xl transition-all"
-                      >
-                        <span>View Orders</span>
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {studentChatThreads.map((thread) => {
-                      const timeFormatted = new Date(thread.lastMessageAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-
-                      return (
-                        <div
-                          key={thread.storeId}
-                          onClick={() => handleSelectStudentThread(thread)}
-                          className="bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between gap-4 hover:border-indigo-300 dark:hover:border-indigo-700/60 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div className="relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800 bg-white shadow-xs">
-                              <Image
-                                src={thread.storeLogo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=80"}
-                                alt={thread.storeName}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                  {thread.storeName}
-                                </span>
-                                {thread.unreadCount > 0 && (
-                                  <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-black animate-pulse">
-                                    {thread.unreadCount} New
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-[#71717A] dark:text-zinc-400 font-medium truncate mt-0.5">
-                                {thread.lastSenderType === "STUDENT" ? "You: " : ""}&ldquo;{thread.lastMessage}&rdquo;
-                              </p>
-                              <span className="text-[10px] text-[#A1A1AA] dark:text-zinc-500 block mt-1">
-                                {timeFormatted}
-                              </span>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectStudentThread(thread);
-                            }}
-                            className="px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white rounded-xl text-xs font-heading font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-                          >
-                            <MessageSquare size={13} />
-                            <span>Continue Chat</span>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-8 space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
+              <MessageSquare size={30} />
+            </div>
+            <div className="space-y-1">
+              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+                In-App Vendor Messaging
+              </h2>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto font-body">
+                Direct in-app messaging with campus kitchens and stores will be available in the upcoming platform version. For questions, you can reach vendors directly via phone or WhatsApp on their store pages.
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center gap-3">
+              <Link
+                href="/profile"
+                className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white text-xs font-heading font-bold rounded-xl transition shadow-xs"
+              >
+                Back to Profile
+              </Link>
+              <Link
+                href="/"
+                className="px-5 py-2.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[#18181B] dark:text-zinc-100 text-xs font-heading font-bold rounded-xl transition"
+              >
+                Browse Campus Stores
+              </Link>
+            </div>
           </div>
         )}
 

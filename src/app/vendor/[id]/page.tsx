@@ -25,7 +25,6 @@ import { useCartStore } from "@/lib/store";
 import { useUserStore } from "@/lib/userStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { Modal } from "@/components/ui/Modal";
-import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { getLiveStoreById } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 
@@ -432,7 +431,6 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
   const { isStoreFavorite, toggleStoreFavorite } = useFavoritesStore();
   const isFavorite = isStoreFavorite(vendor.id);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
   const toggleFavorite = () => {
@@ -565,12 +563,6 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
               >
                 <Phone size={15} /> Call Shop
               </a>
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="flex-1 md:flex-none px-4 py-2.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                <MessageSquare size={15} /> Chat Merchant
-              </button>
             </div>
 
           </div>
@@ -735,19 +727,6 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </Modal>
-
-      {/* MERCHANT CHAT MODAL DRAWER */}
-      <MerchantChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        vendor={{
-          id: vendor.id,
-          name: vendor.name,
-          avatar: vendor.avatar,
-          phone: vendor.phone,
-          category: vendor.category,
-        }}
-      />
 
     </div>
   );

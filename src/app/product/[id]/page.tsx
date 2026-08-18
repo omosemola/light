@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
-import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { getLiveProductById } from "@/actions/marketplace";
@@ -709,7 +708,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [quantity, setQuantity] = useState(1);
   const isLiked = isProductFavorite(product.id) || isProductFavorite(id);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
-  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   // SYNCHRONIZED PER-PRODUCT REVIEWS
   const reviewsList = reviewsByProduct[product.id] || reviewsByProduct[id] || [];
@@ -932,7 +930,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           transition={{ duration: 0.4 }}
           className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-3"
         >
-          {/* VENDOR LINK & CHAT MERCHANT BUTTON */}
+          {/* VENDOR LINK */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <Link 
@@ -948,15 +946,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   (Store ↗)
                 </span>
               </Link>
-
-              <button
-                onClick={() => setIsChatModalOpen(true)}
-                className="px-2.5 py-1 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-300 hover:text-white font-heading font-extrabold text-[10px] md:text-xs rounded-full border border-indigo-100 dark:border-indigo-800 transition-all flex items-center gap-1 shadow-2xs group"
-                title={`Chat directly with ${product.vendorName}`}
-              >
-                <MessageSquare size={11} className="group-hover:scale-110 transition-transform" />
-                <span>Chat Merchant</span>
-              </button>
             </div>
 
             {reviewsList.length > 0 ? (
@@ -1358,19 +1347,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </button>
         </div>
       </Modal>
-
-      {/* MERCHANT CHAT MODAL DRAWER */}
-      <MerchantChatModal
-        isOpen={isChatModalOpen}
-        onClose={() => setIsChatModalOpen(false)}
-        vendor={{
-          id: product.vendorId,
-          name: product.vendorName,
-          avatar: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-          phone: "+234 812 345 9900",
-        }}
-        initialProductContext={product.name}
-      />
 
     </div>
   );

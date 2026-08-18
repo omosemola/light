@@ -38,7 +38,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useUserStore } from "@/lib/userStore";
 import { 
@@ -51,14 +50,6 @@ import {
   deleteVendorProduct,
   updateStoreSchedule
 } from "@/actions/vendor";
-import { 
-  getStoreChatThreads, 
-  getConversationMessages, 
-  saveChatMessage, 
-  markThreadAsRead, 
-  ChatThreadItem, 
-  ChatMessageRecord 
-} from "@/actions/chat";
 import { OrderStatus } from "@prisma/client";
 
 interface VariationOption {
@@ -78,19 +69,9 @@ export default function VendorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
-  const [selectedTab, setSelectedTab] = useState<"orders" | "products" | "chats" | "settings">("orders");
+  const [selectedTab, setSelectedTab] = useState<"orders" | "products" | "settings">("orders");
   const [orderFilter, setOrderFilter] = useState<string>("ALL");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-
-  // Live Chat State (Database Backed)
-  const [chatThreads, setChatThreads] = useState<ChatThreadItem[]>([]);
-  const [activeThread, setActiveThread] = useState<ChatThreadItem | null>(null);
-  const [activeThreadMessages, setActiveThreadMessages] = useState<ChatMessageRecord[]>([]);
-  const [replyText, setReplyText] = useState("");
-  const [isSendingReply, setIsSendingReply] = useState(false);
-  const [isLoadingThreadMessages, setIsLoadingThreadMessages] = useState(false);
-  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
-  const prevUnreadChatsCountRef = useRef<number>(0);
 
   // Add / Edit Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -219,19 +200,6 @@ export default function VendorDashboardPage() {
         setStorePhone(res.store.phone);
       }
 
-      // Fetch live database chat threads
-      if (res.store.id) {
-        const threadsRes = await getStoreChatThreads(res.store.id);
-        if (threadsRes.success && threadsRes.threads) {
-          setChatThreads(threadsRes.threads);
-          const totalUnread = threadsRes.threads.reduce((acc, t) => acc + t.unreadCount, 0);
-          if (isPoll && totalUnread > prevUnreadChatsCountRef.current) {
-            playMessageChime();
-          }
-          prevUnreadChatsCountRef.current = totalUnread;
-        }
-      }
-
       const currentPending = res.metrics?.pendingOrdersCount || 0;
       if (isPoll && currentPending > 0 && currentPending > prevPendingCountRef.current && !isAlarmMuted) {
         playVendorOrderAlarm();
@@ -250,86 +218,6 @@ export default function VendorDashboardPage() {
     }, 5000);
     return () => clearInterval(interval);
   }, [isAlarmMuted]);
-
-  // Polling active thread messages when an active thread is selected
-  useEffect(() => {
-    if (!activeThread || !storeData?.id) return;
-    let active = true;
-
-    async function loadActiveMessages() {
-      if (!activeThread || !storeData?.id) return;
-      try {
-        const res = await getConversationMessages(storeData.id, activeThread.studentEmail);
-        if (active && res.success && res.messages) {
-          setActiveThreadMessages(res.messages);
-        }
-      } catch (e) {
-        console.error("Error loading active thread messages:", e);
-      }
-    }
-
-    loadActiveMessages();
-    const interval = setInterval(loadActiveMessages, 3500);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [activeThread?.studentEmail, storeData?.id]);
-
-  useEffect(() => {
-    chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeThreadMessages]);
-
-  const handleSelectThread = async (thread: ChatThreadItem) => {
-    setActiveThread(thread);
-    setIsLoadingThreadMessages(true);
-    if (storeData?.id) {
-      await markThreadAsRead(storeData.id, thread.studentEmail);
-      const res = await getConversationMessages(storeData.id, thread.studentEmail);
-      if (res.success && res.messages) {
-        setActiveThreadMessages(res.messages);
-      }
-      setChatThreads((prev) =>
-        prev.map((t) => (t.studentEmail === thread.studentEmail ? { ...t, unreadCount: 0 } : t))
-      );
-    }
-    setIsLoadingThreadMessages(false);
-  };
-
-  const handleSendVendorReply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!replyText.trim() || !activeThread || !storeData?.id) return;
-
-    const textToSend = replyText.trim();
-    setReplyText("");
-    setIsSendingReply(true);
-
-    try {
-      const res = await saveChatMessage({
-        storeId: storeData.id,
-        senderType: "VENDOR",
-        senderName: storeData.name,
-        senderEmail: activeThread.studentEmail,
-        text: textToSend,
-        orderId: activeThread.orderId || undefined,
-      });
-
-      if (res.success && res.message) {
-        setActiveThreadMessages((prev) => [...prev, res.message as any]);
-        setChatThreads((prev) =>
-          prev.map((t) =>
-            t.studentEmail === activeThread.studentEmail
-              ? { ...t, lastMessage: textToSend, lastMessageAt: new Date().toISOString() }
-              : t
-          )
-        );
-      }
-    } catch (e) {
-      console.error("Error sending vendor reply:", e);
-    } finally {
-      setIsSendingReply(false);
-    }
-  };
 
   const handleToggleStore = async () => {
     if (!storeData) return;
@@ -745,22 +633,6 @@ export default function VendorDashboardPage() {
               🍔 Menu & Add-ons ({storeData?.products?.length || 0})
             </button>
             <button
-              onClick={() => setSelectedTab("chats")}
-              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                selectedTab === "chats"
-                  ? "bg-[#312E81] text-white dark:bg-indigo-600 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60"
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Customer Chats</span>
-              {chatThreads.reduce((acc, t) => acc + t.unreadCount, 0) > 0 && (
-                <span className="px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px] font-black animate-pulse">
-                  {chatThreads.reduce((acc, t) => acc + t.unreadCount, 0)}
-                </span>
-              )}
-            </button>
-            <button
               onClick={() => setSelectedTab("settings")}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-extrabold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
                 selectedTab === "settings"
@@ -1017,198 +889,6 @@ export default function VendorDashboardPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {/* CUSTOMER LIVE CHATS TAB (DATABASE SYNCHRONIZED) */}
-        {selectedTab === "chats" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-5">
-            {activeThread ? (
-              /* ACTIVE CONVERSATION VIEW */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setActiveThread(null)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-heading font-extrabold text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                    >
-                      ← Back to All Chats
-                    </button>
-                    <div>
-                      <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                        <span>{activeThread.studentName}</span>
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {activeThread.studentEmail}
-                        {activeThread.orderSummary && ` • Context: ${activeThread.orderSummary}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="text-[11px] font-heading font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-full">
-                    Live Supabase Thread
-                  </span>
-                </div>
-
-                {/* MESSAGES BUBBLES LIST */}
-                <div className="h-[380px] overflow-y-auto p-4 rounded-2xl bg-[#FAFAF7] dark:bg-[#0A0A0C] border border-slate-100 dark:border-slate-800/80 space-y-3">
-                  {isLoadingThreadMessages ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-slate-400 space-y-2">
-                      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                      <p>Loading conversation history from database...</p>
-                    </div>
-                  ) : activeThreadMessages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-slate-400">
-                      <MessageSquare size={32} className="text-slate-300 dark:text-slate-700 mb-2" />
-                      <p>No messages exchanged yet in this conversation.</p>
-                    </div>
-                  ) : (
-                    activeThreadMessages.map((msg) => {
-                      const isVendor = msg.senderType === "VENDOR";
-                      const timeFormatted = new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`flex flex-col ${isVendor ? "items-end" : "items-start"}`}
-                        >
-                          <div
-                            className={`max-w-[78%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-2xs ${
-                              isVendor
-                                ? "bg-[#312E81] text-white rounded-br-xs font-medium"
-                                : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-xs border border-slate-200 dark:border-slate-700 font-medium"
-                            }`}
-                          >
-                            {!isVendor && (
-                              <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 block mb-1">
-                                {msg.senderName}
-                              </span>
-                            )}
-                            {msg.image && (
-                              <div className="relative w-44 h-28 rounded-xl overflow-hidden mb-2 border border-black/10">
-                                <Image src={msg.image} alt="Attachment" fill className="object-cover" />
-                              </div>
-                            )}
-                            <p className="whitespace-pre-wrap">{msg.text}</p>
-                          </div>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 px-1">
-                            {timeFormatted}
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                  <div ref={chatMessagesEndRef} />
-                </div>
-
-                {/* VENDOR REPLY FORM */}
-                <form onSubmit={handleSendVendorReply} className="flex items-center gap-2 pt-1">
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder={`Reply to ${activeThread.studentName}...`}
-                    className="flex-1 px-4 py-3 bg-[#FAFAF7] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!replyText.trim() || isSendingReply}
-                    className="px-5 py-3 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-40 cursor-pointer active:scale-95"
-                  >
-                    <span>{isSendingReply ? "Sending..." : "Send Reply"}</span>
-                  </button>
-                </form>
-              </div>
-            ) : (
-              /* THREADS LIST VIEW */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-indigo-500" />
-                    <span>Customer Live Chats ({chatThreads.length})</span>
-                  </h3>
-                  <span className="text-xs text-slate-500">Live student inquiries & order chats from PostgreSQL</span>
-                </div>
-
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {chatThreads.length > 0 ? (
-                    chatThreads.map((thread) => {
-                      const timeStr = new Date(thread.lastMessageAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-
-                      return (
-                        <div
-                          key={thread.studentEmail}
-                          className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 px-3 rounded-2xl transition cursor-pointer"
-                          onClick={() => handleSelectThread(thread)}
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-slate-800 text-[#312E81] dark:text-indigo-400 font-extrabold flex items-center justify-center text-base border border-indigo-100 dark:border-slate-700 shrink-0">
-                              {thread.studentName ? thread.studentName[0].toUpperCase() : "S"}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                                  {thread.studentName}
-                                </h4>
-                                {thread.unreadCount > 0 && (
-                                  <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-black animate-pulse">
-                                    {thread.unreadCount} New
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium truncate mt-0.5">
-                                &ldquo;{thread.lastMessage}&rdquo;
-                              </p>
-                              <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
-                                <span>{timeStr}</span>
-                                {thread.orderSummary && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="text-indigo-600 dark:text-indigo-400 font-mono truncate">
-                                      {thread.orderSummary}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectThread(thread);
-                            }}
-                            className="px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white rounded-xl text-xs font-heading font-extrabold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
-                          >
-                            <MessageSquare size={14} />
-                            <span>Reply Live</span>
-                          </button>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="py-14 text-center space-y-3">
-                      <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
-                        <MessageSquare size={26} />
-                      </div>
-                      <h4 className="font-heading font-bold text-sm text-slate-800 dark:text-slate-200">
-                        No customer chat messages yet
-                      </h4>
-                      <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                        When students ask questions about your menu items or active orders, their messages will appear here in real time with audible notification chimes.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
 

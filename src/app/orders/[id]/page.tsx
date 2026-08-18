@@ -17,7 +17,6 @@ import {
   Receipt
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { submitStudentReview } from "@/actions/reviews";
 import { getLiveOrderById } from "@/actions/orders";
 import { useUserStore } from "@/lib/userStore";
@@ -529,14 +528,6 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
         </div>
 
       </div>
-
-      {/* CHAT MODAL DRAWER */}
-      <MerchantChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        vendor={chatVendor}
-        initialProductContext={order.items[0]?.name}
-      />
 
     </div>
   );
