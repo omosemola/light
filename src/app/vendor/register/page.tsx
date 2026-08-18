@@ -178,8 +178,16 @@ export default function VendorRegistrationPage() {
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="bg-[#1E1B4B] text-white py-12 md:py-16 px-4 md:px-8 relative overflow-hidden">
+      {/* HERO SECTION WITH PROJECT BANNER */}
+      <section className="relative bg-[#1E1B4B] dark:bg-zinc-950 text-white py-12 md:py-16 px-4 md:px-8 overflow-hidden shadow-lg border-b border-indigo-950 dark:border-zinc-800">
+        <Image
+          src="/support-banner.jpg"
+          alt="Vendor Registration Banner"
+          fill
+          priority
+          className="object-cover object-center pointer-events-none opacity-45"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#312E81] rounded-full blur-3xl opacity-60 pointer-events-none -mr-20 -mt-20" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#F5A623] rounded-full blur-3xl opacity-15 pointer-events-none -ml-20 -mb-20" />
 
@@ -194,7 +202,7 @@ export default function VendorRegistrationPage() {
             <span className="text-[#F5A623]">Lights</span>on Marketplace
           </h1>
 
-          <p className="text-sm md:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm md:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed">
             Sell food, groceries, stationery, tech gadgets, fashion, and campus services. Receive instant student orders, manage live stock, and enjoy automated daily bank payouts.
           </p>
 

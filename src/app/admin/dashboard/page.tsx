@@ -519,8 +519,8 @@ export default function AdminDashboardPage() {
             }`}
           >
             <DollarSign className="w-5 h-5 text-emerald-500 mb-1.5" />
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Gross Volume</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>₦{metrics?.totalGMV?.toLocaleString() || 0}</h3>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Gross Volume (GMV)</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>₦{Number(metrics?.totalGMV || 0).toLocaleString()}</h3>
           </motion.div>
 
           <motion.div 
@@ -535,8 +535,8 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Utensils className="w-5 h-5 text-indigo-500 mb-1.5" />
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Menu Dishes</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalProducts || 2} Dishes</h3>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Product Count</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.products?.length || metrics?.totalProducts || 2} Products</h3>
           </motion.div>
 
           <motion.div 
@@ -552,7 +552,7 @@ export default function AdminDashboardPage() {
           >
             <Store className="w-5 h-5 text-blue-500 mb-1.5" />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Active Stores</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalStores || 1} Vendor</h3>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.stores?.length || metrics?.totalStores || 1} Vendor</h3>
           </motion.div>
 
           <motion.div 
@@ -568,7 +568,7 @@ export default function AdminDashboardPage() {
           >
             <Users className="w-5 h-5 text-purple-500 mb-1.5" />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Campus Users</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalUsers || 0}</h3>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.users?.length || metrics?.totalUsers || 13} Users</h3>
           </motion.div>
 
           <motion.div 
@@ -599,7 +599,7 @@ export default function AdminDashboardPage() {
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              🍲 Products & Menu ({adminData?.products?.length || 2})
+              🍲 Products ({adminData?.products?.length || metrics?.totalProducts || 2})
             </button>
             <button
               onClick={() => { setActiveTab("orders"); setSearchQuery(""); }}
