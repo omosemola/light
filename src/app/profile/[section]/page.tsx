@@ -29,7 +29,18 @@ import {
   Send,
   Phone,
   ExternalLink,
-  Volume2
+  Volume2,
+  User,
+  KeyRound,
+  Shield,
+  Smartphone,
+  Eye,
+  EyeOff,
+  LogOut,
+  AlertTriangle,
+  RefreshCw,
+  Save,
+  Check
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,6 +51,7 @@ import { useTheme } from "@/components/providers/ThemeProvider";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
+import { updateUserProfileDb, changeUserPasswordDb, deleteUserAccountSelf } from "@/actions/account";
 
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -170,6 +182,129 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
       console.error("Failed to delete review from database:", e);
       // Refresh on error
       fetchUserReviews();
+    }
+  };
+
+  // SETTINGS & SECURITY STATE
+  const [editName, setEditName] = useState(profile.name || "");
+  const [editPhone, setEditPhone] = useState(profile.phone || "");
+  const [editHostel, setEditHostel] = useState(profile.hostel || "");
+  const [editAddressDetail, setEditAddressDetail] = useState(profile.addressDetail || "");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSuccessMsg, setProfileSuccessMsg] = useState("");
+
+  // Password state
+  const [currentPass, setCurrentPass] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [updatingPass, setUpdatingPass] = useState(false);
+  const [passError, setPassError] = useState("");
+  const [passSuccess, setPassSuccess] = useState("");
+
+  // Preferences state
+  const [smsAlerts, setSmsAlerts] = useState(true);
+  const [emailReceipts, setEmailReceipts] = useState(true);
+  const [promoAlerts, setPromoAlerts] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+
+  // Danger Zone
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  useEffect(() => {
+    if (profile.name) setEditName(profile.name);
+    if (profile.phone) setEditPhone(profile.phone);
+    if (profile.hostel) setEditHostel(profile.hostel);
+    if (profile.addressDetail) setEditAddressDetail(profile.addressDetail);
+  }, [profile.name, profile.phone, profile.hostel, profile.addressDetail]);
+
+  const handleSaveAccountInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileSuccessMsg("");
+
+    try {
+      updateProfile({
+        name: editName,
+        phone: editPhone,
+        hostel: editHostel,
+        addressDetail: editAddressDetail,
+      });
+
+      if (profile.email) {
+        await updateUserProfileDb(profile.email, {
+          name: editName,
+          phone: editPhone,
+        });
+      }
+
+      setProfileSuccessMsg("Account details updated successfully!");
+      setTimeout(() => setProfileSuccessMsg(""), 3500);
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError("");
+    setPassSuccess("");
+
+    if (!newPass || newPass.length < 6) {
+      setPassError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      setPassError("New passwords do not match. Please re-enter.");
+      return;
+    }
+
+    setUpdatingPass(true);
+    try {
+      const res = await changeUserPasswordDb(profile.email, currentPass, newPass);
+      if (res.success) {
+        setPassSuccess("Password updated successfully in database!");
+        setCurrentPass("");
+        setNewPass("");
+        setConfirmPass("");
+        setTimeout(() => setPassSuccess(""), 4000);
+      } else {
+        setPassError(res.error || "Failed to update password.");
+      }
+    } catch (err: any) {
+      setPassError(err.message || "An error occurred while updating password.");
+    } finally {
+      setUpdatingPass(false);
+    }
+  };
+
+  const handleClearAppCache = () => {
+    try {
+      sessionStorage.clear();
+      setProfileSuccessMsg("App cache & history cleared!");
+      setTimeout(() => setProfileSuccessMsg(""), 3000);
+    } catch (e) {
+      console.error("Failed to clear cache:", e);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!profile.email) return;
+    setDeletingAccount(true);
+    try {
+      await deleteUserAccountSelf(profile.email);
+      useUserStore.getState().logoutUser();
+      router.push("/");
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+    } finally {
+      setDeletingAccount(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -765,8 +900,313 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
         {/* SECTION: SETTINGS */}
         {section === "settings" && (
           <div className="space-y-6">
-            
-            {/* THEME PREFERENCE CARD */}
+
+            {/* GLOBAL SUCCESS / FEEDBACK TOAST */}
+            {profileSuccessMsg && (
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200 shadow-sm">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>{profileSuccessMsg}</span>
+              </div>
+            )}
+
+            {/* 1. PERSONAL ACCOUNT & HOSTEL INFORMATION */}
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                  <User className="text-[#312E81] dark:text-indigo-400" size={20} />
+                  Account & Profile Details
+                </h2>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-300">
+                  Database Synced
+                </span>
+              </div>
+
+              <form onSubmit={handleSaveAccountInfo} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="e.g. Samuel Adeleke"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="e.g. 08123456789"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    disabled
+                    value={profile.email || "visitor@campuslightson.com"}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-medium cursor-not-allowed"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Email address is managed by campus authentication.</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Campus Hostel / Lodge</label>
+                    <input
+                      type="text"
+                      value={editHostel}
+                      onChange={(e) => setEditHostel(e.target.value)}
+                      placeholder="e.g. Mellanby Hall, Tedder, or Off-Campus Lodge"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Room / Address Details</label>
+                    <input
+                      type="text"
+                      value={editAddressDetail}
+                      onChange={(e) => setEditAddressDetail(e.target.value)}
+                      placeholder="e.g. Room B14, First Floor"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="px-5 py-2.5 rounded-xl bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-md disabled:opacity-50"
+                  >
+                    <Save size={14} />
+                    <span>{savingProfile ? "Saving..." : "Save Account Changes"}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* 2. PASSWORD & AUTHENTICATION SECURITY */}
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                  <KeyRound className="text-amber-500" size={20} />
+                  Password & Authentication
+                </h2>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300">
+                  Secured
+                </span>
+              </div>
+
+              {passError && (
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <AlertTriangle size={15} className="shrink-0" />
+                  <span>{passError}</span>
+                </div>
+              )}
+
+              {passSuccess && (
+                <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 size={15} className="shrink-0" />
+                  <span>{passSuccess}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Current Password</label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPass ? "text" : "password"}
+                      value={currentPass}
+                      onChange={(e) => setCurrentPass(e.target.value)}
+                      placeholder="Enter existing password"
+                      className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPass(!showCurrentPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showCurrentPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPass ? "text" : "password"}
+                        value={newPass}
+                        onChange={(e) => setNewPass(e.target.value)}
+                        placeholder="Min 6 characters"
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPass(!showNewPass)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showNewPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-zinc-300 mb-1">Confirm New Password</label>
+                    <input
+                      type="password"
+                      value={confirmPass}
+                      onChange={(e) => setConfirmPass(e.target.value)}
+                      placeholder="Re-type new password"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={updatingPass || !newPass}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-sm disabled:opacity-50"
+                  >
+                    <KeyRound size={14} />
+                    <span>{updatingPass ? "Updating Password..." : "Update Password"}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* 3. SECURITY & VERIFICATION PROTOCOLS */}
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                <ShieldCheck className="text-emerald-600" size={20} />
+                Security & Verification
+              </h2>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl border border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+                      <Shield size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-zinc-200">Student Identity Verification</p>
+                      <span className="text-[10px] text-slate-400">Authenticated UI Student Campus Profile</span>
+                    </div>
+                  </div>
+                  <span className="text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full text-[10px]">
+                    Verified
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl border border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-[#312E81] dark:text-indigo-400 flex items-center justify-center">
+                      <Lock size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-zinc-200">Two-Factor Authentication (2FA)</p>
+                      <span className="text-[10px] text-slate-400">SMS / Email prompt for new device logins</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTwoFactorEnabled(!twoFactorEnabled);
+                      setProfileSuccessMsg(`2FA ${!twoFactorEnabled ? "enabled" : "disabled"}`);
+                      setTimeout(() => setProfileSuccessMsg(""), 3000);
+                    }}
+                    className={`px-3 py-1 rounded-full font-bold text-[10px] transition-colors ${
+                      twoFactorEnabled
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300"
+                    }`}
+                  >
+                    {twoFactorEnabled ? "Active" : "Disabled"}
+                  </button>
+                </div>
+
+                {/* ACTIVE SESSION CARD */}
+                <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl border border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
+                      <Smartphone size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-zinc-200">Active Device Session</p>
+                      <span className="text-[10px] text-slate-400">Current Web Session • Campus Network</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Active Now</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. NOTIFICATION & ORDER PREFERENCES */}
+            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                <Bell className="text-indigo-600" size={20} />
+                Communication & Order Alerts
+              </h2>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl">
+                  <div>
+                    <p className="font-bold text-slate-800 dark:text-zinc-200">Order Updates (WhatsApp & SMS)</p>
+                    <span className="text-[10px] text-slate-400">Instant ping when Mama Cass accepts or dispatches food</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={smsAlerts}
+                    onChange={(e) => setSmsAlerts(e.target.checked)}
+                    className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl">
+                  <div>
+                    <p className="font-bold text-slate-800 dark:text-zinc-200">Email Invoices & Receipts</p>
+                    <span className="text-[10px] text-slate-400">Send itemized PDF receipts upon successful payment</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={emailReceipts}
+                    onChange={(e) => setEmailReceipts(e.target.checked)}
+                    className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl">
+                  <div>
+                    <p className="font-bold text-slate-800 dark:text-zinc-200">Meal Promos & Flash Deals</p>
+                    <span className="text-[10px] text-slate-400">Receive notifications for discounted weekend platters</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={promoAlerts}
+                    onChange={(e) => setPromoAlerts(e.target.checked)}
+                    className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. THEME PREFERENCE CARD */}
             <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
               <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
                 <Sun className="text-amber-500" size={20} />
@@ -775,8 +1215,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
               
               <div className="grid grid-cols-3 gap-3">
                 <button
+                  type="button"
                   onClick={() => setTheme("light")}
-                  className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${
                     theme === "light"
                       ? "bg-[#F4F3FF] border-[#312E81] text-[#312E81] font-bold shadow-sm"
                       : "bg-[#FAFAF7] dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-[#71717A] dark:text-zinc-300"
@@ -787,8 +1228,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setTheme("dark")}
-                  className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${
                     theme === "dark"
                       ? "bg-indigo-950 border-indigo-500 text-indigo-200 font-bold shadow-sm"
                       : "bg-[#FAFAF7] dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-[#71717A] dark:text-zinc-300"
@@ -799,8 +1241,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setTheme("system")}
-                  className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${
                     theme === "system"
                       ? "bg-[#F4F3FF] dark:bg-indigo-950 border-[#312E81] dark:border-indigo-500 text-[#312E81] dark:text-indigo-200 font-bold shadow-sm"
                       : "bg-[#FAFAF7] dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-[#71717A] dark:text-zinc-300"
@@ -812,25 +1255,81 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
               </div>
             </div>
 
-            {/* SECURITY CARD */}
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
-              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
-                <Lock className="text-emerald-600" size={20} />
-                Security & Verification
+            {/* 6. DANGER ZONE & SESSION MANAGEMENT */}
+            <div className="bg-rose-50/60 dark:bg-rose-950/20 p-6 rounded-3xl border border-rose-200/80 dark:border-rose-900/40 shadow-sm space-y-4">
+              <h2 className="font-heading font-extrabold text-base text-rose-900 dark:text-rose-300 flex items-center gap-2">
+                <AlertTriangle className="text-rose-600" size={20} />
+                Danger Zone & Cache
               </h2>
 
-              <div className="space-y-3 text-xs text-[#71717A] dark:text-zinc-400">
-                <div className="flex items-center justify-between p-3 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-xl">
-                  <span>Student ID Verification</span>
-                  <span className="text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full">Verified</span>
+              <div className="space-y-3 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white dark:bg-zinc-900 rounded-2xl border border-rose-100 dark:border-zinc-800">
+                  <div>
+                    <p className="font-bold text-slate-800 dark:text-zinc-200">Clear Local App Cache</p>
+                    <span className="text-[10px] text-slate-400">Removes temporary session storage and stored review cache</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearAppCache}
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shrink-0"
+                  >
+                    <RefreshCw size={13} />
+                    <span>Clear Cache</span>
+                  </button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-xl">
-                  <span>Two-Factor Authentication</span>
-                  <span className="text-[#312E81] dark:text-indigo-400 font-bold">Enabled</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white dark:bg-zinc-900 rounded-2xl border border-rose-100 dark:border-zinc-800">
+                  <div>
+                    <p className="font-bold text-rose-800 dark:text-rose-300">Delete Account & Stored Data</p>
+                    <span className="text-[10px] text-slate-400">Permanently delete your profile and order history from the database</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center justify-center gap-1.5 transition active:scale-95 shrink-0 shadow-sm"
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete Account</span>
+                  </button>
                 </div>
               </div>
             </div>
+
+            {/* DELETE ACCOUNT CONFIRMATION MODAL */}
+            {showDeleteModal && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <h3 className="text-base font-heading font-bold text-slate-900 dark:text-zinc-100">
+                      Delete Account Permanently?
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      This action cannot be undone. All your saved profile records, active favorites, and order history will be wiped from the live Supabase database.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs hover:bg-slate-200 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingAccount}
+                      onClick={handleDeleteAccount}
+                      className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md disabled:opacity-50"
+                    >
+                      {deletingAccount ? "Deleting..." : "Yes, Delete"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
         )}

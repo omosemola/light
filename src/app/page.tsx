@@ -62,31 +62,19 @@ const PROMO_SLIDES = [
   },
   {
     id: "promo-2",
-    tag: "🍲 CAMPUS SPECIAL • Fresh Nigerian Swallows",
-    title: "Rich Egusi Soup & Pounded Yam 🍲",
-    subtitle: "Nutritious melon seed soup cooked with fresh pumpkin leaves and tender beef cuts, paired with smooth pounded yam.",
+    tag: "🍗 BESTSELLER • Vegetable Fried Rice Combo",
+    title: "Fried Rice Combo & Grilled Turkey 🍗",
+    subtitle: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
     link: "/category/food",
-    buttonText: "Order Swallows",
-    gradient: "from-amber-950 via-zinc-900 to-indigo-950",
+    buttonText: "Order Fried Rice",
+    gradient: "from-slate-950 via-[#1E1B4B] to-indigo-950",
     badgeBg: "bg-amber-400 text-slate-950",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
-    highlight: "🍛 Authentic Recipe"
-  },
-  {
-    id: "promo-3",
-    tag: "🍗 SIDES & GRILLS • Hot Asun & Peppered Cuts",
-    title: "Peppered Chicken & Spicy Asun Platters 🌶️",
-    subtitle: "Slow-grilled chicken drumsticks and spicy habanero goat meat portions, packaged leak-proof for fast delivery.",
-    link: "/category/food",
-    buttonText: "Explore Grills",
-    gradient: "from-slate-950 via-[#1E1B4B] to-blue-900",
-    badgeBg: "bg-sky-400 text-slate-950",
-    image: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80",
     highlight: "⚡ 15-20 Min Fast Delivery"
   }
 ];
 
-// POPULAR PRODUCTS (MAMA CASS ONLY)
+// POPULAR PRODUCTS (EXACTLY 2 DISHES)
 const POPULAR_PRODUCTS = [
   {
     id: "p1",
@@ -111,32 +99,6 @@ const POPULAR_PRODUCTS = [
     description: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
     isAvailable: true,
     rating: 4.8,
-    vendorIsOpen: true,
-    vendorPrepTime: "15-20 mins",
-  },
-  {
-    id: "p1_3",
-    name: "Peppered Chicken Drumsticks (3 pcs)",
-    price: 2800,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    image: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80",
-    description: "Tender chicken drumsticks tossed in hot spicy ATA din din sauce and caramelized sweet bell peppers.",
-    isAvailable: true,
-    rating: 5.0,
-    vendorIsOpen: true,
-    vendorPrepTime: "10-15 mins",
-  },
-  {
-    id: "f5",
-    name: "Egusi Soup with Pounded Yam & Beef",
-    price: 3800,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-    description: "Rich melon seed egusi soup garnished with pumpkin leaves and tender beef cuts, served with smooth pounded yam.",
-    isAvailable: true,
-    rating: 4.9,
     vendorIsOpen: true,
     vendorPrepTime: "15-20 mins",
   },
@@ -348,15 +310,29 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">
       
-      {/* HERO HEADER: Midnight Indigo (#1E1B4B) WITH ANIMATIONS */}
+      {/* HERO HEADER: Midnight Indigo (#1E1B4B) WITH BRAND BANNER */}
       <motion.section 
         initial={{ opacity: 0, y: -20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: false }}
         transition={{ duration: 0.5 }}
-        className="bg-[#1E1B4B] dark:bg-[#121215] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md border-b dark:border-zinc-800/80"
+        className="relative bg-[#1E1B4B] dark:bg-zinc-950 text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-lg overflow-hidden border-b border-indigo-950 dark:border-zinc-800"
       >
-        <div className="max-w-5xl mx-auto">
+        {/* BACKGROUND BANNER IMAGE */}
+        <Image
+          src="/support-banner.jpg"
+          alt="Homepage Hero Banner"
+          fill
+          priority
+          className="object-cover object-center"
+        />
+
+        {/* GRADIENT OVERLAYS FOR HIGH CONTRAST */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
+        <div className="absolute -top-12 -right-12 w-56 h-56 bg-[#312E81] dark:bg-indigo-900/40 rounded-full blur-3xl opacity-40 pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#FBBF24] rounded-full blur-3xl opacity-10 pointer-events-none" />
+
+        <div className="relative z-10 max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white flex items-center gap-2">

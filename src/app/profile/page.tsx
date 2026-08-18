@@ -284,9 +284,19 @@ export default function ProfilePage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: false }}
         transition={{ duration: 0.5 }}
-        className="relative bg-[#1E1B4B] dark:bg-zinc-900 text-white px-5 pt-10 pb-12 rounded-b-[36px] shadow-md overflow-hidden border-b border-indigo-950 dark:border-zinc-800"
+        className="relative bg-[#1E1B4B] dark:bg-zinc-950 text-white px-5 pt-10 pb-12 rounded-b-[36px] shadow-lg overflow-hidden border-b border-indigo-950 dark:border-zinc-800"
       >
-        {/* Subtle Ambient Background Accent */}
+        {/* BACKGROUND BANNER IMAGE */}
+        <Image
+          src="/support-banner.jpg"
+          alt="Profile Background Banner"
+          fill
+          priority
+          className="object-cover object-center"
+        />
+
+        {/* GRADIENT OVERLAYS FOR CRISP CONTRAST */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
         <div className="absolute -top-12 -right-12 w-56 h-56 bg-[#312E81] dark:bg-indigo-900/40 rounded-full blur-3xl opacity-40 pointer-events-none" />
         <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#FBBF24] rounded-full blur-3xl opacity-10 pointer-events-none" />
 
