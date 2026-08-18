@@ -53,18 +53,6 @@ const DEFAULT_INITIAL_REVIEWS: Record<string, ProductReview[]> = {
       likes: 5,
     },
   ],
-  p2: [
-    {
-      id: "r4",
-      author: "Chidimma N.",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      hostel: "Idia Hall",
-      rating: 5,
-      date: "Yesterday",
-      comment: "Extremely refreshing juice! No sugar added, pure orange pulp. Great for hot afternoon lectures.",
-      likes: 9,
-    },
-  ],
 };
 
 export const useReviewsStore = create<ReviewsState>()(
