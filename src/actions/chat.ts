@@ -258,3 +258,98 @@ export async function markThreadAsRead(storeId: string, studentEmail: string) {
     return { success: false, error: error.message };
   }
 }
+
+export interface StudentChatThreadItem {
+  storeId: string;
+  storeName: string;
+  storeLogo: string | null;
+  storeCoverImage: string | null;
+  storePhone: string | null;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+  lastSenderType: "STUDENT" | "VENDOR";
+}
+
+export async function getStudentChatThreads(studentEmail?: string) {
+  try {
+    const cleanEmail = studentEmail ? studentEmail.trim().toLowerCase() : null;
+    if (!cleanEmail) {
+      return { success: true, threads: [] };
+    }
+
+    const messages = await prisma.chatMessage.findMany({
+      where: {
+        OR: [
+          { senderEmail: cleanEmail },
+          { user: { email: cleanEmail } },
+        ],
+      },
+      include: {
+        store: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+            coverImage: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const threadMap = new Map<string, StudentChatThreadItem>();
+
+    for (const msg of messages) {
+      const storeId = msg.storeId;
+      if (!threadMap.has(storeId) && msg.store) {
+        threadMap.set(storeId, {
+          storeId: msg.store.id,
+          storeName: msg.store.name,
+          storeLogo: msg.store.logo,
+          storeCoverImage: msg.store.coverImage,
+          storePhone: msg.store.phone,
+          lastMessage: msg.text,
+          lastMessageAt: msg.createdAt.toISOString(),
+          unreadCount: msg.senderType === "VENDOR" && !msg.isRead ? 1 : 0,
+          lastSenderType: msg.senderType as "STUDENT" | "VENDOR",
+        });
+      } else if (threadMap.has(storeId)) {
+        const existing = threadMap.get(storeId)!;
+        if (msg.senderType === "VENDOR" && !msg.isRead) {
+          existing.unreadCount += 1;
+        }
+      }
+    }
+
+    return { success: true, threads: Array.from(threadMap.values()) };
+  } catch (error: any) {
+    console.error("Error fetching student chat threads:", error);
+    return { success: false, error: error.message || "Failed to load student chats", threads: [] };
+  }
+}
+
+export async function markStudentThreadAsRead(storeId: string, studentEmail: string) {
+  try {
+    const cleanEmail = studentEmail.trim().toLowerCase();
+    await prisma.chatMessage.updateMany({
+      where: {
+        storeId,
+        senderType: "VENDOR",
+        OR: [
+          { senderEmail: cleanEmail },
+          { user: { email: cleanEmail } },
+        ],
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

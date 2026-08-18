@@ -22,7 +22,8 @@ import {
   Upload,
   Image as ImageIcon,
   Store,
-  ShieldCheck
+  ShieldCheck,
+  MessageSquare
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,6 +37,7 @@ import { getUserOrders } from "@/actions/orders";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews } from "@/actions/reviews";
+import { getStudentChatThreads } from "@/actions/chat";
 
 const ABSTRACT_AVATARS = [
   {
@@ -204,6 +206,8 @@ export default function ProfilePage() {
   const { notifications, ensureWelcomeNotification } = useNotificationStore();
   const { favoriteProducts, favoriteStores, syncWithUserAccount } = useFavoritesStore();
   const [userReviewsCount, setUserReviewsCount] = useState<number>(0);
+  const [userChatsCount, setUserChatsCount] = useState<number>(0);
+  const [unreadChatsCount, setUnreadChatsCount] = useState<number>(0);
 
   useEffect(() => {
     if (profile.email) {
@@ -216,6 +220,15 @@ export default function ProfilePage() {
           setUserReviewsCount(res.reviews.length);
         }
       }).catch((e) => console.error("Error loading profile reviews count:", e));
+
+      // Fetch student live chats from database
+      getStudentChatThreads(profile.email).then((res) => {
+        if (res.success && res.threads) {
+          setUserChatsCount(res.threads.length);
+          const unread = res.threads.reduce((acc, t) => acc + t.unreadCount, 0);
+          setUnreadChatsCount(unread);
+        }
+      }).catch((e) => console.error("Error loading profile chats count:", e));
     }
   }, [profile.email, profile.name, ensureWelcomeNotification, syncWithUserAccount]);
 
@@ -239,9 +252,14 @@ export default function ProfilePage() {
     ? "No reviews posted yet" 
     : `${userReviewsCount} ${userReviewsCount === 1 ? "Review" : "Reviews"}`;
 
+  const chatsLabel = userChatsCount === 0
+    ? "No active vendor chats"
+    : `${userChatsCount} ${userChatsCount === 1 ? "Store Conversation" : "Store Conversations"}`;
+
   const menuItems = [
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: userOrdersCount === 0 ? "No orders placed yet" : `${userOrdersCount} ${userOrdersCount === 1 ? "Order" : "Orders"}` },
+    { icon: MessageSquare, label: "Live Vendor Chats", href: "/profile/chats", supportText: chatsLabel, badge: unreadChatsCount > 0 ? `${unreadChatsCount} New` : undefined },
     { icon: Heart, label: "Favorite Vendors & Foods", href: "/profile/favorites", supportText: favoritesLabel },
     { icon: Bell, label: "Notifications & Alerts", href: "/profile/notifications", badge: unreadNotificationsCount > 0 ? `${unreadNotificationsCount} New` : undefined },
     { icon: Star, label: "My Reviews & Ratings", href: "/profile/reviews", supportText: reviewsLabel },
