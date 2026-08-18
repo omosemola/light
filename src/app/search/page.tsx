@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Star, Clock, Store, RotateCcw, Check } from "lucide-react";
+import { Search as SearchIcon, SlidersHorizontal, ArrowLeft, X, Star, Clock, Store, RotateCcw, Check, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
-import { searchLiveCatalog } from "@/actions/marketplace";
+import { searchLiveCatalog, getLiveHomepageData } from "@/actions/marketplace";
+import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 
 interface Product {
   id: string;
@@ -553,7 +555,7 @@ const SEARCH_CATALOG: Product[] = [
   },
 ];
 
-const CATEGORY_OPTIONS = ["All", "Food", "Snacks", "Drinks", "Groceries", "Pastries", "Stationery", "Care", "Sports", "Wears", "Jewelries", "Gadgets", "Accessories", "Electronics"];
+const CATEGORY_OPTIONS = ["All", "Food", "Snacks", "Groceries", "Pastries", "Stationery", "Care", "Sports", "Wears", "Jewelries", "Gadgets", "Accessories", "Electronics"];
 const VENDOR_OPTIONS = ["All Vendors", "Mama Cass", "Fresh Squeeze", "Campus Books", "Pizza Hub", "Campus Bites", "Campus Mart", "Tasty Bakes", "PharmaCare", "Campus Sports", "Urban Campus Wears", "Ice Drip Jewelry", "Tech Hub Campus", "Hostel Electronics"];
 const POPULAR_SUGGESTIONS = ["Power Bank", "Graphic Hoodie", "Cuban Chain", "Smart Watch", "Study Lamp", "Football Boots", "Jollof Rice", "Suya Pizza"];
 
@@ -568,9 +570,29 @@ export default function SearchPage() {
   const [sortBy, setSortBy] = useState<string>("relevance"); // "relevance", "price_low", "price_high", "rating"
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
+  const [pendingProduct, setPendingProduct] = useState<any>(null);
+  const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
+  const [stores, setStores] = useState<any[]>([]);
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
+
+  useEffect(() => {
+    let active = true;
+    async function loadStores() {
+      try {
+        const data = await getLiveHomepageData();
+        if (active && data.success && data.stores) {
+          setStores(data.stores);
+        }
+      } catch (err) {
+        console.error("Error loading stores in search:", err);
+      }
+    }
+    loadStores();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -671,34 +693,25 @@ export default function SearchPage() {
     setSortBy("relevance");
   };
 
-  const handleAddProduct = (productId: string) => {
+  const handleOpenCustomizer = (productId: string) => {
     const product = catalog.find((p) => p.id === productId) || SEARCH_CATALOG.find((p) => p.id === productId);
     if (!product) return;
 
-    const result = addItem({
+    setCustomizerProduct({
       id: product.id,
       name: product.name,
+      description: product.description,
       price: product.price,
       image: product.image,
-      vendorId: product.vendorId,
-      vendorName: product.vendorName,
+      storeId: product.vendorId,
+      storeName: product.vendorName,
+      isAvailable: product.isAvailable !== false,
     });
-
-    if (result.requiresConfirmation) {
-      setPendingProduct(product);
-    }
   };
 
   const handleReplaceCart = () => {
     if (pendingProduct) {
-      confirmAndReplaceCart({
-        id: pendingProduct.id,
-        name: pendingProduct.name,
-        price: pendingProduct.price,
-        image: pendingProduct.image,
-        vendorId: pendingProduct.vendorId,
-        vendorName: pendingProduct.vendorName,
-      });
+      confirmAndReplaceCart(pendingProduct.item, pendingProduct.quantity || 1);
       setPendingProduct(null);
     }
   };
@@ -805,6 +818,76 @@ export default function SearchPage() {
           </motion.div>
         )}
 
+        {/* CAMPUS KITCHENS & STORES SECTION */}
+        {stores.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                  <Store size={18} className="text-[#312E81] dark:text-indigo-400" />
+                  Campus Kitchens & Stores
+                </h3>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400 font-body">Verified campus vendors with live store fulfillment</p>
+              </div>
+              <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400 font-body">
+                {stores.length} Stores Available
+              </span>
+            </div>
+
+            <div className="flex gap-3.5 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
+              {stores.map((st) => (
+                <Link
+                  key={st.id}
+                  href={`/vendor/${st.id}`}
+                  className="flex-shrink-0 w-60 p-3 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 shrink-0 border border-slate-200/60 dark:border-zinc-700">
+                      <Image
+                        src={st.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=80"}
+                        alt={st.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white truncate">
+                          {st.name}
+                        </h4>
+                        {/* LIVE OPEN / CLOSED BADGE */}
+                        <span className={`text-[8px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                          st.isOpen
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                            : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                        }`}>
+                          {st.isOpen ? "🟢 Open" : "🔴 Closed"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
+                        {st.description || "Fresh food & campus supplies"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-600 dark:text-zinc-400">
+                    <span className="flex items-center gap-1 font-medium">
+                      <Clock size={11} className="text-amber-500" /> {st.estimatedDelivery || "15-25m"}
+                    </span>
+                    <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
+                      <Star size={11} className="fill-amber-400 text-amber-400" /> {st.rating ? st.rating.toFixed(1) : "4.9"}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
         {/* ACTIVE FILTER CHIPS BAR */}
         {activeFiltersCount > 0 && (
           <div className="flex items-center justify-between gap-2 flex-wrap bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-sm text-xs font-body">
@@ -870,7 +953,7 @@ export default function SearchPage() {
         {filteredProducts.length > 0 ? (
           <ProductGrid 
             products={filteredProducts} 
-            onAddProduct={handleAddProduct}
+            onAddProduct={handleOpenCustomizer}
           />
         ) : (
           <motion.div 
@@ -1068,6 +1151,14 @@ export default function SearchPage() {
         </div>
       </Modal>
 
+      {/* PRODUCT CUSTOMIZATION MODAL (PORTIONS, EXTRAS, SPECIAL NOTES) */}
+      <ProductCustomizerModal
+        isOpen={!!customizerProduct}
+        product={customizerProduct}
+        onClose={() => setCustomizerProduct(null)}
+        onVendorConflict={(item, quantity) => setPendingProduct({ item, quantity })}
+      />
+
       {/* CONFIRM REPLACEMENT MODAL */}
       <Modal
         isOpen={!!pendingProduct}
@@ -1075,18 +1166,18 @@ export default function SearchPage() {
         title="Replace Cart?"
       >
         <p className="text-[#71717A] dark:text-zinc-300 text-sm mb-6 leading-relaxed font-body">
-          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
+          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.item?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm cursor-pointer"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm cursor-pointer"
           >
             Keep Current Cart
           </button>

@@ -37,10 +37,10 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
         const err = await response.text();
         console.error("Resend Email error:", err);
       } else {
-        console.log(`[EMAIL DISPATCHED] Successfully sent email to ${to}: "${subject}"`);
+        console.log(`[EMAIL SENT] Successfully sent email to ${to}: "${subject}"`);
       }
     } else {
-      console.log(`[EMAIL DISPATCH SIMULATION] To: ${to} | Subject: "${subject}"`);
+      console.log(`[EMAIL SIMULATION] To: ${to} | Subject: "${subject}"`);
     }
 
     return { success: true };
@@ -130,7 +130,7 @@ export function generateStudentOrderReceiptEmail({
               </div>
               ${deliveryInstructions ? `
                 <div style="font-size: 12px; color: #b45309; background: #fef3c7; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px;">
-                  <strong>Note to Rider:</strong> "${deliveryInstructions}"
+                  <strong>Delivery Instructions:</strong> "${deliveryInstructions}"
                 </div>
               ` : ""}
 
@@ -361,7 +361,7 @@ export function generateVendorNewOrderAlertEmail({
               Please accept and start preparing the order promptly to maintain your store rating.
             </p>
           </div>
-          <div class="footer">Lightson Vendor Partner Portal • Automatic Dispatch</div>
+          <div class="footer">Lightson Vendor Partner Portal • Instant Order Notification</div>
         </div>
       </body>
     </html>

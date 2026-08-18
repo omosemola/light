@@ -21,17 +21,19 @@ import {
   Check,
   Upload,
   Image as ImageIcon,
-  Store
+  Store,
+  ShieldCheck
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { signOut } from "next-auth/react";
-import { useUserStore } from "@/lib/userStore";
+import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { Modal } from "@/components/ui/Modal";
 import { registerVendorStore } from "@/actions/vendor";
 import { getUserOrders } from "@/actions/orders";
+import { useNotificationStore } from "@/lib/notificationStore";
 
 const ABSTRACT_AVATARS = [
   {
@@ -109,9 +111,9 @@ export default function ProfilePage() {
   }, [profile.email]);
 
   const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
-  const userAvatar = profile.avatar && profile.avatar !== "/visitor-avatar.png"
-    ? profile.avatar
-    : DEFAULT_HUMAN_AVATAR;
+  const userAvatar = isVisitor
+    ? (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_VISITOR_CARTOON_AVATAR)
+    : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
 
   const displayHostel = profile.hostel && profile.hostel.trim() && profile.hostel !== "Campus Guest" && profile.hostel !== "Main Campus (Mellanby Hall)"
     ? profile.hostel
@@ -197,12 +199,28 @@ export default function ProfilePage() {
     }
   };
 
+  const { notifications, ensureWelcomeNotification } = useNotificationStore();
+
+  useEffect(() => {
+    if (profile.email) {
+      ensureWelcomeNotification(profile.email, profile.name);
+    }
+  }, [profile.email, profile.name, ensureWelcomeNotification]);
+
+  const activeEmailNormalized = profile.email?.trim().toLowerCase() || "visitor@light.app";
+  const unreadNotificationsCount = notifications.filter((n) => {
+    const notifEmail = n.userEmail?.trim().toLowerCase() || "";
+    const isTarget = !profile.email ? notifEmail === "visitor@light.app" : notifEmail === activeEmailNormalized;
+    return isTarget && !n.read;
+  }).length;
+
   const menuItems = [
-    { icon: Store, label: "Become a Vendor / Open Vendor Store", href: "/vendor/register", supportText: "Manage live menu, incoming orders & sales", isVendorTrigger: true },
+    { icon: Store, label: "Merchant Vendor Portal", href: "/vendor/login", supportText: "Manage store catalog, live order terminal & sales", isVendorTrigger: true },
+    { icon: ShieldCheck, label: "Platform Admin Portal", href: "/admin/login", supportText: "Supervisor control, store verification & metrics", isAdminTrigger: true },
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: userOrdersCount === 0 ? "No orders placed yet" : `${userOrdersCount} ${userOrdersCount === 1 ? "Order" : "Orders"}` },
     { icon: Heart, label: "Favorite Vendors", href: "/profile/favorites", supportText: `${profile.savedStoresCount} Stores` },
-    { icon: Bell, label: "Notifications & Alerts", href: "/profile/notifications", badge: "2 New" },
+    { icon: Bell, label: "Notifications & Alerts", href: "/profile/notifications", badge: unreadNotificationsCount > 0 ? `${unreadNotificationsCount} New` : undefined },
     { icon: Star, label: "My Reviews & Ratings", href: "/profile/reviews" },
     { icon: HelpCircle, label: "Help & Campus Support", href: "/support" },
     { icon: Settings, label: "Security & Account Settings", href: "/profile/settings" },
@@ -272,6 +290,7 @@ export default function ProfilePage() {
                   alt={profile.name}
                   fill
                   priority
+                  unoptimized
                   className="object-cover"
                 />
               </div>
@@ -358,37 +377,6 @@ export default function ProfilePage() {
 
       {/* MENU OPTIONS CONTAINER */}
 
-        {/* PROMINENT VENDOR STORE REGISTRATION HERO BANNER */}
-        <Link href="/vendor/register">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: false }}
-            transition={{ duration: 0.4 }}
-            className="bg-gradient-to-r from-[#1E1B4B] via-[#312E81] to-indigo-900 text-white rounded-3xl p-5 md:p-6 shadow-xl border border-indigo-700/50 cursor-pointer relative overflow-hidden group active:scale-[0.99] transition-all"
-          >
-            <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-[#FBBF24]/20 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1.5 max-w-md">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider">
-                  <Store size={12} /> Campus Merchant Portal
-                </div>
-                <h3 className="font-heading font-black text-lg md:text-xl text-white tracking-tight">
-                  Are you a Campus Store or Vendor? 🏪
-                </h3>
-                <p className="text-xs text-indigo-200 font-body leading-relaxed">
-                  Create your Vendor Store Account to start listing products, managing live campus orders, and tracking sales!
-                </p>
-              </div>
-
-              <div className="hidden sm:flex px-4 py-2.5 bg-[#FBBF24] hover:bg-amber-400 text-[#1E1B4B] font-heading font-black text-xs rounded-2xl shadow-md group-hover:scale-105 active:scale-95 transition-all items-center gap-1.5 shrink-0 ml-4">
-                <Store size={16} /> Open Vendor Store
-              </div>
-            </div>
-          </motion.div>
-        </Link>
-
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -402,15 +390,46 @@ export default function ProfilePage() {
               return (
                 <Link
                   key={i}
-                  href="/vendor/register"
-                  className="w-full flex items-center p-4.5 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100/50 dark:hover:bg-indigo-950/40 text-left transition-colors group"
+                  href="/vendor/login"
+                  className="w-full flex items-center p-4.5 bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-100/60 dark:hover:bg-amber-950/40 text-left transition-colors group"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-[#312E81] text-white flex items-center justify-center mr-4 group-hover:bg-[#1E1B4B] transition-colors shadow-sm">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center mr-4 group-hover:bg-amber-600 transition-colors shadow-sm font-black">
                     <Icon size={20} />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <span className="font-heading font-bold text-sm text-[#312E81] dark:text-indigo-300 block">
+                    <span className="font-heading font-bold text-sm text-amber-950 dark:text-amber-200 block">
+                      {item.label}
+                    </span>
+                    {item.supportText && (
+                      <span className="text-xs font-body font-normal text-amber-800/80 dark:text-amber-400">
+                        {item.supportText}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-xs font-heading font-extrabold text-slate-950 bg-amber-400 px-3 py-1 rounded-full mr-2 shadow-xs group-hover:scale-105 transition-transform">
+                    Vendor Sign In
+                  </span>
+                  
+                  <ChevronRight size={18} className="text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+                </Link>
+              );
+            }
+
+            if (item.isAdminTrigger) {
+              return (
+                <Link
+                  key={i}
+                  href="/admin/login"
+                  className="w-full flex items-center p-4.5 bg-indigo-50/60 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-950/40 text-left transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-[#1E1B4B] text-white flex items-center justify-center mr-4 group-hover:bg-indigo-800 transition-colors shadow-sm">
+                    <Icon size={20} />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <span className="font-heading font-bold text-sm text-[#312E81] dark:text-indigo-200 block">
                       {item.label}
                     </span>
                     {item.supportText && (
@@ -420,8 +439,8 @@ export default function ProfilePage() {
                     )}
                   </div>
 
-                  <span className="text-xs font-heading font-extrabold text-white bg-[#312E81] px-3 py-1 rounded-full mr-2 shadow-xs group-hover:scale-105 transition-transform">
-                    Create / Open
+                  <span className="text-xs font-heading font-extrabold text-white bg-[#1E1B4B] px-3 py-1 rounded-full mr-2 shadow-xs group-hover:scale-105 transition-transform">
+                    Admin Sign In
                   </span>
                   
                   <ChevronRight size={18} className="text-[#312E81] dark:text-indigo-400 group-hover:translate-x-0.5 transition-all" />

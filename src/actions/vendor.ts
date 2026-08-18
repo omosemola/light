@@ -280,29 +280,6 @@ export async function deleteVendorProduct(productId: string) {
   }
 }
 
-export async function updateStoreSchedule(storeId: string, data: {
-  estimatedDelivery?: string;
-  description?: string;
-  isOpen?: boolean;
-}) {
-  try {
-    const updatedStore = await prisma.store.update({
-      where: { id: storeId },
-      data: {
-        ...(data.estimatedDelivery ? { estimatedDelivery: data.estimatedDelivery } : {}),
-        ...(data.description ? { description: data.description } : {}),
-        ...(data.isOpen !== undefined ? { isOpen: data.isOpen } : {}),
-      },
-    });
-
-    revalidatePath("/vendor/dashboard");
-    revalidatePath("/");
-    return { success: true, store: updatedStore };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to update store schedule" };
-  }
-}
-
 export async function registerVendorStore(data: {
   storeName: string;
   ownerName: string;
@@ -452,5 +429,34 @@ export async function authenticateVendor(email: string, password?: string) {
   } catch (error: any) {
     console.error("Error authenticating vendor:", error);
     return { success: false, error: error.message || "Failed to authenticate vendor" };
+  }
+}
+
+export async function updateStoreSchedule(data: {
+  storeId: string;
+  openingTime: string;
+  closingTime: string;
+  phone?: string;
+  estimatedDelivery?: string;
+  isOpen?: boolean;
+}) {
+  try {
+    const updatedStore = await prisma.store.update({
+      where: { id: data.storeId },
+      data: {
+        openingTime: data.openingTime,
+        closingTime: data.closingTime,
+        phone: data.phone,
+        estimatedDelivery: data.estimatedDelivery,
+        ...(typeof data.isOpen === "boolean" ? { isOpen: data.isOpen } : {}),
+      },
+    });
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/");
+    return { success: true, store: updatedStore };
+  } catch (error: any) {
+    console.error("Error updating store schedule:", error);
+    return { success: false, error: error.message || "Failed to update store schedule" };
   }
 }

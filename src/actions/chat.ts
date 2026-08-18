@@ -68,7 +68,7 @@ export async function sendChatMessageNotification(input: SendChatMessageNotifica
 
     return { success: true };
   } catch (error: any) {
-    console.error("Error dispatching chat notification email:", error);
+    console.error("Error sending chat notification email:", error);
     return { success: false, error: error.message };
   }
 }

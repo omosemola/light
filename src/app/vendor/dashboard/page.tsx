@@ -35,10 +35,12 @@ import {
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useUserStore } from "@/lib/userStore";
 import { 
   getVendorDashboardData, 
   updateOrderStatus, 
@@ -62,6 +64,8 @@ interface AddOnOption {
 }
 
 export default function VendorDashboardPage() {
+  const router = useRouter();
+  const { profile } = useUserStore();
   const { isDark, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState<any>(null);
@@ -88,6 +92,7 @@ export default function VendorDashboardPage() {
   // Store Schedule State
   const [openingTime, setOpeningTime] = useState("08:00");
   const [closingTime, setClosingTime] = useState("22:00");
+  const [storePhone, setStorePhone] = useState("+2348012345678");
   const [deliveryEstimate, setDeliveryEstimate] = useState("20-35 mins");
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
@@ -147,12 +152,23 @@ export default function VendorDashboardPage() {
       if (res.store.estimatedDelivery) {
         setDeliveryEstimate(res.store.estimatedDelivery);
       }
+      if (res.store.openingTime) {
+        setOpeningTime(res.store.openingTime);
+      }
+      if (res.store.closingTime) {
+        setClosingTime(res.store.closingTime);
+      }
+      if (res.store.phone) {
+        setStorePhone(res.store.phone);
+      }
 
       const currentPending = res.metrics?.pendingOrdersCount || 0;
       if (isPoll && currentPending > 0 && currentPending > prevPendingCountRef.current && !isAlarmMuted) {
         playVendorOrderAlarm();
       }
       prevPendingCountRef.current = currentPending;
+    } else if (!isPoll) {
+      router.replace("/vendor/login");
     }
     if (!isPoll) setLoading(false);
   };
@@ -311,13 +327,22 @@ export default function VendorDashboardPage() {
     setIsSavingSchedule(true);
     setScheduleSuccess(false);
 
-    const desc = `${storeData.description || "Fresh hot meals and rapid deliveries."} (Operating Hours: ${openingTime} - ${closingTime})`;
-    const res = await updateStoreSchedule(storeData.id, {
+    const res = await updateStoreSchedule({
+      storeId: storeData.id,
+      openingTime,
+      closingTime,
+      phone: storePhone,
       estimatedDelivery: deliveryEstimate,
-      description: desc,
     });
 
-    if (res.success) {
+    if (res.success && res.store) {
+      setStoreData((prev: any) => ({
+        ...prev,
+        openingTime: res.store.openingTime,
+        closingTime: res.store.closingTime,
+        phone: res.store.phone,
+        estimatedDelivery: res.store.estimatedDelivery,
+      }));
       setScheduleSuccess(true);
       setTimeout(() => setScheduleSuccess(false), 3000);
     }
@@ -701,7 +726,7 @@ export default function VendorDashboardPage() {
                           disabled={updatingId === order.id}
                           className="px-3 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold transition flex-1 cursor-pointer"
                         >
-                          Dispatch Rider
+                          Send for Delivery
                         </button>
                       )}
 
@@ -924,15 +949,27 @@ export default function VendorDashboardPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">Estimated Delivery Speed</label>
-                <input
-                  type="text"
-                  value={deliveryEstimate}
-                  onChange={(e) => setDeliveryEstimate(e.target.value)}
-                  placeholder="e.g. 20-35 mins"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">Estimated Delivery Speed</label>
+                  <input
+                    type="text"
+                    value={deliveryEstimate}
+                    onChange={(e) => setDeliveryEstimate(e.target.value)}
+                    placeholder="e.g. 20-35 mins"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">Store Contact Phone / WhatsApp Line</label>
+                  <input
+                    type="tel"
+                    value={storePhone}
+                    onChange={(e) => setStorePhone(e.target.value)}
+                    placeholder="+234 812 345 6789"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                  />
+                </div>
               </div>
 
               <div className="pt-2">

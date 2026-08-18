@@ -136,7 +136,7 @@ function TermsContent() {
                 <Store size={18} /> Official Campus Merchant Charter & Fast Delivery Commitment
               </div>
               <p className="text-xs text-[#71717A] dark:text-zinc-300 mt-1">
-                This standard protocol governs all campus kitchens, student bakeries, retail stores, and dispatch riders operating on the Lightson Marketplace platform.
+                This standard protocol governs all campus kitchens, student bakeries, retail stores, and delivery couriers operating on the Lightson Marketplace platform.
               </p>
             </div>
 
@@ -148,7 +148,7 @@ function TermsContent() {
               </h2>
               <ul className="space-y-2 pl-4 list-disc marker:text-[#312E81] dark:marker:text-indigo-400">
                 <li>
-                  <strong className="text-slate-900 dark:text-white">Verified Campus Operations:</strong> Any food kitchen, cafeteria, student entrepreneur, tech vendor, or hostel service provider must register with verified contact info, active phone/WhatsApp numbers, and valid dispatch location details.
+                  <strong className="text-slate-900 dark:text-white">Verified Campus Operations:</strong> Any food kitchen, cafeteria, student entrepreneur, tech vendor, or hostel service provider must register with verified contact info, active phone/WhatsApp numbers, and valid outlet location details.
                 </li>
                 <li>
                   <strong className="text-slate-900 dark:text-white">Food Safety & Kitchen Hygiene:</strong> All meals, combos, pastries, and drinks must be prepared under strict hygienic conditions. Perishable food items must be freshly cooked and packed in sanitized, food-grade disposable containers.
@@ -187,8 +187,8 @@ function TermsContent() {
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold mb-2">
                     <Bike size={16} />
                   </div>
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">10-15 Min Hostel Transit</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">Couriers navigate directly to the student&apos;s hostel block/room for direct drop-off.</p>
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">10-15 Min Direct Transit</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">Vendors deliver directly to the student&apos;s hostel block/room for quick drop-off.</p>
                 </div>
               </div>
 
@@ -197,7 +197,7 @@ function TermsContent() {
                   <strong className="text-slate-900 dark:text-white">Tamper-Evident Safety Packaging:</strong> Vendors must seal all food boxes and drink packages with adhesive tamper-evident stickers. Deliveries must never arrive opened, unsealed, or compromised.
                 </li>
                 <li>
-                  <strong className="text-slate-900 dark:text-white">Hostel Room-to-Room & Porter Gate Handover:</strong> Riders and merchant couriers must respect university residential rules, check in at the hall porter lodge when required, and send instant SMS/call alerts when arriving at the student&apos;s hostel block.
+                  <strong className="text-slate-900 dark:text-white">Hostel Room-to-Room & Porter Gate Handover:</strong> Vendors and their store delivery staff must respect university residential rules, check in at the hall porter lodge when required, and send instant SMS/call alerts when arriving at the student&apos;s hostel block.
                 </li>
               </ul>
             </section>
@@ -265,7 +265,7 @@ function TermsContent() {
                 2. Order Fulfillment & Hostel Delivery
               </h2>
               <p>
-                Orders placed before vendor closing hours are fulfilled by assigned student couriers and store dispatch teams. Delivery fees are clearly displayed per order. Students are required to remain reachable via their registered phone number upon dispatch notification.
+                Orders placed before vendor closing hours are fulfilled by assigned student couriers and verified store delivery teams. Delivery fees are clearly displayed per order. Students are required to remain reachable via their registered phone number upon arrival.
               </p>
             </section>
 
@@ -304,7 +304,7 @@ function TermsContent() {
                 2. How We Protect Your Information
               </h2>
               <p>
-                Your personal delivery data is only visible to the assigned student rider for the duration of the active delivery. We never sell, share, or rent student personal data to third-party advertisers.
+                Your personal delivery data is only visible to the fulfilling vendor for the duration of the active delivery. We never sell, share, or rent student personal data to third-party advertisers.
               </p>
             </section>
           </motion.div>

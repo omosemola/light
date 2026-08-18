@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ShieldCheck, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Sparkles } from "lucide-react";
+import { ShieldCheck, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, AlertCircle } from "lucide-react";
 import { useUserStore } from "@/lib/userStore";
+import { authenticateAdmin } from "@/actions/admin";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -17,28 +18,38 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [toastMessage, setToastMessage] = useState("");
 
-  const handleAdminAuth = (e?: React.FormEvent, adminEmail = email) => {
-    if (e) e.preventDefault();
+  const handleAdminAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg("Please enter both your administrator email and password.");
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg("");
 
-    updateProfile({
-      email: adminEmail || "admin@campuslightson.com",
-      name: "Platform Super Admin",
-      role: "ADMIN",
-      isVisitor: false,
-    });
+    try {
+      const res = await authenticateAdmin(email.trim(), password.trim());
+      if (res.success && res.user) {
+        updateProfile({
+          email: res.user.email || email.trim(),
+          name: res.user.name || "Platform Super Admin",
+          role: "ADMIN",
+          isVisitor: false,
+        });
 
-    setToastMessage("Access granted! Opening Admin Command Center...");
-    setTimeout(() => {
-      window.location.href = "/admin/dashboard";
-    }, 500);
-  };
-
-  const handleDemoAdminLogin = () => {
-    setEmail("admin@campuslightson.com");
-    setPassword("AdminMaster2026");
-    handleAdminAuth(undefined, "admin@campuslightson.com");
+        setToastMessage("Access verified! Opening Admin Command Center...");
+        setTimeout(() => {
+          window.location.href = "/admin/dashboard";
+        }, 500);
+      } else {
+        setErrorMsg(res.error || "Invalid administrator credentials. Access denied.");
+        setIsSubmitting(false);
+      }
+    } catch {
+      setErrorMsg("Connection error. Could not authenticate administrator.");
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -92,27 +103,9 @@ export default function AdminLoginPage() {
             <h1 className="font-heading font-extrabold text-2xl text-white tracking-tight">
               Platform Admin Sign In 🛡️
             </h1>
-            <p className="text-xs text-slate-400 mt-1.5">
-              Secure authentication for campus administrators & operators.
+            <p className="text-xs text-slate-400 mt-1.5 font-medium">
+              Authorized personnel only. Enter your administrator credentials.
             </p>
-          </div>
-
-          {/* 1-Click Demo Admin Button */}
-          <button
-            type="button"
-            onClick={handleDemoAdminLogin}
-            disabled={isSubmitting}
-            className="w-full h-12 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-200 border border-indigo-800/80 font-heading font-extrabold text-xs rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-6 disabled:opacity-50"
-          >
-            <Sparkles size={16} className="text-amber-400" />
-            <span>⚡ 1-Click Demo Admin Access</span>
-          </button>
-
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="border-t border-slate-800 w-full" />
-            <span className="bg-slate-900 px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider absolute">
-              Or enter credentials
-            </span>
           </div>
 
           <form onSubmit={handleAdminAuth} className="space-y-4 font-body">
@@ -125,9 +118,10 @@ export default function AdminLoginPage() {
                 <input
                   type="email"
                   required
+                  placeholder="admin@campuslightson.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder-slate-600"
                 />
               </div>
             </div>
@@ -141,14 +135,15 @@ export default function AdminLoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-slate-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -156,16 +151,19 @@ export default function AdminLoginPage() {
             </div>
 
             {errorMsg && (
-              <p className="text-xs text-rose-400 font-medium">{errorMsg}</p>
+              <div className="p-3 bg-rose-950/60 border border-rose-800/80 rounded-xl flex items-center gap-2 text-xs text-rose-300 font-medium">
+                <AlertCircle size={15} className="shrink-0 text-rose-400" />
+                <span>{errorMsg}</span>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-950/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-950/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 cursor-pointer"
             >
               <ShieldCheck size={18} />
-              <span>{isSubmitting ? "Authenticating..." : "Sign In to Dashboard"}</span>
+              <span>{isSubmitting ? "Authenticating..." : "Sign In to Admin Dashboard"}</span>
             </button>
           </form>
         </div>

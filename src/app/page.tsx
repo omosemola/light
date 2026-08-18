@@ -1,19 +1,89 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Flame, ArrowRight, Clock, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Sun, Moon } from "lucide-react";
+import { 
+  Flame, 
+  ArrowRight, 
+  Clock, 
+  Utensils, 
+  Cookie, 
+  Coffee, 
+  ShoppingCart, 
+  ShoppingBag,
+  Cake, 
+  BookOpen, 
+  HeartPulse, 
+  Dumbbell,
+  Shirt,
+  Gem,
+  Smartphone,
+  Headphones,
+  Tv,
+  Sun, 
+  Moon,
+  Store, 
+  Star, 
+  Sparkles, 
+  Filter, 
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Zap,
+  Gift,
+  ShieldCheck
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { useUserStore } from "@/lib/userStore";
+import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import WelcomePage from "@/app/welcome/page";
 import { getLiveHomepageData } from "@/actions/marketplace";
+import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
+
+const PROMO_SLIDES = [
+  {
+    id: "promo-1",
+    tag: "🔥 BESTSELLER • Authentic Smoky Grill",
+    title: "Smoky Jollof & Suya Combos 🍗",
+    subtitle: "Hot student meal platters and combos freshly prepared by verified campus kitchens.",
+    link: "/category/food",
+    buttonText: "Order Hot Lunch",
+    gradient: "from-[#1E1B4B] via-[#312E81] to-indigo-900",
+    badgeBg: "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-400 text-slate-950 font-black shadow-md border border-amber-300/90",
+    image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=600&q=80",
+    highlight: "⭐ Top Campus Kitchens"
+  },
+  {
+    id: "promo-2",
+    tag: "🌙 NIGHT OWL • Fresh Oven Cravings",
+    title: "Pizza, Drinks & Midnight Snacks 🍕",
+    subtitle: "Late-night hostel cravings? Freshly baked cheesy pizza, cold drinks & quick snacks.",
+    link: "/category/snacks",
+    buttonText: "Order Snacks",
+    gradient: "from-amber-950 via-zinc-900 to-indigo-950",
+    badgeBg: "bg-amber-400 text-slate-950",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80",
+    highlight: "🍕 Oven-Fresh Quality"
+  },
+  {
+    id: "promo-3",
+    tag: "📚 STUDY GEAR • Campus Stationery",
+    title: "Spiral Notes, Pens & Study Gear ✏️",
+    subtitle: "Premium hardcover notebooks, scientific calculators, highlighters & stationery essentials.",
+    link: "/category/stationery",
+    buttonText: "Shop Study Supplies",
+    gradient: "from-slate-950 via-[#1E1B4B] to-blue-900",
+    badgeBg: "bg-sky-400 text-slate-950",
+    image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=800&q=80",
+    highlight: "🎒 Exam-Ready Bundles"
+  }
+];
 
 // POPULAR PRODUCTS MOCK DATA WITH UNSPLASH IMAGERY
 const POPULAR_PRODUCTS = [
@@ -24,9 +94,11 @@ const POPULAR_PRODUCTS = [
     vendorId: "v1",
     vendorName: "Mama Cass",
     image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
+    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg. [OPTIONS:{\"sizes\":[{\"name\":\"Medium Pack\",\"price\":500},{\"name\":\"Large Pack (Jumbo)\",\"price\":1200}],\"addons\":[{\"name\":\"Extra Fried Plantain (Dodo)\",\"price\":500},{\"name\":\"Grilled Chicken Drumstick\",\"price\":1200},{\"name\":\"Chilled Coke 50cl\",\"price\":450}]}]",
     isAvailable: true,
     rating: 4.9,
+    vendorIsOpen: true,
+    vendorPrepTime: "15-20 mins",
   },
   {
     id: "p2",
@@ -38,6 +110,8 @@ const POPULAR_PRODUCTS = [
     description: "100% natural, freshly squeezed orange juice with no added sugar.",
     isAvailable: true,
     rating: 4.8,
+    vendorIsOpen: true,
+    vendorPrepTime: "10-15 mins",
   },
   {
     id: "p3",
@@ -49,6 +123,8 @@ const POPULAR_PRODUCTS = [
     description: "High quality 60-leaf ruled exercise notebooks for campus lectures.",
     isAvailable: false,
     rating: 4.7,
+    vendorIsOpen: false,
+    vendorPrepTime: "25-35 mins",
   },
   {
     id: "p4",
@@ -57,78 +133,99 @@ const POPULAR_PRODUCTS = [
     vendorId: "v4",
     vendorName: "Pizza Hub",
     image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
-    description: "Freshly baked pizza topped with spicy beef suya, onions, and melted mozzarella cheese.",
+    description: "Freshly baked pizza topped with spicy beef suya, onions, and melted mozzarella cheese. [OPTIONS:{\"sizes\":[{\"name\":\"Large (12 inch)\",\"price\":2500}],\"addons\":[{\"name\":\"Extra Mozzarella Cheese\",\"price\":800},{\"name\":\"Garlic Dip\",\"price\":400}]}]",
     isAvailable: true,
     rating: 4.9,
+    vendorIsOpen: true,
+    vendorPrepTime: "20-25 mins",
   },
 ];
 
-// CATEGORIES METADATA WITH REALISTIC PICTURE THUMBNAILS
+// CATEGORIES METADATA WITH CLEAN ICONS & DESCRIPTIVE BADGES
 const CATEGORIES = [
   { 
     name: "Food", 
     slug: "food", 
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=300&q=80" 
+    icon: Utensils,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Hot Meals"
   },
   { 
     name: "Snacks", 
     slug: "snacks", 
-    image: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?auto=format&fit=crop&w=300&q=80" 
-  },
-  { 
-    name: "Drinks", 
-    slug: "drinks", 
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=300&q=80" 
+    icon: Cookie,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Quick Bites"
   },
   { 
     name: "Groceries", 
     slug: "groceries", 
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80" 
+    icon: ShoppingBag,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Daily Dorm"
   },
   { 
     name: "Pastries", 
     slug: "pastries", 
-    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=300&q=80" 
+    icon: Cake,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Fresh Bakery"
   },
   { 
     name: "Stationery", 
     slug: "stationery", 
-    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80" 
+    icon: BookOpen,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Study & Exam"
   },
   { 
     name: "Care", 
     slug: "care", 
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=300&q=80" 
+    icon: HeartPulse,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Personal Care"
   },
   { 
     name: "Sports", 
     slug: "sports", 
-    image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=300&q=80" 
+    icon: Dumbbell,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Fitness"
   },
   { 
     name: "Wears", 
     slug: "wears", 
-    image: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=300&q=80" 
+    icon: Shirt,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Campus Style"
   },
   { 
     name: "Jewelries", 
     slug: "jewelries", 
-    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=300&q=80" 
+    icon: Gem,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Ice & Bling"
   },
   { 
     name: "Gadgets", 
     slug: "gadgets", 
-    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=300&q=80" 
+    icon: Smartphone,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Tech Gadgets"
   },
   { 
     name: "Accessories", 
     slug: "accessories", 
-    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=300&q=80" 
+    icon: Headphones,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Audio & More"
   },
   { 
     name: "Electronics", 
     slug: "electronics", 
-    image: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=300&q=80" 
+    icon: Tv,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Appliances"
   },
 ];
 
@@ -139,6 +236,21 @@ export default function Home() {
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [products, setProducts] = useState<any[]>(POPULAR_PRODUCTS);
+  const [stores, setStores] = useState<any[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "open" | "fast" | "top">("all");
+  const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
+
+  // PROMOTIONAL CAROUSEL STATE
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [isHovered]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -147,8 +259,13 @@ export default function Home() {
     async function loadLiveProducts() {
       try {
         const res = await getLiveHomepageData();
-        if (isCurrent && res.success && res.products.length > 0) {
-          setProducts(res.products);
+        if (isCurrent && res.success) {
+          if (res.products && res.products.length > 0) {
+            setProducts(res.products);
+          }
+          if (res.stores && res.stores.length > 0) {
+            setStores(res.stores);
+          }
         }
       } catch (e) {
         console.error("Error loading live homepage products:", e);
@@ -169,44 +286,49 @@ export default function Home() {
     return <WelcomePage />;
   }
 
-  const handleAddProduct = (productId: string) => {
+  const handleOpenCustomizer = (productId: string) => {
     const product = products.find((p) => p.id === productId) || POPULAR_PRODUCTS.find((p) => p.id === productId);
     if (!product) return;
 
-    const result = addItem({
+    setCustomizerProduct({
       id: product.id,
       name: product.name,
+      description: product.description,
       price: product.price,
       image: product.image,
-      vendorId: product.vendorId,
-      vendorName: product.vendorName,
+      storeId: product.vendorId || "v1",
+      storeName: product.vendorName || "Campus Vendor",
+      isAvailable: product.isAvailable !== false,
     });
-
-    if (result.requiresConfirmation) {
-      setPendingProduct(product);
-    }
   };
 
   const handleReplaceCart = () => {
     if (pendingProduct) {
-      confirmAndReplaceCart({
-        id: pendingProduct.id,
-        name: pendingProduct.name,
-        price: pendingProduct.price,
-        image: pendingProduct.image,
-        vendorId: pendingProduct.vendorId,
-        vendorName: pendingProduct.vendorName,
-      });
+      confirmAndReplaceCart(pendingProduct.item, pendingProduct.quantity || 1);
       setPendingProduct(null);
     }
   };
 
+  const filteredProducts = products.filter((p) => {
+    if (selectedFilter === "open") {
+      return p.vendorIsOpen !== false;
+    }
+    if (selectedFilter === "fast") {
+      const timeStr = p.vendorPrepTime || "";
+      return timeStr.includes("10") || timeStr.includes("15") || timeStr.includes("20");
+    }
+    if (selectedFilter === "top") {
+      return (p.rating || 4.8) >= 4.8;
+    }
+    return true;
+  });
+
   const firstName = profile.name ? profile.name.split(" ")[0] : "Alex";
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
   const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
-  const userAvatar = profile.avatar && profile.avatar !== "/visitor-avatar.png"
-    ? profile.avatar
-    : DEFAULT_HUMAN_AVATAR;
+  const userAvatar = isVisitor
+    ? (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_VISITOR_CARTOON_AVATAR)
+    : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">
@@ -260,6 +382,7 @@ export default function Home() {
                   alt={profile.name || "Profile"}
                   fill
                   priority
+                  unoptimized
                   className="object-cover group-hover:scale-110 transition-transform"
                 />
               </Link>
@@ -281,76 +404,114 @@ export default function Home() {
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full -mt-4 z-20 space-y-8 pb-12">
         
-        {/* PROMOTIONAL BENTO GRID WITH SCROLL ANIMATIONS */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Main Hero Bento Card */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: false, margin: "-30px" }}
-            transition={{ duration: 0.5 }}
-            className="md:col-span-2 bg-[#312E81] dark:bg-indigo-950/90 rounded-3xl p-6 text-white flex flex-col justify-between shadow-md min-h-[190px] border border-transparent dark:border-indigo-800/50"
-          >
-            <div>
-              <span className="bg-[#FBBF24] text-[#312E81] px-3 py-1 text-xs font-heading font-extrabold rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm">
-                <Flame size={14} className="fill-[#312E81]" /> Hot Deal
-              </span>
-              <h2 className="font-heading font-extrabold text-2xl md:text-3xl leading-tight mt-3 text-white">
-                20% OFF All Pastries & Bakery 🥐
-              </h2>
-              <p className="text-[#F4F3FF] dark:text-indigo-200 text-xs md:text-sm font-normal mt-1 font-body">Use code CAMPUS20 at checkout</p>
-            </div>
-            
-            <div className="mt-4">
-              <Link href="/category/pastries" className="inline-flex items-center gap-2 bg-white dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-body font-semibold text-xs md:text-sm px-4 py-2.5 rounded-full shadow-sm hover:bg-slate-100 dark:hover:bg-zinc-700 active:scale-95 transition-all">
-                Order Now <ArrowRight size={16} />
-              </Link>
-            </div>
-          </motion.div>
+        {/* PROMOTIONAL HERO CAROUSEL */}
+        <section 
+          className="w-full relative overflow-hidden rounded-[28px] shadow-lg border border-slate-200/80 dark:border-zinc-800/90 flex flex-col justify-between min-h-[250px] md:min-h-[280px] group"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {/* CAROUSEL SLIDES */}
+          <AnimatePresence mode="wait">
+            {PROMO_SLIDES.map((slide, idx) => {
+              if (idx !== currentSlide) return null;
+              return (
+                <motion.div
+                  key={slide.id}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                  className={`absolute inset-0 bg-gradient-to-r ${slide.gradient} p-6 md:p-8 text-white flex flex-col justify-between z-10`}
+                >
+                  {/* BACKGROUND AMBIENT IMAGE WITH DEPTH GRADIENT */}
+                  <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 dark:opacity-20 pointer-events-none overflow-hidden">
+                    <Image
+                      src={slide.image}
+                      alt={slide.title}
+                      fill
+                      className="object-cover object-center scale-110 blur-xs"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#1E1B4B]/80 to-[#1E1B4B]" />
+                  </div>
 
-          {/* Side Bento Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
-            
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false, margin: "-30px" }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-[#FBBF24] dark:bg-amber-500/90 rounded-3xl p-4 text-[#1E1B4B] dark:text-zinc-950 flex flex-col justify-between shadow-sm"
-            >
-              <span className="bg-[#1E1B4B] dark:bg-zinc-950 text-white text-[10px] font-body font-bold px-2.5 py-0.5 rounded-full w-fit uppercase">
-                New Vendor
-              </span>
-              <div className="mt-2">
-                <h3 className="font-heading font-extrabold text-base leading-tight text-[#1E1B4B] dark:text-zinc-950">Tasty Treats</h3>
-                <p className="text-xs text-[#312E81] dark:text-indigo-950 font-body font-semibold">Fresh Smoothies & Shakes</p>
-              </div>
-            </motion.div>
+                  {/* TOP BADGE */}
+                  <div className="relative z-10 flex items-center justify-between gap-2">
+                    <span className={`${slide.badgeBg} px-3.5 py-1 text-[11px] font-heading font-extrabold rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm`}>
+                      {slide.tag}
+                    </span>
+                  </div>
 
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false, margin: "-30px" }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-4 shadow-sm border border-slate-200 dark:border-zinc-800 flex items-center justify-between"
-            >
-              <div>
-                <div className="flex items-center gap-1 text-[#71717A] dark:text-zinc-400 text-xs font-body font-medium">
-                  <Clock size={14} className="text-[#312E81] dark:text-indigo-400" /> Avg. Time
-                </div>
-                <p className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100 mt-0.5">15-20 Mins</p>
-                <span className="text-[10px] font-body font-bold text-[#16A34A] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/60">
-                  Fast Campus Riders
-                </span>
-              </div>
-            </motion.div>
+                  {/* MAIN HEADINGS & COPY */}
+                  <div className="relative z-10 my-3 max-w-xl">
+                    <h2 className="font-heading font-black text-2xl sm:text-3xl lg:text-4xl text-white leading-tight tracking-tight drop-shadow-xs">
+                      {slide.title}
+                    </h2>
+                    <p className="text-slate-200 dark:text-zinc-300 text-xs sm:text-sm font-normal mt-1.5 leading-relaxed line-clamp-2">
+                      {slide.subtitle}
+                    </p>
+                  </div>
 
-          </div>
+                  {/* BOTTOM ACTIONS & PROGRESS CONTROLS */}
+                  <div className="relative z-10 flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={slide.link}
+                        className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-400 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-amber-500/20 active:scale-95 transition-all group/btn"
+                      >
+                        <span>{slide.buttonText}</span>
+                        <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </Link>
 
+                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-amber-200 font-semibold bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+                        {slide.highlight}
+                      </span>
+                    </div>
+
+                    {/* CAROUSEL CONTROLS */}
+                    <div className="flex items-center gap-2">
+                      {/* PREV/NEXT ARROWS */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setCurrentSlide((prev) => (prev - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length)}
+                          className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer"
+                          aria-label="Previous promo slide"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length)}
+                          className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer"
+                          aria-label="Next promo slide"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+
+                      {/* DOTS */}
+                      <div className="flex items-center gap-1.5 ml-1">
+                        {PROMO_SLIDES.map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setCurrentSlide(i)}
+                            className={`h-2 rounded-full transition-all cursor-pointer ${
+                              currentSlide === i ? "w-6 bg-[#FBBF24]" : "w-2 bg-white/40 hover:bg-white/70"
+                            }`}
+                            aria-label={`Go to slide ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </section>
 
-        {/* CATEGORIES SECTION WITH PICTURE THUMBNAILS & SCROLL ANIMATIONS */}
+        {/* CATEGORIES SECTION WITH BEAUTIFUL ICON BADGES & SCROLL ANIMATIONS */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -358,64 +519,139 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100">
-              Explore Categories
-            </h2>
+            <div>
+              <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100">
+                Explore Categories
+              </h2>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body">Browse essentials across campus</p>
+            </div>
+            <Link
+              href="/search"
+              className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              All Categories <ArrowRight size={13} />
+            </Link>
           </div>
           
-          <div className="flex gap-3.5 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
+          <div className="flex gap-2.5 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
             {CATEGORIES.map((cat, i) => {
+              const IconComponent = cat.icon;
               return (
                 <Link
                   key={i}
                   href={`/category/${cat.slug}`}
-                  className="flex flex-col items-center justify-center min-w-[92px] p-2.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group"
+                  className="flex flex-col items-center justify-center min-w-[88px] py-3.5 px-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 hover:shadow-md transition-all group"
                 >
-                  <div className="w-13 h-13 rounded-2xl overflow-hidden relative shadow-sm mb-2 border border-slate-100 dark:border-zinc-700/80 group-hover:scale-108 transition-transform duration-300">
-                    <Image
-                      src={cat.image}
-                      alt={cat.name}
-                      fill
-                      className="object-cover"
-                      sizes="60px"
-                    />
+                  <div className="w-10 h-10 flex items-center justify-center mb-1 transition-transform duration-200 group-hover:scale-115">
+                    <IconComponent size={28} className={`${cat.iconColor} transition-colors drop-shadow-xs`} />
                   </div>
-                  <span className="text-xs font-heading font-bold text-[#18181B] dark:text-zinc-200">{cat.name}</span>
+                  <span className="text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-200 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors text-center">
+                    {cat.name}
+                  </span>
+                  <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap text-center">
+                    {cat.badge}
+                  </span>
                 </Link>
               );
             })}
           </div>
         </motion.section>
 
-        {/* POPULAR NEAR YOU SECTION WITH ANIMATIONS - LINKS DIRECTLY TO /product/[id] */}
+        {/* POPULAR NEAR YOU SECTION (MAX 4 FEATURED ITEMS) */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, margin: "-40px" }}
           transition={{ duration: 0.5 }}
+          className="space-y-4"
         >
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100">
-                Popular Near You
+                Featured Near You
               </h2>
-              <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal">Click any item to order</p>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal">Top trending campus picks • Click any item to view details</p>
             </div>
-            <Link 
-              href="/search" 
-              className="text-xs md:text-sm font-body font-semibold text-[#312E81] dark:text-indigo-400 hover:underline flex items-center gap-1"
-            >
-              See all <ArrowRight size={14} />
-            </Link>
+
+            {/* QUICK STOREFRONT FILTER CHIPS */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("all")}
+                className={`px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                  selectedFilter === "all"
+                    ? "bg-[#312E81] text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800"
+                }`}
+              >
+                All Items
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("open")}
+                className={`px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                  selectedFilter === "open"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-emerald-400"
+                }`}
+              >
+                🟢 Open Now
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("fast")}
+                className={`px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                  selectedFilter === "fast"
+                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-amber-400"
+                }`}
+              >
+                ⚡ Fast (&lt;20m)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("top")}
+                className={`px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                  selectedFilter === "top"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-indigo-400"
+                }`}
+              >
+                ⭐ Top (4.8+)
+              </button>
+            </div>
           </div>
 
           <ProductGrid 
-            products={products} 
-            onAddProduct={handleAddProduct}
+            products={filteredProducts.slice(0, 4)} 
+            onAddProduct={handleOpenCustomizer}
           />
+
+          {filteredProducts.length > 4 && (
+            <div className="flex justify-center pt-3">
+              <Link
+                href="/search"
+                className="px-6 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-2 group"
+              >
+                <span>Explore Full Catalog ({filteredProducts.length}+ Items)</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          )}
         </motion.section>
 
       </div>
+
+      {/* PRODUCT CUSTOMIZATION MODAL (PORTIONS, EXTRAS, SPECIAL NOTES) */}
+      <ProductCustomizerModal
+        isOpen={!!customizerProduct}
+        product={customizerProduct}
+        onClose={() => setCustomizerProduct(null)}
+        onVendorConflict={(item, quantity) => setPendingProduct({ item, quantity })}
+      />
 
       {/* CONFIRM REPLACEMENT MODAL */}
       <Modal 
@@ -424,18 +660,18 @@ export default function Home() {
         title="Replace Cart?"
       >
         <p className="text-[#71717A] dark:text-zinc-300 text-sm mb-6 leading-relaxed font-body font-normal">
-          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
+          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.item?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm cursor-pointer"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm cursor-pointer"
           >
             Keep Current Cart
           </button>

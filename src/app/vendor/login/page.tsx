@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Store, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, Sparkles, ChefHat, ArrowRight } from "lucide-react";
+import { Store, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, ChefHat, ArrowRight, AlertCircle } from "lucide-react";
 import { authenticateVendor } from "@/actions/vendor";
 import { useUserStore } from "@/lib/userStore";
 
@@ -18,11 +18,10 @@ export default function VendorLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [toastMessage, setToastMessage] = useState("");
 
-  const handleVendorAuth = async (e?: React.FormEvent, customEmail?: string) => {
-    if (e) e.preventDefault();
-    const loginEmail = customEmail || email;
-    if (!loginEmail) {
-      setErrorMsg("Please enter your store email address.");
+  const handleVendorAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg("Please enter your store email address and password.");
       return;
     }
 
@@ -30,10 +29,10 @@ export default function VendorLoginPage() {
     setErrorMsg("");
 
     try {
-      const res = await authenticateVendor(loginEmail, password);
+      const res = await authenticateVendor(email.trim(), password.trim());
       if (res.success) {
         updateProfile({
-          email: res.userEmail || loginEmail,
+          email: res.userEmail || email.trim(),
           name: res.storeName || "Campus Merchant",
           isVisitor: false,
         });
@@ -43,19 +42,13 @@ export default function VendorLoginPage() {
           window.location.href = "/vendor/dashboard";
         }, 600);
       } else {
-        setErrorMsg(res.error || "Invalid vendor credentials. Please check your email or register.");
+        setErrorMsg(res.error || "Invalid vendor credentials. Please check your email and password.");
         setIsSubmitting(false);
       }
     } catch {
       setErrorMsg("Failed to connect to merchant database. Please try again.");
       setIsSubmitting(false);
     }
-  };
-
-  const handleDemoVendorLogin = () => {
-    setEmail("vendor@mamacass.com");
-    setPassword("MamaCass2026");
-    handleVendorAuth(undefined, "vendor@mamacass.com");
   };
 
   return (
@@ -76,7 +69,7 @@ export default function VendorLoginPage() {
       <div className="max-w-md mx-auto w-full flex items-center justify-between">
         <button
           onClick={() => router.push("/")}
-          className="w-11 h-11 rounded-full bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 hover:text-slate-900 active:scale-95 transition-all shadow-xs"
+          className="w-11 h-11 rounded-full bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 hover:text-slate-900 active:scale-95 transition-all shadow-xs cursor-pointer"
           aria-label="Back to Marketplace"
         >
           <ArrowLeft size={20} />
@@ -92,7 +85,7 @@ export default function VendorLoginPage() {
         </div>
       </div>
 
-      {/* Main Light Mode Card */}
+      {/* Main Form Card */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -100,7 +93,6 @@ export default function VendorLoginPage() {
         className="max-w-md mx-auto w-full my-auto py-8"
       >
         <div className="bg-white border border-slate-200/90 rounded-3xl p-7 md:p-8 shadow-xl shadow-slate-200/40 relative overflow-hidden">
-          {/* Subtle Ambient Accent */}
           <div className="absolute top-0 right-0 -mt-8 -mr-8 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-36 h-36 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -112,26 +104,8 @@ export default function VendorLoginPage() {
               Merchant Store Sign In 🏪
             </h1>
             <p className="text-xs text-slate-500 mt-1 font-medium">
-              Manage your campus food menu, live order alarms & daily sales.
+              Manage your campus store catalog, live order alarms & daily sales.
             </p>
-          </div>
-
-          {/* 1-Click Demo Vendor Button */}
-          <button
-            type="button"
-            onClick={handleDemoVendorLogin}
-            disabled={isSubmitting}
-            className="w-full h-12 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-900 border border-amber-300 font-heading font-extrabold text-xs rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-6 shadow-xs disabled:opacity-50"
-          >
-            <Sparkles size={16} className="text-amber-500" />
-            <span>⚡ 1-Click Demo Vendor Access (Mama Cass)</span>
-          </button>
-
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="border-t border-slate-200 w-full" />
-            <span className="bg-white px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider absolute">
-              Or enter credentials
-            </span>
           </div>
 
           <form onSubmit={handleVendorAuth} className="space-y-4 font-body">
@@ -144,9 +118,10 @@ export default function VendorLoginPage() {
                 <input
                   type="email"
                   required
+                  placeholder="vendor@mamacass.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium placeholder-slate-400"
                 />
               </div>
             </div>
@@ -160,14 +135,15 @@ export default function VendorLoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium"
+                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium placeholder-slate-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -175,37 +151,41 @@ export default function VendorLoginPage() {
             </div>
 
             {errorMsg && (
-              <p className="text-xs text-rose-600 font-semibold">{errorMsg}</p>
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-700 font-medium">
+                <AlertCircle size={15} className="shrink-0 text-rose-500" />
+                <span>{errorMsg}</span>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-black text-sm rounded-xl shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+              className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-slate-950 font-heading font-black text-sm rounded-xl shadow-md hover:shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 cursor-pointer"
             >
               <Store size={18} />
-              <span>{isSubmitting ? "Opening POS Dashboard..." : "Sign In to Kitchen POS"}</span>
+              <span>{isSubmitting ? "Verifying Credentials..." : "Sign In to Store Dashboard"}</span>
             </button>
           </form>
 
-          {/* New Store Onboarding CTA */}
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <span className="text-xs text-slate-500 font-medium">New campus merchant? </span>
-            <Link href="/vendor/register" className="text-xs text-amber-600 hover:text-amber-700 underline underline-offset-2 font-black inline-flex items-center gap-0.5">
-              Register your store <ArrowRight size={12} />
-            </Link>
+            <p className="text-xs text-slate-500 font-medium">
+              Want to sell on campus?{" "}
+              <Link href="/vendor/register" className="text-amber-600 hover:text-amber-700 font-extrabold inline-flex items-center gap-1 ml-1 hover:underline">
+                Register Your Store <ArrowRight size={13} />
+              </Link>
+            </p>
           </div>
         </div>
 
         <div className="text-center mt-6">
-          <Link href="/" className="text-xs text-slate-500 hover:text-slate-900 font-semibold transition-colors">
-            ← Return to Campus Marketplace
+          <Link href="/" className="text-xs text-slate-500 hover:text-slate-900 font-bold transition-colors">
+            ← Return to Marketplace
           </Link>
         </div>
       </motion.div>
 
       <div className="text-center text-[11px] text-slate-400 font-medium">
-        Lightson Marketplace • Merchant Partner Services
+        Lightson Marketplace • Merchant Partner Network
       </div>
     </div>
   );

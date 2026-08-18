@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { computeIsStoreOpen } from "@/lib/storeSchedule";
 
 export async function getLiveHomepageData() {
   try {
@@ -11,11 +12,10 @@ export async function getLiveHomepageData() {
           store: true,
           category: true,
         },
-        take: 12,
+        take: 16,
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
-        where: { isOpen: true },
         include: {
           products: {
             where: { isAvailable: true },
@@ -25,7 +25,8 @@ export async function getLiveHomepageData() {
             select: { products: true, orders: true },
           },
         },
-        take: 8,
+        take: 12,
+        orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
       }),
       prisma.category.findMany({
         include: {
@@ -46,13 +47,20 @@ export async function getLiveHomepageData() {
       rating: 4.8,
       vendorId: p.storeId,
       vendorName: p.store.name,
+      vendorIsOpen: computeIsStoreOpen(p.store),
+      vendorPrepTime: p.store.estimatedDelivery || "15-25 mins",
       category: p.category?.name || "Campus Item",
+    }));
+
+    const formattedStores = stores.map((s) => ({
+      ...s,
+      isCurrentlyOpen: computeIsStoreOpen(s),
     }));
 
     return {
       success: true,
       products: formattedProducts,
-      stores,
+      stores: formattedStores,
       categories,
     };
   } catch (error: any) {
@@ -112,6 +120,10 @@ export async function getLiveProductById(productId: string) {
 
     if (!product) {
       return { success: false, error: "Product not found" };
+    }
+
+    if (product.store) {
+      product.store.isOpen = computeIsStoreOpen(product.store);
     }
 
     return { success: true, product };

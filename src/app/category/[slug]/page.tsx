@@ -9,6 +9,7 @@ import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { getLiveCategoryProducts } from "@/actions/marketplace";
+import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -56,8 +57,8 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     name: "Stationery & Books",
     Icon: BookOpen,
     bg: "bg-[#1E1B4B]",
-    heroImage: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80",
-    description: "Lecture exercise books, pens, sticky notes, files, and exam materials.",
+    heroImage: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=1200&q=80",
+    description: "Lecture exercise books, pens, sticky notes, scientific calculators, and exam materials.",
     subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Accessories"],
   },
   care: {
@@ -836,6 +837,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const [selectedSubcategory, setSelectedSubcategory] = useState("All");
   const [sortBy, setSortBy] = useState<"popular" | "price-asc" | "price-desc" | "name">("popular");
   const [pendingProduct, setPendingProduct] = useState<any>(null);
+  const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
@@ -857,34 +859,25 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     return list;
   }, [rawProducts, searchQuery, selectedSubcategory, sortBy]);
 
-  const handleAddProduct = (productId: string) => {
+  const handleOpenCustomizer = (productId: string) => {
     const product = rawProducts.find((p) => p.id === productId);
     if (!product) return;
 
-    const result = addItem({
+    setCustomizerProduct({
       id: product.id,
       name: product.name,
+      description: product.description,
       price: product.price,
       image: product.image,
-      vendorId: product.vendorId,
-      vendorName: product.vendorName,
+      storeId: product.vendorId,
+      storeName: product.vendorName,
+      isAvailable: product.isAvailable !== false,
     });
-
-    if (result.requiresConfirmation) {
-      setPendingProduct(product);
-    }
   };
 
   const handleReplaceCart = () => {
     if (pendingProduct) {
-      confirmAndReplaceCart({
-        id: pendingProduct.id,
-        name: pendingProduct.name,
-        price: pendingProduct.price,
-        image: pendingProduct.image,
-        vendorId: pendingProduct.vendorId,
-        vendorName: pendingProduct.vendorName,
-      });
+      confirmAndReplaceCart(pendingProduct.item, pendingProduct.quantity || 1);
       setPendingProduct(null);
     }
   };
@@ -990,11 +983,11 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
           </div>
         </div>
 
-        {/* PRODUCTS GRID WITH SCROLL ANIMATION - LINKS DIRECTLY TO /product/[id] */}
+        {/* PRODUCTS GRID WITH SCROLL ANIMATION */}
         {filteredProducts.length > 0 ? (
           <ProductGrid
             products={filteredProducts}
-            onAddProduct={handleAddProduct}
+            onAddProduct={handleOpenCustomizer}
           />
         ) : (
           <motion.div 
@@ -1010,6 +1003,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         )}
       </div>
 
+      {/* PRODUCT CUSTOMIZATION MODAL (PORTIONS, EXTRAS, SPECIAL NOTES) */}
+      <ProductCustomizerModal
+        isOpen={!!customizerProduct}
+        product={customizerProduct}
+        onClose={() => setCustomizerProduct(null)}
+        onVendorConflict={(item, quantity) => setPendingProduct({ item, quantity })}
+      />
+
       {/* CONFIRM REPLACEMENT MODAL */}
       <Modal
         isOpen={!!pendingProduct}
@@ -1017,18 +1018,18 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         title="Replace Cart?"
       >
         <p className="text-[#71717A] dark:text-zinc-300 text-sm mb-6 leading-relaxed font-body">
-          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.vendorName}</strong>?
+          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.item?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
             onClick={handleReplaceCart}
-            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#312E81] dark:bg-indigo-600 text-white font-semibold rounded-full shadow-md active:scale-[0.98] transition-transform text-sm cursor-pointer"
           >
             Clear Cart and Add
           </button>
           <button
             onClick={() => setPendingProduct(null)}
-            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm"
+            className="w-full h-12 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold rounded-full active:scale-[0.98] transition-transform text-sm cursor-pointer"
           >
             Keep Current Cart
           </button>

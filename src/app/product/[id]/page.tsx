@@ -12,6 +12,9 @@ import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { getLiveProductById } from "@/actions/marketplace";
+import { useReviewsStore, ProductReview } from "@/lib/reviewsStore";
+import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { submitStudentReview } from "@/actions/reviews";
 
 interface Review {
   id: string;
@@ -696,6 +699,8 @@ ALL_PRODUCTS.b1 = ALL_PRODUCTS.pas1;
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { profile } = useUserStore();
+  const { reviewsByProduct, addProductReview, toggleLikeReview } = useReviewsStore();
 
   const defaultProduct = ALL_PRODUCTS[id] || ALL_PRODUCTS.p1;
   const [product, setProduct] = useState(defaultProduct);
@@ -704,10 +709,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
-  // REVIEWS STATE
-  const [reviewsList, setReviewsList] = useState<Review[]>(
-    INITIAL_REVIEWS[defaultProduct.id] || INITIAL_REVIEWS.p1 || []
-  );
+  // SYNCHRONIZED PER-PRODUCT REVIEWS
+  const reviewsList = reviewsByProduct[product.id] || reviewsByProduct[id] || [];
+  const averageRating = reviewsList.length > 0
+    ? (reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length).toFixed(1)
+    : "0.0";
 
   useEffect(() => {
     let active = true;
@@ -730,7 +736,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             isAvailable: p.isAvailable,
             category: p.category?.name?.toLowerCase() || "food",
             rating: p.store?.rating || 4.9,
-            reviewsCount: p.store?.reviews?.length || 20,
+            reviewsCount: p.store?.reviews?.length || 0,
           });
         }
       } catch (err) {
@@ -749,7 +755,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [newRating, setNewRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [newComment, setNewComment] = useState("");
-  const [studentHostel, setStudentHostel] = useState("Mellanby Hall");
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState(false);
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
@@ -795,41 +800,42 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const newReviewItem: Review = {
-      id: `r-${Date.now()}`,
-      author: "Alex John",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      hostel: studentHostel,
-      rating: newRating,
-      date: "Just now",
-      comment: newComment.trim(),
-      likes: 0,
-    };
+    const authorName = profile.name && profile.name !== "Visitor" ? profile.name : "Alex John";
+    const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app" || !profile.email;
+    const authorAvatar = isVisitor
+      ? DEFAULT_VISITOR_CARTOON_AVATAR
+      : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80");
+    const authorHostel = profile.hostel && profile.hostel.trim() && profile.hostel !== "Campus Guest" ? profile.hostel : "Campus Student";
 
-    setReviewsList([newReviewItem, ...reviewsList]);
+    addProductReview(product.id, {
+      author: authorName,
+      avatar: authorAvatar,
+      hostel: authorHostel,
+      rating: newRating,
+      comment: newComment.trim(),
+    });
+
+    if (product.vendorId) {
+      submitStudentReview({
+        storeId: product.vendorId,
+        userEmail: profile.email || "student@campuslightson.com",
+        userName: authorName,
+        rating: newRating,
+        comment: newComment.trim(),
+      }).catch((err) => console.error("Database review submission error:", err));
+    }
+
     setActiveReviewIndex(0); // Jump to newly added review
     setNewComment("");
     setReviewSuccessMsg(true);
     setTimeout(() => {
       setReviewSuccessMsg(false);
       setIsWriteReviewOpen(false);
-    }, 1500);
+    }, 1400);
   };
 
   const handleLikeReview = (reviewId: string) => {
-    setReviewsList(
-      reviewsList.map((rev) => {
-        if (rev.id === reviewId) {
-          const isLiked = !rev.isLiked;
-          return {
-            ...rev,
-            isLiked,
-            likes: isLiked ? rev.likes + 1 : rev.likes - 1,
-          };
-        }
-        return rev;
-      })
-    );
+    toggleLikeReview(product.id, reviewId);
   };
 
   const currentReview = reviewsList[activeReviewIndex] || reviewsList[0];
@@ -936,11 +942,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </button>
             </div>
 
-            <div className="flex items-center gap-1 text-[11px] font-body text-[#71717A] dark:text-zinc-400">
-              <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
-              <span className="font-bold text-[#18181B] dark:text-zinc-100">{product.rating}</span>
-              <span>({reviewsList.length})</span>
-            </div>
+            {reviewsList.length > 0 ? (
+              <div className="flex items-center gap-1.5 bg-amber-50/80 dark:bg-amber-950/40 px-2.5 py-1 rounded-full border border-amber-200/60 dark:border-amber-800/40 text-[11px] font-body text-[#18181B] dark:text-zinc-100">
+                <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
+                <span className="font-extrabold font-heading">{averageRating}</span>
+                <span className="text-[#71717A] dark:text-zinc-400 font-medium">({reviewsList.length})</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsWriteReviewOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-heading font-extrabold text-[11px] hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all active:scale-95 shadow-2xs group cursor-pointer"
+                title="Leave a review for this product"
+              >
+                <Star size={12} className="text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform" />
+                <span>Leave a Review</span>
+              </button>
+            )}
           </div>
 
           {/* Title & Price */}
@@ -1024,149 +1042,174 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </motion.div>
 
-        {/* SINGLE REVIEW CAROUSEL TESTIMONIAL CARD */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden mt-[200px]"
-        >
-          {/* Header Bar */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2">
-              <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
-              <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-                Student Reviews ({reviewsList.length})
-              </h3>
+        {/* REVIEWS SECTION */}
+        {reviewsList.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden"
+          >
+            {/* Header Bar */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
+                <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+                  Student Reviews ({reviewsList.length})
+                </h3>
+              </div>
+
+              {/* WRITE REVIEW BUTTON */}
+              <button
+                onClick={() => setIsWriteReviewOpen(true)}
+                className="px-3 py-1.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-sm hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-1.5 border border-indigo-700/50 group cursor-pointer"
+              >
+                <div className="w-4.5 h-4.5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-2xs group-hover:scale-110 transition-transform">
+                  <Edit3 size={10} className="text-[#312E81]" />
+                </div>
+                <span>Write Review</span>
+              </button>
             </div>
 
-            {/* WRITE REVIEW BUTTON */}
-            <button
-              onClick={() => setIsWriteReviewOpen(true)}
-              className="px-3 py-1.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-sm hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-1.5 border border-indigo-700/50 group"
-            >
-              <div className="w-4.5 h-4.5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-2xs group-hover:scale-110 transition-transform">
-                <Edit3 size={10} className="text-[#312E81]" />
-              </div>
-              <span>Write Review</span>
-            </button>
-          </div>
+            {/* Testimonial Display */}
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                {currentReview && (
+                  <motion.div
+                    key={currentReview.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="relative space-y-3 pt-1"
+                  >
+                    <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 dark:text-white/5 pointer-events-none rotate-180" />
 
-          {/* SINGLE TESTIMONIAL DISPLAY SITTING DIRECTLY IN PARENT DIV */}
-          <div className="relative">
-            <AnimatePresence mode="wait">
-              {currentReview && (
-                <motion.div
-                  key={currentReview.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="relative space-y-3 pt-1"
-                >
-                  {/* Decorative Background Quote Watermark */}
-                  <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 dark:text-white/5 pointer-events-none rotate-180" />
-
-                  {/* Top Author & Rating Bar */}
-                  <div className="flex items-center justify-between gap-3 relative z-10">
-                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                      <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md shrink-0">
-                        <Image src={currentReview.avatar} alt={currentReview.author} fill className="object-cover" />
+                    <div className="flex items-center justify-between gap-3 relative z-10">
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md shrink-0">
+                          <Image src={currentReview.avatar} alt={currentReview.author} fill unoptimized className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 truncate">
+                            {currentReview.author}
+                          </h4>
+                          <span className="text-xs font-body font-medium text-[#71717A] dark:text-zinc-400 truncate block">
+                            {currentReview.hostel} • {currentReview.date}
+                          </span>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 truncate">
-                          {currentReview.author}
-                        </h4>
-                        <span className="text-xs font-body font-medium text-[#71717A] dark:text-zinc-400 truncate block">
-                          {currentReview.hostel} • {currentReview.date}
+
+                      <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-full shadow-xs border border-slate-100 dark:border-zinc-700 shrink-0">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={12}
+                              className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200 dark:text-zinc-600"}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-extrabold text-[#18181B] dark:text-zinc-100 font-body ml-0.5">
+                          {currentReview.rating}.0
                         </span>
                       </div>
                     </div>
 
-                    {/* Gold Star Badge */}
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-full shadow-xs border border-slate-100 dark:border-zinc-700 shrink-0">
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            size={12}
-                            className={star <= currentReview.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-200 dark:text-zinc-600"}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs font-extrabold text-[#18181B] dark:text-zinc-100 font-body ml-0.5">
-                        {currentReview.rating}.0
+                    <p className="text-sm md:text-base text-[#18181B] dark:text-zinc-200 font-body font-medium leading-relaxed italic relative z-10 pt-1">
+                      &ldquo;{currentReview.comment}&rdquo;
+                    </p>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-zinc-700/50 relative z-10">
+                      <span className="text-[11px] font-body font-semibold text-[#71717A] dark:text-zinc-400">
+                        Review {activeReviewIndex + 1} of {reviewsList.length}
                       </span>
+
+                      <button
+                        onClick={() => handleLikeReview(currentReview.id)}
+                        className={`flex items-center gap-1.5 text-xs font-body font-semibold px-3.5 py-1.5 rounded-full border transition-all active:scale-95 cursor-pointer ${
+                          currentReview.isLiked
+                            ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                            : "bg-white dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:text-[#18181B] dark:hover:text-zinc-100"
+                        }`}
+                      >
+                        <ThumbsUp size={13} className={currentReview.isLiked ? "fill-white" : ""} />
+                        <span>Helpful ({currentReview.likes})</span>
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Comment Text */}
-                  <p className="text-sm md:text-base text-[#18181B] dark:text-zinc-200 font-body font-medium leading-relaxed italic relative z-10 pt-1">
-                    &ldquo;{currentReview.comment}&rdquo;
-                  </p>
-
-                  {/* Helpful Button */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-zinc-700/50 relative z-10">
-                    <span className="text-[11px] font-body font-semibold text-[#71717A] dark:text-zinc-400">
-                      Review {activeReviewIndex + 1} of {reviewsList.length}
-                    </span>
-
-                    <button
-                      onClick={() => handleLikeReview(currentReview.id)}
-                      className={`flex items-center gap-1.5 text-xs font-body font-semibold px-3.5 py-1.5 rounded-full border transition-all active:scale-95 ${
-                        currentReview.isLiked
-                          ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
-                          : "bg-white dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:text-[#18181B] dark:hover:text-zinc-100"
-                      }`}
-                    >
-                      <ThumbsUp size={13} className={currentReview.isLiked ? "fill-white" : ""} />
-                      <span>Helpful ({currentReview.likes})</span>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* CAROUSEL FOOTER NAV CONTROLS & DOT INDICATORS */}
-          {reviewsList.length > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              {/* Dots */}
-              <div className="flex items-center gap-1.5">
-                {reviewsList.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveReviewIndex(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      idx === activeReviewIndex ? "w-6 bg-[#312E81] dark:bg-indigo-500" : "w-2 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600"
-                    }`}
-                    aria-label={`Go to review ${idx + 1}`}
-                  />
-                ))}
-              </div>
-
-              {/* Prev / Next Arrows */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevReview}
-                  className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
-                  aria-label="Previous review"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <button
-                  onClick={handleNextReview}
-                  className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
-                  aria-label="Next review"
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          )}
 
-        </motion.div>
+            {reviewsList.length > 1 && (
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-1.5">
+                  {reviewsList.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveReviewIndex(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        idx === activeReviewIndex ? "w-6 bg-[#312E81] dark:bg-indigo-500" : "w-2 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600"
+                      }`}
+                      aria-label={`Go to review ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrevReview}
+                    className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                    aria-label="Previous review"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    onClick={handleNextReview}
+                    className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90"
+                    aria-label="Next review"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="bg-white dark:bg-zinc-900 rounded-2xl p-5 md:p-6 shadow-xs border border-slate-200/80 dark:border-zinc-800 text-center space-y-3.5"
+          >
+            <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center mx-auto border border-amber-200/60 dark:border-amber-800/60 shadow-2xs">
+              <Star size={22} className="fill-amber-400 text-amber-400" />
+            </div>
+
+            <div className="space-y-1 max-w-sm mx-auto">
+              <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100">
+                No reviews yet for this product
+              </h3>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body leading-relaxed">
+                Have you tried this item? Be the first campus student to rate and review it!
+              </p>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsWriteReviewOpen(true)}
+                className="px-5 py-2.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-xs rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all inline-flex items-center gap-2 border border-indigo-700/50 group cursor-pointer"
+              >
+                <Star size={14} className="text-[#FBBF24] fill-[#FBBF24] group-hover:rotate-12 transition-transform" />
+                <span>Leave a Review</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* RELATED PRODUCTS */}
         {relatedProducts.length > 0 && (
@@ -1245,26 +1288,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Hostel Location Selector */}
-            <div className="space-y-1.5">
-              <label className="font-heading font-bold text-xs text-[#71717A] uppercase tracking-wider block">
-                Your Campus Hostel / Hall
-              </label>
-              <select
-                value={studentHostel}
-                onChange={(e) => setStudentHostel(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-2xl bg-[#FAFAF7] border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#312E81]"
-              >
-                <option value="Mellanby Hall">Mellanby Hall</option>
-                <option value="Queen Elizabeth Hall">Queen Elizabeth Hall</option>
-                <option value="Tedder Hall">Tedder Hall</option>
-                <option value="Kuti Hall">Kuti Hall</option>
-                <option value="Sultan Bello Hall">Sultan Bello Hall</option>
-                <option value="Idia Hall">Idia Hall</option>
-                <option value="Off-Campus Annex">Off-Campus Annex</option>
-              </select>
             </div>
 
             {/* Review Comment Textarea */}

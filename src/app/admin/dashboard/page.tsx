@@ -22,13 +22,17 @@ import {
   UserCheck
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useUserStore } from "@/lib/userStore";
 import { getAdminDashboardData, updateSupportTicketStatus, updateUserRole, deleteUserAccount } from "@/actions/admin";
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
+  const { profile } = useUserStore();
   const { isDark, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [adminData, setAdminData] = useState<any>(null);
@@ -49,6 +53,14 @@ export default function AdminDashboardPage() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (profile.role !== "ADMIN" && profile.email?.toLowerCase() !== "admin@campuslightson.com") {
+      router.replace("/admin/login");
+    } else {
+      fetchAdminData();
+    }
+  }, [profile, router]);
 
   const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
     const nextStatus = !currentIsOpen;

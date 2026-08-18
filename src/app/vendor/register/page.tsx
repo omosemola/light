@@ -109,7 +109,7 @@ export default function VendorRegistrationPage() {
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (!location) {
-        setErrorMessage("Please specify your store, kitchen, or campus dispatch location.");
+        setErrorMessage("Please specify your store, kitchen, or campus outlet location.");
         return;
       }
       setCurrentStep(3);
@@ -434,7 +434,7 @@ export default function VendorRegistrationPage() {
                 >
                   <div>
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                      Campus Store / Outlet / Dispatch Location <span className="text-red-500">*</span>
+                      Campus Store / Kitchen / Outlet Location <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -447,7 +447,7 @@ export default function VendorRegistrationPage() {
 
                   <div>
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                      Average Packaging & Dispatch Time
+                      Average Preparation & Packaging Time
                     </label>
                     <select
                       value={estimatedPrepTime}

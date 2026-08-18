@@ -167,3 +167,55 @@ export async function deleteUserAccount(userId: string) {
     return { success: false, error: error.message || "Failed to delete user account" };
   }
 }
+
+export async function authenticateAdmin(email: string, pass: string) {
+  try {
+    const validEmail = (process.env.ADMIN_EMAIL || "admin@campuslightson.com").trim().toLowerCase();
+    const validPassword = process.env.ADMIN_PASSWORD || "AdminMaster2026!";
+
+    const cleanInputEmail = email?.trim().toLowerCase();
+    const cleanInputPass = pass?.trim();
+
+    if (cleanInputEmail === validEmail && cleanInputPass === validPassword) {
+      let adminUser = await prisma.user.findUnique({
+        where: { email: validEmail },
+      });
+
+      if (!adminUser) {
+        adminUser = await prisma.user.create({
+          data: {
+            email: validEmail,
+            name: "Platform Super Admin",
+            role: Role.ADMIN,
+          },
+        });
+      } else if (adminUser.role !== Role.ADMIN) {
+        adminUser = await prisma.user.update({
+          where: { email: validEmail },
+          data: { role: Role.ADMIN },
+        });
+      }
+
+      return {
+        success: true,
+        user: {
+          id: adminUser.id,
+          email: adminUser.email,
+          name: adminUser.name || "Platform Super Admin",
+          role: "ADMIN",
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: "Invalid admin email or password. Access denied.",
+    };
+  } catch (error: any) {
+    console.error("Admin authentication error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to authenticate administrator.",
+    };
+  }
+}

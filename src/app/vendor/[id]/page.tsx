@@ -26,6 +26,7 @@ import { useUserStore } from "@/lib/userStore";
 import { Modal } from "@/components/ui/Modal";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { getLiveStoreById } from "@/actions/marketplace";
+import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 
 // MOCK VENDORS DATABASE
 const VENDORS_DATA: Record<string, {
@@ -430,6 +431,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
   const [isFavorite, setIsFavorite] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
   const toggleFavorite = () => {
     const next = !isFavorite;
@@ -447,34 +449,25 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
     return matchesCat && matchesQuery;
   });
 
-  const handleAddProduct = (productId: string) => {
+  const handleOpenCustomizer = (productId: string) => {
     const product = vendor.products.find((p) => p.id === productId);
     if (!product) return;
 
-    const result = addItem({
+    setCustomizerProduct({
       id: product.id,
       name: product.name,
+      description: product.description,
       price: product.price,
       image: product.image,
-      vendorId: vendor.id,
-      vendorName: vendor.name,
+      storeId: vendor.id,
+      storeName: vendor.name,
+      isAvailable: product.isAvailable,
     });
-
-    if (result.requiresConfirmation) {
-      setPendingProduct(product);
-    }
   };
 
   const handleReplaceCart = () => {
     if (pendingProduct) {
-      confirmAndReplaceCart({
-        id: pendingProduct.id,
-        name: pendingProduct.name,
-        price: pendingProduct.price,
-        image: pendingProduct.image,
-        vendorId: vendor.id,
-        vendorName: vendor.name,
-      });
+      confirmAndReplaceCart(pendingProduct.item, pendingProduct.quantity || 1);
       setPendingProduct(null);
     }
   };
@@ -645,7 +638,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
           ) : (
             <ProductGrid
               products={filteredProducts.map((p) => ({ ...p, vendorId: vendor.id, vendorName: vendor.name }))}
-              onAddProduct={handleAddProduct}
+              onAddProduct={handleOpenCustomizer}
             />
           )}
         </div>
@@ -680,7 +673,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
                     ))}
                   </div>
                 </div>
-                <p className="text-xs text-[#71717A] dark:text-zinc-300 font-medium pl-9">"{rev.comment}"</p>
+                <p className="text-xs text-[#71717A] dark:text-zinc-300 font-medium pl-9">&ldquo;{rev.comment}&rdquo;</p>
                 <span className="text-[10px] text-[#A1A1AA] dark:text-zinc-500 block pl-9">{rev.time}</span>
               </div>
             ))}
@@ -688,6 +681,14 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
         </div>
 
       </div>
+
+      {/* PRODUCT CUSTOMIZATION MODAL (PORTIONS, EXTRAS, SPECIAL NOTES) */}
+      <ProductCustomizerModal
+        isOpen={!!customizerProduct}
+        product={customizerProduct}
+        onClose={() => setCustomizerProduct(null)}
+        onVendorConflict={(item, quantity) => setPendingProduct({ item, quantity })}
+      />
 
       {/* CART CONFLICT CONFIRMATION MODAL */}
       <Modal
@@ -702,13 +703,13 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
           <div className="flex items-center gap-3 pt-2">
             <button
               onClick={() => setPendingProduct(null)}
-              className="flex-1 py-2.5 border border-slate-200 dark:border-zinc-700 font-heading font-bold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-800"
+              className="flex-1 py-2.5 border border-slate-200 dark:border-zinc-700 font-heading font-bold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleReplaceCart}
-              className="flex-1 py-2.5 bg-[#312E81] dark:bg-indigo-600 text-white font-heading font-bold text-xs rounded-xl shadow-md"
+              className="flex-1 py-2.5 bg-[#312E81] dark:bg-indigo-600 text-white font-heading font-bold text-xs rounded-xl shadow-md cursor-pointer"
             >
               Yes, Replace Cart
             </button>

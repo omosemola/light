@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { 
   ArrowLeft, 
   MapPin, 
@@ -17,7 +17,12 @@ import {
   Store,
   ChevronRight,
   Monitor,
-  Lock
+  Lock,
+  Package,
+  Sparkles,
+  Tag,
+  X,
+  CheckCheck
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,6 +30,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useNotificationStore } from "@/lib/notificationStore";
 
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -68,16 +74,40 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     updateProfile({ savedStoresCount: Math.max(0, favorites.length - 1) });
   };
 
-  // NOTIFICATIONS STATE
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: "Order Delivered! 🚀", desc: "Your Jollof Rice from Mama Cass has arrived at Mellanby Lodge.", time: "10 mins ago", read: false },
-    { id: 2, title: "New Campus Promo 🍕", desc: "Get 20% off all pizza orders today with code CAMPUS20.", time: "2 hours ago", read: false },
-    { id: 3, title: "Welcome to Campus Hub!", desc: "Thanks for creating an account. Enjoy 100 free Campus Points.", time: "1 day ago", read: true },
-  ]);
+  // NOTIFICATIONS STATE (SYNCED WITH USER ACCOUNT & DATABASE)
+  const {
+    notifications: allNotifications,
+    syncWithDb,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAllForUser,
+    ensureWelcomeNotification
+  } = useNotificationStore();
 
-  const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
-  };
+  useEffect(() => {
+    if (section === "notifications" && profile.email) {
+      syncWithDb(profile.email);
+    }
+  }, [section, profile.email, syncWithDb]);
+
+  const [notifFilter, setNotifFilter] = useState<"all" | "order" | "promo" | "account">("all");
+
+  const activeEmailNormalized = profile.email?.trim().toLowerCase() || "visitor@light.app";
+
+  const userNotifications = allNotifications.filter((n) => {
+    const notifEmail = n.userEmail?.trim().toLowerCase() || "";
+    const isForUser = !profile.email ? notifEmail === "visitor@light.app" : notifEmail === activeEmailNormalized;
+    if (!isForUser) return false;
+    if (notifFilter === "all") return true;
+    return n.type === notifFilter;
+  });
+
+  const unreadCount = allNotifications.filter((n) => {
+    const notifEmail = n.userEmail?.trim().toLowerCase() || "";
+    const isForUser = !profile.email ? notifEmail === "visitor@light.app" : notifEmail === activeEmailNormalized;
+    return isForUser && !n.read;
+  }).length;
 
   // REVIEWS STATE
   const [myReviews, setMyReviews] = useState([
@@ -225,42 +255,164 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
         {/* SECTION: NOTIFICATIONS */}
         {section === "notifications" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-                Recent Alerts
-              </h2>
-              <button
-                onClick={markAllRead}
-                className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline"
-              >
-                Mark all as read
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
+              <div>
+                <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                  <Bell size={18} className="text-[#312E81] dark:text-indigo-400" />
+                  Notifications & Alerts
+                </h2>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body">
+                  {unreadCount > 0 ? `${unreadCount} unread alert${unreadCount === 1 ? "" : "s"} for your account` : "All alerts caught up"}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={() => markAllAsRead(profile.email)}
+                    className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-zinc-800 px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5"
+                  >
+                    <CheckCheck size={14} />
+                    <span>Mark all read</span>
+                  </button>
+                )}
+                {userNotifications.length > 0 && (
+                  <button
+                    onClick={() => clearAllForUser(profile.email)}
+                    className="text-xs font-heading font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 px-3 py-1.5 rounded-full transition-all flex items-center gap-1"
+                  >
+                    <Trash2 size={13} />
+                    <span>Clear all</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {notifications.map((n) => (
-                <div 
-                  key={n.id} 
-                  className={`p-4 rounded-2xl border transition-all flex items-start gap-3.5 ${
-                    n.read 
-                      ? "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800" 
-                      : "bg-[#F4F3FF]/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800"
+            {/* FILTER TABS */}
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {[
+                { id: "all", label: "All Alerts" },
+                { id: "order", label: "Orders 📦" },
+                { id: "promo", label: "Promos 🎁" },
+                { id: "account", label: "Account 👤" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setNotifFilter(tab.id as any)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                    notifFilter === tab.id
+                      ? "bg-[#312E81] text-white shadow-xs"
+                      : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-slate-300"
                   }`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-[#312E81] dark:bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <Bell size={18} />
-                  </div>
-
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">{n.title}</h3>
-                      <span className="text-[11px] text-[#71717A] dark:text-zinc-400">{n.time}</span>
-                    </div>
-                    <p className="text-xs text-[#71717A] dark:text-zinc-300 leading-relaxed">{n.desc}</p>
-                  </div>
-                </div>
+                  {tab.label}
+                </button>
               ))}
             </div>
+
+            {/* NOTIFICATIONS LIST */}
+            {userNotifications.length > 0 ? (
+              <div className="space-y-3">
+                {userNotifications.map((n) => {
+                  return (
+                    <motion.div 
+                      key={n.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-4 rounded-3xl border transition-all flex items-start gap-3.5 relative group ${
+                        n.read 
+                          ? "bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800/80 opacity-90 hover:opacity-100" 
+                          : "bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 shadow-xs"
+                      }`}
+                    >
+                      {/* TYPE ICON CONTAINER */}
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${
+                        n.type === "order"
+                          ? "bg-emerald-500 text-white"
+                          : n.type === "promo"
+                          ? "bg-amber-500 text-slate-950"
+                          : "bg-[#312E81] text-white"
+                      }`}>
+                        {n.type === "order" ? (
+                          <Package size={18} />
+                        ) : n.type === "promo" ? (
+                          <Sparkles size={18} />
+                        ) : (
+                          <ShieldCheck size={18} />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 truncate">
+                            <h3 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 truncate">
+                              {n.title}
+                            </h3>
+                            {!n.read && (
+                              <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0 animate-pulse" />
+                            )}
+                          </div>
+                          <span className="text-[10px] font-semibold text-[#71717A] dark:text-zinc-400 shrink-0">
+                            {n.time}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[#71717A] dark:text-zinc-300 leading-relaxed font-body">
+                          {n.desc}
+                        </p>
+
+                        {n.link && (
+                          <div className="pt-1.5">
+                            <Link
+                              href={n.link}
+                              onClick={() => markAsRead(n.id)}
+                              className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                            >
+                              <span>View details</span>
+                              <ChevronRight size={13} />
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ACTION BUTTONS: MARK READ / DELETE */}
+                      <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100">
+                        {!n.read && (
+                          <button
+                            type="button"
+                            onClick={() => markAsRead(n.id)}
+                            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center transition-all"
+                            title="Mark as read"
+                          >
+                            <CheckCheck size={13} />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => deleteNotification(n.id)}
+                          className="w-7 h-7 rounded-full bg-slate-100 hover:bg-rose-100 dark:bg-zinc-800 dark:hover:bg-rose-950/60 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 flex items-center justify-center transition-all"
+                          title="Delete notification"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-8 space-y-3">
+                <div className="w-14 h-14 rounded-full bg-[#F4F3FF] dark:bg-indigo-950/60 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
+                  <Bell size={24} />
+                </div>
+                <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+                  No {notifFilter !== "all" ? notifFilter : ""} notifications
+                </h3>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-xs mx-auto font-body">
+                  When you place orders or receive campus alerts, they will show up here.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

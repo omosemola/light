@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useUserStore } from "@/lib/userStore";
+import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { useNotificationStore } from "@/lib/notificationStore";
 import { sendStudentWelcomeNotification } from "@/actions/support";
 import { signIn } from "next-auth/react";
 
@@ -49,6 +50,8 @@ export default function SignupPage() {
 
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
 
+  const { ensureWelcomeNotification } = useNotificationStore();
+
   const handleFinishSignup = (userEmail = email, userName = name) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
@@ -62,6 +65,7 @@ export default function SignupPage() {
     });
 
     if (userEmail) {
+      ensureWelcomeNotification(userEmail, userName);
       sendStudentWelcomeNotification({
         email: userEmail,
         name: userName || "Student",
@@ -82,7 +86,7 @@ export default function SignupPage() {
       email: "",
       hostel: "Campus Guest",
       phone: "",
-      avatar: "/visitor-avatar.png",
+      avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
       isVisitor: true,
     });
 
@@ -178,7 +182,7 @@ export default function SignupPage() {
             disabled={isSubmitting}
             className="w-full h-12 bg-[#F4F3FF] dark:bg-indigo-950/60 hover:bg-[#E0E7FF] dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-200 font-heading font-bold text-xs rounded-full border border-indigo-100 dark:border-indigo-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <span>⚡ 1-Click Visitor Demo</span>
+            <span>Continue as Campus Guest (Visitor)</span>
           </button>
         </div>
 

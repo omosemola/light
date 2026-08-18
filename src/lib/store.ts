@@ -3,12 +3,16 @@ import { persist } from "zustand/middleware";
 
 export interface CartItem {
   id: string; // product id
+  cartItemId?: string; // unique instance id for distinct variations
   name: string;
   price: number;
   quantity: number;
   image: string;
   vendorId: string;
   vendorName: string;
+  selectedSize?: { name: string; price: number };
+  selectedAddOns?: Array<{ name: string; price: number }>;
+  customNotes?: string;
 }
 
 interface CartState {
@@ -17,15 +21,23 @@ interface CartState {
   vendorName: string | null;
   
   // Actions
-  addItem: (item: Omit<CartItem, "quantity">) => { success: boolean; requiresConfirmation: boolean };
-  confirmAndReplaceCart: (item: Omit<CartItem, "quantity">) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => { success: boolean; requiresConfirmation: boolean };
+  confirmAndReplaceCart: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
+  removeItem: (idOrCartItemId: string) => void;
+  updateQuantity: (idOrCartItemId: string, quantity: number) => void;
   clearCart: () => void;
   
   // Computed
   getTotal: () => number;
   getItemCount: () => number;
+}
+
+function generateCartKey(item: Omit<CartItem, "quantity">): string {
+  const sizeKey = item.selectedSize ? item.selectedSize.name : "default";
+  const addOnsKey = item.selectedAddOns && item.selectedAddOns.length > 0 
+    ? item.selectedAddOns.map(a => a.name).sort().join(",") 
+    : "none";
+  return `${item.id}-${sizeKey}-${addOnsKey}`;
 }
 
 export const useCartStore = create<CartState>()(
@@ -35,7 +47,7 @@ export const useCartStore = create<CartState>()(
       vendorId: null,
       vendorName: null,
 
-      addItem: (newItem) => {
+      addItem: (newItem, quantity = 1) => {
         const { items, vendorId } = get();
 
         // Check if cart has items from a different vendor
@@ -43,14 +55,27 @@ export const useCartStore = create<CartState>()(
           return { success: false, requiresConfirmation: true };
         }
 
+        const instanceKey = newItem.cartItemId || generateCartKey(newItem);
+        const itemWithKey: CartItem = {
+          ...newItem,
+          cartItemId: instanceKey,
+          quantity: quantity > 0 ? quantity : 1,
+        };
+
         set((state) => {
-          const existingItem = state.items.find((i) => i.id === newItem.id);
-          if (existingItem) {
+          const existingIndex = state.items.findIndex(
+            (i) => (i.cartItemId || i.id) === instanceKey
+          );
+
+          if (existingIndex > -1) {
+            const updatedItems = [...state.items];
+            updatedItems[existingIndex] = {
+              ...updatedItems[existingIndex],
+              quantity: updatedItems[existingIndex].quantity + (quantity > 0 ? quantity : 1),
+            };
             return {
               ...state,
-              items: state.items.map((i) =>
-                i.id === newItem.id ? { ...i, quantity: i.quantity + 1 } : i
-              ),
+              items: updatedItems,
               vendorId: newItem.vendorId,
               vendorName: newItem.vendorName,
             };
@@ -58,7 +83,7 @@ export const useCartStore = create<CartState>()(
 
           return {
             ...state,
-            items: [...state.items, { ...newItem, quantity: 1 }],
+            items: [...state.items, itemWithKey],
             vendorId: newItem.vendorId,
             vendorName: newItem.vendorName,
           };
@@ -67,17 +92,20 @@ export const useCartStore = create<CartState>()(
         return { success: true, requiresConfirmation: false };
       },
 
-      confirmAndReplaceCart: (newItem) => {
+      confirmAndReplaceCart: (newItem, quantity = 1) => {
+        const instanceKey = newItem.cartItemId || generateCartKey(newItem);
         set({
-          items: [{ ...newItem, quantity: 1 }],
+          items: [{ ...newItem, cartItemId: instanceKey, quantity: quantity > 0 ? quantity : 1 }],
           vendorId: newItem.vendorId,
           vendorName: newItem.vendorName,
         });
       },
 
-      removeItem: (id) => {
+      removeItem: (idOrCartItemId) => {
         set((state) => {
-          const newItems = state.items.filter((i) => i.id !== id);
+          const newItems = state.items.filter(
+            (i) => i.cartItemId !== idOrCartItemId && i.id !== idOrCartItemId
+          );
           return {
             ...state,
             items: newItems,
@@ -87,15 +115,15 @@ export const useCartStore = create<CartState>()(
         });
       },
 
-      updateQuantity: (id, quantity) => {
+      updateQuantity: (idOrCartItemId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(id);
+          get().removeItem(idOrCartItemId);
           return;
         }
         set((state) => ({
           ...state,
           items: state.items.map((i) =>
-            i.id === id ? { ...i, quantity } : i
+            (i.cartItemId || i.id) === idOrCartItemId ? { ...i, quantity } : i
           ),
         }));
       },

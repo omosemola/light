@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export const DEFAULT_VISITOR_CARTOON_AVATAR = "https://api.dicebear.com/7.x/adventurer/png?seed=Midnight&backgroundColor=ffd5dc";
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -31,7 +33,7 @@ export const useUserStore = create<UserState>()(
         hostel: "",
         addressDetail: "",
         phone: "",
-        avatar: "/visitor-avatar.png",
+        avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
         points: 0,
         savedStoresCount: 0,
         isVisitor: true,
@@ -50,7 +52,7 @@ export const useUserStore = create<UserState>()(
             hostel: "",
             addressDetail: "",
             phone: "",
-            avatar: "/visitor-avatar.png",
+            avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
             points: 0,
             savedStoresCount: 0,
             isVisitor: true,
@@ -59,7 +61,7 @@ export const useUserStore = create<UserState>()(
         }),
     }),
     {
-      name: "lightson-user-app-storage-v4",
+      name: "lightson-user-app-storage-v6",
     }
   )
 );

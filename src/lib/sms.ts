@@ -1,5 +1,5 @@
 /**
- * SMS & WhatsApp Courier Dispatch Alert Service
+ * SMS & WhatsApp Delivery Alert Service
  * Integrates with Termii / Twilio / WhatsApp Cloud API for campus order delivery alerts
  */
 
@@ -29,10 +29,10 @@ export async function sendOrderDeliverySMS({ toPhone, message }: SendSMSOptions)
       });
 
       if (res.ok) {
-        console.log(`[SMS DISPATCHED] Sent delivery alert SMS to ${toPhone}`);
+        console.log(`[SMS SENT] Sent delivery alert SMS to ${toPhone}`);
       }
     } else {
-      console.log(`[SMS DISPATCH SIMULATED] To: ${toPhone} | Message: "${message}"`);
+      console.log(`[SMS SIMULATED] To: ${toPhone} | Message: "${message}"`);
     }
 
     return { success: true };

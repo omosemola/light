@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,7 +18,9 @@ import {
   ChevronRight, 
   AlertCircle, 
   Bike,
-  Star
+  Star,
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
@@ -147,8 +149,8 @@ const MOCK_ORDERS: Record<string, OrderDetail> = {
 const STAGES = [
   { id: 1, title: "Order Confirmed", desc: "Vendor accepted your order", icon: Clock },
   { id: 2, title: "Kitchen Preparing", desc: "Chef is packaging your food fresh", icon: Package },
-  { id: 3, title: "Out for Delivery", desc: "Student rider en route to hostel", icon: Bike },
-  { id: 4, title: "Arrived at Hostel", desc: "Rider at your hostel entrance", icon: ShoppingBag },
+  { id: 3, title: "Out for Delivery", desc: "Store team en route to your hostel", icon: Bike },
+  { id: 4, title: "Arrived at Hostel", desc: "Store delivery at your hostel entrance", icon: ShoppingBag },
 ];
 
 export default function OrderTrackingDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -158,6 +160,46 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
   const fallbackOrder = MOCK_ORDERS[id] || MOCK_ORDERS["ORD-9821-XT"];
   const [dbOrder, setDbOrder] = useState<any>(null);
   const [currentStage, setCurrentStage] = useState(2); // Default to Kitchen Preparing
+  const prevStageRef = useRef<number>(0);
+  const [statusAlert, setStatusAlert] = useState<{ title: string; desc: string } | null>(null);
+
+  const playStageChime = (stage: number) => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+
+      const playTone = (freq: number, start: number, dur: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0.28, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + dur);
+      };
+
+      if (stage === 4) {
+        // Celebratory Delivery Arrived Chime (C5 -> E5 -> G5 -> C6)
+        playTone(523.25, 0, 0.18);
+        playTone(659.25, 0.14, 0.18);
+        playTone(783.99, 0.28, 0.22);
+        playTone(1046.5, 0.44, 0.5);
+      } else {
+        // Upbeat Order Stage Advancement Chime (E5 -> A5)
+        playTone(659.25, 0, 0.16);
+        playTone(880.0, 0.14, 0.3);
+      }
+    } catch {
+      // Audio playback fallback
+    }
+  };
 
   const fetchLiveOrder = async () => {
     const res = await getLiveOrderById(id);
@@ -166,6 +208,15 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
       const stage = mapStatusToStage(res.order.status);
       if (stage !== 0) {
         setCurrentStage(stage);
+        if (prevStageRef.current > 0 && stage > prevStageRef.current) {
+          playStageChime(stage);
+          const stgInfo = STAGES.find((s) => s.id === stage);
+          if (stgInfo) {
+            setStatusAlert({ title: stgInfo.title, desc: stgInfo.desc });
+            setTimeout(() => setStatusAlert(null), 5000);
+          }
+        }
+        prevStageRef.current = stage;
       }
     }
   };
@@ -257,7 +308,7 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
   const handleOpenCourierChat = () => {
     setChatVendor({
       id: "courier-1",
-      name: `${order.courier.name} (Rider)`,
+      name: `${order.courier.name} (${order.vendorName} Delivery)`,
       avatar: order.courier.avatar,
       phone: order.courier.phone,
     });
@@ -276,6 +327,30 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
+      
+      {/* REAL-TIME ORDER STATUS TRANSITION TOAST BANNER */}
+      <AnimatePresence>
+        {statusAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#1E1B4B] text-white px-5 py-3 rounded-full shadow-2xl border border-indigo-500/50 flex items-center gap-2.5 max-w-sm w-[90%]"
+          >
+            <div className="w-7 h-7 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shrink-0">
+              <Sparkles size={15} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="font-heading font-extrabold text-xs text-white block">
+                {statusAlert.title} 🔔
+              </span>
+              <span className="text-[11px] text-slate-300 truncate block">
+                {statusAlert.desc}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* TOP STICKY NAV HEADER */}
       <div className="px-5 pt-6 pb-4 bg-white dark:bg-[#121215] border-b border-slate-200/80 dark:border-zinc-800 sticky top-0 md:top-20 z-40 shadow-sm">
@@ -355,30 +430,6 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
               />
             </div>
           </div>
-
-          {/* DEMO STAGE SIMULATION SELECTOR FOR TESTING */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
-            <span className="text-slate-300 font-semibold">Simulate Progress:</span>
-            <div className="flex gap-1.5">
-              {[1, 2, 3, 4].map((stageNum) => (
-                <button
-                  key={stageNum}
-                  onClick={() => {
-                    setCurrentStage(stageNum);
-                    if (stageNum === 4) setEtaSeconds(0);
-                    else setEtaSeconds((5 - stageNum) * 300);
-                  }}
-                  className={`w-7 h-7 rounded-full text-xs font-heading font-extrabold transition-all ${
-                    currentStage === stageNum
-                      ? "bg-[#FBBF24] text-[#312E81] shadow-md scale-110"
-                      : "bg-white/10 text-white hover:bg-white/20"
-                  }`}
-                >
-                  {stageNum}
-                </button>
-              ))}
-            </div>
-          </div>
         </motion.div>
 
         {/* LIVE TIMELINE STAGES */}
@@ -441,44 +492,70 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        {/* VENDOR DIRECT SELF-DELIVERY CARD */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="relative w-12 h-12 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-xs p-0.5">
-              <Image src={order.vendorAvatar} alt={order.vendorName} fill className="object-cover" />
+        {/* VENDOR DIRECT SELF-DELIVERY & 1-TAP CONTACT CARD */}
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <div className="relative w-12 h-12 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-xs p-0.5">
+                <Image src={order.vendorAvatar} alt={order.vendorName} fill className="object-cover" />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h4 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 truncate">
+                    {order.vendorName}
+                  </h4>
+                  <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    Store Delivery
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-[#71717A] dark:text-zinc-400 truncate">
+                  Direct vendor fulfillment • Fixed ₦500 delivery fee
+                </p>
+              </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h4 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100">
-                  {order.vendorName} Dispatch
-                </h4>
-                <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  Store Self-Delivery
-                </span>
-              </div>
-              <p className="text-xs font-medium text-[#71717A] dark:text-zinc-400">
-                Directly delivered by vendor • Fixed ₦500 Delivery Fee
-              </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={`tel:${order.vendorPhone}`}
+                className="w-10 h-10 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                title={`Call ${order.vendorName}`}
+              >
+                <Phone size={17} />
+              </a>
+
+              <button
+                type="button"
+                onClick={handleOpenMerchantChat}
+                className="w-10 h-10 rounded-2xl bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white flex items-center justify-center transition-colors shadow-md active:scale-95 cursor-pointer"
+                title="In-App Merchant Chat"
+              >
+                <MessageSquare size={17} />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* 1-TAP WHATSAPP & DIRECT CALL ACTION BAR */}
+          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center gap-2.5">
             <a
-              href={`tel:${order.vendorPhone}`}
-              className="w-10 h-10 rounded-2xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white flex items-center justify-center transition-colors shadow-2xs"
-              title="Call Store Delivery Team"
+              href={`https://wa.me/${((order.vendorPhone || "2348012345678").replace(/[^0-9]/g, "").startsWith("0") ? `234${(order.vendorPhone || "2348012345678").replace(/[^0-9]/g, "").slice(1)}` : (order.vendorPhone || "2348012345678").replace(/[^0-9]/g, ""))}?text=${encodeURIComponent(`Hello ${order.vendorName}! 👋 I just placed Order #${order.id} on Lightson for delivery to ${order.hostelAddress || "my campus hostel room"}.\n\nItems: ${order.items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}\nTotal: ₦${order.total.toLocaleString()}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 h-11 bg-[#25D366] hover:bg-[#20bd5a] text-white font-heading font-bold text-xs rounded-2xl shadow-sm hover:shadow-emerald-900/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Phone size={18} />
+              <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+              </svg>
+              <span>1-Tap WhatsApp Store</span>
             </a>
 
-            <button
-              onClick={handleOpenMerchantChat}
-              className="w-10 h-10 rounded-2xl bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white flex items-center justify-center transition-colors shadow-md active:scale-95"
-              title="Chat Live with Store"
+            <a
+              href={`tel:${order.vendorPhone}`}
+              className="px-4 h-11 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[#18181B] dark:text-zinc-200 font-heading font-bold text-xs rounded-2xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <MessageSquare size={18} />
-            </button>
+              <Phone size={14} className="text-[#312E81] dark:text-indigo-400" />
+              <span>Call Store</span>
+            </a>
           </div>
         </div>
 

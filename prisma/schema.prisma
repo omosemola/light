@@ -47,6 +47,7 @@ model User {
   orders        Order[]
   tickets       SupportTicket[]
   reviews       Review[]
+  notifications Notification[]
 }
 
 model Store {
@@ -58,6 +59,9 @@ model Store {
   isOpen              Boolean   @default(true)
   estimatedDelivery   String?   @default("30-45 mins")
   rating              Float     @default(5.0)
+  phone               String?   @default("+2348012345678")
+  openingTime         String?   @default("08:00")
+  closingTime         String?   @default("22:00")
   paystackSubaccountCode String? // For split payments
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -156,4 +160,25 @@ model Review {
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderId   String?  @unique
   order     Order?   @relation(fields: [orderId], references: [id])
+}
+
+enum NotificationType {
+  ORDER
+  PROMO
+  ACCOUNT
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  desc      String
+  type      NotificationType @default(SYSTEM)
+  read      Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

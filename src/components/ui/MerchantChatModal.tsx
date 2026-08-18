@@ -157,9 +157,9 @@ export function MerchantChatModal({
         const lower = text.toLowerCase();
 
         if (lower.includes("stock") || lower.includes("available")) {
-          merchantReply = `Yes! All listed items are currently in stock and ready to be dispatched immediately. 👍`;
+          merchantReply = `Yes! All listed items are currently in stock and ready for immediate delivery. 👍`;
         } else if (lower.includes("delivery") || lower.includes("time") || lower.includes("hostel")) {
-          merchantReply = `Our student couriers deliver directly to your hostel block/room in approximately 15-20 minutes after order placement! 🛵`;
+          merchantReply = `Our store delivery team delivers directly to your hostel block/room in approximately 15-20 minutes after order placement! 🛵`;
         } else if (lower.includes("custom") || lower.includes("sauce") || lower.includes("cutlery") || lower.includes("extra")) {
           merchantReply = `Noted! Please specify your preferences in the order notes during checkout, and we will package it accordingly. 🎁`;
         }

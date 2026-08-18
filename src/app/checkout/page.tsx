@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createLiveOrder } from "@/actions/orders";
+import { useNotificationStore } from "@/lib/notificationStore";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, vendorName, clearCart } = useCartStore();
+  const { addNotification } = useNotificationStore();
   const { profile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,12 +58,33 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsProcessing(true);
 
+    // Format item customization notes for kitchen POS
+    const customizationSummary = items
+      .map((i) => {
+        const parts = [];
+        if (i.selectedSize) parts.push(`Size: ${i.selectedSize.name}`);
+        if (i.selectedAddOns && i.selectedAddOns.length > 0) {
+          parts.push(`Add-ons: ${i.selectedAddOns.map((a) => a.name).join(", ")}`);
+        }
+        if (i.customNotes) parts.push(`Note: "${i.customNotes}"`);
+        return parts.length > 0 ? `${i.name} (${parts.join(" | ")})` : "";
+      })
+      .filter(Boolean)
+      .join("; ");
+
+    const combinedInstructions = [
+      formData.instructions,
+      customizationSummary ? `[Item Options: ${customizationSummary}]` : "",
+    ]
+      .filter(Boolean)
+      .join(" - ");
+
     const res = await createLiveOrder({
       userEmail: profile.email,
       userName: profile.name,
       totalAmount: total,
       deliveryLocation: formData.location,
-      deliveryInstructions: formData.instructions,
+      deliveryInstructions: combinedInstructions,
       paymentMethod: paymentMethod === "paystack" ? "Paystack (Card/Transfer)" : "Pay on Arrival",
       paymentReference: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       items: items.map((item) => ({
@@ -72,6 +95,17 @@ export default function CheckoutPage() {
     });
 
     clearCart();
+
+    const orderId = res.success && res.order ? res.order.id : `ORD-${Date.now().toString().slice(-4)}`;
+    addNotification({
+      userEmail: profile.email || "visitor@light.app",
+      title: "Order Placed Successfully! 🛍️",
+      desc: `Your order for ₦${total.toLocaleString()} (${items.length} item${items.length === 1 ? "" : "s"}) has been sent to the store.`,
+      type: "order",
+      time: "Just now",
+      link: res.success && res.order ? `/orders/${res.order.id}` : "/orders",
+    });
+
     if (res.success && res.order) {
       router.push(`/orders/${res.order.id}?success=true`);
     } else {
@@ -148,7 +182,7 @@ export default function CheckoutPage() {
             
             <div>
               <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1 flex items-center gap-1.5">
-                <Phone size={13} /> Phone Number (For Rider Call)
+                <Phone size={13} /> Phone Number (For Delivery Contact)
               </label>
               <input 
                 type="tel" 
@@ -162,7 +196,7 @@ export default function CheckoutPage() {
 
             <div>
               <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1 flex items-center gap-1.5">
-                <MessageSquare size={13} /> Delivery Note to Rider (Optional)
+                <MessageSquare size={13} /> Delivery Note to Store / Kitchen (Optional)
               </label>
               <textarea 
                 value={formData.instructions}
@@ -212,7 +246,7 @@ export default function CheckoutPage() {
                   Paystack (Card / Transfer / USSD)
                 </span>
                 <span className="text-[10px] font-body text-[#71717A] dark:text-zinc-400 block">
-                  Instant confirmation & live rider tracking
+                  Instant confirmation & direct store delivery
                 </span>
               </div>
               {paymentMethod === "paystack" && <CheckCircle2 size={16} className="text-[#312E81] dark:text-indigo-400 shrink-0" />}
@@ -232,10 +266,10 @@ export default function CheckoutPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 block">
-                  Pay on Arrival (Cash / Transfer to Rider)
+                  Pay on Arrival (Cash / Transfer to Store)
                 </span>
                 <span className="text-[10px] font-body text-[#71717A] dark:text-zinc-400 block">
-                  Hand cash or transfer directly to courier
+                  Hand cash or transfer directly to store delivery person
                 </span>
               </div>
               {paymentMethod === "cash" && <CheckCircle2 size={16} className="text-[#312E81] dark:text-indigo-400 shrink-0" />}
@@ -264,7 +298,7 @@ export default function CheckoutPage() {
 
           <div className="space-y-3">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 text-xs font-body">
+              <div key={item.cartItemId || item.id} className="flex items-center justify-between gap-3 text-xs font-body">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 shrink-0 border border-slate-100 dark:border-zinc-700">
                     <Image src={item.image} alt={item.name} fill className="object-cover" />
@@ -273,9 +307,19 @@ export default function CheckoutPage() {
                     <span className="font-bold text-[#18181B] dark:text-zinc-100 truncate block">
                       {item.name}
                     </span>
-                    <span className="text-[#71717A] dark:text-zinc-400 text-[11px]">
-                      Quantity: {item.quantity} × ₦{item.price.toLocaleString()}
-                    </span>
+                    <div className="text-[#71717A] dark:text-zinc-400 text-[11px] space-y-0.5">
+                      <span>Qty: {item.quantity} × ₦{item.price.toLocaleString()}</span>
+                      {item.selectedSize && (
+                        <span className="block text-indigo-600 dark:text-indigo-400 font-medium">
+                          Size: {item.selectedSize.name}
+                        </span>
+                      )}
+                      {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                        <span className="block text-amber-600 dark:text-amber-400 font-medium">
+                          Extras: {item.selectedAddOns.map(a => a.name).join(", ")}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

@@ -176,7 +176,7 @@ function DeliveryMemphisIllustration() {
         <rect x="80" y="125" width="45" height="40" rx="8" fill="#312E81" />
         <circle cx="102" cy="145" r="8" fill="#FBBF24" />
 
-        {/* Rider Character Body (Alegria Corporate Memphis) */}
+        {/* Delivery Character Body (Alegria Corporate Memphis) */}
         <path d="M140 100 L170 145 H130 Z" fill="#EF4444" />
         <circle cx="145" cy="75" r="18" fill="#38BDF8" /> {/* Helmet */}
         <path d="M145 75 L160 75" stroke="white" strokeWidth="4" strokeLinecap="round" />
@@ -207,7 +207,7 @@ const CHOWDECK_SLIDES = [
   },
   {
     title: "Fast Room Delivery & Live Order Tracking 🛵",
-    desc: "Track your campus courier in real time from checkout to your hostel door with zero stress.",
+    desc: "Track your direct store delivery in real time from checkout to your hostel door with zero stress.",
     Component: DeliveryMemphisIllustration,
   },
 ];
