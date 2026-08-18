@@ -227,8 +227,6 @@ export default function ProfilePage() {
     : "0 Saved";
 
   const menuItems = [
-    { icon: Store, label: "Merchant Vendor Portal", href: "/vendor/login", supportText: "Manage store catalog, live order terminal & sales", isVendorTrigger: true },
-    { icon: ShieldCheck, label: "Platform Admin Portal", href: "/admin/login", supportText: "Supervisor control, store verification & metrics", isAdminTrigger: true },
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: userOrdersCount === 0 ? "No orders placed yet" : `${userOrdersCount} ${userOrdersCount === 1 ? "Order" : "Orders"}` },
     { icon: Heart, label: "Favorite Vendors & Foods", href: "/profile/favorites", supportText: favoritesLabel },
@@ -398,68 +396,6 @@ export default function ProfilePage() {
         >
           {menuItems.map((item, i) => {
             const Icon = item.icon;
-            if (item.isVendorTrigger) {
-              return (
-                <Link
-                  key={i}
-                  href="/vendor/login"
-                  className="w-full flex items-center p-4.5 bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-100/60 dark:hover:bg-amber-950/40 text-left transition-colors group"
-                >
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center mr-4 group-hover:bg-amber-600 transition-colors shadow-sm font-black">
-                    <Icon size={20} />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <span className="font-heading font-bold text-sm text-amber-950 dark:text-amber-200 block">
-                      {item.label}
-                    </span>
-                    {item.supportText && (
-                      <span className="text-xs font-body font-normal text-amber-800/80 dark:text-amber-400">
-                        {item.supportText}
-                      </span>
-                    )}
-                  </div>
-
-                  <span className="text-xs font-heading font-extrabold text-slate-950 bg-amber-400 px-3 py-1 rounded-full mr-2 shadow-xs group-hover:scale-105 transition-transform">
-                    Vendor Sign In
-                  </span>
-                  
-                  <ChevronRight size={18} className="text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-              );
-            }
-
-            if (item.isAdminTrigger) {
-              return (
-                <Link
-                  key={i}
-                  href="/admin/login"
-                  className="w-full flex items-center p-4.5 bg-indigo-50/60 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-950/40 text-left transition-colors group"
-                >
-                  <div className="w-10 h-10 rounded-2xl bg-[#1E1B4B] text-white flex items-center justify-center mr-4 group-hover:bg-indigo-800 transition-colors shadow-sm">
-                    <Icon size={20} />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <span className="font-heading font-bold text-sm text-[#312E81] dark:text-indigo-200 block">
-                      {item.label}
-                    </span>
-                    {item.supportText && (
-                      <span className="text-xs font-body font-normal text-indigo-700/80 dark:text-indigo-400">
-                        {item.supportText}
-                      </span>
-                    )}
-                  </div>
-
-                  <span className="text-xs font-heading font-extrabold text-white bg-[#1E1B4B] px-3 py-1 rounded-full mr-2 shadow-xs group-hover:scale-105 transition-transform">
-                    Admin Sign In
-                  </span>
-                  
-                  <ChevronRight size={18} className="text-[#312E81] dark:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-              );
-            }
-
             return (
               <Link 
                 key={i} 
@@ -475,19 +411,19 @@ export default function ProfilePage() {
                     {item.label}
                   </span>
                   {item.supportText && (
-                    <span className="text-xs font-body font-normal text-[#71717A] dark:text-zinc-400">
+                    <span className="text-xs font-body font-normal text-[#71717A] dark:text-zinc-400 truncate block">
                       {item.supportText}
                     </span>
                   )}
                 </div>
 
                 {item.badge && (
-                  <span className="text-xs font-body font-extrabold text-[#312E81] bg-[#FBBF24] px-2.5 py-0.5 rounded-full mr-3 shadow-sm">
+                  <span className="text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-1 rounded-full mr-2">
                     {item.badge}
                   </span>
                 )}
                 
-                <ChevronRight size={18} className="text-[#71717A] dark:text-zinc-500 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight size={18} className="text-[#71717A] dark:text-zinc-500 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             );
           })}
