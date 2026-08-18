@@ -24,7 +24,8 @@ import {
   X,
   CheckCheck,
   UtensilsCrossed,
-  ShoppingBag
+  ShoppingBag,
+  MessageSquare
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -34,6 +35,7 @@ import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
+import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
 
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -118,14 +120,42 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     return isForUser && !n.read;
   }).length;
 
-  // REVIEWS STATE
-  const [myReviews, setMyReviews] = useState([
-    { id: "r1", vendor: "Mama Cass", item: "Jollof Rice & Chicken", rating: 5, date: "Aug 2, 2026", comment: "Portion size was huge and chicken was piping hot! Delivered fast to Mellanby." },
-    { id: "r2", vendor: "Fresh Squeeze", item: "Cold Pressed Orange Juice", rating: 5, date: "Jul 28, 2026", comment: "100% natural, super refreshing after afternoon GST lectures." },
-  ]);
+  // REVIEWS STATE (SYNCED WITH DATABASE)
+  const [myReviews, setMyReviews] = useState<UserReviewItem[]>([]);
+  const [isReviewsLoading, setIsReviewsLoading] = useState(false);
+  const [reviewDeleteId, setReviewDeleteId] = useState<string | null>(null);
 
-  const handleDeleteReview = (id: string) => {
-    setMyReviews(myReviews.filter((r) => r.id !== id));
+  const fetchUserReviews = async () => {
+    if (!profile.email) return;
+    setIsReviewsLoading(true);
+    try {
+      const res = await getUserReviews(profile.email);
+      if (res.success && res.reviews) {
+        setMyReviews(res.reviews);
+      }
+    } catch (e) {
+      console.error("Error loading user reviews:", e);
+    } finally {
+      setIsReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (section === "reviews" && profile.email) {
+      fetchUserReviews();
+    }
+  }, [section, profile.email]);
+
+  const handleDeleteReview = async (id: string) => {
+    // Optimistic UI update
+    setMyReviews((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await deleteUserReview(id, profile.email);
+    } catch (e) {
+      console.error("Failed to delete review from database:", e);
+      // Refresh on error
+      fetchUserReviews();
+    }
   };
 
   return (
@@ -571,42 +601,117 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
           </div>
         )}
 
-        {/* SECTION: REVIEWS */}
+        {/* SECTION: REVIEWS (SYNCED WITH DATABASE) */}
         {section === "reviews" && (
           <div className="space-y-4">
-            <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-              Reviews You Posted ({myReviews.length})
-            </h2>
-
-            <div className="space-y-3">
-              {myReviews.map((rev) => (
-                <div key={rev.id} className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 block">{rev.vendor}</span>
-                      <span className="text-xs text-[#71717A] dark:text-zinc-400">{rev.item} • {rev.date}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
-                        <Star size={12} className="fill-amber-400 text-amber-400" />
-                        <span className="text-xs font-bold">{rev.rating}.0</span>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteReview(rev.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-xs md:text-sm text-[#18181B] dark:text-zinc-300 italic bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl">
-                    &ldquo;{rev.comment}&rdquo;
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                  <Star size={18} className="text-amber-500 fill-amber-500" />
+                  <span>My Ratings & Reviews</span>
+                </h2>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400">
+                  Reviews and feedback you have posted for campus kitchens and stores.
+                </p>
+              </div>
+              <span className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-full">
+                {myReviews.length} {myReviews.length === 1 ? "Review" : "Reviews"}
+              </span>
             </div>
+
+            {isReviewsLoading ? (
+              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-2">
+                <div className="w-8 h-8 border-2 border-[#312E81] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body">Loading your reviews from database...</p>
+              </div>
+            ) : myReviews.length === 0 ? (
+              <div className="text-center py-14 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-3">
+                <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center mx-auto">
+                  <MessageSquare size={26} />
+                </div>
+                <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">
+                  No reviews posted yet
+                </h3>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
+                  Share your experience with fellow students! When you receive a delivery or visit a campus vendor, tap &ldquo;Leave a Review&rdquo; to post your rating here.
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <Link
+                    href="/orders"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white text-xs font-heading font-bold rounded-xl shadow-xs transition-all"
+                  >
+                    <span>View Orders to Rate</span>
+                  </Link>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[#18181B] dark:text-zinc-100 text-xs font-heading font-bold rounded-xl transition-all"
+                  >
+                    <span>Browse Foods</span>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {myReviews.map((rev) => {
+                  const dateFormatted = new Date(rev.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+
+                  return (
+                    <div
+                      key={rev.id}
+                      className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-3 hover:border-amber-200 dark:hover:border-amber-900/50 transition-all"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <Link href={`/vendor/${rev.storeId}`} className="flex items-center gap-3 min-w-0 flex-1 group">
+                          <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800 bg-white shadow-xs">
+                            <Image
+                              src={rev.storeLogo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=80"}
+                              alt={rev.storeName}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                              {rev.storeName}
+                            </span>
+                            <span className="text-xs text-[#71717A] dark:text-zinc-400 block truncate">
+                              {rev.orderSummary ? `${rev.orderSummary} • ` : ""}{dateFormatted}
+                            </span>
+                          </div>
+                        </Link>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/80 px-2.5 py-1 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shadow-2xs">
+                            <Star size={13} className="fill-amber-400 text-amber-400" />
+                            <span className="text-xs font-heading font-extrabold text-amber-900 dark:text-amber-300">
+                              {rev.rating}.0
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handleDeleteReview(rev.id)}
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                            title="Delete this review"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {rev.comment && (
+                        <p className="text-xs md:text-sm text-[#18181B] dark:text-zinc-300 italic bg-[#FAFAF7] dark:bg-zinc-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-zinc-800/80 font-body">
+                          &ldquo;{rev.comment}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

@@ -35,6 +35,7 @@ import { registerVendorStore } from "@/actions/vendor";
 import { getUserOrders } from "@/actions/orders";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
+import { getUserReviews } from "@/actions/reviews";
 
 const ABSTRACT_AVATARS = [
   {
@@ -202,11 +203,19 @@ export default function ProfilePage() {
 
   const { notifications, ensureWelcomeNotification } = useNotificationStore();
   const { favoriteProducts, favoriteStores, syncWithUserAccount } = useFavoritesStore();
+  const [userReviewsCount, setUserReviewsCount] = useState<number>(0);
 
   useEffect(() => {
     if (profile.email) {
       ensureWelcomeNotification(profile.email, profile.name);
       syncWithUserAccount(profile.email);
+
+      // Fetch user reviews count from database
+      getUserReviews(profile.email).then((res) => {
+        if (res.success && res.reviews) {
+          setUserReviewsCount(res.reviews.length);
+        }
+      }).catch((e) => console.error("Error loading profile reviews count:", e));
     }
   }, [profile.email, profile.name, ensureWelcomeNotification, syncWithUserAccount]);
 
@@ -226,12 +235,16 @@ export default function ProfilePage() {
     ? `${favoriteProducts.length} ${favoriteProducts.length === 1 ? "Meal" : "Meals"}`
     : "0 Saved";
 
+  const reviewsLabel = userReviewsCount === 0 
+    ? "No reviews posted yet" 
+    : `${userReviewsCount} ${userReviewsCount === 1 ? "Review" : "Reviews"}`;
+
   const menuItems = [
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: userOrdersCount === 0 ? "No orders placed yet" : `${userOrdersCount} ${userOrdersCount === 1 ? "Order" : "Orders"}` },
     { icon: Heart, label: "Favorite Vendors & Foods", href: "/profile/favorites", supportText: favoritesLabel },
     { icon: Bell, label: "Notifications & Alerts", href: "/profile/notifications", badge: unreadNotificationsCount > 0 ? `${unreadNotificationsCount} New` : undefined },
-    { icon: Star, label: "My Reviews & Ratings", href: "/profile/reviews" },
+    { icon: Star, label: "My Reviews & Ratings", href: "/profile/reviews", supportText: reviewsLabel },
     { icon: HelpCircle, label: "Help & Campus Support", href: "/support" },
     { icon: Settings, label: "Security & Account Settings", href: "/profile/settings" },
   ];

@@ -663,29 +663,39 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
           </div>
 
           <div className="space-y-3">
-            {[
-              { id: "r1", name: "Damilola A.", rating: 5, comment: "Super fast delivery to Mellanby Hall! The food was hot and well packaged.", time: "2 hours ago" },
-              { id: "r2", name: "Chinedu O.", rating: 5, comment: "Best chicken fried rice on campus. Always fresh!", time: "Yesterday" },
-              { id: "r3", name: "Zainab B.", rating: 4, comment: "Good portion size and friendly store owner. Highly recommended.", time: "3 days ago" }
-            ].map((rev) => (
-              <div key={rev.id} className="p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl border border-slate-100 dark:border-zinc-800 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-400 font-extrabold text-xs flex items-center justify-center">
-                      {rev.name[0]}
+            {vendor.reviews && vendor.reviews.length > 0 ? (
+              vendor.reviews.map((rev: any) => {
+                const authorInitial = (rev.author || rev.name || "Student").charAt(0).toUpperCase();
+                const authorName = rev.author || rev.name || "Verified Student";
+                const reviewDate = rev.date || rev.time || "Recently";
+
+                return (
+                  <div key={rev.id} className="p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl border border-slate-100 dark:border-zinc-800 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-400 font-extrabold text-xs flex items-center justify-center">
+                          {authorInitial}
+                        </div>
+                        <span className="font-bold text-xs text-[#18181B] dark:text-zinc-100">{authorName}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-amber-400">
+                        {Array.from({ length: Math.min(5, Math.max(1, rev.rating || 5)) }).map((_, i) => (
+                          <Star key={i} size={12} className="fill-amber-400" />
+                        ))}
+                      </div>
                     </div>
-                    <span className="font-bold text-xs text-[#18181B] dark:text-zinc-100">{rev.name}</span>
+                    {rev.comment && (
+                      <p className="text-xs text-[#71717A] dark:text-zinc-300 font-medium pl-9">&ldquo;{rev.comment}&rdquo;</p>
+                    )}
+                    <span className="text-[10px] text-[#A1A1AA] dark:text-zinc-500 block pl-9">{reviewDate}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {Array.from({ length: rev.rating }).map((_, i) => (
-                      <Star key={i} size={12} className="fill-amber-400" />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-[#71717A] dark:text-zinc-300 font-medium pl-9">&ldquo;{rev.comment}&rdquo;</p>
-                <span className="text-[10px] text-[#A1A1AA] dark:text-zinc-500 block pl-9">{rev.time}</span>
+                );
+              })
+            ) : (
+              <div className="text-center py-6 text-xs text-[#71717A] dark:text-zinc-400">
+                No reviews yet for this vendor. Be the first to leave a review!
               </div>
-            ))}
+            )}
           </div>
         </div>
 
