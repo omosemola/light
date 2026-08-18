@@ -20,6 +20,7 @@ import {
   Search,
   MessageCircle
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
@@ -301,27 +302,37 @@ export default function SupportPage() {
           </a>
         </div>
 
-        {/* HERO CREATE TICKET CTA */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#1E1B4B] via-[#312E81] to-indigo-900 text-white p-6 rounded-3xl shadow-xl">
-          <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-36 h-36 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+        {/* HERO CREATE TICKET CTA WITH USER BANNER */}
+        <div className="relative overflow-hidden rounded-3xl shadow-xl border border-indigo-900/40 min-h-[190px] flex items-center bg-[#1E1B4B]">
+          {/* BACKGROUND BANNER IMAGE */}
+          <Image
+            src="/support-banner.jpg"
+            alt="Campus Help & Support Banner"
+            fill
+            priority
+            className="object-cover object-center"
+          />
           
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[11px] mb-2 border border-amber-400/30">
-                <Sparkles size={12} />
-                24/7 Student Assistance
+          {/* DARK/INDIGO GRADIENT OVERLAY FOR CRISP TEXT CONTRAST */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1E1B4B]/95 via-[#1E1B4B]/80 to-[#1E1B4B]/40" />
+
+          <div className="relative z-10 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-5 w-full">
+            <div className="max-w-md">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-amber-300 font-bold text-[11px] mb-2.5 border border-white/20 shadow-xs">
+                <Sparkles size={13} className="text-amber-400" />
+                24/7 Campus Student Care
               </span>
-              <h2 className="font-heading font-bold text-xl sm:text-2xl text-white">
+              <h2 className="font-heading font-black text-xl sm:text-2xl text-white drop-shadow-sm leading-tight">
                 Have an Issue with an Order?
               </h2>
-              <p className="text-white/80 text-xs sm:text-sm mt-1 max-w-sm">
+              <p className="text-white/90 text-xs sm:text-sm mt-1.5 max-w-sm leading-relaxed font-medium">
                 Submit a ticket directly to the administration database. Our team investigates delays, missing items, or refunds.
               </p>
             </div>
 
             <button 
               onClick={() => setShowModal(true)}
-              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs active:scale-95 transition-all shadow-lg shrink-0"
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs active:scale-95 transition-all shadow-xl shrink-0 hover:shadow-amber-400/20"
             >
               <Plus size={18} />
               <span>Create New Ticket</span>
