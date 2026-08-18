@@ -60,6 +60,7 @@ model Store {
   logo                String?
   coverImage          String?
   isOpen              Boolean   @default(true)
+  isVerified          Boolean   @default(false)
   estimatedDelivery   String?   @default("30-45 mins")
   rating              Float     @default(5.0)
   phone               String?   @default("+2348012345678")

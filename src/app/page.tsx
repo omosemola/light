@@ -55,8 +55,8 @@ const PROMO_SLIDES = [
     subtitle: "Piping hot Nigerian party Jollof rice, crispy plantains & succulent grilled chicken prepared fresh daily by Mama Cass.",
     link: "/category/food",
     buttonText: "Order Hot Lunch",
-    gradient: "from-[#1E1B4B] via-[#312E81] to-indigo-900",
-    badgeBg: "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-400 text-slate-950 font-black shadow-md border border-amber-300/90",
+    bgColor: "bg-[#1E1B4B]",
+    badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
     image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=600&q=80",
     highlight: "⭐ 4.9 Top Rated • Mama Cass"
   },
@@ -67,8 +67,8 @@ const PROMO_SLIDES = [
     subtitle: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
     link: "/category/food",
     buttonText: "Order Fried Rice",
-    gradient: "from-slate-950 via-[#1E1B4B] to-indigo-950",
-    badgeBg: "bg-amber-400 text-slate-950",
+    bgColor: "bg-[#1E1B4B]",
+    badgeBg: "bg-amber-400 text-slate-950 font-black",
     image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80",
     highlight: "⚡ 15-20 Min Fast Delivery"
   }
@@ -320,10 +320,8 @@ export default function Home() {
           className="object-cover object-center"
         />
 
-        {/* GRADIENT OVERLAYS FOR HIGH CONTRAST */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
-        <div className="absolute -top-12 -right-12 w-56 h-56 bg-[#312E81] dark:bg-indigo-900/40 rounded-full blur-3xl opacity-40 pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#FBBF24] rounded-full blur-3xl opacity-10 pointer-events-none" />
+        {/* SOLID HIGH CONTRAST OVERLAY */}
+        <div className="absolute inset-0 bg-[#1E1B4B]/90 dark:bg-[#09090B]/95" />
 
         <div className="relative z-10 max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
@@ -405,9 +403,9 @@ export default function Home() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.02 }}
                   transition={{ duration: 0.45, ease: "easeOut" }}
-                  className={`absolute inset-0 bg-gradient-to-r ${slide.gradient} p-6 md:p-8 text-white flex flex-col justify-between z-10`}
+                  className={`absolute inset-0 ${slide.bgColor} p-6 md:p-8 text-white flex flex-col justify-between z-10`}
                 >
-                  {/* BACKGROUND AMBIENT IMAGE WITH DEPTH GRADIENT */}
+                  {/* BACKGROUND AMBIENT IMAGE */}
                   <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 dark:opacity-20 pointer-events-none overflow-hidden">
                     <Image
                       src={slide.image}
@@ -415,7 +413,7 @@ export default function Home() {
                       fill
                       className="object-cover object-center scale-110 blur-xs"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#1E1B4B]/80 to-[#1E1B4B]" />
+                    <div className="absolute inset-0 bg-[#1E1B4B]/80" />
                   </div>
 
                   {/* TOP BADGE */}

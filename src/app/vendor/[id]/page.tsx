@@ -233,7 +233,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
           priority
           className="object-cover opacity-80"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#18181B] via-transparent to-[#18181B]/40" />
+        <div className="absolute inset-0 bg-black/60" />
 
         {/* Top Controls */}
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">

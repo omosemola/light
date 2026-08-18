@@ -44,7 +44,9 @@ import {
   checkAdminSession, 
   logoutAdmin,
   updateOrderStatusAdmin,
-  toggleProductAvailabilityAdmin
+  toggleProductAvailabilityAdmin,
+  verifyStoreAdmin,
+  toggleStoreStatusAdmin
 } from "@/actions/admin";
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
@@ -56,7 +58,7 @@ export default function AdminDashboardPage() {
   const INITIAL_ADMIN_DATA = {
     success: true,
     metrics: {
-      totalUsers: 13,
+      totalUsers: 5,
       totalStores: 1,
       totalOrders: 0,
       totalProducts: 2,
@@ -200,17 +202,6 @@ export default function AdminDashboardPage() {
     window.location.href = "/admin/login";
   };
 
-  const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
-    const nextStatus = !currentIsOpen;
-    setAdminData((prev: any) => ({
-      ...prev,
-      stores: prev.stores.map((s: any) =>
-        s.id === storeId ? { ...s, isOpen: nextStatus } : s
-      ),
-    }));
-    await toggleStoreOpenStatus(storeId, nextStatus);
-    setToastMessage(`Store status updated to ${nextStatus ? "Active & Live" : "Suspended"}`);
-  };
 
   const handleToggleProductAvailability = async (productId: string, currentIsAvailable: boolean) => {
     const nextAvailable = !currentIsAvailable;
@@ -262,6 +253,51 @@ export default function AdminDashboardPage() {
     setTicketUpdating(null);
   };
 
+  const handleVerifyStore = async (storeId: string, isVerified: boolean) => {
+    const res = await verifyStoreAdmin(storeId, isVerified);
+    if (res.success) {
+      setAdminData((prev: any) => {
+        const updatedStores = prev.stores?.map((s: any) =>
+          s.id === storeId ? { ...s, isVerified, isOpen: isVerified } : s
+        );
+        const updated = {
+          ...prev,
+          stores: updatedStores,
+        };
+        try {
+          sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      setToastMessage(isVerified ? "Store verified & approved live! 🎉" : "Store verification revoked.");
+    } else {
+      setToastMessage(res.error || "Failed to update store verification");
+    }
+  };
+
+  const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
+    const newStatus = !currentIsOpen;
+    const res = await toggleStoreStatusAdmin(storeId, newStatus);
+    if (res.success) {
+      setAdminData((prev: any) => {
+        const updatedStores = prev.stores?.map((s: any) =>
+          s.id === storeId ? { ...s, isOpen: newStatus } : s
+        );
+        const updated = {
+          ...prev,
+          stores: updatedStores,
+        };
+        try {
+          sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      setToastMessage(`Store is now ${newStatus ? "ACTIVE & LIVE" : "PAUSED / SUSPENDED"}`);
+    } else {
+      setToastMessage(res.error || "Failed to toggle store status");
+    }
+  };
+
   const handleRoleChange = async (userId: string, role: Role) => {
     setRoleUpdating(userId);
     const res = await updateUserRole(userId, role);
@@ -283,14 +319,23 @@ export default function AdminDashboardPage() {
     try {
       const res = await deleteUserAccount(userToDelete.id);
       if (res.success) {
-        setAdminData((prev: any) => ({
-          ...prev,
-          users: prev.users.filter((u: any) => u.id !== userToDelete.id),
-          metrics: {
-            ...prev.metrics,
-            totalUsers: Math.max(0, (prev.metrics?.totalUsers || 1) - 1),
-          },
-        }));
+        setAdminData((prev: any) => {
+          const updatedUsers = (prev.users || []).filter(
+            (u: any) => u.id !== userToDelete.id && u.email !== userToDelete.email
+          );
+          const updated = {
+            ...prev,
+            users: updatedUsers,
+            metrics: {
+              ...prev.metrics,
+              totalUsers: Math.max(0, updatedUsers.length),
+            },
+          };
+          try {
+            sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
+          } catch {}
+          return updated;
+        });
         setToastMessage(`User "${userToDelete.name || userToDelete.email}" deleted successfully`);
         setUserToDelete(null);
       } else {
@@ -430,7 +475,7 @@ export default function AdminDashboardPage() {
           priority
           className="object-cover object-center pointer-events-none opacity-40"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
+        <div className="absolute inset-0 bg-[#1E1B4B]/90 dark:bg-[#09090B]/95" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -467,22 +512,6 @@ export default function AdminDashboardPage() {
                 <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
                 <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
               </button>
-
-              <Link
-                href="/"
-                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
-              >
-                <Store size={14} className="text-amber-400" />
-                <span>Storefront</span>
-              </Link>
-
-              <Link
-                href="/support"
-                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
-              >
-                <HelpCircle size={14} className="text-sky-400" />
-                <span>Help Desk</span>
-              </Link>
 
               <button
                 onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -568,7 +597,7 @@ export default function AdminDashboardPage() {
           >
             <Users className="w-5 h-5 text-purple-500 mb-1.5" />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Campus Users</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.users?.length || metrics?.totalUsers || 13} Users</h3>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.users?.length || metrics?.totalUsers || 5} Users</h3>
           </motion.div>
 
           <motion.div 
@@ -807,9 +836,9 @@ export default function AdminDashboardPage() {
                     <th className="p-4">Store Name</th>
                     <th className="p-4">Owner Email</th>
                     <th className="p-4">Menu Items</th>
-                    <th className="p-4">Rating</th>
-                    <th className="p-4">Store State</th>
-                    <th className="p-4 text-right">Storefront</th>
+                    <th className="p-4">Verification Status</th>
+                    <th className="p-4">Live State</th>
+                    <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
@@ -826,7 +855,19 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className={`p-4 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{st.user?.email || "vendor@mamacass.com"}</td>
                       <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{st._count?.products || 2} items</td>
-                      <td className="p-4 font-bold text-amber-500">★ {st.rating || "4.9"}</td>
+                      <td className="p-4">
+                        {st.isVerified ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
+                            <CheckCircle2 size={11} className="text-emerald-400" />
+                            VERIFIED & APPROVED
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80 animate-pulse">
+                            <Clock size={11} className="text-amber-400" />
+                            PENDING VERIFICATION
+                          </span>
+                        )}
+                      </td>
                       <td className="p-4">
                         <button
                           onClick={() => handleToggleStoreStatus(st.id, st.isOpen !== false)}
@@ -836,17 +877,36 @@ export default function AdminDashboardPage() {
                               : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
                           }`}
                         >
-                          {st.isOpen !== false ? "✓ ACTIVE & LIVE" : "✕ SUSPENDED"}
+                          {st.isOpen !== false ? "✓ ACTIVE & OPEN" : "✕ CLOSED / PAUSED"}
                         </button>
                       </td>
                       <td className="p-4 text-right">
-                        <Link
-                          href={`/vendor/${st.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
-                        >
-                          <span>Open Store</span>
-                          <ExternalLink size={12} />
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          {!st.isVerified ? (
+                            <button
+                              onClick={() => handleVerifyStore(st.id, true)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                            >
+                              <CheckCircle2 size={13} />
+                              <span>Approve & Verify</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleVerifyStore(st.id, false)}
+                              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-rose-950 hover:border-rose-800 border border-zinc-700 text-zinc-400 hover:text-rose-300 font-heading font-bold text-[10px] transition-all cursor-pointer"
+                            >
+                              Revoke
+                            </button>
+                          )}
+
+                          <Link
+                            href={`/vendor/${st.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
+                          >
+                            <span>Preview</span>
+                            <ExternalLink size={12} />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -229,6 +229,30 @@ export default function LoginPage() {
             Get Started
           </Link>
         </div>
+
+        {/* ARE YOU A VENDOR? CALLOUT */}
+        <div className="mt-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-800/80 flex items-center justify-between gap-3 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
+              <Store size={20} />
+            </div>
+            <div>
+              <span className="block text-xs font-heading font-black text-slate-900 dark:text-white">
+                Are you a vendor?
+              </span>
+              <span className="block text-[11px] text-slate-600 dark:text-zinc-400 font-medium">
+                Log into your Merchant POS Terminal
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/vendor/login"
+            className="px-3.5 py-2 bg-[#1E1B4B] hover:bg-[#312E81] text-white text-xs font-heading font-extrabold rounded-xl shadow-sm transition-all active:scale-95 shrink-0 flex items-center gap-1"
+          >
+            <span>Vendor Login</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
       </motion.div>
 
       {/* Footer copyright */}

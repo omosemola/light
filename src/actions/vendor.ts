@@ -333,7 +333,7 @@ export async function registerVendorStore(data: {
       });
     }
 
-    // 2. Create vendor store
+    // 2. Create vendor store (Pending Admin Approval)
     const store = await prisma.store.create({
       data: {
         name: data.storeName,
@@ -341,7 +341,8 @@ export async function registerVendorStore(data: {
         logo: data.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
         coverImage: data.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
         userId: user.id,
-        isOpen: true,
+        isOpen: false,
+        isVerified: false,
       },
     });
 
@@ -360,7 +361,7 @@ export async function registerVendorStore(data: {
       }).catch((e) => console.error("Failed to send vendor welcome email:", e));
     }
 
-    // 4. Send New Vendor Application Alert to Admin
+    // 4. Send New Vendor Application Alert to Admin for Verification
     const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
     const adminNoticeHtml = generateAdminNewVendorEmail({
       storeName: data.storeName,
@@ -373,11 +374,18 @@ export async function registerVendorStore(data: {
 
     sendEmail({
       to: adminEmail,
-      subject: `[LIGHTSON ADMIN] New Vendor Registered: ${data.storeName} (${data.category})`,
+      subject: `[LIGHTSON ADMIN - ACTION REQUIRED] New Vendor Application: ${data.storeName} (${data.category})`,
       html: adminNoticeHtml,
     }).catch((e) => console.error("Failed to send admin vendor alert email:", e));
 
-    return { success: true, store, userId: user.id };
+    return { 
+      success: true, 
+      store, 
+      userId: user.id,
+      isVerified: false,
+      isPendingVerification: true,
+      message: "Vendor store application submitted successfully and is pending administrator verification." 
+    };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to register vendor store" };
   }
@@ -431,15 +439,30 @@ export async function authenticateVendor(email: string, password?: string) {
           userId: user.id,
           rating: 5.0,
           estimatedDelivery: "20-30 mins",
-          isOpen: true,
+          isOpen: false,
+          isVerified: false,
           logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
           coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
         },
       });
-      return { success: true, storeId: store.id, storeName: store.name, userEmail: user.email };
+      return { 
+        success: true, 
+        storeId: store.id, 
+        storeName: store.name, 
+        userEmail: user.email,
+        isVerified: false,
+        isOpen: false
+      };
     }
 
-    return { success: true, storeId: user.store.id, storeName: user.store.name, userEmail: user.email };
+    return { 
+      success: true, 
+      storeId: user.store.id, 
+      storeName: user.store.name, 
+      userEmail: user.email,
+      isVerified: user.store.isVerified,
+      isOpen: user.store.isOpen
+    };
   } catch (error: any) {
     console.error("Error authenticating vendor:", error);
     return { success: false, error: error.message || "Failed to authenticate vendor" };

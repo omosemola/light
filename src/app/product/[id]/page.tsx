@@ -262,7 +262,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           className="object-cover"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#18181B]/80 via-transparent to-[#18181B]/40" />
+        <div className="absolute inset-0 bg-black/40" />
 
         {/* Floating Top Controls */}
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">

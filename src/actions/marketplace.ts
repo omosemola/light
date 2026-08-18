@@ -16,6 +16,7 @@ export async function getLiveHomepageData() {
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
+        where: { isVerified: true },
         include: {
           products: {
             where: { isAvailable: true },
@@ -201,6 +202,7 @@ export async function searchLiveCatalog(query: string) {
       }),
       prisma.store.findMany({
         where: {
+          isVerified: true,
           OR: [
             { name: { contains: cleanQuery, mode: "insensitive" } },
             { description: { contains: cleanQuery, mode: "insensitive" } },

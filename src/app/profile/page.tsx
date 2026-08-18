@@ -186,20 +186,20 @@ export default function ProfilePage() {
       });
 
       if (res.success) {
-        setToastMessage(`🎉 Store "${vendorStoreName}" created successfully! Opening Vendor Portal...`);
+        setToastMessage(`🎉 Store "${vendorStoreName}" submitted! Pending administrator verification.`);
         setIsVendorModalOpen(false);
         setTimeout(() => {
           window.location.href = "/vendor/dashboard";
-        }, 1200);
+        }, 1500);
       } else {
         setToastMessage(`Error: ${res.error}`);
       }
     } catch {
-      setToastMessage(`Vendor Store registered! Redirecting to dashboard...`);
+      setToastMessage(`Vendor Store registered! Application under review...`);
       setIsVendorModalOpen(false);
       setTimeout(() => {
         window.location.href = "/vendor/dashboard";
-      }, 1200);
+      }, 1500);
     } finally {
       setIsRegisteringVendor(false);
     }
@@ -285,10 +285,8 @@ export default function ProfilePage() {
           className="object-cover object-center"
         />
 
-        {/* GRADIENT OVERLAYS FOR CRISP CONTRAST */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
-        <div className="absolute -top-12 -right-12 w-56 h-56 bg-[#312E81] dark:bg-indigo-900/40 rounded-full blur-3xl opacity-40 pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#FBBF24] rounded-full blur-3xl opacity-10 pointer-events-none" />
+        {/* SOLID OVERLAY FOR CRISP CONTRAST */}
+        <div className="absolute inset-0 bg-[#1E1B4B]/90 dark:bg-[#09090B]/95" />
 
         <div className="relative z-10 max-w-4xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
@@ -424,7 +422,7 @@ export default function ProfilePage() {
         >
           <Link
             href="/admin/dashboard"
-            className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1E1B4B] to-[#312E81] text-white rounded-3xl shadow-md border border-indigo-700 hover:shadow-lg transition-all group"
+            className="flex items-center justify-between p-4 bg-[#1E1B4B] hover:bg-[#312E81] text-white rounded-3xl shadow-md border border-indigo-700 hover:shadow-lg transition-all group"
           >
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-sm group-hover:scale-105 transition-transform">

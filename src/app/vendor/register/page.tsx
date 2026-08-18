@@ -187,9 +187,7 @@ export default function VendorRegistrationPage() {
           priority
           className="object-cover object-center pointer-events-none opacity-45"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#312E81] rounded-full blur-3xl opacity-60 pointer-events-none -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#F5A623] rounded-full blur-3xl opacity-15 pointer-events-none -ml-20 -mb-20" />
+        <div className="absolute inset-0 bg-[#1E1B4B]/90 dark:bg-[#09090B]/95" />
 
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-amber-300 font-heading font-extrabold text-xs">
@@ -239,20 +237,36 @@ export default function VendorRegistrationPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8 space-y-5"
             >
-              <div className="w-18 h-18 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center border-2 border-emerald-200 dark:border-emerald-800 shadow-md">
-                <CheckCircle2 size={40} />
+              <div className="w-18 h-18 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border-2 border-amber-200 dark:border-amber-800 shadow-md">
+                <Clock size={40} />
               </div>
 
               <div>
-                <span className="inline-block px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold rounded-full mb-2">
-                  Store Registered Successfully 🎉
+                <span className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full mb-2">
+                  Application Submitted • Pending Admin Review ⏳
                 </span>
                 <h2 className="text-2xl md:text-3xl font-heading font-black text-[#18181B] dark:text-white">
-                  Welcome, {storeName}!
+                  Application Received, {storeName}!
                 </h2>
                 <p className="text-xs md:text-sm text-[#71717A] dark:text-zinc-400 mt-2 max-w-md mx-auto leading-relaxed">
-                  Your campus vendor merchant account is ready. You can now access your live Order Processing Terminal, add menu items, and start receiving student orders.
+                  Your campus vendor registration has been safely received. Platform administrators will review your store details and activate your account. You will receive an email confirmation once verified.
                 </p>
+              </div>
+
+              {/* VERIFICATION STEPS */}
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl max-w-md mx-auto text-left text-xs space-y-2">
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                  <CheckCircle2 size={15} className="shrink-0" />
+                  <span>Step 1: Store & Banking Profile Submitted</span>
+                </div>
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold">
+                  <Clock size={15} className="shrink-0 animate-spin" />
+                  <span>Step 2: Campus Administrator Review & Approval</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400 dark:text-zinc-500">
+                  <ShieldCheck size={15} className="shrink-0" />
+                  <span>Step 3: Storefront Goes Live on Marketplace</span>
+                </div>
               </div>
 
               <div className="p-4 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl border border-slate-200 dark:border-zinc-700/80 max-w-md mx-auto text-left text-xs space-y-1.5 font-medium">
@@ -276,13 +290,13 @@ export default function VendorRegistrationPage() {
                   className="px-8 py-3.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-sm rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   <Store size={18} />
-                  <span>Open Vendor Dashboard</span>
+                  <span>View Application Status</span>
                 </Link>
                 <Link
                   href="/"
                   className="px-6 py-3.5 bg-slate-100 dark:bg-zinc-800 text-[#18181B] dark:text-white font-heading font-extrabold text-sm rounded-xl hover:bg-slate-200 transition-all text-center"
                 >
-                  Go to Marketplace
+                  Back to Marketplace
                 </Link>
               </div>
             </motion.div>
@@ -710,7 +724,7 @@ export default function VendorRegistrationPage() {
                     4. Rating Standards (4.0+ Stars)
                   </h4>
                   <p className="text-xs leading-relaxed">
-                    Merchants must maintain at least a 4.0-star customer satisfaction score. Courteous communication on the integrated live chat is mandatory.
+                    Merchants must maintain at least a 4.0-star customer satisfaction score with prompt order processing and polite customer service.
                   </p>
                 </div>
               </div>

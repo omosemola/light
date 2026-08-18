@@ -50,8 +50,8 @@ export function ProductCard({
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />
 
-          {/* Vignette Depth Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/15 opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+          {/* Ambient Contrast Tint */}
+          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
 
           {/* SMALLER VENDOR BADGE */}
           <div className="absolute top-1 left-1 bg-black/40 dark:bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-white/20 shadow-xs max-w-[85%] z-10">

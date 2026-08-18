@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { TicketStatus, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { sendEmail } from "@/lib/email";
 
 export async function getAdminDashboardData() {
   const DEFAULT_FALLBACK_PRODUCTS = [
@@ -30,6 +31,7 @@ export async function getAdminDashboardData() {
       id: "cmst41xau0002tb705xlithpk",
       name: "Mama Cass Continental",
       isOpen: true,
+      isVerified: true,
       rating: 4.9,
       user: { email: "vendor@mamacass.com", name: "Mama Cass Manager" },
       _count: { products: 2, orders: 0 },
@@ -90,7 +92,7 @@ export async function getAdminDashboardData() {
 
       return {
         metrics: {
-          totalUsers: users.length || 13,
+          totalUsers: users.length || 5,
           totalStores: finalStores.length,
           totalOrders: recentOrders.length,
           totalProducts: finalProducts.length,
@@ -113,7 +115,7 @@ export async function getAdminDashboardData() {
       return {
         success: true,
         metrics: {
-          totalUsers: 13,
+          totalUsers: 5,
           totalStores: 1,
           totalOrders: 0,
           totalProducts: 2,
@@ -138,7 +140,7 @@ export async function getAdminDashboardData() {
     return {
       success: true,
       metrics: {
-        totalUsers: 13,
+        totalUsers: 5,
         totalStores: 1,
         totalOrders: 0,
         totalProducts: 2,
@@ -210,6 +212,70 @@ export async function updateSupportTicketStatus(ticketId: string, status: Ticket
   }
 }
 
+export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
+  try {
+    const updatedStore = await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        isVerified,
+        isOpen: isVerified, // Auto-open store when approved
+      },
+      include: {
+        user: { select: { email: true, name: true } },
+      },
+    });
+
+    if (isVerified && updatedStore.user?.email) {
+      sendEmail({
+        to: updatedStore.user.email,
+        subject: `🎉 Congratulations! Your store ${updatedStore.name} is now Verified on Lightson!`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+            <div style="background: #1E1B4B; color: #ffffff; padding: 28px 24px; text-align: center; border-radius: 12px; margin-bottom: 24px;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800;">Merchant Application Approved! 🏪</h1>
+              <p style="margin: 6px 0 0; color: #fbbf24; font-size: 14px;">Welcome to Lightson Campus Marketplace</p>
+            </div>
+            <p style="font-size: 14px; color: #334155; line-height: 1.6;">Hello <strong>${updatedStore.name}</strong>,</p>
+            <p style="font-size: 14px; color: #334155; line-height: 1.6;">Great news! Campus Administrators have officially reviewed and <strong>approved</strong> your merchant store application.</p>
+            <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 8px;">
+              <p style="margin: 0; font-size: 13px; color: #065f46; font-weight: 700;">✓ Store Status: VERIFIED & ACTIVE</p>
+              <p style="margin: 4px 0 0; font-size: 13px; color: #334155;">Your storefront is now visible to all students across campus. You can now log into your Merchant POS terminal to add dishes, manage prices, and fulfill live orders.</p>
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://campuslightson.com/vendor/login" style="display: inline-block; background-color: #312E81; color: #ffffff; font-weight: 800; font-size: 14px; padding: 12px 28px; border-radius: 10px; text-decoration: none;">Launch Merchant Terminal</a>
+            </div>
+          </div>
+        `,
+      }).catch((e) => console.error("Failed to send vendor verification approval email:", e));
+    }
+
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/");
+    revalidatePath(`/vendor/${storeId}`);
+    return { success: true, store: updatedStore };
+  } catch (error: any) {
+    console.error("Error verifying store in admin:", error);
+    return { success: false, error: error.message || "Failed to verify store" };
+  }
+}
+
+export async function toggleStoreStatusAdmin(storeId: string, isOpen: boolean) {
+  try {
+    const updatedStore = await prisma.store.update({
+      where: { id: storeId },
+      data: { isOpen },
+    });
+
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/");
+    revalidatePath(`/vendor/${storeId}`);
+    return { success: true, store: updatedStore };
+  } catch (error: any) {
+    console.error("Error toggling store status in admin:", error);
+    return { success: false, error: error.message || "Failed to toggle store status" };
+  }
+}
+
 export async function updateUserRole(userId: string, role: Role) {
   try {
     const updatedUser = await prisma.user.update({
@@ -233,10 +299,13 @@ export async function deleteUserAccount(userId: string) {
       });
 
       if (!user) {
-        throw new Error("User not found in database");
+        return;
       }
 
       if (user.store) {
+        await tx.chatMessage.deleteMany({
+          where: { storeId: user.store.id },
+        });
         await tx.orderItem.deleteMany({
           where: { product: { storeId: user.store.id } },
         });
@@ -254,6 +323,12 @@ export async function deleteUserAccount(userId: string) {
         });
       }
 
+      await tx.notification.deleteMany({
+        where: { userId },
+      });
+      await tx.chatMessage.deleteMany({
+        where: { userId },
+      });
       await tx.orderItem.deleteMany({
         where: { order: { userId } },
       });

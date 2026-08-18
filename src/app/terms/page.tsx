@@ -104,7 +104,7 @@ function TermsContent() {
             onClick={() => setActiveTab("merchant")}
             className={`flex-1 py-3 px-3 rounded-xl font-heading font-extrabold text-xs md:text-sm flex items-center justify-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
               activeTab === "merchant"
-                ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md"
+                ? "bg-amber-500 text-slate-950 font-black shadow-md"
                 : "text-[#71717A] dark:text-zinc-400 hover:text-[#18181B] dark:hover:text-zinc-200"
             }`}
           >
@@ -131,7 +131,7 @@ function TermsContent() {
             className="bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-8 text-xs md:text-sm text-[#71717A] dark:text-zinc-300 leading-relaxed font-body"
           >
             {/* HERO HIGHLIGHT */}
-            <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-indigo-500/10 border border-amber-500/20 text-[#18181B] dark:text-white">
+            <div className="p-4 md:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#18181B] dark:text-white">
               <div className="flex items-center gap-2 font-heading font-extrabold text-sm md:text-base text-amber-700 dark:text-amber-400">
                 <Store size={18} /> Official Campus Merchant Charter & Fast Delivery Commitment
               </div>

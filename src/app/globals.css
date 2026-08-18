@@ -62,7 +62,7 @@
   padding: 0 1.5rem;
   height: 3.75rem;
   border-radius: 1.25rem;
-  background: linear-gradient(135deg, #312E81 0%, #1E1B4B 50%, #312E81 100%);
+  background: #312E81;
   color: #fff;
   position: relative;
   z-index: 1;

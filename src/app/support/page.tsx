@@ -313,8 +313,8 @@ export default function SupportPage() {
             className="object-cover object-center"
           />
           
-          {/* DARK/INDIGO GRADIENT OVERLAY FOR CRISP TEXT CONTRAST */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1E1B4B]/95 via-[#1E1B4B]/80 to-[#1E1B4B]/40" />
+          {/* SOLID DARK/INDIGO OVERLAY FOR CRISP TEXT CONTRAST */}
+          <div className="absolute inset-0 bg-[#1E1B4B]/85" />
 
           <div className="relative z-10 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-5 w-full">
             <div className="max-w-md">

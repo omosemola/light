@@ -313,7 +313,7 @@ export function generateVendorNewOrderAlertEmail({
         <style>
           body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
           .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 2px solid #fbbf24; box-shadow: 0 10px 35px rgba(245, 158, 11, 0.15); }
-          .header { background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%); color: #ffffff; padding: 32px 24px; text-align: center; }
+          .header { background: #1E1B4B; color: #ffffff; padding: 32px 24px; text-align: center; }
           .badge { display: inline-block; background-color: #FEF3C7; color: #B45309; font-weight: 900; font-size: 12px; padding: 6px 14px; border-radius: 50px; border: 1px solid #fcd34d; margin-bottom: 12px; }
           .body-content { padding: 32px 24px; }
           .card { background-color: #fffbeb; border-radius: 16px; padding: 20px; border: 1px solid #fde68a; margin-bottom: 24px; }
