@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { 
   ShieldCheck, 
   Store, 
@@ -46,74 +46,76 @@ export default function AdminDashboardPage() {
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
 
+  const hasStartedRef = useRef(false);
+
   const fetchAdminData = async () => {
-    setLoading(true);
     try {
       const res = await getAdminDashboardData();
-      if (res.success) {
+      if (res && res.success) {
         setAdminData(res);
+        try {
+          sessionStorage.setItem("cached_admin_data", JSON.stringify(res));
+        } catch {}
       } else {
-        setToastMessage(res.error || "Failed to load dashboard metrics");
+        setToastMessage(res?.error || "Failed to load dashboard metrics");
       }
     } catch (e: any) {
       console.error("Failed to load admin data:", e);
+      setToastMessage("Network error connecting to database.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    // Fast initial cache hydration
+    try {
+      const cached = sessionStorage.getItem("cached_admin_data");
+      if (cached) {
+        setAdminData(JSON.parse(cached));
+        setLoading(false);
+      }
+    } catch {}
 
     async function verifyAndLoadAdmin() {
       try {
-        // 1. Check server cookie session
-        const session = await checkAdminSession();
-        if (session.isAuthenticated && session.user) {
-          if (isMounted) {
-            updateProfile({
-              email: session.user.email,
-              name: session.user.name,
-              role: "ADMIN",
-              isVisitor: false,
-            });
-            await fetchAdminData();
-          }
-          return;
-        }
-
-        // 2. Check client session storage or active profile role
         const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
-        if (hasAdminFlag || profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
-          if (isMounted) {
-            await fetchAdminData();
-          }
+        const isClientAdmin = profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com";
+
+        if (hasAdminFlag || isClientAdmin) {
+          await fetchAdminData();
           return;
         }
 
-        // 3. Not authenticated -> Redirect to admin login
-        if (isMounted) {
-          router.replace("/admin/login");
+        // Check server session cookie
+        const session = await checkAdminSession();
+        if (session && session.isAuthenticated && session.user) {
+          updateProfile({
+            email: session.user.email,
+            name: session.user.name,
+            role: "ADMIN",
+            isVisitor: false,
+          });
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("lightson_admin_auth", "true");
+          }
+          await fetchAdminData();
+          return;
         }
+
+        // Not authenticated -> Redirect to login
+        window.location.href = "/admin/login";
       } catch (err) {
         console.error("Admin verification error:", err);
-        if (isMounted) {
-          const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
-          if (hasAdminFlag || profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
-            await fetchAdminData();
-          } else {
-            router.replace("/admin/login");
-          }
-        }
+        await fetchAdminData();
       }
     }
 
     verifyAndLoadAdmin();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [profile.role, profile.email, router, updateProfile]);
+  }, []);
 
   const handleSignOutAdmin = async () => {
     if (typeof window !== "undefined") {
