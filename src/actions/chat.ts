@@ -285,7 +285,13 @@ export async function getStudentChatThreads(studentEmail?: string) {
           { user: { email: cleanEmail } },
         ],
       },
-      include: {
+      select: {
+        id: true,
+        storeId: true,
+        text: true,
+        senderType: true,
+        isRead: true,
+        createdAt: true,
         store: {
           select: {
             id: true,
@@ -297,6 +303,7 @@ export async function getStudentChatThreads(studentEmail?: string) {
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 60,
     });
 
     const threadMap = new Map<string, StudentChatThreadItem>();

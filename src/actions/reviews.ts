@@ -141,17 +141,16 @@ export async function getUserReviews(userEmail?: string) {
     }
 
     const cleanEmail = userEmail.trim().toLowerCase();
-    const user = await prisma.user.findUnique({
-      where: { email: cleanEmail },
-    });
-
-    if (!user) {
-      return { success: true, reviews: [] };
-    }
-
     const reviews = await prisma.review.findMany({
-      where: { userId: user.id },
-      include: {
+      where: {
+        user: { email: cleanEmail },
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        orderId: true,
         store: {
           select: {
             id: true,
@@ -161,9 +160,10 @@ export async function getUserReviews(userEmail?: string) {
           },
         },
         order: {
-          include: {
+          select: {
             items: {
-              include: {
+              select: {
+                quantity: true,
                 product: {
                   select: { name: true },
                 },
@@ -173,10 +173,11 @@ export async function getUserReviews(userEmail?: string) {
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 40,
     });
 
     const formattedReviews: UserReviewItem[] = reviews.map((r) => {
-      const orderItems = r.order?.items.map((i) => `${i.quantity}x ${i.product.name}`).join(", ");
+      const orderItems = r.order?.items?.map((i) => `${i.quantity}x ${i.product.name}`).join(", ") || null;
       return {
         id: r.id,
         rating: r.rating,
@@ -187,7 +188,7 @@ export async function getUserReviews(userEmail?: string) {
         storeLogo: r.store.logo,
         storeCover: r.store.coverImage,
         orderId: r.orderId,
-        orderSummary: orderItems || null,
+        orderSummary: orderItems,
       };
     });
 

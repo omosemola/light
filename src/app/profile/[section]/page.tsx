@@ -132,18 +132,29 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     return isForUser && !n.read;
   }).length;
 
-  // REVIEWS STATE (SYNCED WITH DATABASE)
-  const [myReviews, setMyReviews] = useState<UserReviewItem[]>([]);
+  // REVIEWS STATE (SYNCED WITH DATABASE & INSTANT CACHE)
+  const [myReviews, setMyReviews] = useState<UserReviewItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("cached_user_reviews");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
   const [isReviewsLoading, setIsReviewsLoading] = useState(false);
   const [reviewDeleteId, setReviewDeleteId] = useState<string | null>(null);
 
   const fetchUserReviews = async () => {
     if (!profile.email) return;
-    setIsReviewsLoading(true);
+    if (myReviews.length === 0) setIsReviewsLoading(true);
     try {
       const res = await getUserReviews(profile.email);
       if (res.success && res.reviews) {
         setMyReviews(res.reviews);
+        try {
+          sessionStorage.setItem("cached_user_reviews", JSON.stringify(res.reviews));
+        } catch {}
       }
     } catch (e) {
       console.error("Error loading user reviews:", e);
@@ -170,8 +181,16 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     }
   };
 
-  // STUDENT LIVE CHATS STATE (DATABASE BACKED)
-  const [studentChatThreads, setStudentChatThreads] = useState<StudentChatThreadItem[]>([]);
+  // STUDENT LIVE CHATS STATE (DATABASE BACKED & INSTANT CACHE)
+  const [studentChatThreads, setStudentChatThreads] = useState<StudentChatThreadItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("cached_student_chats");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
   const [activeStudentThread, setActiveStudentThread] = useState<StudentChatThreadItem | null>(null);
   const [studentThreadMessages, setStudentThreadMessages] = useState<ChatMessageRecord[]>([]);
   const [studentReplyText, setStudentReplyText] = useState("");
@@ -210,11 +229,14 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
   const fetchStudentChats = useCallback(async (isPoll = false) => {
     if (!profile.email) return;
-    if (!isPoll) setIsLoadingStudentChats(true);
+    if (!isPoll && studentChatThreads.length === 0) setIsLoadingStudentChats(true);
     try {
       const res = await getStudentChatThreads(profile.email);
       if (res.success && res.threads) {
         setStudentChatThreads(res.threads);
+        try {
+          sessionStorage.setItem("cached_student_chats", JSON.stringify(res.threads));
+        } catch {}
         const totalUnread = res.threads.reduce((acc, t) => acc + t.unreadCount, 0);
         if (isPoll && totalUnread > prevVendorMsgCountRef.current) {
           playStudentMessageChime();
@@ -226,7 +248,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     } finally {
       if (!isPoll) setIsLoadingStudentChats(false);
     }
-  }, [profile.email, playStudentMessageChime]);
+  }, [profile.email, playStudentMessageChime, studentChatThreads.length]);
 
   useEffect(() => {
     if ((section === "chats" || section === "messages") && profile.email) {
@@ -932,7 +954,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   </span>
                 </div>
 
-                {isLoadingStudentChats ? (
+                {isLoadingStudentChats && studentChatThreads.length === 0 ? (
                   <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-2">
                     <div className="w-8 h-8 border-2 border-[#312E81] border-t-transparent rounded-full animate-spin mx-auto" />
                     <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body">Loading your vendor chats from database...</p>
@@ -1046,7 +1068,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
               </span>
             </div>
 
-            {isReviewsLoading ? (
+            {isReviewsLoading && myReviews.length === 0 ? (
               <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-2">
                 <div className="w-8 h-8 border-2 border-[#312E81] border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body">Loading your reviews from database...</p>

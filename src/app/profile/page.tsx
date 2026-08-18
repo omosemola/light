@@ -227,19 +227,25 @@ export default function ProfilePage() {
       ensureWelcomeNotification(profile.email, profile.name);
       syncWithUserAccount(profile.email);
 
-      // Fetch user reviews count from database
+      // Fetch user reviews count from database and cache for instant page open
       getUserReviews(profile.email).then((res) => {
         if (res.success && res.reviews) {
           setUserReviewsCount(res.reviews.length);
+          try {
+            sessionStorage.setItem("cached_user_reviews", JSON.stringify(res.reviews));
+          } catch {}
         }
       }).catch((e) => console.error("Error loading profile reviews count:", e));
 
-      // Fetch student live chats from database
+      // Fetch student live chats from database and cache for instant page open
       getStudentChatThreads(profile.email).then((res) => {
         if (res.success && res.threads) {
           setUserChatsCount(res.threads.length);
           const unread = res.threads.reduce((acc, t) => acc + t.unreadCount, 0);
           setUnreadChatsCount(unread);
+          try {
+            sessionStorage.setItem("cached_student_chats", JSON.stringify(res.threads));
+          } catch {}
         }
       }).catch((e) => console.error("Error loading profile chats count:", e));
     }
