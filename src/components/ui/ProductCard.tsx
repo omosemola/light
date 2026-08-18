@@ -1,10 +1,9 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Store, Heart } from "lucide-react";
 import { motion } from "framer-motion";
+import { useFavoritesStore } from "@/lib/favoritesStore";
+import { useUserStore } from "@/lib/userStore";
 
 export interface ProductCardProps {
   id: string;
@@ -25,9 +24,12 @@ export function ProductCard({
   image,
   vendorName,
   isAvailable = true,
+  rating = 4.8,
   onClick,
 }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isProductFavorite, toggleProductFavorite } = useFavoritesStore();
+  const { profile } = useUserStore();
+  const isFavorite = isProductFavorite(id);
 
   const cardContent = (
     <motion.div
@@ -91,7 +93,10 @@ export function ProductCard({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            setIsFavorite(!isFavorite);
+            toggleProductFavorite(
+              { id, name, price, image, vendorName, rating },
+              profile?.email
+            );
           }}
           className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs border ${
             isFavorite

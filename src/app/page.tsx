@@ -42,6 +42,7 @@ import { Modal } from "@/components/ui/Modal";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { useFavoritesStore } from "@/lib/favoritesStore";
 import WelcomePage from "@/app/welcome/page";
 import { getLiveHomepageData } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
@@ -273,10 +274,14 @@ export default function Home() {
     }
 
     loadLiveProducts();
+    if (profile.email) {
+      useFavoritesStore.getState().syncWithUserAccount(profile.email);
+    }
+
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [profile.email]);
 
   if (!isMounted) {
     return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;

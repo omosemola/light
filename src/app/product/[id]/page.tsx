@@ -14,6 +14,7 @@ import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { getLiveProductById } from "@/actions/marketplace";
 import { useReviewsStore, ProductReview } from "@/lib/reviewsStore";
 import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { useFavoritesStore } from "@/lib/favoritesStore";
 import { submitStudentReview } from "@/actions/reviews";
 
 interface Review {
@@ -701,11 +702,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { profile } = useUserStore();
   const { reviewsByProduct, addProductReview, toggleLikeReview } = useReviewsStore();
+  const { isProductFavorite, toggleProductFavorite } = useFavoritesStore();
 
   const defaultProduct = ALL_PRODUCTS[id] || ALL_PRODUCTS.p1;
   const [product, setProduct] = useState(defaultProduct);
   const [quantity, setQuantity] = useState(1);
-  const [isLiked, setIsLiked] = useState(false);
+  const isLiked = isProductFavorite(product.id) || isProductFavorite(id);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
@@ -885,10 +887,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </button>
 
           <button
-            onClick={() => setIsLiked(!isLiked)}
+            onClick={() => {
+              toggleProductFavorite(
+                {
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image,
+                  vendorName: product.vendorName,
+                  rating: typeof product.rating === "number" ? product.rating : 4.8,
+                  category: product.category,
+                },
+                profile?.email
+              );
+            }}
             className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm ${
               isLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
             }`}
+            aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
+            title={isLiked ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart size={20} className={isLiked ? "fill-white" : ""} />
           </button>

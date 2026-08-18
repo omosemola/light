@@ -22,7 +22,9 @@ import {
   Sparkles,
   Tag,
   X,
-  CheckCheck
+  CheckCheck,
+  UtensilsCrossed,
+  ShoppingBag
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,6 +33,7 @@ import { motion } from "framer-motion";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useNotificationStore } from "@/lib/notificationStore";
+import { useFavoritesStore } from "@/lib/favoritesStore";
 
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -62,17 +65,23 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     setLocations(locations.filter((l) => l.id !== id));
   };
 
-  // FAVORITE VENDORS STATE
-  const [favorites, setFavorites] = useState([
-    { id: "v1", name: "Mama Cass Jollof", rating: 4.9, category: "Food & Meals", image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=400&q=80" },
-    { id: "v2", name: "Fresh Squeeze Juice", rating: 4.8, category: "Drinks & Smoothies", image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=400&q=80" },
-    { id: "v4", name: "Pizza Hub Express", rating: 4.9, category: "Fast Food", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80" },
-  ]);
+  // FAVORITES STATE (SYNCED WITH USER ACCOUNT & DATABASE)
+  const {
+    favoriteProducts,
+    favoriteStores,
+    syncWithUserAccount,
+    toggleProductFavorite,
+    toggleStoreFavorite,
+    isLoading: isFavsLoading,
+  } = useFavoritesStore();
 
-  const handleRemoveFavorite = (id: string) => {
-    setFavorites(favorites.filter((f) => f.id !== id));
-    updateProfile({ savedStoresCount: Math.max(0, favorites.length - 1) });
-  };
+  const [favSectionTab, setFavSectionTab] = useState<"foods" | "vendors">("foods");
+
+  useEffect(() => {
+    if (section === "favorites" && profile.email) {
+      syncWithUserAccount(profile.email);
+    }
+  }, [section, profile.email, syncWithUserAccount]);
 
   // NOTIFICATIONS STATE (SYNCED WITH USER ACCOUNT & DATABASE)
   const {
@@ -208,45 +217,191 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
           </div>
         )}
 
-        {/* SECTION: FAVORITES */}
+        {/* SECTION: FAVORITES (SYNCED WITH USER ACCOUNT & DATABASE) */}
         {section === "favorites" && (
-          <div className="space-y-4">
-            <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-              Saved Campus Vendors ({favorites.length})
-            </h2>
-
-            {favorites.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 p-6">
-                <Store size={40} className="mx-auto text-slate-400 mb-2" />
-                <p className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-200">No favorite vendors saved yet.</p>
+          <div className="space-y-5">
+            {/* Header & Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
+              <div>
+                <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
+                  <Heart size={18} className="text-rose-500 fill-rose-500" />
+                  <span>My Saved Favorites</span>
+                </h2>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400">
+                  Your personalized saved meals and preferred campus vendors.
+                </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {favorites.map((fav) => (
-                  <div key={fav.id} className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800">
-                        <Image src={fav.image} alt={fav.name} fill className="object-cover" />
-                      </div>
-                      <div>
-                        <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">{fav.name}</h3>
-                        <span className="text-xs text-[#71717A] dark:text-zinc-400">{fav.category}</span>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Star size={12} className="fill-amber-400 text-amber-400" />
-                          <span className="text-xs font-bold">{fav.rating}</span>
+
+              {/* Segmented Tab Switcher */}
+              <div className="flex items-center p-1 bg-slate-100 dark:bg-zinc-800 rounded-2xl shrink-0">
+                <button
+                  onClick={() => setFavSectionTab("foods")}
+                  className={`px-3.5 py-1.5 rounded-xl font-heading font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                    favSectionTab === "foods"
+                      ? "bg-white dark:bg-zinc-700 text-[#312E81] dark:text-white shadow-xs"
+                      : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <UtensilsCrossed size={13} />
+                  <span>Foods & Meals ({favoriteProducts.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setFavSectionTab("vendors")}
+                  className={`px-3.5 py-1.5 rounded-xl font-heading font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                    favSectionTab === "vendors"
+                      ? "bg-white dark:bg-zinc-700 text-[#312E81] dark:text-white shadow-xs"
+                      : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Store size={13} />
+                  <span>Vendors ({favoriteStores.length})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* TAB 1: SAVED FOODS & MEALS */}
+            {favSectionTab === "foods" && (
+              <div className="space-y-4">
+                {favoriteProducts.length === 0 ? (
+                  <div className="text-center py-14 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-3">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 flex items-center justify-center mx-auto">
+                      <Heart size={26} />
+                    </div>
+                    <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">
+                      No saved meals yet
+                    </h3>
+                    <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
+                      Tap the heart icon on any food item across the campus marketplace to save it here for fast re-ordering.
+                    </p>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white text-xs font-heading font-bold rounded-xl shadow-xs transition-all"
+                    >
+                      <span>Explore Campus Foods</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {favoriteProducts.map((prod) => (
+                      <div
+                        key={prod.id}
+                        className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between gap-3 hover:border-indigo-200 dark:hover:border-indigo-900/60 transition-all"
+                      >
+                        <Link href={`/product/${prod.id}`} className="flex items-center gap-3 min-w-0 flex-1 group">
+                          <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800">
+                            <Image src={prod.image} alt={prod.name} fill className="object-cover group-hover:scale-105 transition-transform" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-heading font-bold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                              {prod.name}
+                            </h3>
+                            <span className="text-[11px] text-[#71717A] dark:text-zinc-400 truncate block">
+                              {prod.vendorName || "Campus Vendor"}
+                            </span>
+                            <span className="font-heading font-extrabold text-xs text-[#312E81] dark:text-indigo-400 block mt-0.5">
+                              ₦{prod.price.toLocaleString()}
+                            </span>
+                          </div>
+                        </Link>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Link
+                            href={`/product/${prod.id}`}
+                            className="px-3 py-1.5 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#312E81] hover:text-white text-[#312E81] dark:text-indigo-300 font-heading font-bold text-xs rounded-xl transition-all"
+                          >
+                            Order
+                          </Link>
+
+                          <button
+                            onClick={() => toggleProductFavorite(prod, profile.email)}
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                            title="Remove from favorites"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleRemoveFavorite(fav.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
-                      title="Remove from favorites"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    ))}
                   </div>
-                ))}
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: SAVED VENDORS & STORES */}
+            {favSectionTab === "vendors" && (
+              <div className="space-y-4">
+                {favoriteStores.length === 0 ? (
+                  <div className="text-center py-14 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/80 dark:border-zinc-800 p-6 space-y-3">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
+                      <Store size={26} />
+                    </div>
+                    <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">
+                      No saved vendors yet
+                    </h3>
+                    <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
+                      Favorite your trusted campus kitchens and snack bars to quickly jump straight to their menu.
+                    </p>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#312E81] hover:bg-[#1E1B4B] text-white text-xs font-heading font-bold rounded-xl shadow-xs transition-all"
+                    >
+                      <span>Browse Campus Vendors</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {favoriteStores.map((store) => (
+                      <div
+                        key={store.id}
+                        className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between gap-3 hover:border-indigo-200 dark:hover:border-indigo-900/60 transition-all"
+                      >
+                        <Link href={`/vendor/${store.id}`} className="flex items-center gap-3.5 min-w-0 flex-1 group">
+                          <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-indigo-100 dark:border-zinc-800 bg-white shadow-xs">
+                            <Image
+                              src={store.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80"}
+                              alt={store.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                              {store.name}
+                            </h3>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <div className="flex items-center gap-0.5 text-amber-500">
+                                <Star size={12} className="fill-amber-400 text-amber-400" />
+                                <span className="text-xs font-bold">{store.rating || "5.0"}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-300 dark:text-zinc-600">•</span>
+                              <span className="text-xs text-[#71717A] dark:text-zinc-400">
+                                {store.estimatedDelivery || "20-35 mins"}
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Link
+                            href={`/vendor/${store.id}`}
+                            className="px-3 py-1.5 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#312E81] hover:text-white text-[#312E81] dark:text-indigo-300 font-heading font-bold text-xs rounded-xl transition-all"
+                          >
+                            Visit
+                          </Link>
+
+                          <button
+                            onClick={() => toggleStoreFavorite(store, profile.email)}
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                            title="Remove from favorites"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

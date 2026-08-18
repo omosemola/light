@@ -23,6 +23,7 @@ import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { useUserStore } from "@/lib/userStore";
+import { useFavoritesStore } from "@/lib/favoritesStore";
 import { Modal } from "@/components/ui/Modal";
 import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 import { getLiveStoreById } from "@/actions/marketplace";
@@ -428,17 +429,25 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isStoreFavorite, toggleStoreFavorite } = useFavoritesStore();
+  const isFavorite = isStoreFavorite(vendor.id);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
   const toggleFavorite = () => {
-    const next = !isFavorite;
-    setIsFavorite(next);
-    updateProfile({
-      savedStoresCount: Math.max(0, profile.savedStoresCount + (next ? 1 : -1)),
-    });
+    toggleStoreFavorite(
+      {
+        id: vendor.id,
+        name: vendor.name,
+        logo: vendor.avatar,
+        coverImage: vendor.coverImage,
+        rating: vendor.rating,
+        estimatedDelivery: vendor.prepTime,
+        isOpen: vendor.isOpen,
+      },
+      profile?.email
+    );
   };
 
   const categories = ["All", ...Array.from(new Set(vendor.products.map((p) => p.category)))];

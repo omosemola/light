@@ -34,6 +34,7 @@ import { Modal } from "@/components/ui/Modal";
 import { registerVendorStore } from "@/actions/vendor";
 import { getUserOrders } from "@/actions/orders";
 import { useNotificationStore } from "@/lib/notificationStore";
+import { useFavoritesStore } from "@/lib/favoritesStore";
 
 const ABSTRACT_AVATARS = [
   {
@@ -200,12 +201,14 @@ export default function ProfilePage() {
   };
 
   const { notifications, ensureWelcomeNotification } = useNotificationStore();
+  const { favoriteProducts, favoriteStores, syncWithUserAccount } = useFavoritesStore();
 
   useEffect(() => {
     if (profile.email) {
       ensureWelcomeNotification(profile.email, profile.name);
+      syncWithUserAccount(profile.email);
     }
-  }, [profile.email, profile.name, ensureWelcomeNotification]);
+  }, [profile.email, profile.name, ensureWelcomeNotification, syncWithUserAccount]);
 
   const activeEmailNormalized = profile.email?.trim().toLowerCase() || "visitor@light.app";
   const unreadNotificationsCount = notifications.filter((n) => {
@@ -214,12 +217,21 @@ export default function ProfilePage() {
     return isTarget && !n.read;
   }).length;
 
+  const totalSavedCount = favoriteStores.length + favoriteProducts.length;
+  const favoritesLabel = favoriteStores.length > 0 && favoriteProducts.length > 0
+    ? `${favoriteStores.length} ${favoriteStores.length === 1 ? "Store" : "Stores"} • ${favoriteProducts.length} ${favoriteProducts.length === 1 ? "Meal" : "Meals"}`
+    : favoriteStores.length > 0
+    ? `${favoriteStores.length} ${favoriteStores.length === 1 ? "Store" : "Stores"}`
+    : favoriteProducts.length > 0
+    ? `${favoriteProducts.length} ${favoriteProducts.length === 1 ? "Meal" : "Meals"}`
+    : "0 Saved";
+
   const menuItems = [
     { icon: Store, label: "Merchant Vendor Portal", href: "/vendor/login", supportText: "Manage store catalog, live order terminal & sales", isVendorTrigger: true },
     { icon: ShieldCheck, label: "Platform Admin Portal", href: "/admin/login", supportText: "Supervisor control, store verification & metrics", isAdminTrigger: true },
     { icon: MapPin, label: "Saved Locations & Hostels", href: "/profile/locations", supportText: profile.hostel },
     { icon: ClipboardList, label: "Order History", href: "/orders", supportText: userOrdersCount === 0 ? "No orders placed yet" : `${userOrdersCount} ${userOrdersCount === 1 ? "Order" : "Orders"}` },
-    { icon: Heart, label: "Favorite Vendors", href: "/profile/favorites", supportText: `${profile.savedStoresCount} Stores` },
+    { icon: Heart, label: "Favorite Vendors & Foods", href: "/profile/favorites", supportText: favoritesLabel },
     { icon: Bell, label: "Notifications & Alerts", href: "/profile/notifications", badge: unreadNotificationsCount > 0 ? `${unreadNotificationsCount} New` : undefined },
     { icon: Star, label: "My Reviews & Ratings", href: "/profile/reviews" },
     { icon: HelpCircle, label: "Help & Campus Support", href: "/support" },
@@ -350,8 +362,8 @@ export default function ProfilePage() {
             <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/50 text-[#D97706] dark:text-amber-400 flex items-center justify-center mb-1">
               <Heart size={16} />
             </div>
-            <span className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">{profile.savedStoresCount}</span>
-            <span className="text-[10px] font-body font-semibold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">Saved Stores</span>
+            <span className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">{totalSavedCount}</span>
+            <span className="text-[10px] font-body font-semibold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">Favorites</span>
           </Link>
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 shadow-sm border border-slate-200/80 dark:border-zinc-800 text-center flex flex-col items-center justify-center">
