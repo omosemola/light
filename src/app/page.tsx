@@ -236,14 +236,7 @@ export default function Home() {
     }
 
     loadLiveProducts();
-    if (profile.name === "Platform Super Admin" || profile.email === "admin@campuslightson.com") {
-      useUserStore.getState().updateProfile({
-        name: "Visitor",
-        email: "",
-        role: "STUDENT",
-        isVisitor: true,
-      });
-    } else if (profile.email) {
+    if (profile.email && profile.email !== "admin@campuslightson.com") {
       useFavoritesStore.getState().syncWithUserAccount(profile.email);
     }
 

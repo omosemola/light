@@ -41,10 +41,19 @@ export default function AdminLoginPage() {
     try {
       const res = await authenticateAdmin(email.trim(), password.trim());
       if (res.success && res.user) {
+        updateProfile({
+          email: res.user.email || "admin@campuslightson.com",
+          name: res.user.name || "Platform Super Admin",
+          role: "ADMIN",
+          isVisitor: false,
+        });
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("lightson_admin_auth", "true");
+        }
         setToastMessage("Access verified! Opening Admin Command Center...");
         setTimeout(() => {
-          router.push("/admin/dashboard");
-        }, 400);
+          window.location.href = "/admin/dashboard";
+        }, 300);
       } else {
         setErrorMsg(res.error || "Invalid administrator credentials. Access denied.");
         setIsSubmitting(false);

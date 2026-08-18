@@ -82,8 +82,9 @@ export default function AdminDashboardPage() {
           return;
         }
 
-        // 2. Fallback check for active admin in client profile
-        if (profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
+        // 2. Check client session storage or active profile role
+        const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
+        if (hasAdminFlag || profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
           if (isMounted) {
             await fetchAdminData();
           }
@@ -97,7 +98,8 @@ export default function AdminDashboardPage() {
       } catch (err) {
         console.error("Admin verification error:", err);
         if (isMounted) {
-          if (profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
+          const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
+          if (hasAdminFlag || profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
             await fetchAdminData();
           } else {
             router.replace("/admin/login");
@@ -112,6 +114,15 @@ export default function AdminDashboardPage() {
       isMounted = false;
     };
   }, [profile.role, profile.email, router, updateProfile]);
+
+  const handleSignOutAdmin = async () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("lightson_admin_auth");
+    }
+    await logoutAdmin();
+    logoutUser();
+    window.location.href = "/admin/login";
+  };
 
   const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
     const nextStatus = !currentIsOpen;
@@ -185,8 +196,39 @@ export default function AdminDashboardPage() {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
         <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
-        <h2 className="text-xl font-bold">Loading Platform Admin Dashboard...</h2>
-        <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Connecting to Supabase Database</p>
+        <h2 className="text-xl font-bold font-heading">Loading Platform Admin Dashboard...</h2>
+        <p className={`text-sm mt-1 font-body ${isDark ? "text-slate-400" : "text-slate-500"}`}>Connecting to Supabase Database</p>
+      </div>
+    );
+  }
+
+  if (!adminData) {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-[#0B0F19] text-white" : "bg-slate-50 text-slate-900"}`}>
+        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mb-4 border border-rose-500/20 shadow-sm">
+          <AlertCircle size={28} />
+        </div>
+        <h2 className="text-xl font-extrabold font-heading">Admin Dashboard Connection Error</h2>
+        <p className={`text-xs mt-1.5 font-body max-w-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+          {toastMessage || "Unable to retrieve real-time operations metrics from the database."}
+        </p>
+        <div className="flex items-center gap-3 mt-6">
+          <button
+            onClick={fetchAdminData}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <RefreshCw size={14} />
+            <span>Retry Connection</span>
+          </button>
+          <button
+            onClick={handleSignOutAdmin}
+            className={`px-5 py-2.5 rounded-xl font-heading font-bold text-xs border transition-all active:scale-95 cursor-pointer ${
+              isDark ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
     );
   }
@@ -259,11 +301,7 @@ export default function AdminDashboardPage() {
             </Link>
 
             <button
-              onClick={async () => {
-                await logoutAdmin();
-                logoutUser();
-                router.replace("/admin/login");
-              }}
+              onClick={handleSignOutAdmin}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer active:scale-95"
               title="Sign Out of Admin Command Center"
             >
@@ -427,9 +465,9 @@ export default function AdminDashboardPage() {
                     <tr key={st.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
                       <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-slate-900"}`}>
                         <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
-                          {st.name[0]}
+                          {st.name ? st.name[0]?.toUpperCase() : "S"}
                         </div>
-                        {st.name}
+                        {st.name || "Unnamed Store"}
                       </td>
                       <td className={`p-4 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{st.user?.email || "No email"}</td>
                       <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{st._count?.products || 0}</td>
@@ -562,7 +600,7 @@ export default function AdminDashboardPage() {
                   {adminData?.recentOrders?.map((ord: any) => (
                     <tr key={ord.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
                       <td className={`p-4 font-mono font-bold ${isDark ? "text-slate-300" : "text-slate-800"}`}>
-                        #{ord.id.slice(-6).toUpperCase()}
+                        {ord.id ? `#${ord.id.slice(-6).toUpperCase()}` : "#ORDER"}
                       </td>
                       <td className={`p-4 ${isDark ? "text-white" : "text-slate-900"}`}>{ord.user?.name || ord.user?.email || "Student"}</td>
                       <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{ord.store?.name || "Campus Store"}</td>
@@ -605,7 +643,7 @@ export default function AdminDashboardPage() {
                   {adminData?.tickets?.map((t: any) => (
                     <tr key={t.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
                       <td className={`p-4 font-mono font-bold ${isDark ? "text-slate-300" : "text-slate-800"}`}>
-                        #{t.id.slice(-6).toUpperCase()}
+                        {t.id ? `#${t.id.slice(-6).toUpperCase()}` : "#TICKET"}
                       </td>
                       <td className="p-4">
                         <div className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{t.subject}</div>

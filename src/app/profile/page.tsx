@@ -113,17 +113,7 @@ export default function ProfilePage() {
     };
   }, [profile.email]);
 
-  useEffect(() => {
-    // If leftover admin profile from portal login in local storage, auto-sanitize back to visitor/student
-    if (profile.name === "Platform Super Admin" || profile.email === "admin@campuslightson.com") {
-      updateProfile({
-        name: "Visitor",
-        email: "",
-        role: "STUDENT",
-        isVisitor: true,
-      });
-    }
-  }, [profile.name, profile.email, updateProfile]);
+
 
   const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app" || !profile.email;
   const displayName = profile.name && profile.name !== "Platform Super Admin" ? profile.name : (isVisitor ? "Campus Visitor" : "Student");
