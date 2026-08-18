@@ -114,7 +114,20 @@ export default function ProfilePage() {
     };
   }, [profile.email]);
 
-  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
+  useEffect(() => {
+    // If leftover admin profile from portal login in local storage, auto-sanitize back to visitor/student
+    if (profile.name === "Platform Super Admin" || profile.email === "admin@campuslightson.com") {
+      updateProfile({
+        name: "Visitor",
+        email: "",
+        role: "STUDENT",
+        isVisitor: true,
+      });
+    }
+  }, [profile.name, profile.email, updateProfile]);
+
+  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app" || !profile.email;
+  const displayName = profile.name && profile.name !== "Platform Super Admin" ? profile.name : (isVisitor ? "Campus Visitor" : "Student");
   const userAvatar = isVisitor
     ? (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_VISITOR_CARTOON_AVATAR)
     : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
@@ -352,7 +365,7 @@ export default function ProfilePage() {
 
             <div className="space-y-1">
               <h2 className="font-heading font-extrabold text-xl md:text-2xl text-white">
-                {profile.name}
+                {displayName}
               </h2>
               {profile.email ? (
                 <p className="text-white font-body font-normal text-xs md:text-sm opacity-90">

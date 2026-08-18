@@ -22,17 +22,11 @@ export default function AdminLoginPage() {
     async function checkExistingAdmin() {
       const session = await checkAdminSession();
       if (session.isAuthenticated && session.user) {
-        updateProfile({
-          email: session.user.email,
-          name: session.user.name,
-          role: "ADMIN",
-          isVisitor: false,
-        });
         router.replace("/admin/dashboard");
       }
     }
     checkExistingAdmin();
-  }, [router, updateProfile]);
+  }, [router]);
 
   const handleAdminAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,13 +41,6 @@ export default function AdminLoginPage() {
     try {
       const res = await authenticateAdmin(email.trim(), password.trim());
       if (res.success && res.user) {
-        updateProfile({
-          email: res.user.email || email.trim(),
-          name: res.user.name || "Platform Super Admin",
-          role: "ADMIN",
-          isVisitor: false,
-        });
-
         setToastMessage("Access verified! Opening Admin Command Center...");
         setTimeout(() => {
           router.push("/admin/dashboard");

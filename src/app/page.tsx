@@ -274,14 +274,21 @@ export default function Home() {
     }
 
     loadLiveProducts();
-    if (profile.email) {
+    if (profile.name === "Platform Super Admin" || profile.email === "admin@campuslightson.com") {
+      useUserStore.getState().updateProfile({
+        name: "Visitor",
+        email: "",
+        role: "STUDENT",
+        isVisitor: true,
+      });
+    } else if (profile.email) {
       useFavoritesStore.getState().syncWithUserAccount(profile.email);
     }
 
     return () => {
       isCurrent = false;
     };
-  }, [profile.email]);
+  }, [profile.email, profile.name]);
 
   if (!isMounted) {
     return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
@@ -328,9 +335,12 @@ export default function Home() {
     return true;
   });
 
-  const firstName = profile.name ? profile.name.split(" ")[0] : "Alex";
+  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app" || !profile.email;
+  const rawName = profile.name && profile.name !== "Platform Super Admin" && profile.name !== "Visitor" 
+    ? profile.name 
+    : (isVisitor ? "Explorer" : "Student");
+  const firstName = rawName.split(" ")[0];
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
-  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app";
   const userAvatar = isVisitor
     ? (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_VISITOR_CARTOON_AVATAR)
     : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
