@@ -19,20 +19,21 @@ import {
   Trash2,
   AlertTriangle,
   X,
-  UserCheck
+  UserCheck,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useUserStore } from "@/lib/userStore";
-import { getAdminDashboardData, updateSupportTicketStatus, updateUserRole, deleteUserAccount } from "@/actions/admin";
+import { getAdminDashboardData, updateSupportTicketStatus, updateUserRole, deleteUserAccount, checkAdminSession, logoutAdmin } from "@/actions/admin";
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { profile } = useUserStore();
+  const { profile, updateProfile, logoutUser } = useUserStore();
   const { isDark, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [adminData, setAdminData] = useState<any>(null);
@@ -47,20 +48,70 @@ export default function AdminDashboardPage() {
 
   const fetchAdminData = async () => {
     setLoading(true);
-    const res = await getAdminDashboardData();
-    if (res.success) {
-      setAdminData(res);
+    try {
+      const res = await getAdminDashboardData();
+      if (res.success) {
+        setAdminData(res);
+      } else {
+        setToastMessage(res.error || "Failed to load dashboard metrics");
+      }
+    } catch (e: any) {
+      console.error("Failed to load admin data:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    if (profile.role !== "ADMIN" && profile.email?.toLowerCase() !== "admin@campuslightson.com") {
-      router.replace("/admin/login");
-    } else {
-      fetchAdminData();
+    let isMounted = true;
+
+    async function verifyAndLoadAdmin() {
+      try {
+        // 1. Check server cookie session
+        const session = await checkAdminSession();
+        if (session.isAuthenticated && session.user) {
+          if (isMounted) {
+            updateProfile({
+              email: session.user.email,
+              name: session.user.name,
+              role: "ADMIN",
+              isVisitor: false,
+            });
+            await fetchAdminData();
+          }
+          return;
+        }
+
+        // 2. Fallback check for active admin in client profile
+        if (profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
+          if (isMounted) {
+            await fetchAdminData();
+          }
+          return;
+        }
+
+        // 3. Not authenticated -> Redirect to admin login
+        if (isMounted) {
+          router.replace("/admin/login");
+        }
+      } catch (err) {
+        console.error("Admin verification error:", err);
+        if (isMounted) {
+          if (profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com") {
+            await fetchAdminData();
+          } else {
+            router.replace("/admin/login");
+          }
+        }
+      }
     }
-  }, [profile, router]);
+
+    verifyAndLoadAdmin();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile.role, profile.email, router, updateProfile]);
 
   const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
     const nextStatus = !currentIsOpen;
@@ -73,10 +124,6 @@ export default function AdminDashboardPage() {
     await toggleStoreOpenStatus(storeId, nextStatus);
     setToastMessage(`Store status updated to ${nextStatus ? "Active" : "Suspended"}`);
   };
-
-  useEffect(() => {
-    fetchAdminData();
-  }, []);
 
   const handleResolveTicket = async (ticketId: string, status: TicketStatus) => {
     setTicketUpdating(ticketId);
@@ -210,6 +257,19 @@ export default function AdminDashboardPage() {
               Marketplace
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
+
+            <button
+              onClick={async () => {
+                await logoutAdmin();
+                logoutUser();
+                router.replace("/admin/login");
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer active:scale-95"
+              title="Sign Out of Admin Command Center"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
       </div>

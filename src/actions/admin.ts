@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { TicketStatus, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export async function getAdminDashboardData() {
   try {
@@ -196,6 +197,16 @@ export async function authenticateAdmin(email: string, pass: string) {
         });
       }
 
+      // SET SECURE ADMIN SESSION COOKIE
+      const cookieStore = await cookies();
+      cookieStore.set("lightson_admin_session", "authenticated_admin", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: "/",
+        sameSite: "lax",
+      });
+
       return {
         success: true,
         user: {
@@ -217,5 +228,36 @@ export async function authenticateAdmin(email: string, pass: string) {
       success: false,
       error: error.message || "Failed to authenticate administrator.",
     };
+  }
+}
+
+export async function checkAdminSession() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("lightson_admin_session")?.value;
+    if (token === "authenticated_admin") {
+      const validEmail = (process.env.ADMIN_EMAIL || "admin@campuslightson.com").trim().toLowerCase();
+      return {
+        isAuthenticated: true,
+        user: {
+          email: validEmail,
+          name: "Platform Super Admin",
+          role: "ADMIN",
+        },
+      };
+    }
+    return { isAuthenticated: false };
+  } catch {
+    return { isAuthenticated: false };
+  }
+}
+
+export async function logoutAdmin() {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("lightson_admin_session");
+    return { success: true };
+  } catch {
+    return { success: true };
   }
 }

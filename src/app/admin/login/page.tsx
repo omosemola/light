@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, AlertCircle } from "lucide-react";
 import { useUserStore } from "@/lib/userStore";
-import { authenticateAdmin } from "@/actions/admin";
+import { authenticateAdmin, checkAdminSession } from "@/actions/admin";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -17,6 +17,22 @@ export default function AdminLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [toastMessage, setToastMessage] = useState("");
+
+  useEffect(() => {
+    async function checkExistingAdmin() {
+      const session = await checkAdminSession();
+      if (session.isAuthenticated && session.user) {
+        updateProfile({
+          email: session.user.email,
+          name: session.user.name,
+          role: "ADMIN",
+          isVisitor: false,
+        });
+        router.replace("/admin/dashboard");
+      }
+    }
+    checkExistingAdmin();
+  }, [router, updateProfile]);
 
   const handleAdminAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +56,8 @@ export default function AdminLoginPage() {
 
         setToastMessage("Access verified! Opening Admin Command Center...");
         setTimeout(() => {
-          window.location.href = "/admin/dashboard";
-        }, 500);
+          router.push("/admin/dashboard");
+        }, 400);
       } else {
         setErrorMsg(res.error || "Invalid administrator credentials. Access denied.");
         setIsSubmitting(false);
