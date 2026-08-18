@@ -206,8 +206,8 @@ const CHOWDECK_SLIDES = [
     Component: SuppliesMemphisIllustration,
   },
   {
-    title: "Fast Room Delivery & Live Order Tracking 🛵",
-    desc: "Track your direct store delivery in real time from checkout to your hostel door with zero stress.",
+    title: "Direct Doorstep Campus Delivery 🛍️",
+    desc: "Get food, groceries, snacks, and essentials delivered directly from verified campus stores to your hostel or faculty.",
     Component: DeliveryMemphisIllustration,
   },
 ];

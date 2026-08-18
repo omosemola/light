@@ -80,7 +80,7 @@ function OrdersContent() {
           <div>
             <h3 className="font-heading font-extrabold text-sm">Payment Successful! 🎉</h3>
             <p className="text-xs mt-0.5 text-emerald-700 dark:text-emerald-300">
-              Your order has been sent to the vendor kitchen. Click below to track live delivery progress!
+              Your order has been sent to the store. View your order receipt below!
             </p>
           </div>
         </motion.div>
@@ -98,7 +98,7 @@ function OrdersContent() {
                 : "text-[#71717A] dark:text-zinc-400 hover:text-[#18181B] dark:hover:text-zinc-200"
             }`}
           >
-            {tab === "ALL" ? "All Orders" : tab === "ACTIVE" ? "Live Active" : "Completed"}
+            {tab === "ALL" ? "All Orders" : tab === "ACTIVE" ? "Active Orders" : "Completed"}
           </button>
         ))}
       </div>
@@ -138,9 +138,9 @@ function OrdersContent() {
                 <span className={`text-[10px] font-heading font-extrabold px-2.5 py-1 rounded-full border ${
                   order.status === "DELIVERED"
                     ? "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700"
-                    : "bg-[#FBBF24] text-[#312E81] border-amber-300 font-extrabold animate-pulse"
+                    : "bg-[#FBBF24] text-[#312E81] border-amber-300 font-extrabold"
                 }`}>
-                  {order.status === "DELIVERED" ? "Delivered" : "Live Kitchen Preparing"}
+                  {order.status === "DELIVERED" ? "Delivered" : "In Progress"}
                 </span>
               </div>
 
@@ -159,7 +159,7 @@ function OrdersContent() {
                   href={`/orders/${order.id}`}
                   className="inline-flex items-center gap-1 hover:underline"
                 >
-                  <span>Track Live Delivery & Details</span>
+                  <span>View Order Receipt & Details</span>
                   <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                 </Link>
 
@@ -183,7 +183,7 @@ function OrdersContent() {
               No Orders Placed Yet
             </h3>
             <p className="text-xs font-body text-[#71717A] dark:text-zinc-400 max-w-xs mx-auto">
-              When you place an order for campus food, snacks, groceries, or gadgets, your live tracking details will appear here.
+              When you place an order for campus food, snacks, groceries, or essentials, your orders and receipts will appear here.
             </p>
             <Link
               href="/search"
@@ -211,7 +211,7 @@ export default function OrdersPage() {
           </h1>
 
           <span className="text-xs font-body font-semibold text-[#71717A] dark:text-zinc-400">
-            Real-time Campus Tracker
+            Order Receipts & History
           </span>
         </div>
       </div>

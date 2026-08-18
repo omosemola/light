@@ -146,7 +146,7 @@ export function generateStudentOrderReceiptEmail({
             </div>
 
             <div style="text-align: center; margin: 28px 0 16px 0;">
-              <a href="https://campuslightson.com/orders" class="btn">Live Track Order Status ➔</a>
+              <a href="https://campuslightson.com/orders" class="btn">View Order Receipt & Details ➔</a>
             </div>
 
             <p style="font-size: 12px; color: #71717a; text-align: center; line-height: 1.5; margin: 0;">
