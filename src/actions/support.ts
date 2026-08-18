@@ -101,3 +101,108 @@ export async function createLiveSupportTicket(data: {
     return { success: false, error: error.message || "Failed to submit support ticket" };
   }
 }
+
+export async function getLiveUserSupportTickets(userEmail?: string) {
+  try {
+    if (!userEmail) {
+      return { success: true, tickets: [] };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return { success: true, tickets: [] };
+    }
+
+    const tickets = await prisma.supportTicket.findMany({
+      where: { userId: user.id },
+      include: {
+        order: {
+          select: {
+            id: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      success: true,
+      tickets: tickets.map((t) => ({
+        id: t.id,
+        subject: t.subject,
+        category: t.category,
+        message: t.message,
+        status: t.status,
+        createdAt: t.createdAt.toISOString(),
+        updatedAt: t.updatedAt.toISOString(),
+        orderId: t.orderId,
+        order: t.order
+          ? {
+              id: t.order.id,
+              totalAmount: t.order.totalAmount,
+              status: t.order.status,
+              createdAt: t.order.createdAt.toISOString(),
+            }
+          : null,
+      })),
+    };
+  } catch (error: any) {
+    console.error("Error fetching user support tickets:", error);
+    return { success: false, error: error.message, tickets: [] };
+  }
+}
+
+export async function getLiveUserOrdersForSupport(userEmail?: string) {
+  try {
+    if (!userEmail) {
+      return { success: true, orders: [] };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return { success: true, orders: [] };
+    }
+
+    const orders = await prisma.order.findMany({
+      where: { userId: user.id },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        totalAmount: true,
+        status: true,
+        createdAt: true,
+        store: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      orders: orders.map((o) => ({
+        id: o.id,
+        totalAmount: o.totalAmount,
+        status: o.status,
+        storeName: o.store?.name || "Mama Cass",
+        createdAt: o.createdAt.toISOString(),
+      })),
+    };
+  } catch (error: any) {
+    console.error("Error fetching user orders for support:", error);
+    return { success: false, error: error.message, orders: [] };
+  }
+}
