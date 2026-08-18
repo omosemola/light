@@ -183,7 +183,6 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="alex.johnson@gmail.com"
                 className="w-full h-13 pl-11 pr-4 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
             </div>
@@ -200,7 +199,6 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
                 className="w-full h-13 pl-11 pr-12 rounded-2xl bg-white border border-slate-200 text-sm font-medium text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#312E81] shadow-sm transition-all"
               />
               <button

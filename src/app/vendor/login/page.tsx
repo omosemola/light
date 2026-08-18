@@ -118,10 +118,9 @@ export default function VendorLoginPage() {
                 <input
                   type="email"
                   required
-                  placeholder="vendor@mamacass.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium placeholder-slate-400"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium"
                 />
               </div>
             </div>
@@ -135,10 +134,9 @@ export default function VendorLoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium placeholder-slate-400"
+                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium"
                 />
                 <button
                   type="button"

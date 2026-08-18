@@ -130,10 +130,9 @@ export default function AdminLoginPage() {
                 <input
                   type="email"
                   required
-                  placeholder="admin@campuslightson.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder-slate-600"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
                 />
               </div>
             </div>
@@ -147,10 +146,9 @@ export default function AdminLoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-slate-600"
+                  className="w-full h-12 pl-11 pr-11 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 />
                 <button
                   type="button"
