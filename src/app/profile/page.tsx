@@ -415,8 +415,43 @@ export default function ProfilePage() {
         </motion.div>
       )}
 
-      {/* MENU OPTIONS CONTAINER */}
+      {/* ADMIN COMMAND CENTER QUICK ACCESS BANNER (IF ADMIN) */}
+      {(profile.role === "ADMIN" || profile.email === "admin@campuslightson.com") && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <Link
+            href="/admin/dashboard"
+            className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1E1B4B] to-[#312E81] text-white rounded-3xl shadow-md border border-indigo-700 hover:shadow-lg transition-all group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-sm group-hover:scale-105 transition-transform">
+                <ShieldCheck size={22} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-heading font-black tracking-wider uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                    Platform Admin
+                  </span>
+                </div>
+                <h3 className="font-heading font-extrabold text-sm text-white mt-0.5">
+                  Open Admin Command Center
+                </h3>
+                <p className="text-[11px] text-indigo-200">
+                  Manage dishes, live orders, stores & tickets
+                </p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:translate-x-1 transition-transform">
+              <ChevronRight size={18} />
+            </div>
+          </Link>
+        </motion.div>
+      )}
 
+      {/* MENU OPTIONS CONTAINER */}
         <motion.div 
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}

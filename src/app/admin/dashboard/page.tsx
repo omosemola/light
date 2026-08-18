@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { 
   ShieldCheck, 
   Store, 
@@ -20,14 +20,32 @@ import {
   AlertTriangle,
   X,
   UserCheck,
-  LogOut
+  LogOut,
+  Utensils,
+  Package,
+  Clock,
+  Sparkles,
+  TrendingUp,
+  Tag,
+  Phone,
+  Layers
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { useUserStore } from "@/lib/userStore";
-import { getAdminDashboardData, updateSupportTicketStatus, updateUserRole, deleteUserAccount, checkAdminSession, logoutAdmin } from "@/actions/admin";
+import { 
+  getAdminDashboardData, 
+  updateSupportTicketStatus, 
+  updateUserRole, 
+  deleteUserAccount, 
+  checkAdminSession, 
+  logoutAdmin,
+  updateOrderStatusAdmin,
+  toggleProductAvailabilityAdmin
+} from "@/actions/admin";
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
 
@@ -36,10 +54,15 @@ export default function AdminDashboardPage() {
   const { profile, updateProfile, logoutUser } = useUserStore();
   const { isDark, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [adminData, setAdminData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"stores" | "users" | "orders" | "tickets">("stores");
+  const [activeTab, setActiveTab] = useState<"products" | "orders" | "stores" | "users" | "tickets">("products");
+  const [searchQuery, setSearchQuery] = useState("");
+  
   const [ticketUpdating, setTicketUpdating] = useState<string | null>(null);
   const [roleUpdating, setRoleUpdating] = useState<string | null>(null);
+  const [orderUpdating, setOrderUpdating] = useState<string | null>(null);
+  const [productUpdating, setProductUpdating] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
 
   // Delete User State
@@ -48,7 +71,8 @@ export default function AdminDashboardPage() {
 
   const hasStartedRef = useRef(false);
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
     try {
       const res = await getAdminDashboardData();
       if (res && res.success) {
@@ -56,6 +80,7 @@ export default function AdminDashboardPage() {
         try {
           sessionStorage.setItem("cached_admin_data", JSON.stringify(res));
         } catch {}
+        if (isManual) setToastMessage("Live operations data refreshed!");
       } else {
         setToastMessage(res?.error || "Failed to load dashboard metrics");
       }
@@ -64,6 +89,7 @@ export default function AdminDashboardPage() {
       setToastMessage("Network error connecting to database.");
     } finally {
       setLoading(false);
+      if (isManual) setRefreshing(false);
     }
   };
 
@@ -135,7 +161,42 @@ export default function AdminDashboardPage() {
       ),
     }));
     await toggleStoreOpenStatus(storeId, nextStatus);
-    setToastMessage(`Store status updated to ${nextStatus ? "Active" : "Suspended"}`);
+    setToastMessage(`Store status updated to ${nextStatus ? "Active & Live" : "Suspended"}`);
+  };
+
+  const handleToggleProductAvailability = async (productId: string, currentIsAvailable: boolean) => {
+    const nextAvailable = !currentIsAvailable;
+    setProductUpdating(productId);
+    setAdminData((prev: any) => ({
+      ...prev,
+      products: prev.products?.map((p: any) =>
+        p.id === productId ? { ...p, isAvailable: nextAvailable } : p
+      ),
+    }));
+    const res = await toggleProductAvailabilityAdmin(productId, nextAvailable);
+    if (res.success) {
+      setToastMessage(`Product is now ${nextAvailable ? "In Stock (Active)" : "Out of Stock"}`);
+    } else {
+      setToastMessage(res.error || "Failed to update product availability");
+    }
+    setProductUpdating(null);
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, status: any) => {
+    setOrderUpdating(orderId);
+    const res = await updateOrderStatusAdmin(orderId, status);
+    if (res.success) {
+      setAdminData((prev: any) => ({
+        ...prev,
+        recentOrders: prev.recentOrders?.map((o: any) =>
+          o.id === orderId ? { ...o, status } : o
+        ),
+      }));
+      setToastMessage(`Order status updated to ${status}`);
+    } else {
+      setToastMessage(res.error || "Failed to update order");
+    }
+    setOrderUpdating(null);
   };
 
   const handleResolveTicket = async (ticketId: string, status: TicketStatus) => {
@@ -194,30 +255,75 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Filtered queries
+  const filteredProducts = useMemo(() => {
+    const list = adminData?.products || [];
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((p: any) => 
+      p.name?.toLowerCase().includes(q) || 
+      p.store?.name?.toLowerCase().includes(q)
+    );
+  }, [adminData?.products, searchQuery]);
+
+  const filteredOrders = useMemo(() => {
+    const list = adminData?.recentOrders || [];
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((o: any) => 
+      o.id?.toLowerCase().includes(q) || 
+      o.user?.name?.toLowerCase().includes(q) || 
+      o.user?.email?.toLowerCase().includes(q) ||
+      o.store?.name?.toLowerCase().includes(q)
+    );
+  }, [adminData?.recentOrders, searchQuery]);
+
+  const filteredUsers = useMemo(() => {
+    const list = adminData?.users || [];
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((u: any) => 
+      u.name?.toLowerCase().includes(q) || 
+      u.email?.toLowerCase().includes(q) ||
+      u.role?.toLowerCase().includes(q)
+    );
+  }, [adminData?.users, searchQuery]);
+
+  const filteredTickets = useMemo(() => {
+    const list = adminData?.tickets || [];
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter((t: any) => 
+      t.subject?.toLowerCase().includes(q) || 
+      t.description?.toLowerCase().includes(q) ||
+      t.user?.email?.toLowerCase().includes(q)
+    );
+  }, [adminData?.tickets, searchQuery]);
+
   if (loading) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
-        <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
-        <h2 className="text-xl font-bold font-heading">Loading Platform Admin Dashboard...</h2>
-        <p className={`text-sm mt-1 font-body ${isDark ? "text-slate-400" : "text-slate-500"}`}>Connecting to Supabase Database</p>
+      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-[#09090B] text-zinc-100" : "bg-[#FAFAF7] text-zinc-900"}`}>
+        <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+        <h2 className="text-xl font-bold font-heading">Loading Platform Admin Command Center...</h2>
+        <p className={`text-sm mt-1 font-body ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Synchronizing with Supabase Database & Live Marketplace</p>
       </div>
     );
   }
 
   if (!adminData) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-[#0B0F19] text-white" : "bg-slate-50 text-slate-900"}`}>
+      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-[#09090B] text-white" : "bg-[#FAFAF7] text-slate-900"}`}>
         <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mb-4 border border-rose-500/20 shadow-sm">
           <AlertCircle size={28} />
         </div>
         <h2 className="text-xl font-extrabold font-heading">Admin Dashboard Connection Error</h2>
-        <p className={`text-xs mt-1.5 font-body max-w-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+        <p className={`text-xs mt-1.5 font-body max-w-sm ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
           {toastMessage || "Unable to retrieve real-time operations metrics from the database."}
         </p>
         <div className="flex items-center gap-3 mt-6">
           <button
-            onClick={fetchAdminData}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+            onClick={() => fetchAdminData(true)}
+            className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
           >
             <RefreshCw size={14} />
             <span>Retry Connection</span>
@@ -225,7 +331,7 @@ export default function AdminDashboardPage() {
           <button
             onClick={handleSignOutAdmin}
             className={`px-5 py-2.5 rounded-xl font-heading font-bold text-xs border transition-all active:scale-95 cursor-pointer ${
-              isDark ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+              isDark ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
             }`}
           >
             Sign Out
@@ -239,7 +345,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-200 pb-24 font-body ${
-      isDark ? "bg-[#0B0F19] text-slate-100" : "bg-slate-50 text-slate-900"
+      isDark ? "bg-[#09090B] text-zinc-100" : "bg-[#FAFAF7] text-zinc-900"
     }`}>
       {/* TOAST NOTIFICATION */}
       <AnimatePresence>
@@ -248,7 +354,7 @@ export default function AdminDashboardPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-indigo-600 text-white font-heading font-extrabold text-xs md:text-sm px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 border border-indigo-400 max-w-md w-11/12 text-center justify-center"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#312E81] text-white font-heading font-extrabold text-xs md:text-sm px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 border border-indigo-400 max-w-md w-11/12 text-center justify-center"
           >
             <CheckCircle2 size={18} className="text-amber-300 shrink-0" />
             <span>{toastMessage}</span>
@@ -256,112 +362,138 @@ export default function AdminDashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* TOP BAR */}
-      <div className={`border-b sticky top-0 z-30 shadow-md backdrop-blur-md ${
-        isDark ? "bg-slate-900/95 border-slate-800" : "bg-white/95 border-slate-200"
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shadow-sm">
-              <ShieldCheck className="w-6 h-6" />
+      {/* SYNCHRONIZED BRAND HERO HEADER */}
+      <div className="relative bg-[#1E1B4B] text-white overflow-hidden shadow-lg border-b border-indigo-950">
+        <Image
+          src="/support-banner.jpg"
+          alt="Admin Banner Pattern"
+          fill
+          priority
+          className="object-cover object-center pointer-events-none opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1E1B4B]/85 via-[#1E1B4B]/80 to-[#1E1B4B]/95 dark:from-[#09090B]/90 dark:via-[#09090B]/85 dark:to-[#09090B]/95" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg font-black border-2 border-amber-300">
+                <ShieldCheck size={26} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-heading font-black tracking-wider uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2.5 py-0.5 rounded-full">
+                    ⚡ Super Administrator
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/60">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live DB Synced
+                  </span>
+                </div>
+                <h1 className="text-xl md:text-2xl font-heading font-black text-white tracking-tight mt-1">
+                  Lights<span className="text-[#FBBF24]">on</span> Command Center
+                </h1>
+                <p className="text-xs text-indigo-200 mt-0.5">
+                  Platform Operations, Catalog Moderation, Live Orders & Student Support
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className={`text-lg font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-                Lights<span className="text-[#F5A623]">on</span> Super Admin Portal
-              </h1>
-              <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                Campus Marketplace Operations, Users & Audits
-              </p>
+
+            {/* QUICK ACTIONS & LINKS */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
+              <button
+                onClick={() => fetchAdminData(true)}
+                disabled={refreshing}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                title="Refresh Live Operations Data"
+              >
+                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+                <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+              </button>
+
+              <Link
+                href="/"
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
+              >
+                <Store size={14} className="text-amber-400" />
+                <span>Storefront</span>
+              </Link>
+
+              <Link
+                href="/support"
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
+              >
+                <HelpCircle size={14} className="text-sky-400" />
+                <span>Help Desk</span>
+              </Link>
+
+              <button
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-amber-300 flex items-center justify-center backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+
+              <button
+                onClick={handleSignOutAdmin}
+                className="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Sign Out</span>
+              </button>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            {/* THEME TOGGLE BUTTON */}
-            <button
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-heading font-bold transition-all active:scale-95 cursor-pointer ${
-                isDark 
-                  ? "bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700" 
-                  : "bg-slate-100 border-slate-300 text-indigo-700 hover:bg-slate-200"
-              }`}
-              title="Toggle Theme"
-            >
-              {isDark ? <Sun size={15} /> : <Moon size={15} />}
-              <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
-            </button>
-
-            <Link
-              href="/"
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition ${
-                isDark 
-                  ? "bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700" 
-                  : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
-              }`}
-            >
-              Marketplace
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-
-            <button
-              onClick={handleSignOutAdmin}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer active:scale-95"
-              title="Sign Out of Admin Command Center"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-        {/* CLICKABLE METRICS CARDS */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+        
+        {/* CLICKABLE METRICS OVERVIEW */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
           <motion.div 
             onClick={() => setActiveTab("orders")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
               isDark 
-                ? "bg-slate-900 border-slate-800 hover:border-emerald-500" 
+                ? "bg-zinc-900 border-zinc-800 hover:border-emerald-500" 
                 : "bg-white border-slate-200 hover:border-emerald-500 shadow-sm"
             }`}
           >
-            <DollarSign className="w-5 h-5 text-emerald-500 mb-2" />
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Gross Sales (GMV)</span>
-            <h3 className={`text-xl font-extrabold mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>₦{metrics?.totalGMV?.toLocaleString() || 0}</h3>
+            <DollarSign className="w-5 h-5 text-emerald-500 mb-1.5" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Gross Volume</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>₦{metrics?.totalGMV?.toLocaleString() || 0}</h3>
+          </motion.div>
+
+          <motion.div 
+            onClick={() => setActiveTab("products")} 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.05 }} 
+            className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+              isDark 
+                ? "bg-zinc-900 border-zinc-800 hover:border-indigo-500" 
+                : "bg-white border-slate-200 hover:border-indigo-500 shadow-sm"
+            }`}
+          >
+            <Utensils className="w-5 h-5 text-indigo-500 mb-1.5" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Menu Dishes</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalProducts || 2} Dishes</h3>
           </motion.div>
 
           <motion.div 
             onClick={() => setActiveTab("stores")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.05 }} 
-            className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
-              isDark 
-                ? "bg-slate-900 border-slate-800 hover:border-blue-500" 
-                : "bg-white border-slate-200 hover:border-blue-500 shadow-sm"
-            }`}
-          >
-            <Store className="w-5 h-5 text-blue-500 mb-2" />
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Active Vendors</span>
-            <h3 className={`text-xl font-extrabold mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>{metrics?.totalStores || 0}</h3>
-          </motion.div>
-
-          <motion.div 
-            onClick={() => setActiveTab("orders")} 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.1 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
               isDark 
-                ? "bg-slate-900 border-slate-800 hover:border-purple-500" 
-                : "bg-white border-slate-200 hover:border-purple-500 shadow-sm"
+                ? "bg-zinc-900 border-zinc-800 hover:border-blue-500" 
+                : "bg-white border-slate-200 hover:border-blue-500 shadow-sm"
             }`}
           >
-            <ShoppingBag className="w-5 h-5 text-purple-500 mb-2" />
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Orders</span>
-            <h3 className={`text-xl font-extrabold mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>{metrics?.totalOrders || 0}</h3>
+            <Store className="w-5 h-5 text-blue-500 mb-1.5" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Active Stores</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalStores || 1} Vendor</h3>
           </motion.div>
 
           <motion.div 
@@ -371,13 +503,13 @@ export default function AdminDashboardPage() {
             transition={{ delay: 0.15 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
               isDark 
-                ? "bg-slate-900 border-slate-800 hover:border-indigo-500" 
-                : "bg-white border-slate-200 hover:border-indigo-500 shadow-sm"
+                ? "bg-zinc-900 border-zinc-800 hover:border-purple-500" 
+                : "bg-white border-slate-200 hover:border-purple-500 shadow-sm"
             }`}
           >
-            <Users className="w-5 h-5 text-indigo-500 mb-2" />
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>All Users</span>
-            <h3 className={`text-xl font-extrabold mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>{metrics?.totalUsers || 0}</h3>
+            <Users className="w-5 h-5 text-purple-500 mb-1.5" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Campus Users</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalUsers || 0}</h3>
           </motion.div>
 
           <motion.div 
@@ -387,106 +519,148 @@ export default function AdminDashboardPage() {
             transition={{ delay: 0.2 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
               isDark 
-                ? "bg-slate-900 border-slate-800 hover:border-amber-500" 
+                ? "bg-zinc-900 border-zinc-800 hover:border-amber-500" 
                 : "bg-white border-slate-200 hover:border-amber-500 shadow-sm"
             }`}
           >
-            <HelpCircle className="w-5 h-5 text-amber-500 mb-2" />
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Open Tickets</span>
-            <h3 className="text-xl font-extrabold text-amber-500 mt-0.5">{metrics?.openTicketsCount || 0}</h3>
+            <HelpCircle className="w-5 h-5 text-amber-500 mb-1.5" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Support Desk</span>
+            <h3 className="text-lg font-extrabold text-amber-500 mt-0.5 font-heading">{metrics?.openTicketsCount || 0} Open</h3>
           </motion.div>
         </div>
 
-        {/* TABS */}
-        <div className={`flex items-center gap-3 border-b pb-4 mb-6 overflow-x-auto no-scrollbar ${
-          isDark ? "border-slate-800" : "border-slate-200"
-        }`}>
-          <button
-            onClick={() => setActiveTab("stores")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-              activeTab === "stores" 
-                ? "bg-emerald-600 text-white shadow-sm" 
-                : isDark ? "bg-slate-900 text-slate-400 hover:bg-slate-800" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-            }`}
-          >
-            🏪 Vendor Stores ({adminData?.stores?.length || 0})
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-              activeTab === "users" 
-                ? "bg-indigo-600 text-white shadow-sm" 
-                : isDark ? "bg-slate-900 text-slate-400 hover:bg-slate-800" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-            }`}
-          >
-            👥 Users Directory ({adminData?.users?.length || 0})
-          </button>
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-              activeTab === "orders" 
-                ? "bg-purple-600 text-white shadow-sm" 
-                : isDark ? "bg-slate-900 text-slate-400 hover:bg-slate-800" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-            }`}
-          >
-            📦 Recent Orders ({adminData?.recentOrders?.length || 0})
-          </button>
-          <button
-            onClick={() => setActiveTab("tickets")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-              activeTab === "tickets" 
-                ? "bg-amber-600 text-white shadow-sm" 
-                : isDark ? "bg-slate-900 text-slate-400 hover:bg-slate-800" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-            }`}
-          >
-            🎫 Support Tickets ({adminData?.tickets?.length || 0})
-          </button>
+        {/* TABS & SEARCH BAR */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4 mb-6">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            <button
+              onClick={() => { setActiveTab("products"); setSearchQuery(""); }}
+              className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
+                activeTab === "products" 
+                  ? "bg-[#312E81] text-white shadow-sm" 
+                  : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              🍲 Products & Menu ({adminData?.products?.length || 2})
+            </button>
+            <button
+              onClick={() => { setActiveTab("orders"); setSearchQuery(""); }}
+              className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
+                activeTab === "orders" 
+                  ? "bg-[#312E81] text-white shadow-sm" 
+                  : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              📦 Live Orders ({adminData?.recentOrders?.length || 0})
+            </button>
+            <button
+              onClick={() => { setActiveTab("stores"); setSearchQuery(""); }}
+              className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
+                activeTab === "stores" 
+                  ? "bg-[#312E81] text-white shadow-sm" 
+                  : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              🏪 Vendor Stores ({adminData?.stores?.length || 1})
+            </button>
+            <button
+              onClick={() => { setActiveTab("tickets"); setSearchQuery(""); }}
+              className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
+                activeTab === "tickets" 
+                  ? "bg-[#312E81] text-white shadow-sm" 
+                  : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              🎫 Support Tickets ({adminData?.tickets?.length || 0})
+            </button>
+            <button
+              onClick={() => { setActiveTab("users"); setSearchQuery(""); }}
+              className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
+                activeTab === "users" 
+                  ? "bg-[#312E81] text-white shadow-sm" 
+                  : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              👥 Users ({adminData?.users?.length || 0})
+            </button>
+          </div>
+
+          <div className="relative w-full md:w-64">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search records in tab..."
+              className={`w-full h-10 pl-9 pr-4 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                isDark ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500" : "bg-white border-slate-200 text-zinc-900 placeholder-slate-400"
+              }`}
+            />
+          </div>
         </div>
 
-        {/* STORES TAB */}
-        {activeTab === "stores" && (
+        {/* PRODUCTS TAB */}
+        {activeTab === "products" && (
           <div className={`border rounded-2xl overflow-hidden shadow-sm ${
-            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
           }`}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className={`uppercase tracking-wider font-extrabold ${
-                  isDark ? "bg-slate-950 text-slate-400" : "bg-slate-100 text-slate-600"
+                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
                 }`}>
                   <tr>
-                    <th className="p-4">Store Name</th>
-                    <th className="p-4">Owner Email</th>
-                    <th className="p-4">Products</th>
-                    <th className="p-4">Total Orders</th>
-                    <th className="p-4">Rating</th>
-                    <th className="p-4">Status</th>
+                    <th className="p-4">Dish / Product</th>
+                    <th className="p-4">Vendor Store</th>
+                    <th className="p-4">Price</th>
+                    <th className="p-4">Live Status</th>
+                    <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-200"}`}>
-                  {adminData?.stores?.map((st: any) => (
-                    <tr key={st.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-slate-900"}`}>
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
-                          {st.name ? st.name[0]?.toUpperCase() : "S"}
+                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                  {filteredProducts?.map((prod: any) => (
+                    <tr key={prod.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-zinc-800 overflow-hidden relative border border-slate-200 dark:border-zinc-700 shrink-0">
+                            {prod.image ? (
+                              <Image src={prod.image} alt={prod.name} fill className="object-cover" />
+                            ) : (
+                              <Utensils size={18} className="m-auto text-indigo-500" />
+                            )}
+                          </div>
+                          <div>
+                            <div className={`font-bold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>{prod.name}</div>
+                            <div className="text-[11px] text-zinc-400 font-mono">ID: {prod.id}</div>
+                          </div>
                         </div>
-                        {st.name || "Unnamed Store"}
                       </td>
-                      <td className={`p-4 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{st.user?.email || "No email"}</td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{st._count?.products || 0}</td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{st._count?.orders || 0}</td>
-                      <td className="p-4 font-bold text-amber-500">★ {st.rating}</td>
+                      <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
+                        {prod.store?.name || "Mama Cass"}
+                      </td>
+                      <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-amber-400" : "text-[#312E81]"}`}>
+                        ₦{prod.price?.toLocaleString()}
+                      </td>
                       <td className="p-4">
                         <button
-                          onClick={() => handleToggleStoreStatus(st.id, st.isOpen)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-bold cursor-pointer transition-all active:scale-95 border ${
-                            st.isOpen
+                          disabled={productUpdating === prod.id}
+                          onClick={() => handleToggleProductAvailability(prod.id, prod.isAvailable !== false)}
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
+                            prod.isAvailable !== false
                               ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
                               : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
                           }`}
-                          title="Click to toggle store live status"
                         >
-                          {st.isOpen ? "✓ ACTIVE & LIVE" : "✕ SUSPENDED / OFF"}
+                          {prod.isAvailable !== false ? "✓ IN STOCK" : "✕ OUT OF STOCK"}
                         </button>
+                      </td>
+                      <td className="p-4 text-right">
+                        <Link
+                          href={`/product/${prod.id}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
+                        >
+                          <span>View on Site</span>
+                          <ExternalLink size={12} />
+                        </Link>
                       </td>
                     </tr>
                   ))}
@@ -496,64 +670,258 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* USERS TAB WITH DELETE USER ACTION */}
-        {activeTab === "users" && (
+        {/* ORDERS TAB */}
+        {activeTab === "orders" && (
           <div className={`border rounded-2xl overflow-hidden shadow-sm ${
-            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
           }`}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className={`uppercase tracking-wider font-extrabold ${
-                  isDark ? "bg-slate-950 text-slate-400" : "bg-slate-100 text-slate-600"
+                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
+                }`}>
+                  <tr>
+                    <th className="p-4">Order Ref</th>
+                    <th className="p-4">Customer Details</th>
+                    <th className="p-4">Vendor</th>
+                    <th className="p-4">Amount</th>
+                    <th className="p-4">Order Lifecycle Status</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((ord: any) => (
+                      <tr key={ord.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                        <td className={`p-4 font-mono font-bold ${isDark ? "text-zinc-300" : "text-zinc-800"}`}>
+                          {ord.id ? `#${ord.id.slice(-6).toUpperCase()}` : "#ORDER"}
+                        </td>
+                        <td className="p-4">
+                          <div className={`font-bold ${isDark ? "text-white" : "text-zinc-900"}`}>{ord.user?.name || "Campus Student"}</div>
+                          <div className="text-[11px] text-zinc-400">{ord.user?.email || "No email"}</div>
+                          {ord.user?.phone && <div className="text-[11px] text-zinc-500">{ord.user.phone}</div>}
+                        </td>
+                        <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{ord.store?.name || "Mama Cass"}</td>
+                        <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>₦{ord.totalAmount?.toLocaleString()}</td>
+                        <td className="p-4">
+                          <select
+                            value={ord.status}
+                            disabled={orderUpdating === ord.id}
+                            onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
+                            className={`text-xs px-3 py-1.5 rounded-xl focus:outline-none cursor-pointer border font-bold ${
+                              isDark ? "bg-zinc-950 border-zinc-700 text-amber-400" : "bg-white border-slate-300 text-indigo-900"
+                            }`}
+                          >
+                            <option value="PENDING">PENDING</option>
+                            <option value="ACCEPTED">ACCEPTED</option>
+                            <option value="PREPARING">PREPARING</option>
+                            <option value="READY_FOR_DELIVERY">READY FOR DELIVERY</option>
+                            <option value="DELIVERED">DELIVERED</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-zinc-400">
+                        No orders recorded in database yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* STORES TAB */}
+        {activeTab === "stores" && (
+          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
+            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+          }`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
+                }`}>
+                  <tr>
+                    <th className="p-4">Store Name</th>
+                    <th className="p-4">Owner Email</th>
+                    <th className="p-4">Menu Items</th>
+                    <th className="p-4">Rating</th>
+                    <th className="p-4">Store State</th>
+                    <th className="p-4 text-right">Storefront</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                  {adminData?.stores?.map((st: any) => (
+                    <tr key={st.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                      <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"}`}>
+                        <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                          {st.name ? st.name[0]?.toUpperCase() : "S"}
+                        </div>
+                        <div>
+                          <div className="font-heading text-sm">{st.name || "Mama Cass"}</div>
+                          <div className="text-[11px] text-zinc-400 font-mono">ID: {st.id}</div>
+                        </div>
+                      </td>
+                      <td className={`p-4 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{st.user?.email || "vendor@mamacass.com"}</td>
+                      <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{st._count?.products || 2} items</td>
+                      <td className="p-4 font-bold text-amber-500">★ {st.rating || "4.9"}</td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleToggleStoreStatus(st.id, st.isOpen !== false)}
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
+                            st.isOpen !== false
+                              ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
+                              : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
+                          }`}
+                        >
+                          {st.isOpen !== false ? "✓ ACTIVE & LIVE" : "✕ SUSPENDED"}
+                        </button>
+                      </td>
+                      <td className="p-4 text-right">
+                        <Link
+                          href={`/vendor/${st.id}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
+                        >
+                          <span>Open Store</span>
+                          <ExternalLink size={12} />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TICKETS TAB */}
+        {activeTab === "tickets" && (
+          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
+            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+          }`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
+                }`}>
+                  <tr>
+                    <th className="p-4">Ticket ID</th>
+                    <th className="p-4">Subject & Details</th>
+                    <th className="p-4">Student</th>
+                    <th className="p-4">Order Ref</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Resolution</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                  {filteredTickets?.length > 0 ? (
+                    filteredTickets.map((t: any) => (
+                      <tr key={t.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                        <td className={`p-4 font-mono font-bold ${isDark ? "text-zinc-300" : "text-zinc-800"}`}>
+                          {t.id ? `#${t.id.slice(-6).toUpperCase()}` : "#TICKET"}
+                        </td>
+                        <td className="p-4">
+                          <div className={`font-bold font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{t.subject}</div>
+                          <div className={`text-[11px] truncate max-w-xs mt-0.5 ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>{t.description}</div>
+                        </td>
+                        <td className={`p-4 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{t.user?.email || "Student"}</td>
+                        <td className={`p-4 font-mono ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>{t.orderId ? `#${t.orderId.slice(-6).toUpperCase()}` : "General"}</td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            t.status === "RESOLVED" ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : "bg-amber-950 text-amber-300 border border-amber-800"
+                          }`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <select
+                            value={t.status}
+                            disabled={ticketUpdating === t.id}
+                            onChange={(e) => handleResolveTicket(t.id, e.target.value as TicketStatus)}
+                            className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border font-bold ${
+                              isDark ? "bg-zinc-950 border-zinc-700 text-zinc-200" : "bg-white border-slate-300 text-zinc-800"
+                            }`}
+                          >
+                            <option value="OPEN">OPEN</option>
+                            <option value="IN_PROGRESS">IN_PROGRESS</option>
+                            <option value="RESOLVED">RESOLVED</option>
+                            <option value="CLOSED">CLOSED</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-zinc-400">
+                        No support tickets opened by students yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* USERS TAB */}
+        {activeTab === "users" && (
+          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
+            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+          }`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
                 }`}>
                   <tr>
                     <th className="p-4">User Name</th>
                     <th className="p-4">Email Address</th>
-                    <th className="p-4">System Role</th>
-                    <th className="p-4">Associated Store</th>
-                    <th className="p-4">Orders Placed</th>
-                    <th className="p-4">Manage & Delete</th>
+                    <th className="p-4">Role</th>
+                    <th className="p-4">Store Access</th>
+                    <th className="p-4">Manage</th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-200"}`}>
-                  {adminData?.users?.map((u: any) => (
-                    <tr key={u.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-slate-900"}`}>
+                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                  {filteredUsers?.map((u: any) => (
+                    <tr key={u.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                      <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"}`}>
                         <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-extrabold flex items-center justify-center border border-indigo-500/30">
-                          {u.name ? u.name[0].toUpperCase() : "U"}
+                          {u.name ? u.name[0]?.toUpperCase() : "U"}
                         </div>
                         {u.name || "Campus Student"}
                       </td>
-                      <td className={`p-4 font-mono ${isDark ? "text-slate-300" : "text-slate-600"}`}>{u.email}</td>
+                      <td className={`p-4 font-mono ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{u.email}</td>
                       <td className="p-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                           u.role === "ADMIN" 
                             ? "bg-purple-950 text-purple-300 border border-purple-800" 
                             : u.role === "VENDOR" 
                             ? "bg-emerald-950 text-emerald-300 border border-emerald-800" 
-                            : "bg-slate-800 text-slate-300"
+                            : "bg-zinc-800 text-zinc-300"
                         }`}>
                           {u.role}
                         </span>
                       </td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                      <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
                         {u.store ? (
                           <Link href={`/vendor/${u.store.id}`} className="text-emerald-500 hover:underline inline-flex items-center gap-1">
                             {u.store.name} <ExternalLink size={12} />
                           </Link>
                         ) : (
-                          <span className={isDark ? "text-slate-500" : "text-slate-400"}>None (Student)</span>
+                          <span className={isDark ? "text-zinc-500" : "text-zinc-400"}>None (Student)</span>
                         )}
                       </td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{u._count?.orders || 0}</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <select
                             value={u.role}
                             disabled={roleUpdating === u.id}
                             onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
-                            className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border ${
-                              isDark ? "bg-slate-950 border-slate-700 text-slate-200" : "bg-white border-slate-300 text-slate-800"
+                            className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border font-medium ${
+                              isDark ? "bg-zinc-950 border-zinc-700 text-zinc-200" : "bg-white border-slate-300 text-zinc-800"
                             }`}
                           >
                             <option value="STUDENT">STUDENT</option>
@@ -561,7 +929,6 @@ export default function AdminDashboardPage() {
                             <option value="ADMIN">ADMIN</option>
                           </select>
 
-                          {/* DELETE USER BUTTON */}
                           <button
                             type="button"
                             onClick={() => setUserToDelete(u)}
@@ -580,108 +947,6 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* ORDERS TAB */}
-        {activeTab === "orders" && (
-          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
-            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
-          }`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className={`uppercase tracking-wider font-extrabold ${
-                  isDark ? "bg-slate-950 text-slate-400" : "bg-slate-100 text-slate-600"
-                }`}>
-                  <tr>
-                    <th className="p-4">Order ID</th>
-                    <th className="p-4">Customer</th>
-                    <th className="p-4">Vendor Store</th>
-                    <th className="p-4">Amount</th>
-                    <th className="p-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-200"}`}>
-                  {adminData?.recentOrders?.map((ord: any) => (
-                    <tr key={ord.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className={`p-4 font-mono font-bold ${isDark ? "text-slate-300" : "text-slate-800"}`}>
-                        {ord.id ? `#${ord.id.slice(-6).toUpperCase()}` : "#ORDER"}
-                      </td>
-                      <td className={`p-4 ${isDark ? "text-white" : "text-slate-900"}`}>{ord.user?.name || ord.user?.email || "Student"}</td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{ord.store?.name || "Campus Store"}</td>
-                      <td className={`p-4 font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>₦{ord.totalAmount.toLocaleString()}</td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                          ord.status === "DELIVERED" ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : "bg-amber-950 text-amber-300 border border-amber-800"
-                        }`}>
-                          {ord.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TICKETS TAB */}
-        {activeTab === "tickets" && (
-          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
-            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
-          }`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className={`uppercase tracking-wider font-extrabold ${
-                  isDark ? "bg-slate-950 text-slate-400" : "bg-slate-100 text-slate-600"
-                }`}>
-                  <tr>
-                    <th className="p-4">Ticket ID</th>
-                    <th className="p-4">Subject & Description</th>
-                    <th className="p-4">Student</th>
-                    <th className="p-4">Order Ref</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Resolution Action</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-200"}`}>
-                  {adminData?.tickets?.map((t: any) => (
-                    <tr key={t.id} className={isDark ? "hover:bg-slate-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className={`p-4 font-mono font-bold ${isDark ? "text-slate-300" : "text-slate-800"}`}>
-                        {t.id ? `#${t.id.slice(-6).toUpperCase()}` : "#TICKET"}
-                      </td>
-                      <td className="p-4">
-                        <div className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{t.subject}</div>
-                        <div className={`text-[11px] truncate max-w-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{t.description}</div>
-                      </td>
-                      <td className={`p-4 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{t.user?.email || "Student"}</td>
-                      <td className={`p-4 font-mono ${isDark ? "text-slate-400" : "text-slate-500"}`}>{t.orderId ? `#${t.orderId.slice(-6).toUpperCase()}` : "General"}</td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                          t.status === "RESOLVED" ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : "bg-amber-950 text-amber-300 border border-amber-800"
-                        }`}>
-                          {t.status}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <select
-                          value={t.status}
-                          disabled={ticketUpdating === t.id}
-                          onChange={(e) => handleResolveTicket(t.id, e.target.value as TicketStatus)}
-                          className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border ${
-                            isDark ? "bg-slate-950 border-slate-700 text-slate-200" : "bg-white border-slate-300 text-slate-800"
-                          }`}
-                        >
-                          <option value="OPEN">OPEN</option>
-                          <option value="IN_PROGRESS">IN_PROGRESS</option>
-                          <option value="RESOLVED">RESOLVED</option>
-                          <option value="CLOSED">CLOSED</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* DELETE USER CONFIRMATION MODAL */}
@@ -693,7 +958,7 @@ export default function AdminDashboardPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className={`max-w-md w-full rounded-3xl p-6 shadow-2xl border ${
-                isDark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-zinc-900"
               }`}
             >
               <div className="flex items-center gap-3 text-rose-500 mb-4">
@@ -706,8 +971,8 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <p className={`text-xs leading-relaxed mb-5 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                Are you sure you want to delete user <strong className={isDark ? "text-white" : "text-slate-900"}>"{userToDelete.name || userToDelete.email}"</strong>? 
+              <p className={`text-xs leading-relaxed mb-5 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>
+                Are you sure you want to delete user <strong className={isDark ? "text-white" : "text-zinc-900"}>"{userToDelete.name || userToDelete.email}"</strong>? 
                 This will permanently purge their profile, linked orders, and support records from the Supabase database.
               </p>
 
@@ -725,7 +990,7 @@ export default function AdminDashboardPage() {
                   type="button"
                   onClick={() => setUserToDelete(null)}
                   className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all ${
-                    isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
                   Cancel

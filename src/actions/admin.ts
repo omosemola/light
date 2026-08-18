@@ -22,6 +22,7 @@ export async function getAdminDashboardData() {
         recentOrders,
         tickets,
         users,
+        productsList,
       ] = await Promise.all([
         prisma.user.count(),
         prisma.store.count(),
@@ -36,9 +37,9 @@ export async function getAdminDashboardData() {
           orderBy: { createdAt: "desc" },
         }),
         prisma.order.findMany({
-          take: 15,
+          take: 20,
           include: {
-            user: { select: { name: true, email: true } },
+            user: { select: { name: true, email: true, phone: true } },
             store: { select: { name: true } },
           },
           orderBy: { createdAt: "desc" },
@@ -54,6 +55,13 @@ export async function getAdminDashboardData() {
           include: {
             store: { select: { id: true, name: true } },
             _count: { select: { orders: true, tickets: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.product.findMany({
+          include: {
+            store: { select: { id: true, name: true } },
+            category: { select: { id: true, name: true } },
           },
           orderBy: { createdAt: "desc" },
         }),
@@ -74,6 +82,7 @@ export async function getAdminDashboardData() {
         users,
         recentOrders,
         tickets,
+        products: productsList,
         categories: [],
       };
     })();
@@ -81,7 +90,7 @@ export async function getAdminDashboardData() {
     const result = await Promise.race([queryPromise, timeoutPromise]);
 
     if ("isTimeout" in result) {
-      console.warn("getAdminDashboardData query took >7s, returning cached/fallback metrics");
+      console.warn("getAdminDashboardData query took >7s, returning fallback metrics");
       return {
         success: true,
         metrics: {
@@ -96,6 +105,7 @@ export async function getAdminDashboardData() {
         users: [],
         recentOrders: [],
         tickets: [],
+        products: [],
         categories: [],
       };
     }
@@ -120,9 +130,49 @@ export async function getAdminDashboardData() {
       users: [],
       recentOrders: [],
       tickets: [],
+      products: [],
       categories: [],
       error: error.message || "Failed to load live metrics",
     };
+  }
+}
+
+export async function updateOrderStatusAdmin(orderId: string, status: any) {
+  try {
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status },
+      include: {
+        user: { select: { email: true, id: true, name: true } },
+      },
+    });
+
+    revalidatePath("/admin/dashboard");
+    revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/orders");
+    revalidatePath("/profile");
+    return { success: true, order: updatedOrder };
+  } catch (error: any) {
+    console.error("Error updating order status in admin:", error);
+    return { success: false, error: error.message || "Failed to update order status" };
+  }
+}
+
+export async function toggleProductAvailabilityAdmin(productId: string, isAvailable: boolean) {
+  try {
+    const updated = await prisma.product.update({
+      where: { id: productId },
+      data: { isAvailable },
+    });
+
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/");
+    revalidatePath("/category/food");
+    revalidatePath(`/product/${productId}`);
+    return { success: true, product: updated };
+  } catch (error: any) {
+    console.error("Error toggling product availability in admin:", error);
+    return { success: false, error: error.message || "Failed to toggle product availability" };
   }
 }
 
