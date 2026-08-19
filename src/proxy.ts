@@ -51,10 +51,6 @@ export function proxy(req: NextRequest) {
   return handleSubdomains(req);
 }
 
-export default function middleware(req: NextRequest) {
-  return handleSubdomains(req);
-}
-
 export const config = {
   matcher: [
     /*

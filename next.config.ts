@@ -11,6 +11,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   compress: true,
   reactStrictMode: true,
   images: {
