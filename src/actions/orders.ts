@@ -172,13 +172,18 @@ export async function createLiveOrder(input: CreateOrderInput) {
       orderId: displayOrderId,
       storeName: order.store.name,
       customerName: input.userName || order.user?.name || "Campus Student",
+      customerEmail: input.userEmail || order.user?.email || null,
+      customerPhone: order.user?.phone || null,
       totalAmount: order.totalAmount,
       deliveryLocation: order.deliveryLocation,
+      deliveryInstructions: order.deliveryInstructions,
+      items: orderItemsForEmail,
+      paymentMethod: order.paymentReference ? "Paystack Online" : "Pay on Delivery",
     });
 
     sendEmail({
       to: adminEmail,
-      subject: `[LIGHTSON ADMIN] New Order #${displayOrderId} - ₦${order.totalAmount.toLocaleString()}`,
+      subject: `⚡ [ADMIN] New Order #${displayOrderId} (${order.store.name}) - ₦${order.totalAmount.toLocaleString()}`,
       html: adminHtml,
     }).catch((e) => console.error("Failed to send admin order notification:", e));
 

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
-import { sendEmail, generateStudentOrderReceiptEmail, generateVendorNewOrderAlertEmail } from "@/lib/email";
+import { 
+  sendEmail, 
+  generateStudentOrderReceiptEmail, 
+  generateVendorNewOrderAlertEmail,
+  generateAdminPlatformOrderAlertEmail 
+} from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -97,6 +102,31 @@ export async function POST(req: NextRequest) {
             html: vendorEmailHtml,
           });
         }
+
+        // Trigger New Order Alert Email to Admin
+        const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+        const adminEmailHtml = generateAdminPlatformOrderAlertEmail({
+          orderId: updatedOrder.id.slice(-6).toUpperCase(),
+          storeName: updatedOrder.store.name,
+          customerName: updatedOrder.user?.name || "Campus Student",
+          customerEmail: updatedOrder.user?.email || null,
+          customerPhone: updatedOrder.user?.phone || null,
+          deliveryLocation: updatedOrder.deliveryLocation,
+          deliveryInstructions: updatedOrder.deliveryInstructions,
+          totalAmount: updatedOrder.totalAmount,
+          paymentMethod: "Paystack Online Card/Transfer",
+          items: updatedOrder.items.map((it) => ({
+            name: it.product?.name || "Campus Item",
+            quantity: it.quantity,
+            price: it.price,
+          })),
+        });
+
+        await sendEmail({
+          to: adminEmail,
+          subject: `⚡ [ADMIN] Paid Order #${updatedOrder.id.slice(-6).toUpperCase()} (${updatedOrder.store.name}) - ₦${updatedOrder.totalAmount.toLocaleString()}`,
+          html: adminEmailHtml,
+        });
       }
     }
 

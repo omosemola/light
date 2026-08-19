@@ -270,7 +270,7 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-xs font-extrabold uppercase text-[#71717A] dark:text-zinc-400 mb-1.5 font-heading">
-              Room Number / Delivery Details <span className="text-rose-500 ml-0.5">*</span>
+              Street <span className="text-rose-500 ml-0.5">*</span>
             </label>
             <div className="relative">
               <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />

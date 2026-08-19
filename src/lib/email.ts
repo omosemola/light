@@ -26,7 +26,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
           Authorization: `Bearer ${resendApiKey}`,
         },
         body: JSON.stringify({
-          from: "Lightson Marketplace <notifications@campuslightson.com>",
+          from: process.env.EMAIL_FROM || "Lightson Marketplace <notifications@lightsonmarketplace.com>",
           to: [to],
           subject,
           html,
@@ -467,31 +467,98 @@ export function generateAdminPlatformOrderAlertEmail({
   orderId,
   storeName,
   customerName,
+  customerEmail,
+  customerPhone,
   totalAmount,
   deliveryLocation,
+  deliveryInstructions,
+  items,
+  paymentMethod,
 }: {
   orderId: string;
   storeName: string;
   customerName: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
   totalAmount: number;
   deliveryLocation: string;
+  deliveryInstructions?: string | null;
+  items?: EmailOrderItem[];
+  paymentMethod?: string;
 }) {
+  const itemsHtml = (items || [])
+    .map(
+      (it) => `
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 0; font-size: 13px; color: #1e293b;">
+          <strong>${it.quantity}x</strong> ${it.name}
+        </td>
+        <td style="padding: 10px 0; text-align: right; font-size: 13px; font-weight: 700; color: #0f172a;">
+          ₦${(it.price * it.quantity).toLocaleString()}
+        </td>
+      </tr>
+    `
+    )
+    .join("");
+
   return `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <style>
-          body { font-family: 'Segoe UI', sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 20px; }
-          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e4e4e7; padding: 24px; }
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 20px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+          .header { background: #1E1B4B; color: #ffffff; padding: 28px 24px; text-align: center; }
+          .badge { display: inline-block; background-color: #FEF3C7; color: #92400E; font-size: 11px; font-weight: 900; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+          .content { padding: 24px; }
+          .card { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+          .btn { display: block; width: 100%; box-sizing: border-box; background-color: #1E1B4B; color: #ffffff !important; text-align: center; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; margin-top: 20px; }
+          .footer { text-align: center; padding: 18px; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; background: #fafafa; }
         </style>
       </head>
+      <body>
         <div class="container">
-          <h3 style="margin-top: 0; color: ${BRAND_NAVY};">📦 New Campus Marketplace Order (#${orderId})</h3>
-          <p style="font-size: 13px; color: #52525b;">
-            Order placed at <strong>${storeName}</strong> by <strong>${customerName}</strong> for <strong>${deliveryLocation}</strong>.
-          </p>
-          <p style="font-size: 15px; font-weight: 800; color: #059669;">Amount: ₦${totalAmount.toLocaleString()}</p>
+          <div class="header">
+            <span class="badge">⚡ Platform Admin Order Monitor</span>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 900; color: #ffffff;">New Marketplace Order #${orderId}</h1>
+            <p style="margin: 6px 0 0; color: #FBBF24; font-size: 13px; font-weight: 700;">Lightson Campus Marketplace</p>
+          </div>
+
+          <div class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Store / Kitchen</span>
+                <strong style="font-size: 16px; color: #1e1b4b;">${storeName}</strong>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Total Amount</span>
+                <strong style="font-size: 18px; color: #059669;">₦${totalAmount.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            <div class="card">
+              <div><strong>Customer:</strong> ${customerName} ${customerPhone ? `(${customerPhone})` : ""}</div>
+              ${customerEmail ? `<div><strong>Email:</strong> ${customerEmail}</div>` : ""}
+              <div><strong>Delivery Location:</strong> ${deliveryLocation}</div>
+              ${deliveryInstructions ? `<div><strong>Delivery Notes:</strong> ${deliveryInstructions}</div>` : ""}
+              ${paymentMethod ? `<div><strong>Payment Method:</strong> ${paymentMethod}</div>` : ""}
+            </div>
+
+            ${items && items.length > 0 ? `
+              <h4 style="margin: 20px 0 10px; font-size: 13px; text-transform: uppercase; color: #475569; letter-spacing: 0.5px;">Ordered Items</h4>
+              <table style="width: 100%; border-collapse: collapse;">
+                ${itemsHtml}
+              </table>
+            ` : ""}
+
+            <a href="https://admin.lightsonmarketplace.com/dashboard" class="btn">View in Admin Command Center ➔</a>
+          </div>
+
+          <div class="footer">
+            Lightson Campus Marketplace • Live Platform Transaction Monitor
+          </div>
         </div>
       </body>
     </html>
