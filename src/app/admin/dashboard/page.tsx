@@ -404,6 +404,17 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const getStorePreviewUrl = (storeId: string) => {
+    if (typeof window !== "undefined") {
+      const host = window.location.host;
+      if (host.startsWith("admin.")) {
+        const mainHost = host.replace("admin.", "");
+        return `${window.location.protocol}//${mainHost}/vendor/${storeId}`;
+      }
+    }
+    return `/vendor/${storeId}`;
+  };
+
   // Filtered queries
   const filteredProducts = useMemo(() => {
     const list = adminData?.products || [];
@@ -1044,15 +1055,16 @@ export default function AdminDashboardPage() {
                                 </button>
                               )}
 
-                              <Link
-                                href={`/vendor/${st.id}`}
+                              <a
+                                href={getStorePreviewUrl(st.id)}
                                 target="_blank"
+                                rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
                                 title="Preview public storefront"
                               >
                                 <span>Preview</span>
                                 <ExternalLink size={12} />
-                              </Link>
+                              </a>
 
                               <button
                                 type="button"
@@ -1190,9 +1202,14 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
                         {u.store ? (
-                          <Link href={`/vendor/${u.store.id}`} className="text-emerald-500 hover:underline inline-flex items-center gap-1">
+                          <a 
+                            href={getStorePreviewUrl(u.store.id)} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-500 hover:underline inline-flex items-center gap-1"
+                          >
                             {u.store.name} <ExternalLink size={12} />
-                          </Link>
+                          </a>
                         ) : (
                           <span className={isDark ? "text-zinc-500" : "text-zinc-400"}>None (Student)</span>
                         )}

@@ -75,9 +75,7 @@ export async function getLiveStoreById(storeId: string) {
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       include: {
-        products: {
-          where: { isAvailable: true },
-        },
+        products: true,
         reviews: {
           include: {
             user: { select: { name: true, image: true } },

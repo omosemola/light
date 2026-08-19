@@ -37,6 +37,16 @@ function handleSubdomains(req: NextRequest) {
     if (pathname === "/dashboard") {
       return NextResponse.rewrite(new URL("/admin/dashboard", req.url));
     }
+    // Allow public storefront preview, product details, categories & assets without rewriting to /admin/...
+    if (
+      pathname.startsWith("/vendor/") || 
+      pathname.startsWith("/product/") || 
+      pathname.startsWith("/category/") || 
+      pathname.startsWith("/images/") ||
+      pathname.startsWith("/icons/")
+    ) {
+      return NextResponse.next();
+    }
     if (!pathname.startsWith("/admin") && !pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
       return NextResponse.rewrite(new URL(`/admin${pathname}`, req.url));
     }
