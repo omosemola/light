@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-function handleSubdomains(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host")?.toLowerCase() || "";
   const pathname = url.pathname;
 
-  // 1. Vendor Subdomain Handling (e.g. vendor.lightsonmarketplace.netlify.app, vendor.lightsonmarketplace.com, vendor.localhost:3000)
+  // 1. VENDOR SUBDOMAIN: vendor.lightsonmarketplace.com, merchant.lightsonmarketplace.com, vendor.localhost:3000
   if (hostname.startsWith("vendor.") || hostname.startsWith("merchant.")) {
     if (pathname === "/") {
       return NextResponse.rewrite(new URL("/vendor/login", req.url));
@@ -26,7 +26,7 @@ function handleSubdomains(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Admin Subdomain Handling (e.g. admin.lightsonmarketplace.netlify.app, admin.lightsonmarketplace.com, admin.localhost:3000)
+  // 2. ADMIN SUBDOMAIN: admin.lightsonmarketplace.com, admin.localhost:3000
   if (hostname.startsWith("admin.")) {
     if (pathname === "/") {
       return NextResponse.rewrite(new URL("/admin/login", req.url));
@@ -43,16 +43,8 @@ function handleSubdomains(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 3. Default Student Storefront Domain (lightsonmarketplace.netlify.app, lightsonmarketplace.com, localhost:3000)
+  // 3. MAIN STUDENT STOREFRONT: lightsonmarketplace.com, www.lightsonmarketplace.com, localhost:3000
   return NextResponse.next();
-}
-
-export function proxy(req: NextRequest) {
-  return handleSubdomains(req);
-}
-
-export default function middleware(req: NextRequest) {
-  return handleSubdomains(req);
 }
 
 export const config = {
@@ -62,8 +54,8 @@ export const config = {
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt
+     * - favicon.ico, sitemap.xml, robots.txt, and image assets
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:jpg|jpeg|gif|png|webp|svg|ico)).*)",
   ],
 };

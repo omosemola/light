@@ -38,7 +38,7 @@ export const useUserStore = create<UserState>()(
         savedStoresCount: 0,
         isVisitor: true,
       },
-      hasSeenOnboarding: true,
+      hasSeenOnboarding: false,
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
       updateProfile: (updated) =>
         set((state) => ({
@@ -57,11 +57,11 @@ export const useUserStore = create<UserState>()(
             savedStoresCount: 0,
             isVisitor: true,
           },
-          hasSeenOnboarding: true,
+          hasSeenOnboarding: false,
         }),
     }),
     {
-      name: "lightson-user-app-storage-v6",
+      name: "lightson-user-app-storage-v8",
     }
   )
 );

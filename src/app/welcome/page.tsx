@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { useUserStore } from "@/lib/userStore";
 
 // CORPORATE MEMPHIS FLAT VECTOR ART 1: FOOD & DRINKS (FLOATING WITHOUT BOX CONTAINER)
 function FoodMemphisIllustration() {
@@ -213,7 +215,14 @@ const CHOWDECK_SLIDES = [
 ];
 
 export default function WelcomePage() {
+  const router = useRouter();
+  const { setHasSeenOnboarding } = useUserStore();
   const [activeSlide, setActiveSlide] = useState(0);
+
+  const handleContinueAsGuest = () => {
+    setHasSeenOnboarding(true);
+    router.push("/");
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -304,14 +313,22 @@ export default function WelcomePage() {
           <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />
         </Link>
 
-        {/* ALREADY HAVE AN ACCOUNT? LOG IN LINK */}
-        <div className="text-center font-body text-sm text-[#71717A] pt-1">
-          Already have an account?{" "}
+        {/* EXPLORE AS GUEST OR LOG IN */}
+        <div className="flex items-center justify-between font-body text-sm text-[#71717A] pt-1 px-1">
+          <button
+            type="button"
+            onClick={handleContinueAsGuest}
+            className="font-heading font-bold text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Sparkles size={15} className="text-amber-500" />
+            <span>Explore as Guest</span>
+          </button>
+
           <Link
             href="/login"
-            className="font-heading font-extrabold text-[#312E81] hover:underline underline-offset-4"
+            className="font-heading font-extrabold text-[#312E81] dark:text-indigo-400 hover:underline underline-offset-4"
           >
-            Log In
+            Log In ➔
           </Link>
         </div>
 
