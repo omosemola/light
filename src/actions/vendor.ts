@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import bcrypt from "bcrypt";
 import { 
   sendEmail, 
   generateStudentStatusUpdateEmail, 
@@ -13,89 +15,95 @@ import { sendOrderDeliverySMS } from "@/lib/sms";
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
-    // If vendorUserId isn't provided, get the first vendor store or demo store
-    let store = await prisma.store.findFirst({
-      where: vendorUserId ? { userId: vendorUserId } : {},
-      include: {
-        user: { select: { email: true, phone: true, name: true } },
-        products: {
-          include: {
-            category: true,
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        orders: {
-          include: {
-            user: true,
-            items: {
-              include: {
-                product: true,
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        chatMessages: {
-          include: {
-            user: { select: { name: true, email: true, image: true } },
-            order: { select: { id: true, totalAmount: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        reviews: {
-          include: {
-            user: { select: { name: true, image: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    });
+    const cookieStore = await cookies();
+    const sessionUserId = cookieStore.get("lightson_vendor_session")?.value;
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
 
-    if (!store) {
-      // Create fallback demo store if none exists
-      let vendorUser = await prisma.user.findFirst({
-        where: { role: "VENDOR" },
-      });
+    const targetUserId = vendorUserId || sessionUserId;
 
-      if (!vendorUser) {
-        vendorUser = await prisma.user.create({
-          data: {
-            email: "vendor@mamacass.com",
-            name: "Mama Cass",
-            role: "VENDOR",
-          },
-        });
-      }
+    let store = null;
 
-      store = (await prisma.store.create({
-        data: {
-          name: "Mama Cass Campus Kitchen",
-          description: "Fresh hot meals, student combos, jollof rice and snacks delivered directly to your hostel.",
-          userId: vendorUser.id,
-          rating: 4.9,
-          estimatedDelivery: "15-25 mins",
-          isOpen: true,
-          logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-          coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-        },
+    if (targetUserId) {
+      store = await prisma.store.findFirst({
+        where: { userId: targetUserId },
         include: {
+          user: { select: { email: true, phone: true, name: true } },
           products: {
-            include: { category: true },
+            include: {
+              category: true,
+            },
             orderBy: { createdAt: "desc" },
           },
           orders: {
             include: {
               user: true,
-              items: { include: { product: true } },
+              items: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          chatMessages: {
+            include: {
+              user: { select: { name: true, email: true, image: true } },
+              order: { select: { id: true, totalAmount: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          reviews: {
+            include: {
+              user: { select: { name: true, image: true } },
             },
             orderBy: { createdAt: "desc" },
           },
         },
-      })) as any;
+      });
+    } else if (sessionStoreId) {
+      store = await prisma.store.findUnique({
+        where: { id: sessionStoreId },
+        include: {
+          user: { select: { email: true, phone: true, name: true } },
+          products: {
+            include: {
+              category: true,
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          orders: {
+            include: {
+              user: true,
+              items: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          chatMessages: {
+            include: {
+              user: { select: { name: true, email: true, image: true } },
+              order: { select: { id: true, totalAmount: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+          reviews: {
+            include: {
+              user: { select: { name: true, image: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
     }
 
     if (!store) {
-      return { success: false, error: "Failed to initialize vendor store" };
+      return { 
+        success: false, 
+        error: "No active merchant session found. Please log in to your vendor account." 
+      };
     }
 
     // Calculate metrics
@@ -116,7 +124,7 @@ export async function getVendorDashboardData(vendorUserId?: string) {
         totalRevenue,
         pendingOrdersCount,
         completedOrdersCount,
-        rating: store.rating,
+        rating: store.rating || 5.0,
         totalProducts: (store.products || []).length,
       },
     };
@@ -378,10 +386,29 @@ export async function registerVendorStore(data: {
       html: adminNoticeHtml,
     }).catch((e) => console.error("Failed to send admin vendor alert email:", e));
 
+    // 5. Establish secure merchant session cookies
+    const cookieStore = await cookies();
+    cookieStore.set("lightson_vendor_session", user.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+      sameSite: "lax",
+    });
+    cookieStore.set("lightson_vendor_store_id", store.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+      sameSite: "lax",
+    });
+
     return { 
       success: true, 
       store, 
       userId: user.id,
+      storeId: store.id,
+      storeName: store.name,
       isVerified: false,
       isPendingVerification: true,
       message: "Vendor store application submitted successfully and is pending administrator verification." 
@@ -414,7 +441,7 @@ export async function authenticateVendor(email: string, password?: string) {
 
     // Auto-create demo vendor if needed
     if (!user) {
-      if (cleanEmail.includes("vendor") || cleanEmail.includes("mamacass") || cleanEmail.includes("demo")) {
+      if (cleanEmail === "vendor@mamacass.com" || cleanEmail === "mamacass@campuslightson.com") {
         user = await prisma.user.create({
           data: {
             email: cleanEmail,
@@ -430,9 +457,24 @@ export async function authenticateVendor(email: string, password?: string) {
       }
     }
 
-    // If user has no store, create one
-    if (!user.store) {
-      const store = await prisma.store.create({
+    // If user has a password and password was submitted, verify it
+    if (user.password && password) {
+      const isBcrypt = user.password.startsWith("$2a$") || user.password.startsWith("$2b$");
+      if (isBcrypt) {
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) {
+          return { success: false, error: "Incorrect password. Please verify your vendor credentials." };
+        }
+      } else if (user.password !== password) {
+        return { success: false, error: "Incorrect password. Please verify your vendor credentials." };
+      }
+    }
+
+    let targetStore = user.store;
+
+    // If user has no store yet, initialize their merchant store
+    if (!targetStore) {
+      targetStore = await prisma.store.create({
         data: {
           name: `${user.name || "Campus"}'s Store`,
           description: "Fresh campus meals, student combos, and quick hostel deliveries.",
@@ -445,27 +487,48 @@ export async function authenticateVendor(email: string, password?: string) {
           coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
         },
       });
-      return { 
-        success: true, 
-        storeId: store.id, 
-        storeName: store.name, 
-        userEmail: user.email,
-        isVerified: false,
-        isOpen: false
-      };
     }
+
+    // Set secure merchant session cookies
+    const cookieStore = await cookies();
+    cookieStore.set("lightson_vendor_session", user.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+      sameSite: "lax",
+    });
+    cookieStore.set("lightson_vendor_store_id", targetStore.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+      sameSite: "lax",
+    });
 
     return { 
       success: true, 
-      storeId: user.store.id, 
-      storeName: user.store.name, 
+      storeId: targetStore.id, 
+      storeName: targetStore.name, 
       userEmail: user.email,
-      isVerified: user.store.isVerified,
-      isOpen: user.store.isOpen
+      userId: user.id,
+      isVerified: targetStore.isVerified,
+      isOpen: targetStore.isOpen
     };
   } catch (error: any) {
     console.error("Error authenticating vendor:", error);
     return { success: false, error: error.message || "Failed to authenticate vendor" };
+  }
+}
+
+export async function logoutVendor() {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("lightson_vendor_session");
+    cookieStore.delete("lightson_vendor_store_id");
+    return { success: true };
+  } catch {
+    return { success: true };
   }
 }
 

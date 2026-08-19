@@ -108,14 +108,14 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { profile, updateProfile } = useUserStore();
 
-  const defaultVendor = VENDORS_DATA[id] || VENDORS_DATA.v1;
-
-  const [vendor, setVendor] = useState(defaultVendor);
+  const [vendor, setVendor] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     async function loadLiveStore() {
       try {
+        setLoading(true);
         const res = await getLiveStoreById(id);
         if (active && res.success && res.store) {
           const dbStore = res.store;
@@ -123,16 +123,17 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
             id: dbStore.id,
             name: dbStore.name,
             category: "Campus Verified Store",
-            rating: dbStore.rating || 4.9,
-            reviewsCount: dbStore._count?.reviews || 10,
+            rating: dbStore.rating || 5.0,
+            reviewsCount: dbStore._count?.reviews || 0,
             location: "University Campus",
             prepTime: dbStore.estimatedDelivery || "20-30 mins",
             isOpen: dbStore.isOpen,
-            avatar: dbStore.logo || defaultVendor.avatar,
-            coverImage: dbStore.coverImage || defaultVendor.coverImage,
-            description: dbStore.description || defaultVendor.description,
-            phone: dbStore.user?.phone || defaultVendor.phone,
-            ordersCount: (dbStore._count?.orders || 0) + 120,
+            isVerified: dbStore.isVerified,
+            avatar: dbStore.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
+            coverImage: dbStore.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+            description: dbStore.description || `Welcome to ${dbStore.name} on campus.`,
+            phone: dbStore.user?.phone || "",
+            ordersCount: dbStore._count?.orders || 0,
             products: dbStore.products && dbStore.products.length > 0
               ? dbStore.products.map((p: any) => ({
                   id: p.id,
@@ -142,9 +143,9 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
                   description: p.description || "",
                   isAvailable: p.isAvailable,
                   rating: 4.8,
-                  category: "Items",
+                  category: p.category?.name || "Items",
                 }))
-              : defaultVendor.products,
+              : [],
             reviews: dbStore.reviews && dbStore.reviews.length > 0
               ? dbStore.reviews.map((r: any) => ({
                   id: r.id,
@@ -154,11 +155,15 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
                   date: new Date(r.createdAt).toLocaleDateString(),
                   comment: r.comment || "",
                 }))
-              : defaultVendor.reviews,
+              : [],
           });
+        } else if (active && (VENDORS_DATA[id] || id === "v1")) {
+          setVendor(VENDORS_DATA[id] || VENDORS_DATA.v1);
         }
       } catch (err) {
         console.error("Error loading live store:", err);
+      } finally {
+        if (active) setLoading(false);
       }
     }
 
@@ -171,11 +176,12 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
   const { isStoreFavorite, toggleStoreFavorite } = useFavoritesStore();
-  const isFavorite = isStoreFavorite(vendor.id);
+  const isFavorite = vendor ? isStoreFavorite(vendor.id) : false;
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
   const toggleFavorite = () => {
+    if (!vendor) return;
     toggleStoreFavorite(
       {
         id: vendor.id,
@@ -190,16 +196,18 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
     );
   };
 
-  const categories = ["All", ...Array.from(new Set(vendor.products.map((p) => p.category)))];
+  const categories: string[] = vendor 
+    ? ["All", ...Array.from(new Set<string>((vendor.products || []).map((p: any) => String(p.category || "Items"))))]
+    : ["All"];
 
-  const filteredProducts = vendor.products.filter((p) => {
+  const filteredProducts = (vendor?.products || []).filter((p: any) => {
     const matchesCat = selectedCat === "All" || p.category === selectedCat;
-    const matchesQuery = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesQuery = (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesQuery;
   });
 
   const handleOpenCustomizer = (productId: string) => {
-    const product = vendor.products.find((p) => p.id === productId);
+    const product = (vendor?.products || []).find((p: any) => p.id === productId);
     if (!product) return;
 
     setCustomizerProduct({
@@ -220,6 +228,39 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
       setPendingProduct(null);
     }
   };
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 animate-spin mb-3">
+          <Clock size={24} />
+        </div>
+        <p className="text-xs font-heading font-extrabold text-slate-500 dark:text-zinc-400">Loading Storefront...</p>
+      </div>
+    );
+  }
+
+  if (!vendor) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-4">
+          <Store size={32} />
+        </div>
+        <h2 className="text-xl font-heading font-black text-slate-900 dark:text-white mb-2">
+          Store Not Found
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mb-6">
+          This merchant store may be deactivated or still pending verification.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="px-6 py-3 rounded-xl bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+        >
+          Back to Marketplace
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
@@ -380,7 +421,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
             </div>
           ) : (
             <ProductGrid
-              products={filteredProducts.map((p) => ({ ...p, vendorId: vendor.id, vendorName: vendor.name }))}
+              products={filteredProducts.map((p: any) => ({ ...p, vendorId: vendor.id, vendorName: vendor.name }))}
               onAddProduct={handleOpenCustomizer}
             />
           )}

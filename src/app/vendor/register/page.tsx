@@ -30,6 +30,7 @@ import {
   Scale
 } from "lucide-react";
 import { registerVendorStore } from "@/actions/vendor";
+import { useUserStore } from "@/lib/userStore";
 
 const CAMPUS_CATEGORIES = [
   "Campus Hot Kitchen & Meals",
@@ -59,6 +60,7 @@ const NIGERIAN_BANKS = [
 
 export default function VendorRegistrationPage() {
   const router = useRouter();
+  const { updateProfile } = useUserStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -140,6 +142,12 @@ export default function VendorRegistrationPage() {
       });
 
       if (res.success) {
+        updateProfile({
+          email: email.trim(),
+          name: storeName.trim(),
+          phone: phone.trim(),
+          isVisitor: false,
+        });
         setIsSuccess(true);
       } else {
         setErrorMessage(res.error || "Failed to register vendor store. Please try again.");

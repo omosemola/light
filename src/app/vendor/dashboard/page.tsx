@@ -61,7 +61,8 @@ import {
   createVendorProduct,
   updateVendorProduct,
   deleteVendorProduct,
-  updateStoreSchedule
+  updateStoreSchedule,
+  logoutVendor
 } from "@/actions/vendor";
 import { OrderStatus } from "@prisma/client";
 
@@ -625,7 +626,8 @@ export default function VendorDashboardPage() {
               {/* SIGN OUT */}
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
+                  await logoutVendor();
                   logoutUser();
                   window.location.href = "/vendor/login";
                 }}
