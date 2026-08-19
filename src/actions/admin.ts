@@ -54,8 +54,8 @@ export async function getAdminDashboardData() {
 
       const stores = await prisma.store.findMany({
         include: {
-          user: { select: { email: true, name: true } },
-          _count: { select: { products: true, orders: true } },
+          user: { select: { email: true, name: true, phone: true } },
+          _count: { select: { products: true, orders: true, reviews: true } },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -273,6 +273,38 @@ export async function toggleStoreStatusAdmin(storeId: string, isOpen: boolean) {
   } catch (error: any) {
     console.error("Error toggling store status in admin:", error);
     return { success: false, error: error.message || "Failed to toggle store status" };
+  }
+}
+
+export async function deleteStoreAdmin(storeId: string) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.chatMessage.deleteMany({
+        where: { storeId },
+      });
+      await tx.orderItem.deleteMany({
+        where: { product: { storeId } },
+      });
+      await tx.review.deleteMany({
+        where: { storeId },
+      });
+      await tx.product.deleteMany({
+        where: { storeId },
+      });
+      await tx.order.deleteMany({
+        where: { storeId },
+      });
+      await tx.store.delete({
+        where: { id: storeId },
+      });
+    });
+
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting store in admin:", error);
+    return { success: false, error: error.message || "Failed to delete store" };
   }
 }
 

@@ -193,6 +193,7 @@ export default function ProfilePage() {
         }, 1500);
       } else {
         setToastMessage(`Error: ${res.error}`);
+        setTimeout(() => setToastMessage(""), 1000);
       }
     } catch {
       setToastMessage(`Vendor Store registered! Application under review...`);

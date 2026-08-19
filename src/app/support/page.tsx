@@ -173,15 +173,15 @@ export default function SupportPage() {
         setMessage("");
         setSelectedOrderId("");
         setActiveTab("active");
-        setTimeout(() => setToastMessage(""), 4000);
+        setTimeout(() => setToastMessage(""), 1000);
       } else {
         setToastMessage(res.error || "Failed to submit ticket. Please try again.");
-        setTimeout(() => setToastMessage(""), 4000);
+        setTimeout(() => setToastMessage(""), 1000);
       }
     } catch (err) {
       console.error("Error creating ticket:", err);
       setToastMessage("An error occurred while submitting. Please check your connection.");
-      setTimeout(() => setToastMessage(""), 4000);
+      setTimeout(() => setToastMessage(""), 1000);
     } finally {
       setSubmitting(false);
     }

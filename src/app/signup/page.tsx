@@ -109,7 +109,7 @@ export default function SignupPage() {
     e.preventDefault();
     if (!/^[a-zA-Z0-9]+$/.test(password)) {
       setToastMessage("Password can only contain letters (A-Z, a-z) & numbers (0-9)!");
-      setTimeout(() => setToastMessage(""), 3000);
+      setTimeout(() => setToastMessage(""), 1000);
       return;
     }
     handleFinishSignup();

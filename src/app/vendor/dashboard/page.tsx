@@ -112,10 +112,16 @@ export default function VendorDashboardPage() {
   // Sound Alarm State
   const [isAlarmMuted, setIsAlarmMuted] = useState(false);
   const prevPendingCountRef = useRef<number>(0);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, durationMs = 1000) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 3500);
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage("");
+    }, durationMs);
   };
 
   const handleProductFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -470,10 +476,20 @@ export default function VendorDashboardPage() {
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-5 right-5 z-50 px-4 py-3 bg-[#1E1B4B] text-white rounded-2xl shadow-2xl border border-indigo-500/30 flex items-center gap-2.5 font-heading font-extrabold text-xs backdrop-blur-md"
+            className="fixed top-5 right-5 z-50 px-4 py-3 bg-[#1E1B4B] text-white rounded-2xl shadow-2xl border border-indigo-500/30 flex items-center gap-3 font-heading font-extrabold text-xs backdrop-blur-md max-w-sm"
           >
-            <Sparkles size={16} className="text-amber-400" />
-            <span>{toastMessage}</span>
+            <div className="flex items-center gap-2 truncate">
+              <Sparkles size={16} className="text-amber-400 shrink-0" />
+              <span className="truncate">{toastMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage("")}
+              className="w-5 h-5 rounded-full hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-all shrink-0 cursor-pointer"
+              aria-label="Dismiss Alert"
+            >
+              <X size={12} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

@@ -46,7 +46,8 @@ import {
   updateOrderStatusAdmin,
   toggleProductAvailabilityAdmin,
   verifyStoreAdmin,
-  toggleStoreStatusAdmin
+  toggleStoreStatusAdmin,
+  deleteStoreAdmin
 } from "@/actions/admin";
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
@@ -110,10 +111,25 @@ export default function AdminDashboardPage() {
   const [orderUpdating, setOrderUpdating] = useState<string | null>(null);
   const [productUpdating, setProductUpdating] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showToast = (msg: string, durationMs = 1000) => {
+    setToastMessage(msg);
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage("");
+    }, durationMs);
+  };
 
   // Delete User State
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // Delete Store State
+  const [storeToDelete, setStoreToDelete] = useState<any>(null);
+  const [isDeletingStore, setIsDeletingStore] = useState(false);
 
   const hasStartedRef = useRef(false);
 
@@ -128,13 +144,13 @@ export default function AdminDashboardPage() {
             sessionStorage.setItem("cached_admin_data", JSON.stringify(res));
           }
         } catch {}
-        if (isManual) setToastMessage("Live operations data refreshed!");
+        if (isManual) showToast("Live operations data refreshed!");
       } else {
-        setToastMessage(res?.error || "Failed to load dashboard metrics");
+        showToast(res?.error || "Failed to load dashboard metrics");
       }
     } catch (e: any) {
       console.error("Failed to load admin data:", e);
-      setToastMessage("Network error connecting to database.");
+      showToast("Network error connecting to database.");
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);
@@ -214,9 +230,9 @@ export default function AdminDashboardPage() {
     }));
     const res = await toggleProductAvailabilityAdmin(productId, nextAvailable);
     if (res.success) {
-      setToastMessage(`Product is now ${nextAvailable ? "In Stock (Active)" : "Out of Stock"}`);
+      showToast(`Product is now ${nextAvailable ? "In Stock (Active)" : "Out of Stock"}`);
     } else {
-      setToastMessage(res.error || "Failed to update product availability");
+      showToast(res.error || "Failed to update product availability");
     }
     setProductUpdating(null);
   };
@@ -231,9 +247,9 @@ export default function AdminDashboardPage() {
           o.id === orderId ? { ...o, status } : o
         ),
       }));
-      setToastMessage(`Order status updated to ${status}`);
+      showToast(`Order status updated to ${status}`);
     } else {
-      setToastMessage(res.error || "Failed to update order");
+      showToast(res.error || "Failed to update order");
     }
     setOrderUpdating(null);
   };
@@ -248,7 +264,7 @@ export default function AdminDashboardPage() {
           t.id === ticketId ? { ...t, status } : t
         ),
       }));
-      setToastMessage(`Ticket updated to ${status}`);
+      showToast(`Ticket updated to ${status}`);
     }
     setTicketUpdating(null);
   };
@@ -269,9 +285,9 @@ export default function AdminDashboardPage() {
         } catch {}
         return updated;
       });
-      setToastMessage(isVerified ? "Store verified & approved live! 🎉" : "Store verification revoked.");
+      showToast(isVerified ? "Store verified & approved live! 🎉" : "Store verification revoked.");
     } else {
-      setToastMessage(res.error || "Failed to update store verification");
+      showToast(res.error || "Failed to update store verification");
     }
   };
 
@@ -292,9 +308,9 @@ export default function AdminDashboardPage() {
         } catch {}
         return updated;
       });
-      setToastMessage(`Store is now ${newStatus ? "ACTIVE & LIVE" : "PAUSED / SUSPENDED"}`);
+      showToast(`Store is now ${newStatus ? "ACTIVE & LIVE" : "PAUSED / SUSPENDED"}`);
     } else {
-      setToastMessage(res.error || "Failed to toggle store status");
+      showToast(res.error || "Failed to toggle store status");
     }
   };
 
@@ -308,7 +324,7 @@ export default function AdminDashboardPage() {
           u.id === userId ? { ...u, role } : u
         ),
       }));
-      setToastMessage(`User role updated to ${role}`);
+      showToast(`User role updated to ${role}`);
     }
     setRoleUpdating(null);
   };
@@ -336,15 +352,55 @@ export default function AdminDashboardPage() {
           } catch {}
           return updated;
         });
-        setToastMessage(`User "${userToDelete.name || userToDelete.email}" deleted successfully`);
+        showToast(`User "${userToDelete.name || userToDelete.email}" deleted successfully`);
         setUserToDelete(null);
       } else {
-        setToastMessage(`Error deleting user: ${res.error}`);
+        showToast(`Error deleting user: ${res.error}`);
       }
     } catch {
-      setToastMessage("Failed to delete user account.");
+      showToast("Failed to delete user account.");
     } finally {
       setIsDeletingUser(false);
+    }
+  };
+
+  const handleConfirmDeleteStore = async () => {
+    if (!storeToDelete) return;
+    setIsDeletingStore(true);
+    try {
+      const res = await deleteStoreAdmin(storeToDelete.id);
+      if (res.success) {
+        setAdminData((prev: any) => {
+          const updatedStores = (prev.stores || []).filter(
+            (s: any) => s.id !== storeToDelete.id
+          );
+          const updatedProducts = (prev.products || []).filter(
+            (p: any) => p.store?.id !== storeToDelete.id && p.storeId !== storeToDelete.id
+          );
+          const updated = {
+            ...prev,
+            stores: updatedStores,
+            products: updatedProducts,
+            metrics: {
+              ...prev.metrics,
+              totalStores: Math.max(0, updatedStores.length),
+              totalProducts: Math.max(0, updatedProducts.length),
+            },
+          };
+          try {
+            sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
+          } catch {}
+          return updated;
+        });
+        showToast(`Store "${storeToDelete.name}" and catalog deleted successfully.`);
+        setStoreToDelete(null);
+      } else {
+        showToast(`Error deleting store: ${res.error}`);
+      }
+    } catch {
+      showToast("Failed to delete store from database.");
+    } finally {
+      setIsDeletingStore(false);
     }
   };
 
@@ -388,7 +444,9 @@ export default function AdminDashboardPage() {
     const q = searchQuery.toLowerCase();
     return list.filter((s: any) => 
       s.name?.toLowerCase().includes(q) || 
+      s.user?.name?.toLowerCase().includes(q) ||
       s.user?.email?.toLowerCase().includes(q) ||
+      s.user?.phone?.toLowerCase().includes(q) ||
       s.id?.toLowerCase().includes(q)
     );
   }, [adminData?.stores, searchQuery]);
@@ -451,17 +509,27 @@ export default function AdminDashboardPage() {
     <div className={`min-h-screen transition-colors duration-200 pb-24 font-body ${
       isDark ? "bg-[#09090B] text-zinc-100" : "bg-[#FAFAF7] text-zinc-900"
     }`}>
-      {/* TOAST NOTIFICATION */}
+      {/* TOAST NOTIFICATION (AUTO-DISMISSING & CLOSABLE) */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#312E81] text-white font-heading font-extrabold text-xs md:text-sm px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-2 border border-indigo-400 max-w-md w-11/12 text-center justify-center"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#1E1B4B] text-white font-heading font-extrabold text-xs md:text-sm px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-indigo-400 max-w-lg w-11/12 justify-between backdrop-blur-md"
           >
-            <CheckCircle2 size={18} className="text-amber-300 shrink-0" />
-            <span>{toastMessage}</span>
+            <div className="flex items-center gap-2.5 text-left truncate">
+              <CheckCircle2 size={18} className="text-amber-300 shrink-0" />
+              <span className="truncate">{toastMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage("")}
+              className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-all shrink-0 cursor-pointer"
+              aria-label="Dismiss Alert"
+            >
+              <X size={14} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -824,94 +892,190 @@ export default function AdminDashboardPage() {
 
         {/* STORES TAB */}
         {activeTab === "stores" && (
-          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
-            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
-          }`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
-                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
-                }`}>
-                  <tr>
-                    <th className="p-4">Store Name</th>
-                    <th className="p-4">Owner Email</th>
-                    <th className="p-4">Menu Items</th>
-                    <th className="p-4">Verification Status</th>
-                    <th className="p-4">Live State</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                  {filteredStores?.map((st: any) => (
-                    <tr key={st.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"}`}>
-                        <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
-                          {st.name ? st.name[0]?.toUpperCase() : "S"}
-                        </div>
-                        <div>
-                          <div className="font-heading text-sm">{st.name || "Mama Cass"}</div>
-                          <div className="text-[11px] text-zinc-400 font-mono">ID: {st.id}</div>
-                        </div>
-                      </td>
-                      <td className={`p-4 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{st.user?.email || "vendor@mamacass.com"}</td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{st._count?.products || 2} items</td>
-                      <td className="p-4">
-                        {st.isVerified ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
-                            <CheckCircle2 size={11} className="text-emerald-400" />
-                            VERIFIED & APPROVED
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80 animate-pulse">
-                            <Clock size={11} className="text-amber-400" />
-                            PENDING VERIFICATION
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <button
-                          onClick={() => handleToggleStoreStatus(st.id, st.isOpen !== false)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
-                            st.isOpen !== false
-                              ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
-                              : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
-                          }`}
-                        >
-                          {st.isOpen !== false ? "✓ ACTIVE & OPEN" : "✕ CLOSED / PAUSED"}
-                        </button>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {!st.isVerified ? (
-                            <button
-                              onClick={() => handleVerifyStore(st.id, true)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
-                            >
-                              <CheckCircle2 size={13} />
-                              <span>Approve & Verify</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleVerifyStore(st.id, false)}
-                              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-rose-950 hover:border-rose-800 border border-zinc-700 text-zinc-400 hover:text-rose-300 font-heading font-bold text-[10px] transition-all cursor-pointer"
-                            >
-                              Revoke
-                            </button>
-                          )}
+          <div className="space-y-4">
+            {/* STORES METRIC CARDS */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
+                <span className="text-[10px] font-heading font-extrabold uppercase text-slate-400">Total Stores</span>
+                <div className="text-xl font-heading font-black mt-1">{adminData?.stores?.length || 0}</div>
+              </div>
+              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
+                <span className="text-[10px] font-heading font-extrabold uppercase text-emerald-400">Verified & Active</span>
+                <div className="text-xl font-heading font-black text-emerald-500 mt-1">
+                  {adminData?.stores?.filter((s: any) => s.isVerified).length || 0}
+                </div>
+              </div>
+              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
+                <span className="text-[10px] font-heading font-extrabold uppercase text-amber-400">Pending Review</span>
+                <div className="text-xl font-heading font-black text-amber-500 mt-1">
+                  {adminData?.stores?.filter((s: any) => !s.isVerified).length || 0}
+                </div>
+              </div>
+              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
+                <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400">Open Kitchens</span>
+                <div className="text-xl font-heading font-black text-indigo-500 mt-1">
+                  {adminData?.stores?.filter((s: any) => s.isOpen !== false).length || 0}
+                </div>
+              </div>
+            </div>
 
-                          <Link
-                            href={`/vendor/${st.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
-                          >
-                            <span>Preview</span>
-                            <ExternalLink size={12} />
-                          </Link>
-                        </div>
-                      </td>
+            {/* STORES TABLE */}
+            <div className={`border rounded-2xl overflow-hidden shadow-sm ${
+              isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+            }`}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                    isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
+                  }`}>
+                    <tr>
+                      <th className="p-4">Store & Owner</th>
+                      <th className="p-4">Contact Info</th>
+                      <th className="p-4">Dishes & Orders</th>
+                      <th className="p-4">Verification Status</th>
+                      <th className="p-4">Kitchen State</th>
+                      <th className="p-4 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                    {filteredStores.length > 0 ? (
+                      filteredStores.map((st: any) => (
+                        <tr key={st.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                          {/* Store Name & ID */}
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-base shrink-0 border border-indigo-500/30">
+                                {st.name ? st.name[0]?.toUpperCase() : "S"}
+                              </div>
+                              <div>
+                                <div className={`font-heading font-bold text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>
+                                  {st.name || "Campus Kitchen"}
+                                </div>
+                                <div className="text-[10px] text-zinc-400 font-mono">
+                                  Owner: <strong className={isDark ? "text-zinc-200" : "text-zinc-700"}>{st.user?.name || "Merchant"}</strong>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Contact Info */}
+                          <td className="p-4">
+                            <div className={`font-mono text-[11px] ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
+                              {st.user?.email ? (
+                                <a href={`mailto:${st.user.email}`} className="hover:underline text-indigo-400 flex items-center gap-1">
+                                  {st.user.email}
+                                </a>
+                              ) : (
+                                "No email"
+                              )}
+                            </div>
+                            {st.user?.phone && (
+                              <div className="text-[11px] text-zinc-500 flex items-center gap-1 mt-0.5 font-mono">
+                                <Phone size={10} />
+                                <a href={`tel:${st.user.phone}`} className="hover:underline">
+                                  {st.user.phone}
+                                </a>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Dishes & Orders */}
+                          <td className="p-4">
+                            <div className={`font-bold ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>
+                              {st._count?.products || 0} menu items
+                            </div>
+                            <div className="text-[11px] text-zinc-400">
+                              {st._count?.orders || 0} orders completed
+                            </div>
+                          </td>
+
+                          {/* Verification Badge */}
+                          <td className="p-4">
+                            {st.isVerified ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
+                                <CheckCircle2 size={11} className="text-emerald-400" />
+                                VERIFIED & APPROVED
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80 animate-pulse">
+                                <Clock size={11} className="text-amber-400" />
+                                PENDING VERIFICATION
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Live Kitchen Toggle */}
+                          <td className="p-4">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStoreStatus(st.id, st.isOpen !== false)}
+                              className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
+                                st.isOpen !== false
+                                  ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
+                                  : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
+                              }`}
+                              title="Click to toggle live kitchen status"
+                            >
+                              {st.isOpen !== false ? "✓ ACTIVE & OPEN" : "✕ CLOSED / PAUSED"}
+                            </button>
+                          </td>
+
+                          {/* Actions: Approve / Revoke, Preview, Delete */}
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {!st.isVerified ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerifyStore(st.id, true)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                                  title="Approve and verify vendor store"
+                                >
+                                  <CheckCircle2 size={13} />
+                                  <span>Approve & Verify</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerifyStore(st.id, false)}
+                                  className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-amber-950 hover:border-amber-800 border border-zinc-700 text-zinc-400 hover:text-amber-300 font-heading font-bold text-[10px] transition-all cursor-pointer"
+                                  title="Revoke verification status"
+                                >
+                                  Revoke
+                                </button>
+                              )}
+
+                              <Link
+                                href={`/vendor/${st.id}`}
+                                target="_blank"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
+                                title="Preview public storefront"
+                              >
+                                <span>Preview</span>
+                                <ExternalLink size={12} />
+                              </Link>
+
+                              <button
+                                type="button"
+                                onClick={() => setStoreToDelete(st)}
+                                className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 transition-all active:scale-95 cursor-pointer"
+                                title={`Delete store ${st.name}`}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-zinc-400">
+                          No stores matching your search query.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -1109,6 +1273,58 @@ export default function AdminDashboardPage() {
                   type="button"
                   onClick={() => setUserToDelete(null)}
                   className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all ${
+                    isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* DELETE STORE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {storeToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`max-w-md w-full rounded-3xl p-6 shadow-2xl border ${
+                isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-zinc-900"
+              }`}
+            >
+              <div className="flex items-center gap-3 text-rose-500 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-lg">Delete Store & Catalog?</h3>
+                  <p className="text-xs text-rose-400">Irreversible marketplace action</p>
+                </div>
+              </div>
+
+              <p className={`text-xs leading-relaxed mb-5 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>
+                Are you sure you want to permanently delete store <strong className={isDark ? "text-white" : "text-zinc-900"}>"{storeToDelete.name}"</strong>? 
+                This will delete all its dishes, catalog items, reviews, and linked chat history from the live database.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={isDeletingStore}
+                  onClick={handleConfirmDeleteStore}
+                  className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                  <span>{isDeletingStore ? "Deleting Store..." : "Yes, Delete Store"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStoreToDelete(null)}
+                  className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all cursor-pointer ${
                     isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
