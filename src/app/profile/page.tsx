@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
+  ArrowLeft,
   ChevronRight, 
   ClipboardList, 
   MapPin, 
@@ -15,14 +16,14 @@ import {
   ShoppingBag, 
   Heart, 
   Sun, 
-  Moon,
-  Edit3,
-  Camera,
-  Check,
-  Upload,
-  Image as ImageIcon,
-  Store,
-  ShieldCheck,
+  Moon, 
+  Edit3, 
+  Camera, 
+  Check, 
+  Upload, 
+  Image as ImageIcon, 
+  Store, 
+  ShieldCheck, 
   MessageSquare
 } from "lucide-react";
 import Image from "next/image";
@@ -291,9 +292,20 @@ export default function ProfilePage() {
 
         <div className="relative z-10 max-w-4xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white">
-              My Profile
-            </h1>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center justify-center active:scale-95 transition-all cursor-pointer backdrop-blur-sm shadow-xs"
+                aria-label="Back to Marketplace"
+                title="Back to Marketplace"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white">
+                My Profile
+              </h1>
+            </div>
             
             <div className="flex items-center gap-2">
               {/* EDIT INFO BUTTON (ONLY FOR REAL USER ACCOUNTS, HIDDEN FOR VISITORS) */}

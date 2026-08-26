@@ -42,6 +42,7 @@ import {
   Send,
   User,
   ArrowRight,
+  ArrowLeft,
   Filter,
   Eye,
   LogOut,
@@ -62,19 +63,18 @@ import {
   updateVendorProduct,
   deleteVendorProduct,
   updateStoreSchedule,
+  updateVendorProfile,
   logoutVendor
 } from "@/actions/vendor";
 import { OrderStatus } from "@prisma/client";
-
-interface VariationOption {
-  name: string;
-  price: number;
-}
-
-interface AddOnOption {
-  name: string;
-  price: number;
-}
+import { 
+  parseProductDescription, 
+  encodeProductDescription, 
+  parseProductImages, 
+  encodeProductImages, 
+  VariationOption, 
+  AddOnOption 
+} from "@/lib/productOptions";
 
 export default function VendorDashboardPage() {
   const router = useRouter();
@@ -94,28 +94,36 @@ export default function VendorDashboardPage() {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [productPrice, setProductPrice] = useState("");
-  const [productImage, setProductImage] = useState("");
+  const [productImages, setProductImages] = useState<string[]>([]);
   const [productDesc, setProductDesc] = useState("");
+  const [productIngredients, setProductIngredients] = useState("");
   const [productCategory, setProductCategory] = useState("");
   const [variations, setVariations] = useState<VariationOption[]>([]);
   const [addOns, setAddOns] = useState<AddOnOption[]>([]);
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const productFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Store Schedule State
+  // Store Profile & Operations State
+  const [storeName, setStoreName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [storeDesc, setStoreDesc] = useState("");
+  const [storePhone, setStorePhone] = useState("+2348012345678");
+  const [storeEmail, setStoreEmail] = useState("");
+  const [storeLogo, setStoreLogo] = useState("");
+  const [storeCoverImage, setStoreCoverImage] = useState("");
   const [openingTime, setOpeningTime] = useState("08:00");
   const [closingTime, setClosingTime] = useState("22:00");
-  const [storePhone, setStorePhone] = useState("+2348012345678");
   const [deliveryEstimate, setDeliveryEstimate] = useState("20-35 mins");
-  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
-  const [scheduleSuccess, setScheduleSuccess] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sound Alarm State
   const [isAlarmMuted, setIsAlarmMuted] = useState(false);
   const prevPendingCountRef = useRef<number>(0);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showToast = (msg: string, durationMs = 1000) => {
+  const showToast = (msg: string, durationMs = 1500) => {
     setToastMessage(msg);
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
@@ -126,11 +134,42 @@ export default function VendorDashboardPage() {
   };
 
   const handleProductFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            setProductImages((prev) => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    if (e.target) e.target.value = "";
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setProductImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleLogoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProductImage(reader.result as string);
+        setStoreLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setStoreCoverImage(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -214,18 +253,16 @@ export default function VendorDashboardPage() {
       setStoreData(res.store);
       setMetrics(res.metrics);
 
-      if (res.store.estimatedDelivery) {
-        setDeliveryEstimate(res.store.estimatedDelivery);
-      }
-      if (res.store.openingTime) {
-        setOpeningTime(res.store.openingTime);
-      }
-      if (res.store.closingTime) {
-        setClosingTime(res.store.closingTime);
-      }
-      if (res.store.phone) {
-        setStorePhone(res.store.phone);
-      }
+      if (res.store.name) setStoreName(res.store.name);
+      if (res.store.user?.name) setOwnerName(res.store.user.name);
+      if (res.store.description) setStoreDesc(res.store.description);
+      if (res.store.phone || res.store.user?.phone) setStorePhone(res.store.phone || res.store.user?.phone || "");
+      if (res.store.user?.email) setStoreEmail(res.store.user.email);
+      if (res.store.logo) setStoreLogo(res.store.logo);
+      if (res.store.coverImage) setStoreCoverImage(res.store.coverImage);
+      if (res.store.estimatedDelivery) setDeliveryEstimate(res.store.estimatedDelivery);
+      if (res.store.openingTime) setOpeningTime(res.store.openingTime);
+      if (res.store.closingTime) setClosingTime(res.store.closingTime);
 
       const currentPending = res.metrics?.pendingOrdersCount || 0;
       if (isPoll && currentPending > 0 && currentPending > prevPendingCountRef.current && !isAlarmMuted) {
@@ -287,7 +324,8 @@ export default function VendorDashboardPage() {
     setProductName("");
     setProductPrice("");
     setProductDesc("");
-    setProductImage("");
+    setProductIngredients("");
+    setProductImages([]);
     setProductCategory("");
     setVariations([]);
     setAddOns([]);
@@ -296,28 +334,19 @@ export default function VendorDashboardPage() {
 
   const openEditProductModal = (prod: any) => {
     setEditingProductId(prod.id);
-    setProductName(prod.name);
-    setProductPrice(prod.price.toString());
-    setProductImage(prod.image || "");
+    setProductName(prod.name || "");
+    setProductPrice(prod.price ? prod.price.toString() : "");
     setProductCategory(prod.categoryId || "");
 
-    let rawDesc = prod.description || "";
-    let parsedVars: VariationOption[] = [];
-    let parsedAdds: AddOnOption[] = [];
+    const images = parseProductImages(prod.image);
+    setProductImages(images);
 
-    const optionsMatch = rawDesc.match(/\[OPTIONS:\s*(\{.*?\})\]/);
-    if (optionsMatch && optionsMatch[1]) {
-      try {
-        const parsed = JSON.parse(optionsMatch[1]);
-        if (Array.isArray(parsed.sizes)) parsedVars = parsed.sizes;
-        if (Array.isArray(parsed.addons)) parsedAdds = parsed.addons;
-        rawDesc = rawDesc.replace(/\[OPTIONS:\s*\{.*?\}\]/, "").trim();
-      } catch (e) {}
-    }
+    const structured = parseProductDescription(prod.description);
+    setProductDesc(structured.description);
+    setProductIngredients(structured.ingredients.join(", "));
+    setVariations(structured.sizes);
+    setAddOns(structured.addons);
 
-    setProductDesc(rawDesc);
-    setVariations(parsedVars);
-    setAddOns(parsedAdds);
     setShowProductModal(true);
   };
 
@@ -335,88 +364,130 @@ export default function VendorDashboardPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productName || !productPrice || !storeData) return;
+    if (!productName.trim() || !productPrice || !storeData) {
+      showToast("Please provide the dish name and price.");
+      return;
+    }
     setSubmittingProduct(true);
 
-    let finalDesc = productDesc.trim();
-    if (variations.length > 0 || addOns.length > 0) {
-      const optionsPayload = JSON.stringify({
-        sizes: variations,
-        addons: addOns,
-      });
-      finalDesc = `${finalDesc} [OPTIONS: ${optionsPayload}]`.trim();
-    }
+    try {
+      // 1. Process ingredients (comma or newline separated)
+      const ingredientsList = productIngredients
+        .split(/[,\n]/)
+        .map((i) => i.trim())
+        .filter(Boolean);
 
-    const defaultImg = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80";
-
-    if (editingProductId) {
-      const res = await updateVendorProduct({
-        productId: editingProductId,
-        name: productName,
-        price: parseFloat(productPrice),
-        description: finalDesc,
-        image: productImage || defaultImg,
-        categoryId: productCategory || undefined,
+      // 2. Encode structured description
+      const finalDesc = encodeProductDescription({
+        description: productDesc.trim(),
+        ingredients: ingredientsList,
+        sizes: variations.filter((v) => v.name.trim()),
+        addons: addOns.filter((a) => a.name.trim()),
       });
 
-      if (res.success && res.product) {
-        setStoreData((prev: any) => ({
-          ...prev,
-          products: prev.products.map((p: any) => p.id === editingProductId ? res.product : p),
-        }));
-        setShowProductModal(false);
-        showToast("Dish updated successfully!");
+      // 3. Encode images
+      const finalImage = encodeProductImages(productImages);
+
+      if (editingProductId) {
+        const res = await updateVendorProduct({
+          productId: editingProductId,
+          name: productName.trim(),
+          price: parseFloat(productPrice),
+          description: finalDesc,
+          image: finalImage,
+          categoryId: productCategory || undefined,
+        });
+
+        if (res.success && res.product) {
+          setStoreData((prev: any) => ({
+            ...prev,
+            products: prev.products.map((p: any) => (p.id === editingProductId ? res.product : p)),
+          }));
+          setShowProductModal(false);
+          showToast("✓ Dish updated successfully!");
+        } else {
+          showToast(res.error || "Failed to update dish. Please check your inputs.");
+        }
+      } else {
+        const res = await createVendorProduct({
+          storeId: storeData.id,
+          name: productName.trim(),
+          price: parseFloat(productPrice),
+          description: finalDesc,
+          image: finalImage,
+          categoryId: productCategory || undefined,
+        });
+
+        if (res.success && res.product) {
+          setStoreData((prev: any) => ({
+            ...prev,
+            products: [res.product, ...(prev.products || [])],
+          }));
+          setShowProductModal(false);
+          showToast("✓ New dish added to store catalogue!");
+        } else {
+          showToast(res.error || "Failed to create dish. Please try again.");
+        }
       }
-    } else {
-      const res = await createVendorProduct({
-        storeId: storeData.id,
-        name: productName,
-        price: parseFloat(productPrice),
-        description: finalDesc,
-        image: productImage || defaultImg,
-        categoryId: productCategory || undefined,
-      });
-
-      if (res.success && res.product) {
-        setStoreData((prev: any) => ({
-          ...prev,
-          products: [res.product, ...prev.products],
-        }));
-        setShowProductModal(false);
-        showToast("New dish added to store catalogue!");
-      }
+    } catch (err: any) {
+      console.error("Error saving dish:", err);
+      showToast(err.message || "An unexpected error occurred while saving.");
+    } finally {
+      setSubmittingProduct(false);
     }
-
-    setSubmittingProduct(false);
   };
 
-  const handleSaveSchedule = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storeData) return;
-    setIsSavingSchedule(true);
-    setScheduleSuccess(false);
-
-    const res = await updateStoreSchedule({
-      storeId: storeData.id,
-      openingTime,
-      closingTime,
-      phone: storePhone,
-      estimatedDelivery: deliveryEstimate,
-    });
-
-    if (res.success && res.store) {
-      setStoreData((prev: any) => ({
-        ...prev,
-        openingTime: res.store.openingTime,
-        closingTime: res.store.closingTime,
-        phone: res.store.phone,
-        estimatedDelivery: res.store.estimatedDelivery,
-      }));
-      setScheduleSuccess(true);
-      showToast("Store operations & hours saved successfully!");
-      setTimeout(() => setScheduleSuccess(false), 3000);
+    if (!storeName.trim()) {
+      showToast("Store Name cannot be empty.");
+      return;
     }
-    setIsSavingSchedule(false);
+    setIsSavingProfile(true);
+
+    try {
+      const res = await updateVendorProfile({
+        storeId: storeData.id,
+        storeName: storeName.trim(),
+        ownerName: ownerName.trim(),
+        phone: storePhone.trim(),
+        description: storeDesc.trim(),
+        openingTime,
+        closingTime,
+        estimatedDelivery: deliveryEstimate.trim(),
+        logo: storeLogo,
+        coverImage: storeCoverImage,
+      });
+
+      if (res.success && res.store) {
+        setStoreData((prev: any) => ({
+          ...prev,
+          name: res.store.name,
+          description: res.store.description,
+          phone: res.store.phone,
+          openingTime: res.store.openingTime,
+          closingTime: res.store.closingTime,
+          estimatedDelivery: res.store.estimatedDelivery,
+          logo: res.store.logo,
+          coverImage: res.store.coverImage,
+          user: {
+            ...prev?.user,
+            name: ownerName.trim(),
+            phone: storePhone.trim(),
+            image: res.store.logo,
+          },
+        }));
+        showToast("✓ Store profile updated & saved to database!");
+      } else {
+        showToast(res.error || "Failed to update store profile.");
+      }
+    } catch (err: any) {
+      console.error("Error updating vendor profile:", err);
+      showToast(err.message || "An unexpected error occurred while saving profile.");
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const addVariationRow = () => {
@@ -592,6 +663,16 @@ export default function VendorDashboardPage() {
                 {isAlarmMuted ? <VolumeX size={15} /> : <BellRing size={15} className="animate-bounce" />}
                 <span>{isAlarmMuted ? "Audio Muted" : "Live Alarms ON"}</span>
               </button>
+
+              {/* BACK TO MARKETPLACE STOREFRONT */}
+              <Link
+                href="/"
+                className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
+                title="Back to Marketplace Storefront"
+              >
+                <ArrowLeft size={14} className="text-amber-300" />
+                <span>Marketplace</span>
+              </Link>
 
               {/* STOREFRONT PREVIEW LINK */}
               <Link
@@ -854,7 +935,7 @@ export default function VendorDashboardPage() {
             }`}
           >
             <Settings size={15} />
-            <span>Store Operations & Hours</span>
+            <span>Store Profile & Operations</span>
           </button>
         </div>
 
@@ -1122,7 +1203,7 @@ export default function VendorDashboardPage() {
                   >
                     <div className="relative h-44 w-full bg-slate-100 dark:bg-zinc-800">
                       <img
-                        src={prod.image}
+                        src={parseProductImages(prod.image)[0]}
                         alt={prod.name}
                         className="w-full h-full object-cover"
                       />
@@ -1142,6 +1223,12 @@ export default function VendorDashboardPage() {
                       <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/70 backdrop-blur-md text-white rounded-xl font-heading font-black text-xs">
                         ₦{Number(prod.price).toLocaleString()}
                       </div>
+                      {parseProductImages(prod.image).length > 1 && (
+                        <div className="absolute bottom-3 right-3 px-2 py-0.5 bg-black/70 backdrop-blur-md text-amber-300 rounded-lg font-heading font-extrabold text-[10px] flex items-center gap-1">
+                          <ImageIcon size={11} />
+                          <span>{parseProductImages(prod.image).length} photos</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
@@ -1150,8 +1237,22 @@ export default function VendorDashboardPage() {
                           {prod.name}
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                          {prod.description?.replace(/\[OPTIONS:\s*\{.*?\}\]/, "").trim() || "Delicious freshly prepared meal."}
+                          {parseProductDescription(prod.description).description || "Delicious freshly prepared meal."}
                         </p>
+                        {parseProductDescription(prod.description).ingredients.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {parseProductDescription(prod.description).ingredients.slice(0, 3).map((ing, i) => (
+                              <span key={i} className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-medium border border-indigo-100 dark:border-indigo-900/40">
+                                {ing}
+                              </span>
+                            ))}
+                            {parseProductDescription(prod.description).ingredients.length > 3 && (
+                              <span className="text-[10px] text-slate-400 self-center">
+                                +{parseProductDescription(prod.description).ingredients.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
@@ -1235,89 +1336,259 @@ export default function VendorDashboardPage() {
           </div>
         )}
 
-        {/* 4. STORE OPERATIONS & SCHEDULE TAB */}
+        {/* 4. STORE PROFILE & OPERATIONS SETTINGS TAB */}
         {selectedTab === "settings" && (
-          <div className="max-w-2xl">
-            <form onSubmit={handleSaveSchedule} className={`p-6 md:p-8 rounded-3xl border space-y-5 ${
-              isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+          <div className="max-w-3xl">
+            <form onSubmit={handleSaveProfile} className={`p-6 md:p-8 rounded-3xl border space-y-6 ${
+              isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200 shadow-xs"
             }`}>
-              <div>
-                <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
-                  Store Operations & Daily Hours
+              {/* Header */}
+              <div className="border-b pb-4 border-slate-100 dark:border-zinc-800">
+                <h3 className="font-heading font-extrabold text-lg text-slate-900 dark:text-white">
+                  Store Profile & Operational Settings
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Configure your working hours, contact numbers, and delivery time estimates.
+                  Update your brand visual assets, store contact information, and delivery hours.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Opening Time (Daily)
-                  </label>
-                  <input
-                    type="time"
-                    value={openingTime}
-                    onChange={(e) => setOpeningTime(e.target.value)}
-                    className={`w-full h-12 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                    }`}
-                  />
+              {/* 1. BRANDING VISUALS (LOGO & BANNER) */}
+              <div className="space-y-4">
+                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                  1. Store Branding & Media
+                </h4>
+
+                {/* Hidden File Inputs */}
+                <input
+                  type="file"
+                  ref={logoFileInputRef}
+                  onChange={handleLogoFileSelect}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <input
+                  type="file"
+                  ref={coverFileInputRef}
+                  onChange={handleCoverFileSelect}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Store Logo */}
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-3">
+                    <label className="block text-xs font-extrabold font-heading text-slate-700 dark:text-zinc-300">
+                      Store Logo / Avatar
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-indigo-200 dark:border-indigo-900 shadow-sm relative shrink-0 bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
+                        {storeLogo ? (
+                          <img src={storeLogo} alt="Store Logo" className="w-full h-full object-cover" />
+                        ) : (
+                          <Store size={24} className="text-slate-400" />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => logoFileInputRef.current?.click()}
+                          className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-bold font-heading hover:bg-slate-50 flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                        >
+                          <Camera size={13} />
+                          <span>{storeLogo ? "Change Logo" : "Upload Logo"}</span>
+                        </button>
+                        <span className="text-[10px] text-slate-400 block">PNG, JPG, WebP up to 5MB</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Store Cover Banner */}
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-3">
+                    <label className="block text-xs font-extrabold font-heading text-slate-700 dark:text-zinc-300">
+                      Store Cover Banner
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-24 h-16 rounded-2xl overflow-hidden border-2 border-indigo-200 dark:border-indigo-900 shadow-sm relative shrink-0 bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
+                        {storeCoverImage ? (
+                          <img src={storeCoverImage} alt="Cover Banner" className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon size={24} className="text-slate-400" />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => coverFileInputRef.current?.click()}
+                          className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-bold font-heading hover:bg-slate-50 flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                        >
+                          <Upload size={13} />
+                          <span>{storeCoverImage ? "Change Banner" : "Upload Banner"}</span>
+                        </button>
+                        <span className="text-[10px] text-slate-400 block">Wide banner for storefront hero</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. STORE BUSINESS DETAILS */}
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                  2. Store Business Information
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Store Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={storeName}
+                      onChange={(e) => setStoreName(e.target.value)}
+                      placeholder="e.g. Mama Cass Campus Kitchen"
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Owner / Contact Person
+                    </label>
+                    <input
+                      type="text"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      placeholder="e.g. Chief Chef Adebayo"
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Closing Time (Daily)
+                    Store Bio / Description
                   </label>
-                  <input
-                    type="time"
-                    value={closingTime}
-                    onChange={(e) => setClosingTime(e.target.value)}
-                    className={`w-full h-12 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                  <textarea
+                    rows={3}
+                    value={storeDesc}
+                    onChange={(e) => setStoreDesc(e.target.value)}
+                    placeholder="Welcome to our kitchen! Freshly made Nigerian party jollof, proteins, drinks, and express hostel delivery."
+                    className={`w-full p-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
                     }`}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Estimated Delivery Time
-                  </label>
-                  <input
-                    type="text"
-                    value={deliveryEstimate}
-                    onChange={(e) => setDeliveryEstimate(e.target.value)}
-                    className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                    }`}
-                  />
-                </div>
+              {/* 3. CONTACT & HOTLINES */}
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                  3. Contact & WhatsApp Notification Number
+                </h4>
 
-                <div>
-                  <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Store Order Hotline
-                  </label>
-                  <input
-                    type="text"
-                    value={storePhone}
-                    onChange={(e) => setStorePhone(e.target.value)}
-                    className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                    }`}
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      WhatsApp & Order Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={storePhone}
+                      onChange={(e) => setStorePhone(e.target.value)}
+                      placeholder="e.g. +2348012345678"
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">Receives instant order alerts on WhatsApp</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Registered Login Email
+                    </label>
+                    <input
+                      type="email"
+                      disabled
+                      value={storeEmail || "vendor@lightson.com"}
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border opacity-70 cursor-not-allowed ${
+                        isDark ? "bg-zinc-950/80 border-zinc-800 text-zinc-400" : "bg-slate-100 border-slate-200 text-slate-500"
+                      }`}
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">Contact administration to change login email</span>
+                  </div>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSavingSchedule}
-                className="w-full py-3.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isSavingSchedule ? <RefreshCw size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                <span>{isSavingSchedule ? "Saving Settings..." : "Save Store Operations Settings"}</span>
-              </button>
+              {/* 4. OPERATIONS & DELIVERY SCHEDULE */}
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                  4. Operations & Daily Kitchen Hours
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Opening Time
+                    </label>
+                    <input
+                      type="time"
+                      value={openingTime}
+                      onChange={(e) => setOpeningTime(e.target.value)}
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Closing Time
+                    </label>
+                    <input
+                      type="time"
+                      value={closingTime}
+                      onChange={(e) => setClosingTime(e.target.value)}
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Est. Delivery Time
+                    </label>
+                    <input
+                      type="text"
+                      value={deliveryEstimate}
+                      onChange={(e) => setDeliveryEstimate(e.target.value)}
+                      placeholder="e.g. 15-25 mins"
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SAVE BUTTON */}
+              <div className="pt-3">
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="w-full py-4 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-sm rounded-2xl shadow-xl shadow-indigo-950/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingProfile ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                  <span>{isSavingProfile ? "Saving Profile & Settings to Database..." : "Save Store Profile & Settings"}</span>
+                </button>
+              </div>
             </form>
           </div>
         )}
@@ -1391,63 +1662,120 @@ export default function VendorDashboardPage() {
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
                     >
-                      <option value="">Food & Meals</option>
-                      <option value="food">Hot Meals / Kitchen</option>
+                      <option value="">Select Category (Default: Food)</option>
+                      <option value="food">Food & Meals</option>
+                      <option value="snacks">Snacks & Treats</option>
                       <option value="drinks">Drinks & Smoothies</option>
-                      <option value="snacks">Pastries & Snacks</option>
+                      <option value="groceries">Groceries & Provisions</option>
+                      <option value="pastries">Pastries & Bakery</option>
+                      <option value="medical">Medical & Pharmacy</option>
+                      <option value="laundry">Laundry & Dry Cleaning</option>
+                      <option value="stationery">Stationery & Books</option>
+                      <option value="care">Personal Care</option>
+                      <option value="sports">Sports & Fitness</option>
+                      <option value="wears">Fashion & Wears</option>
+                      <option value="jewelries">Jewelries & Accessories</option>
+                      <option value="gadgets">Tech & Gadgets</option>
+                      <option value="electronics">Electronics & Appliances</option>
                     </select>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Dish Photo (File or URL)
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="file"
-                      ref={productFileInputRef}
-                      onChange={handleProductFileSelect}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => productFileInputRef.current?.click()}
-                        className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-bold font-heading flex items-center gap-1.5 hover:bg-slate-200 transition cursor-pointer"
-                      >
-                        <Camera size={15} />
-                        <span>Upload Photo</span>
-                      </button>
-                      <input
-                        type="text"
-                        value={productImage}
-                        onChange={(e) => setProductImage(e.target.value)}
-                        placeholder="Or paste image URL"
-                        className={`flex-1 h-10 px-3 rounded-xl text-xs border focus:outline-none ${
-                          isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    {productImage && (
-                      <div className="h-24 w-24 rounded-2xl overflow-hidden border">
-                        <img src={productImage} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
+                {/* MULTIPLE DISH PHOTOS MANAGER */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 font-heading">
+                      Dish Photos ({productImages.length})
+                    </label>
+                    <span className="text-[11px] text-slate-400">Upload multiple photos from device</span>
                   </div>
+
+                  <input
+                    type="file"
+                    multiple
+                    ref={productFileInputRef}
+                    onChange={handleProductFileSelect}
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  {/* UPLOAD TRIGGER BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => productFileInputRef.current?.click()}
+                    className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold font-heading flex items-center justify-center gap-2 transition cursor-pointer active:scale-[0.99]"
+                  >
+                    <Camera size={16} className="text-indigo-600 dark:text-indigo-400" />
+                    <span>{productImages.length === 0 ? "Click to Upload Dish Photos (Multiple Allowed)" : "+ Add More Photos"}</span>
+                  </button>
+
+                  {/* PHOTOS PREVIEW & DELETION GRID */}
+                  {productImages.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-1">
+                      {productImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-700 group shadow-xs bg-slate-100 dark:bg-zinc-800"
+                        >
+                          <img
+                            src={img}
+                            alt={`Dish photo ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* COVER BADGE ON 1ST PHOTO */}
+                          {idx === 0 && (
+                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#312E81] text-white font-heading font-extrabold text-[9px] shadow-sm">
+                              Cover
+                            </div>
+                          )}
+
+                          {/* DELETE PHOTO BUTTON */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto(idx)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-md active:scale-90 transition cursor-pointer"
+                            title="Delete this photo"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
+                {/* DISH DESCRIPTION */}
                 <div>
                   <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Description & Ingredients
+                    Dish Description
                   </label>
                   <textarea
                     rows={2}
                     value={productDesc}
                     onChange={(e) => setProductDesc(e.target.value)}
+                    placeholder="Describe taste, serving size, and special preparation details..."
                     className={`w-full p-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
+                    }`}
+                  />
+                </div>
+
+                {/* KEY INGREDIENTS */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 font-heading">
+                      Key Ingredients
+                    </label>
+                    <span className="text-[11px] text-slate-400">Comma separated</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={productIngredients}
+                    onChange={(e) => setProductIngredients(e.target.value)}
+                    placeholder="e.g. Long grain rice, Fresh tomatoes, Bell peppers, Fried plantains, Grilled chicken"
+                    className={`w-full h-11 px-3.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
                     }`}
                   />
                 </div>

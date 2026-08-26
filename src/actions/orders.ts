@@ -9,6 +9,7 @@ import {
   generateVendorNewOrderAlertEmail, 
   generateAdminPlatformOrderAlertEmail 
 } from "@/lib/email";
+import { sendVendorWhatsAppOrderNotification } from "@/lib/whatsapp";
 
 export interface CreateOrderInput {
   userId?: string;
@@ -164,6 +165,24 @@ export async function createLiveOrder(input: CreateOrderInput) {
         subject: `🚨 NEW ORDER #${displayOrderId} - ${order.store.name} Kitchen Alert!`,
         html: vendorHtml,
       }).catch((e) => console.error("Failed to send vendor alert email:", e));
+    }
+
+    // 5b. Send WhatsApp Message Notification to Vendor
+    const vendorPhone = order.store.phone || order.store.user?.phone;
+    if (vendorPhone) {
+      sendVendorWhatsAppOrderNotification({
+        vendorPhone,
+        vendorName: order.store.user?.name || order.store.name,
+        storeName: order.store.name,
+        orderId: displayOrderId,
+        customerName: input.userName || order.user?.name || "Campus Student",
+        customerPhone: order.user?.phone || null,
+        deliveryLocation: order.deliveryLocation,
+        deliveryInstructions: order.deliveryInstructions,
+        items: orderItemsForEmail,
+        totalAmount: order.totalAmount,
+        paymentMethod: order.paymentReference ? "Paid Online (Card/Transfer)" : "Pay on Delivery",
+      }).catch((e) => console.error("Failed to dispatch vendor WhatsApp alert:", e));
     }
 
     // 6. Send Transaction Notification to Admin

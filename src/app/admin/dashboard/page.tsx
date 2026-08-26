@@ -28,7 +28,8 @@ import {
   TrendingUp,
   Tag,
   Phone,
-  Layers
+  Layers,
+  ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -582,6 +583,15 @@ export default function AdminDashboardPage() {
 
             {/* QUICK ACTIONS & LINKS */}
             <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
+              <Link
+                href="/"
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+                title="Back to Marketplace Storefront"
+              >
+                <ArrowLeft size={14} className="text-amber-300" />
+                <span>Marketplace</span>
+              </Link>
+
               <button
                 onClick={() => fetchAdminData(true)}
                 disabled={refreshing}

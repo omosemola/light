@@ -6,15 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, Check, Layers, Sparkles, MessageSquare, ShoppingBag, Store } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 
-interface VariationOption {
-  name: string;
-  price: number;
-}
-
-interface AddOnOption {
-  name: string;
-  price: number;
-}
+import { 
+  parseProductDescription, 
+  parseProductImages, 
+  VariationOption, 
+  AddOnOption 
+} from "@/lib/productOptions";
 
 export interface CustomizerProduct {
   id: string;
@@ -35,31 +32,14 @@ interface ProductCustomizerModalProps {
   onVendorConflict?: (newItem: any, quantity: number) => void;
 }
 
-export function parseProductOptions(description?: string | null): {
-  cleanDesc: string;
-  sizes: VariationOption[];
-  addons: AddOnOption[];
-} {
-  if (!description) {
-    return { cleanDesc: "", sizes: [], addons: [] };
-  }
-
-  const match = description.match(/\[OPTIONS:\s*(\{.*?\})\]/);
-  if (match && match[1]) {
-    try {
-      const parsed = JSON.parse(match[1]);
-      const clean = description.replace(/\[OPTIONS:\s*\{.*?\}\]/, "").trim();
-      return {
-        cleanDesc: clean,
-        sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
-        addons: Array.isArray(parsed.addons) ? parsed.addons : [],
-      };
-    } catch {
-      // Fallback
-    }
-  }
-
-  return { cleanDesc: description, sizes: [], addons: [] };
+export function parseProductOptions(description?: string | null) {
+  const structured = parseProductDescription(description);
+  return {
+    cleanDesc: structured.description,
+    ingredients: structured.ingredients,
+    sizes: structured.sizes,
+    addons: structured.addons,
+  };
 }
 
 export function ProductCustomizerModal({
@@ -71,9 +51,15 @@ export function ProductCustomizerModal({
 }: ProductCustomizerModalProps) {
   const { addItem } = useCartStore();
 
-  const { cleanDesc, sizes, addons } = useMemo(() => {
+  const { cleanDesc, ingredients, sizes, addons } = useMemo(() => {
     return parseProductOptions(product?.description);
   }, [product?.description]);
+
+  const images = useMemo(() => {
+    return parseProductImages(product?.image);
+  }, [product?.image]);
+
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   const [selectedSize, setSelectedSize] = useState<VariationOption | null>(null);
   const [selectedAddOns, setSelectedAddOns] = useState<AddOnOption[]>([]);
@@ -140,12 +126,12 @@ export function ProductCustomizerModal({
           {/* PRODUCT BANNER IMAGE & CLOSE BUTTON */}
           <div className="relative h-48 sm:h-56 w-full bg-slate-100 dark:bg-zinc-800 shrink-0">
             <Image
-              src={product.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"}
+              src={images[activeImageIdx] || images[0]}
               alt={product.name}
               fill
-              className="object-cover"
+              className="object-cover transition-all duration-300"
             />
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40" />
             
             <button
               onClick={onClose}
@@ -155,11 +141,29 @@ export function ProductCustomizerModal({
               <X size={18} />
             </button>
 
-            <div className="absolute bottom-4 left-5 right-5 text-white">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider mb-1.5">
+            {/* MULTI-IMAGE THUMBNAIL SWITCHER */}
+            {images.length > 1 && (
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-black/50 backdrop-blur-md p-1 rounded-xl">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImageIdx(idx)}
+                    className={`w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer ${
+                      activeImageIdx === idx ? "border-amber-400 scale-105" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="absolute bottom-3 left-4 right-4 text-white">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] uppercase tracking-wider mb-1">
                 <Store size={11} /> {product.storeName}
               </div>
-              <h3 className="font-heading font-black text-xl md:text-2xl leading-tight">
+              <h3 className="font-heading font-black text-lg md:text-xl leading-tight">
                 {product.name}
               </h3>
               <p className="text-xs text-slate-200 mt-0.5 line-clamp-2">
@@ -169,7 +173,25 @@ export function ProductCustomizerModal({
           </div>
 
           {/* SCROLLABLE CUSTOMIZATION OPTIONS */}
-          <div className="overflow-y-auto p-5 sm:p-6 space-y-6 flex-1 text-xs md:text-sm text-slate-700 dark:text-zinc-300">
+          <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1 text-xs md:text-sm text-slate-700 dark:text-zinc-300">
+            {/* INGREDIENTS LIST */}
+            {ingredients.length > 0 && (
+              <div className="space-y-1.5">
+                <h4 className="font-heading font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                  Key Ingredients
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {ingredients.map((ing, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium border border-slate-200 dark:border-zinc-700"
+                    >
+                      {ing}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* PORTION SIZES */}
             {sizes.length > 0 && (
               <div className="space-y-3">

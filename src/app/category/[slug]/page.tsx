@@ -1,7 +1,26 @@
 "use client";
 
 import { useState, use, useMemo, useEffect } from "react";
-import { ArrowLeft, Search, ArrowUpDown, Utensils, Cookie, Coffee, ShoppingCart, Cake, BookOpen, HeartPulse, Dumbbell, Shirt, Gem, Smartphone, Watch, Zap } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Search, 
+  ArrowUpDown, 
+  Utensils, 
+  Cookie, 
+  Coffee, 
+  ShoppingCart, 
+  Cake, 
+  BookOpen, 
+  HeartPulse, 
+  Stethoscope,
+  Waves,
+  Dumbbell, 
+  Shirt, 
+  Gem, 
+  Smartphone, 
+  Watch, 
+  Zap 
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -109,6 +128,22 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     description: "Smartwatches, sunglasses, tote bags, caps, and leather belts.",
     subcategories: ["All", "Watches", "Sunglasses", "Bags & Caps"],
   },
+  medical: {
+    name: "Medical & Health",
+    Icon: Stethoscope,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1200&q=80",
+    description: "First aid kits, OTC pain relief, vitamins, bandages, and campus pharmacy essentials.",
+    subcategories: ["All", "First Aid", "Pain Relief", "Vitamins & Supplements", "Personal Hygiene"],
+  },
+  laundry: {
+    name: "Laundry & Dry Cleaning",
+    Icon: Waves,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=1200&q=80",
+    description: "Hostel wash & fold, dry cleaning, ironing, beddings, and laundry detergents.",
+    subcategories: ["All", "Wash & Fold", "Ironing & Press", "Dry Cleaning", "Beddings & Duvets"],
+  },
   electronics: {
     name: "Electronics & Appliances",
     Icon: Zap,
@@ -158,6 +193,54 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
   drinks: [],
   groceries: [],
   pastries: [],
+  medical: [
+    {
+      id: "med1",
+      name: "Campus First Aid Kit & Antiseptic Care Pack",
+      price: 2500,
+      vendorId: "cmst41xau0002tb705xlithpk",
+      vendorName: "Campus Med Store",
+      image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?auto=format&fit=crop&w=800&q=80",
+      description: "Essential first aid kit including sterile gauze, bandages, antiseptic wipe, and pain relief balm.",
+      subcategory: "First Aid",
+      isAvailable: true,
+    },
+    {
+      id: "med2",
+      name: "Vitamin C 1000mg Effervescent (Pack of 20)",
+      price: 3200,
+      vendorId: "cmst41xau0002tb705xlithpk",
+      vendorName: "Campus Med Store",
+      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+      description: "High potency Vitamin C + Zinc immune support effervescent tablets for campus study resilience.",
+      subcategory: "Vitamins & Supplements",
+      isAvailable: true,
+    }
+  ],
+  laundry: [
+    {
+      id: "lau1",
+      name: "Wash, Dry & Fold Laundry Service (Per Basket / 5kg)",
+      price: 3000,
+      vendorId: "cmst41xau0002tb705xlithpk",
+      vendorName: "Hostel Wash Pro",
+      image: "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80",
+      description: "Full hostel laundry service with fabric softener, hygienic wash, machine dry, and neat fold.",
+      subcategory: "Wash & Fold",
+      isAvailable: true,
+    },
+    {
+      id: "lau2",
+      name: "Student Bedding & Duvet Deep Clean Service",
+      price: 4500,
+      vendorId: "cmst41xau0002tb705xlithpk",
+      vendorName: "Hostel Wash Pro",
+      image: "https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=800&q=80",
+      description: "Deep chemical sanitization and steam press for duvets, bedsheets, and pillow covers.",
+      subcategory: "Beddings & Duvets",
+      isAvailable: true,
+    }
+  ],
   stationery: [],
   care: [],
   sports: [],

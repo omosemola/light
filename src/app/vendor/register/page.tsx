@@ -40,7 +40,8 @@ const CAMPUS_CATEGORIES = [
   "Fashion, Wears & Campus Merch",
   "Stationery, Books & Print Services",
   "Beauty, Skincare & Personal Care",
-  "Laundry & Hostel Errands",
+  "Medical, Health & Pharmacy",
+  "Laundry, Dry Cleaning & Hostel Errands",
 ];
 
 const NIGERIAN_BANKS = [
@@ -164,21 +165,41 @@ export default function VendorRegistrationPage() {
       
       {/* TOP BRAND NAV */}
       <header className="bg-white dark:bg-[#121215] border-b border-slate-200/80 dark:border-zinc-800 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 h-18 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-11 w-auto object-contain group-hover:scale-105 transition-transform" />
-            <span className="text-xl md:text-2xl font-[900] text-[#312E81] dark:text-indigo-300 font-heading tracking-tight">
-              Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace
-            </span>
-          </Link>
+        <div className="max-w-6xl mx-auto px-4 md:px-8 h-18 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[#18181B] dark:text-zinc-100 flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-slate-200/60 dark:border-zinc-700"
+              aria-label="Go back"
+              title="Go back"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <Link href="/" className="flex items-center gap-3 group">
+              <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-11 w-auto object-contain group-hover:scale-105 transition-transform" />
+              <span className="text-xl md:text-2xl font-[900] text-[#312E81] dark:text-indigo-300 font-heading tracking-tight">
+                Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace
+              </span>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2.5">
-            <span className="hidden md:inline text-[11px] text-[#71717A] dark:text-zinc-400">
-              Looking to order items?
-            </span>
+            <Link
+              href="/"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-white transition-colors"
+            >
+              <span>Marketplace Home</span>
+            </Link>
+            <Link
+              href="/vendor/login"
+              className="px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-300 text-xs font-heading font-extrabold transition-all border border-amber-200/80 dark:border-amber-800/80 shadow-2xs"
+            >
+              Merchant Sign In
+            </Link>
             <Link
               href="/signup"
-              className="px-3 py-1 rounded-full bg-[#F4F3FF] dark:bg-zinc-800/80 hover:bg-indigo-100 dark:hover:bg-zinc-700 text-[#312E81] dark:text-indigo-300 text-[11px] font-heading font-bold transition-all border border-indigo-100 dark:border-zinc-700/80 shadow-2xs"
+              className="px-3.5 py-1.5 rounded-full bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-heading font-extrabold transition-all shadow-xs"
             >
               Student Sign-Up
             </Link>

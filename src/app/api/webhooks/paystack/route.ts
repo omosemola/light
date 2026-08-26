@@ -8,6 +8,7 @@ import {
   generateVendorNewOrderAlertEmail,
   generateAdminPlatformOrderAlertEmail 
 } from "@/lib/email";
+import { sendVendorWhatsAppOrderNotification } from "@/lib/whatsapp";
 
 export async function POST(req: NextRequest) {
   try {
@@ -101,6 +102,28 @@ export async function POST(req: NextRequest) {
             subject: `🚨 Paid Campus Order Received (#${updatedOrder.id.slice(-6).toUpperCase()}) - ₦${updatedOrder.totalAmount.toLocaleString()}`,
             html: vendorEmailHtml,
           });
+        }
+
+        // Trigger WhatsApp Alert to Vendor
+        const vendorWhatsAppPhone = updatedOrder.store.phone || vendorUser?.phone;
+        if (vendorWhatsAppPhone) {
+          sendVendorWhatsAppOrderNotification({
+            vendorPhone: vendorWhatsAppPhone,
+            vendorName: vendorUser?.name || updatedOrder.store.name,
+            storeName: updatedOrder.store.name,
+            orderId: updatedOrder.id.slice(-6).toUpperCase(),
+            customerName: updatedOrder.user?.name || "Campus Student",
+            customerPhone: updatedOrder.user?.phone || null,
+            deliveryLocation: updatedOrder.deliveryLocation,
+            deliveryInstructions: updatedOrder.deliveryInstructions,
+            totalAmount: updatedOrder.totalAmount,
+            paymentMethod: "Paid Online (Paystack Card/Transfer)",
+            items: updatedOrder.items.map((it) => ({
+              name: it.product?.name || "Campus Item",
+              quantity: it.quantity,
+              price: it.price,
+            })),
+          }).catch((err) => console.error("Failed to send Paystack vendor WhatsApp notification:", err));
         }
 
         // Trigger New Order Alert Email to Admin

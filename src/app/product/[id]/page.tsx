@@ -1,7 +1,27 @@
 "use client";
 
-import { useState, use, useEffect } from "react";
-import { ArrowLeft, Star, Clock, Heart, Plus, Store, CheckCircle2, MessageSquare, ThumbsUp, Send, ChevronLeft, ChevronRight, Quote, Info, Edit3 } from "lucide-react";
+import { useState, use, useEffect, useMemo } from "react";
+import { 
+  ArrowLeft, 
+  Star, 
+  Clock, 
+  Heart, 
+  Plus, 
+  Store, 
+  CheckCircle2, 
+  MessageSquare, 
+  ThumbsUp, 
+  Send, 
+  ChevronLeft, 
+  ChevronRight, 
+  Quote, 
+  Info, 
+  Edit3,
+  Sparkles,
+  Layers,
+  Check,
+  Image as ImageIcon
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +35,12 @@ import { useReviewsStore, ProductReview } from "@/lib/reviewsStore";
 import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { submitStudentReview } from "@/actions/reviews";
+import { 
+  parseProductDescription, 
+  parseProductImages, 
+  VariationOption, 
+  AddOnOption 
+} from "@/lib/productOptions";
 
 interface Review {
   id: string;
@@ -139,6 +165,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     };
   }, [id]);
 
+  // STRUCTURED OPTIONS & MULTI-IMAGE PARSING
+  const productImages = useMemo(() => {
+    return parseProductImages(product.image);
+  }, [product.image]);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+  const structuredData = useMemo(() => {
+    return parseProductDescription(product.description);
+  }, [product.description]);
+
+  const [selectedSize, setSelectedSize] = useState<VariationOption | null>(null);
+  const [selectedAddOns, setSelectedAddOns] = useState<AddOnOption[]>([]);
+
+  const toggleAddOn = (addon: AddOnOption) => {
+    if (selectedAddOns.some((a) => a.name === addon.name)) {
+      setSelectedAddOns(selectedAddOns.filter((a) => a.name !== addon.name));
+    } else {
+      setSelectedAddOns([...selectedAddOns, addon]);
+    }
+  };
+
+  const basePrice = product.price || 0;
+  const sizeExtra = selectedSize ? selectedSize.price : 0;
+  const addOnsExtra = selectedAddOns.reduce((acc, a) => acc + a.price, 0);
+  const unitPrice = basePrice + sizeExtra + addOnsExtra;
+  const totalPrice = unitPrice * quantity;
+
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [newRating, setNewRating] = useState(5);
@@ -149,17 +202,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
   const handleAddToCart = () => {
+    const formattedItem = {
+      id: product.id,
+      name: product.name,
+      price: unitPrice,
+      image: productImages[0] || product.image,
+      vendorId: product.vendorId,
+      vendorName: product.vendorName,
+      selectedSize: selectedSize || undefined,
+      selectedAddOns: selectedAddOns.length > 0 ? selectedAddOns : undefined,
+    };
+
     let requiresConf = false;
     for (let i = 0; i < quantity; i++) {
-      const result = addItem({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        vendorId: product.vendorId,
-        vendorName: product.vendorName,
-      });
-
+      const result = addItem(formattedItem);
       if (result.requiresConfirmation) {
         requiresConf = true;
         break;
@@ -167,7 +223,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     if (requiresConf) {
-      setPendingProduct(product);
+      setPendingProduct(formattedItem);
     }
   };
 
@@ -180,6 +236,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         image: pendingProduct.image,
         vendorId: pendingProduct.vendorId,
         vendorName: pendingProduct.vendorName,
+        selectedSize: pendingProduct.selectedSize,
+        selectedAddOns: pendingProduct.selectedAddOns,
       });
       setPendingProduct(null);
     }
@@ -247,28 +305,66 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       
-      {/* HERO PRODUCT IMAGE WITH FULL HEIGHT & ANIMATION */}
+      {/* HERO PRODUCT IMAGE GALLERY WITH FULL HEIGHT & CONTROLS */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden"
+        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden group"
       >
         <Image
-          src={product.image}
+          src={productImages[activeImageIdx] || productImages[0]}
           alt={product.name}
           fill
           priority
-          className="object-cover"
+          className="object-cover transition-all duration-300"
         />
 
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40" />
+
+        {/* Multi-Photo Carousel Arrows */}
+        {productImages.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setActiveImageIdx((prev) => (prev - 1 + productImages.length) % productImages.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition active:scale-95 z-10 cursor-pointer"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveImageIdx((prev) => (prev + 1) % productImages.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition active:scale-95 z-10 cursor-pointer"
+              aria-label="Next photo"
+            >
+              <ChevronRight size={20} />
+            </button>
+
+            {/* Thumbnail Strip Overlay */}
+            <div className="absolute bottom-10 inset-x-4 z-10 flex items-center justify-center gap-2">
+              {productImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveImageIdx(idx)}
+                  className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-lg ${
+                    activeImageIdx === idx ? "border-[#FBBF24] scale-110 ring-2 ring-amber-400/50" : "border-white/50 opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Floating Top Controls */}
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
           <button
             onClick={() => router.back()}
-            className="w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm"
+            className="w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm cursor-pointer"
           >
             <ArrowLeft size={22} />
           </button>
@@ -280,7 +376,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   id: product.id,
                   name: product.name,
                   price: product.price,
-                  image: product.image,
+                  image: productImages[0] || product.image,
                   vendorName: product.vendorName,
                   rating: typeof product.rating === "number" ? product.rating : 4.8,
                   category: product.category,
@@ -288,7 +384,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 profile?.email
               );
             }}
-            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm ${
+            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm cursor-pointer ${
               isLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
             }`}
             aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
@@ -308,7 +404,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         )}
       </motion.div>
 
-      {/* MAIN CONTAINER (COMPACT SPACING & HEIGHTS) */}
+      {/* MAIN CONTAINER */}
       <div className="px-4 md:px-8 max-w-4xl mx-auto w-full -mt-6 relative z-20 space-y-4">
         
         {/* MAIN PRODUCT HEADER CARD */}
@@ -364,8 +460,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             
             <div className="flex items-baseline gap-3 mt-1.5">
               <span className="text-2xl md:text-3xl font-body font-extrabold text-[#312E81] dark:text-indigo-400">
-                ₦{product.price.toLocaleString()}
+                ₦{unitPrice.toLocaleString()}
               </span>
+              {(sizeExtra > 0 || addOnsExtra > 0) && (
+                <span className="text-xs text-slate-400 line-through">
+                  Base ₦{basePrice.toLocaleString()}
+                </span>
+              )}
               <span className="text-[11px] font-bold text-[#16A34A] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                 In Stock & Ready
               </span>
@@ -381,40 +482,147 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </motion.div>
 
-        {/* ELEGANT COMPACT "ABOUT THIS ITEM" DIV */}
+        {/* ABOUT THIS ITEM & CUSTOMIZATIONS CARD */}
         <motion.div 
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/90 dark:border-zinc-800 relative overflow-hidden space-y-3"
+          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/90 dark:border-zinc-800 relative overflow-hidden space-y-4"
         >
           {/* Section Title */}
-          <div className="relative z-10">
+          <div>
             <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
               About this Item
             </h3>
+            <p className="text-[#18181B] dark:text-zinc-200 text-xs md:text-sm leading-relaxed font-body font-normal mt-1">
+              {structuredData.description || product.description || "Freshly prepared campus delicacy."}
+            </p>
           </div>
 
-          {/* Description Body (Sitting directly in parent card) */}
-          <p className="text-[#18181B] dark:text-zinc-200 text-xs md:text-sm leading-relaxed font-body font-normal relative z-10">
-            {product.description}
-          </p>
+          {/* KEY INGREDIENTS LIST */}
+          {structuredData.ingredients.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                Key Ingredients & Highlights
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {structuredData.ingredients.map((ing, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 rounded-full bg-indigo-50/70 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-300 text-xs font-medium border border-indigo-100 dark:border-indigo-900/50"
+                  >
+                    ✓ {ing}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PORTION SIZES BUILDER */}
+          {structuredData.sizes.length > 0 && (
+            <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers size={14} className="text-[#312E81] dark:text-indigo-400" />
+                  Choose Portion Size
+                </h4>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Required</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div
+                  onClick={() => setSelectedSize(null)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                    selectedSize === null
+                      ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold shadow-xs"
+                      : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                  }`}
+                >
+                  <span className="text-xs">Regular (Standard)</span>
+                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    ₦{basePrice.toLocaleString()}
+                  </span>
+                </div>
+
+                {structuredData.sizes.map((s, idx) => {
+                  const isSelected = selectedSize?.name === s.name;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedSize(s)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        isSelected
+                          ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold shadow-xs"
+                          : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                      }`}
+                    >
+                      <span className="text-xs">{s.name}</span>
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        +₦{s.price.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* CUSTOM ADD-ONS */}
+          {structuredData.addons.length > 0 && (
+            <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-amber-500" />
+                  Extras & Add-Ons
+                </h4>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Optional</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {structuredData.addons.map((a, idx) => {
+                  const isChecked = selectedAddOns.some((item) => item.name === a.name);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => toggleAddOn(a)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        isChecked
+                          ? "border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 font-bold shadow-xs"
+                          : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          isChecked ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300 dark:border-zinc-700"
+                        }`}>
+                          {isChecked && <Check size={10} className="stroke-[3]" />}
+                        </div>
+                        <span className="text-xs">{a.name}</span>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        +₦{a.price.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
           <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2.5 relative z-10">
-            
             <button
               onClick={handleAddToCart}
               disabled={!product.isAvailable}
-              className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 group flex-1"
+              className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 group flex-1 cursor-pointer"
             >
               <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
                 <CustomCartIcon size={17} strokeWidth={2.2} />
               </div>
               
               <span className="font-heading font-extrabold tracking-wider text-sm md:text-base text-white">
-                Add to Cart
+                Add to Cart • ₦{totalPrice.toLocaleString()}
               </span>
 
               {quantity > 1 && (
@@ -427,13 +635,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* STANDALONE "+" BUTTON */}
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-14 h-14 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group"
+              className="w-14 h-14 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group cursor-pointer"
               title="Increase Quantity"
               aria-label="Increase Quantity"
             >
               <Plus size={20} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>
-
           </div>
         </motion.div>
 

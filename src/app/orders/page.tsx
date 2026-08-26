@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { 
   CheckCircle2, 
   ClipboardList, 
@@ -9,7 +9,8 @@ import {
   RotateCcw,
   Loader2,
   ShoppingBag,
-  Store
+  Store,
+  ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -30,6 +31,7 @@ interface OrderSummaryItem {
 }
 
 function OrdersContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const isSuccess = searchParams.get("success") === "true";
   const { profile } = useUserStore();
@@ -67,7 +69,30 @@ function OrdersContent() {
   });
 
   return (
-    <div className="px-5 md:px-8 max-w-3xl mx-auto w-full space-y-6">
+    <div className="px-5 md:px-8 max-w-3xl mx-auto w-full space-y-6 pt-4">
+      
+      {/* TOP HEADER WITH BACK BUTTON */}
+      <div className="flex items-center justify-between pb-1">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-full bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 text-[#18181B] dark:text-zinc-100 flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-slate-200/80 dark:border-zinc-800"
+            aria-label="Go back"
+            title="Go back"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <h1 className="text-xl md:text-2xl font-heading font-black text-[#18181B] dark:text-zinc-100 tracking-tight">
+              My Orders & Receipts
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+              Track live food prep, order history & receipts
+            </p>
+          </div>
+        </div>
+      </div>
       
       {/* SUCCESS TOAST IF REDIRECTED FROM CHECKOUT */}
       {isSuccess && (

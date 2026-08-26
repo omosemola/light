@@ -14,6 +14,8 @@ import {
   Cake, 
   BookOpen, 
   HeartPulse, 
+  Stethoscope,
+  Waves,
   Dumbbell,
   Shirt,
   Gem,
@@ -133,6 +135,20 @@ const CATEGORIES = [
     icon: Cake,
     iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
     badge: "Fresh Bakery"
+  },
+  { 
+    name: "Medical", 
+    slug: "medical", 
+    icon: Stethoscope,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Health & Meds"
+  },
+  { 
+    name: "Laundry", 
+    slug: "laundry", 
+    icon: Waves,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Wash & Press"
   },
   { 
     name: "Stationery", 

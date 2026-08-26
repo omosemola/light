@@ -1,7 +1,7 @@
 "use client";
 
 import { useCartStore } from "@/lib/store";
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, Store } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, Store, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,14 +44,25 @@ export default function CartPage() {
       {/* STICKY TOP HEADER */}
       <div className="px-5 pt-6 pb-4 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800 sticky top-0 md:top-20 z-40 shadow-xs">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-heading font-extrabold text-[#18181B] dark:text-zinc-100 tracking-tight">
-              My Shopping Cart
-            </h1>
-            <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-0.5 font-medium flex items-center gap-1.5">
-              <Store size={13} className="text-[#312E81] dark:text-indigo-400 shrink-0" />
-              <span>Ordering from <strong className="text-[#312E81] dark:text-indigo-300 font-extrabold">{vendorName}</strong></span>
-            </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-[#18181B] dark:text-zinc-100 flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-slate-200/60 dark:border-zinc-700"
+              aria-label="Go back"
+              title="Go back"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-heading font-extrabold text-[#18181B] dark:text-zinc-100 tracking-tight">
+                My Shopping Cart
+              </h1>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-0.5 font-medium flex items-center gap-1.5">
+                <Store size={13} className="text-[#312E81] dark:text-indigo-400 shrink-0" />
+                <span>Ordering from <strong className="text-[#312E81] dark:text-indigo-300 font-extrabold">{vendorName}</strong></span>
+              </p>
+            </div>
           </div>
 
           <span className="text-xs font-heading font-extrabold bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-800">

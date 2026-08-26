@@ -238,15 +238,34 @@ export async function createVendorProduct(data: {
   categoryId?: string;
 }) {
   try {
+    let validCategoryId: string | null = null;
+    if (data.categoryId && data.categoryId.trim().length > 0) {
+      const cleanCatId = data.categoryId.trim().toLowerCase();
+      const categoryExists = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { id: cleanCatId },
+            { name: { equals: cleanCatId, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (categoryExists) {
+        validCategoryId = categoryExists.id;
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
-        name: data.name,
+        name: data.name.trim(),
         description: data.description,
         price: data.price,
         image: data.image,
         storeId: data.storeId,
-        categoryId: data.categoryId || null,
+        categoryId: validCategoryId,
         isAvailable: true,
+      },
+      include: {
+        category: true,
       },
     });
 
@@ -254,6 +273,7 @@ export async function createVendorProduct(data: {
     revalidatePath("/");
     return { success: true, product };
   } catch (error: any) {
+    console.error("Error creating vendor product:", error);
     return { success: false, error: error.message || "Failed to create product" };
   }
 }
@@ -268,15 +288,34 @@ export async function updateVendorProduct(data: {
   isAvailable?: boolean;
 }) {
   try {
+    let validCategoryId: string | null = null;
+    if (data.categoryId && data.categoryId.trim().length > 0) {
+      const cleanCatId = data.categoryId.trim().toLowerCase();
+      const categoryExists = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { id: cleanCatId },
+            { name: { equals: cleanCatId, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (categoryExists) {
+        validCategoryId = categoryExists.id;
+      }
+    }
+
     const product = await prisma.product.update({
       where: { id: data.productId },
       data: {
-        name: data.name,
+        name: data.name.trim(),
         description: data.description,
         price: data.price,
         ...(data.image ? { image: data.image } : {}),
-        categoryId: data.categoryId || null,
+        categoryId: validCategoryId,
         ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
+      },
+      include: {
+        category: true,
       },
     });
 
@@ -284,6 +323,7 @@ export async function updateVendorProduct(data: {
     revalidatePath("/");
     return { success: true, product };
   } catch (error: any) {
+    console.error("Error updating vendor product:", error);
     return { success: false, error: error.message || "Failed to update product" };
   }
 }
@@ -558,5 +598,63 @@ export async function updateStoreSchedule(data: {
   } catch (error: any) {
     console.error("Error updating store schedule:", error);
     return { success: false, error: error.message || "Failed to update store schedule" };
+  }
+}
+
+export async function updateVendorProfile(data: {
+  storeId: string;
+  storeName: string;
+  ownerName?: string;
+  phone?: string;
+  description?: string;
+  openingTime?: string;
+  closingTime?: string;
+  estimatedDelivery?: string;
+  logo?: string;
+  coverImage?: string;
+}) {
+  try {
+    // 1. Update the Store record
+    const updatedStore = await prisma.store.update({
+      where: { id: data.storeId },
+      data: {
+        name: data.storeName.trim(),
+        description: data.description !== undefined ? data.description.trim() : undefined,
+        phone: data.phone !== undefined ? data.phone.trim() : undefined,
+        openingTime: data.openingTime || undefined,
+        closingTime: data.closingTime || undefined,
+        estimatedDelivery: data.estimatedDelivery || undefined,
+        ...(data.logo ? { logo: data.logo } : {}),
+        ...(data.coverImage ? { coverImage: data.coverImage } : {}),
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // 2. Also update the associated User's owner name, phone, and image
+    if (updatedStore.userId) {
+      await prisma.user.update({
+        where: { id: updatedStore.userId },
+        data: {
+          ...(data.ownerName ? { name: data.ownerName.trim() } : {}),
+          ...(data.phone ? { phone: data.phone.trim() } : {}),
+          ...(data.logo ? { image: data.logo } : {}),
+        },
+      });
+    }
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/");
+    revalidatePath(`/vendor/${data.storeId}`);
+
+    return { 
+      success: true, 
+      store: updatedStore,
+      message: "Store profile updated successfully!" 
+    };
+  } catch (error: any) {
+    console.error("Error updating vendor profile:", error);
+    return { success: false, error: error.message || "Failed to update vendor profile" };
   }
 }
