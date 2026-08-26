@@ -290,6 +290,7 @@ export async function updateVendorProduct(data: {
   image?: string;
   categoryId?: string;
   isAvailable?: boolean;
+  storeId?: string;
 }) {
   try {
     if (!data.productId) {
@@ -324,7 +325,7 @@ export async function updateVendorProduct(data: {
     if (!existing) {
       // If product record wasn't in DB yet, find current vendor store and insert it
       const cookieStore = await cookies();
-      const storeId = cookieStore.get("lightson_vendor_store_id")?.value;
+      const storeId = data.storeId || cookieStore.get("lightson_vendor_store_id")?.value;
       if (storeId) {
         const created = await prisma.product.create({
           data: {

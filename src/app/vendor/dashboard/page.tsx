@@ -76,6 +76,39 @@ import {
   AddOnOption 
 } from "@/lib/productOptions";
 
+// Client-side image compression to prevent payload limits and ensure fast loading
+function compressImage(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new (window as any).Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } else {
+          resolve(e.target?.result as string);
+        }
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function VendorDashboardPage() {
   const router = useRouter();
   const { profile, logoutUser } = useUserStore();
@@ -150,18 +183,17 @@ export default function VendorDashboardPage() {
     setShowProfileModal(true);
   };
 
-  const handleProductFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (reader.result) {
-            setProductImages((prev) => [...prev, reader.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      for (const file of Array.from(files)) {
+        try {
+          const compressed = await compressImage(file, 1200, 0.82);
+          setProductImages((prev) => [...prev, compressed]);
+        } catch (err) {
+          console.error("Error compressing product image:", err);
+        }
+      }
     }
     if (e.target) e.target.value = "";
   };
@@ -170,26 +202,30 @@ export default function VendorDashboardPage() {
     setProductImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleLogoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setStoreLogo(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 400, 0.85);
+        setStoreLogo(compressed);
+      } catch (err) {
+        console.error("Error compressing logo:", err);
+      }
     }
+    if (e.target) e.target.value = "";
   };
 
-  const handleCoverFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setStoreCoverImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 1400, 0.82);
+        setStoreCoverImage(compressed);
+      } catch (err) {
+        console.error("Error compressing cover:", err);
+      }
     }
+    if (e.target) e.target.value = "";
   };
 
   const playVendorOrderAlarm = () => {
@@ -361,17 +397,17 @@ export default function VendorDashboardPage() {
   const openEditProductModal = (prod: any) => {
     setEditingProductId(prod.id);
     setProductName(prod.name || "");
-    setProductPrice(prod.price ? prod.price.toString() : "");
-    setProductCategory(prod.categoryId || "");
+    setProductPrice(prod.price !== undefined && prod.price !== null ? String(prod.price) : "");
+    setProductCategory(prod.categoryId || (prod.category?.id || prod.category?.name?.toLowerCase()) || "");
 
     const images = parseProductImages(prod.image);
     setProductImages(images);
 
     const structured = parseProductDescription(prod.description);
-    setProductDesc(structured.description);
-    setProductIngredients(structured.ingredients.join(", "));
-    setVariations(structured.sizes);
-    setAddOns(structured.addons);
+    setProductDesc(structured.description || "");
+    setProductIngredients(structured.ingredients ? structured.ingredients.join(", ") : "");
+    setVariations(structured.sizes || []);
+    setAddOns(structured.addons || []);
 
     setShowProductModal(true);
   };
@@ -390,8 +426,12 @@ export default function VendorDashboardPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productName.trim() || !productPrice || !storeData) {
-      showToast("Please provide the dish name and price.");
+    if (!productName.trim()) {
+      showToast("Please enter the dish name.");
+      return;
+    }
+    if (productPrice === "" || isNaN(parseFloat(productPrice))) {
+      showToast("Please provide a valid price.");
       return;
     }
     setSubmittingProduct(true);
@@ -422,6 +462,7 @@ export default function VendorDashboardPage() {
           description: finalDesc,
           image: finalImage,
           categoryId: productCategory || undefined,
+          storeId: storeData?.id,
         });
 
         if (res.success && res.product) {
@@ -441,6 +482,10 @@ export default function VendorDashboardPage() {
           showToast(res.error || "Failed to update dish. Please check your inputs.");
         }
       } else {
+        if (!storeData?.id) {
+          showToast("Please log in again as vendor to add a dish.");
+          return;
+        }
         const res = await createVendorProduct({
           storeId: storeData.id,
           name: productName.trim(),
@@ -581,7 +626,7 @@ export default function VendorDashboardPage() {
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-5 right-5 z-50 px-4 py-3 bg-[#1E1B4B] text-white rounded-2xl shadow-2xl border border-indigo-500/30 flex items-center gap-3 font-heading font-extrabold text-xs backdrop-blur-md max-w-sm"
+            className="fixed top-5 right-5 z-[100] px-4 py-3 bg-[#1E1B4B] text-white rounded-2xl shadow-2xl border border-indigo-500/30 flex items-center gap-3 font-heading font-extrabold text-xs backdrop-blur-md max-w-sm"
           >
             <div className="flex items-center gap-2 truncate">
               <Sparkles size={16} className="text-amber-400 shrink-0" />

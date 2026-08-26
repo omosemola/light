@@ -11,6 +11,11 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   turbopack: {},
   compress: true,
   reactStrictMode: true,
