@@ -288,9 +288,17 @@ export async function updateVendorProduct(data: {
   isAvailable?: boolean;
 }) {
   try {
-    let validCategoryId: string | null = null;
+    if (!data.productId) {
+      return { success: false, error: "Missing product ID" };
+    }
+
+    const numericPrice = typeof data.price === "number" && !isNaN(data.price) 
+      ? data.price 
+      : parseFloat(String(data.price)) || 0;
+
+    let categoryIdToSet: string | null | undefined = undefined;
     if (data.categoryId && data.categoryId.trim().length > 0) {
-      const cleanCatId = data.categoryId.trim().toLowerCase();
+      const cleanCatId = data.categoryId.trim();
       const categoryExists = await prisma.category.findFirst({
         where: {
           OR: [
@@ -300,8 +308,39 @@ export async function updateVendorProduct(data: {
         },
       });
       if (categoryExists) {
-        validCategoryId = categoryExists.id;
+        categoryIdToSet = categoryExists.id;
       }
+    }
+
+    // Check if product exists in database
+    const existing = await prisma.product.findUnique({
+      where: { id: data.productId },
+    });
+
+    if (!existing) {
+      // If product record wasn't in DB yet, find current vendor store and insert it
+      const cookieStore = await cookies();
+      const storeId = cookieStore.get("lightson_vendor_store_id")?.value;
+      if (storeId) {
+        const created = await prisma.product.create({
+          data: {
+            name: data.name.trim(),
+            description: data.description,
+            price: numericPrice,
+            image: data.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+            storeId: storeId,
+            categoryId: categoryIdToSet || null,
+            isAvailable: data.isAvailable !== undefined ? data.isAvailable : true,
+          },
+          include: {
+            category: true,
+          },
+        });
+        revalidatePath("/vendor/dashboard");
+        revalidatePath("/");
+        return { success: true, product: created };
+      }
+      return { success: false, error: "Product record not found in database" };
     }
 
     const product = await prisma.product.update({
@@ -309,9 +348,9 @@ export async function updateVendorProduct(data: {
       data: {
         name: data.name.trim(),
         description: data.description,
-        price: data.price,
+        price: numericPrice,
         ...(data.image ? { image: data.image } : {}),
-        categoryId: validCategoryId,
+        ...(categoryIdToSet !== undefined ? { categoryId: categoryIdToSet } : {}),
         ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
       },
       include: {

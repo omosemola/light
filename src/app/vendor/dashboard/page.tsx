@@ -104,6 +104,7 @@ export default function VendorDashboardPage() {
   const productFileInputRef = useRef<HTMLInputElement>(null);
 
   // Store Profile & Operations State
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [storeDesc, setStoreDesc] = useState("");
@@ -131,6 +132,22 @@ export default function VendorDashboardPage() {
     toastTimeoutRef.current = setTimeout(() => {
       setToastMessage("");
     }, durationMs);
+  };
+
+  const openEditProfileModal = () => {
+    if (storeData) {
+      setStoreName(storeData.name || "");
+      setOwnerName(storeData.user?.name || "");
+      setStoreDesc(storeData.description || "");
+      setStorePhone(storeData.phone || storeData.user?.phone || "");
+      setStoreEmail(storeData.user?.email || "");
+      setStoreLogo(storeData.logo || "");
+      setStoreCoverImage(storeData.coverImage || "");
+      setDeliveryEstimate(storeData.estimatedDelivery || "20-35 mins");
+      setOpeningTime(storeData.openingTime || "08:00");
+      setClosingTime(storeData.closingTime || "22:00");
+    }
+    setShowProfileModal(true);
   };
 
   const handleProductFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,19 +267,28 @@ export default function VendorDashboardPage() {
     if (!isPoll) setLoading(true);
     const res = await getVendorDashboardData();
     if (res.success && res.store) {
-      setStoreData(res.store);
+      setStoreData((prev: any) => {
+        if (!prev || !isPoll) return res.store;
+        return {
+          ...res.store,
+          products: prev.products || res.store.products,
+        };
+      });
       setMetrics(res.metrics);
 
-      if (res.store.name) setStoreName(res.store.name);
-      if (res.store.user?.name) setOwnerName(res.store.user.name);
-      if (res.store.description) setStoreDesc(res.store.description);
-      if (res.store.phone || res.store.user?.phone) setStorePhone(res.store.phone || res.store.user?.phone || "");
-      if (res.store.user?.email) setStoreEmail(res.store.user.email);
-      if (res.store.logo) setStoreLogo(res.store.logo);
-      if (res.store.coverImage) setStoreCoverImage(res.store.coverImage);
-      if (res.store.estimatedDelivery) setDeliveryEstimate(res.store.estimatedDelivery);
-      if (res.store.openingTime) setOpeningTime(res.store.openingTime);
-      if (res.store.closingTime) setClosingTime(res.store.closingTime);
+      // ONLY populate edit form inputs on initial load (!isPoll), NEVER on background poll
+      if (!isPoll) {
+        if (res.store.name) setStoreName(res.store.name);
+        if (res.store.user?.name) setOwnerName(res.store.user.name);
+        if (res.store.description) setStoreDesc(res.store.description);
+        if (res.store.phone || res.store.user?.phone) setStorePhone(res.store.phone || res.store.user?.phone || "");
+        if (res.store.user?.email) setStoreEmail(res.store.user.email);
+        if (res.store.logo) setStoreLogo(res.store.logo);
+        if (res.store.coverImage) setStoreCoverImage(res.store.coverImage);
+        if (res.store.estimatedDelivery) setDeliveryEstimate(res.store.estimatedDelivery);
+        if (res.store.openingTime) setOpeningTime(res.store.openingTime);
+        if (res.store.closingTime) setClosingTime(res.store.closingTime);
+      }
 
       const currentPending = res.metrics?.pendingOrdersCount || 0;
       if (isPoll && currentPending > 0 && currentPending > prevPendingCountRef.current && !isAlarmMuted) {
@@ -392,17 +418,23 @@ export default function VendorDashboardPage() {
         const res = await updateVendorProduct({
           productId: editingProductId,
           name: productName.trim(),
-          price: parseFloat(productPrice),
+          price: parseFloat(productPrice) || 0,
           description: finalDesc,
           image: finalImage,
           categoryId: productCategory || undefined,
         });
 
         if (res.success && res.product) {
-          setStoreData((prev: any) => ({
-            ...prev,
-            products: prev.products.map((p: any) => (p.id === editingProductId ? res.product : p)),
-          }));
+          setStoreData((prev: any) => {
+            const currentProds = prev?.products || [];
+            const exists = currentProds.some((p: any) => p.id === editingProductId);
+            return {
+              ...prev,
+              products: exists
+                ? currentProds.map((p: any) => (p.id === editingProductId ? res.product : p))
+                : [res.product, ...currentProds],
+            };
+          });
           setShowProductModal(false);
           showToast("✓ Dish updated successfully!");
         } else {
@@ -412,7 +444,7 @@ export default function VendorDashboardPage() {
         const res = await createVendorProduct({
           storeId: storeData.id,
           name: productName.trim(),
-          price: parseFloat(productPrice),
+          price: parseFloat(productPrice) || 0,
           description: finalDesc,
           image: finalImage,
           categoryId: productCategory || undefined,
@@ -421,7 +453,7 @@ export default function VendorDashboardPage() {
         if (res.success && res.product) {
           setStoreData((prev: any) => ({
             ...prev,
-            products: [res.product, ...(prev.products || [])],
+            products: [res.product, ...(prev?.products || [])],
           }));
           setShowProductModal(false);
           showToast("✓ New dish added to store catalogue!");
@@ -478,6 +510,7 @@ export default function VendorDashboardPage() {
             image: res.store.logo,
           },
         }));
+        setShowProfileModal(false);
         showToast("✓ Store profile updated & saved to database!");
       } else {
         showToast(res.error || "Failed to update store profile.");
@@ -596,6 +629,15 @@ export default function VendorDashboardPage() {
                     {storeData?.name || "Campus Kitchen POS"}
                   </h1>
 
+                  <button
+                    type="button"
+                    onClick={openEditProfileModal}
+                    className="w-7 h-7 rounded-full bg-white/20 hover:bg-amber-400 hover:text-slate-950 text-white flex items-center justify-center transition active:scale-95 cursor-pointer shadow-sm"
+                    title="Edit Store Profile"
+                  >
+                    <Edit3 size={13} />
+                  </button>
+
                   {storeData?.isVerified ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-heading font-extrabold tracking-wider uppercase">
                       <ShieldCheck size={12} className="text-emerald-400" />
@@ -631,6 +673,17 @@ export default function VendorDashboardPage() {
             {/* QUICK ACTIONS & LIVE STORE TOGGLE */}
             <div className="flex flex-wrap items-center gap-2.5">
               
+              {/* EDIT STORE PROFILE BUTTON ON HERO */}
+              <button
+                type="button"
+                onClick={openEditProfileModal}
+                className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 border border-amber-300 text-slate-950 font-heading font-black text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-lg"
+                title="Edit Store Profile, Branding, Hotlines & Hours"
+              >
+                <Edit3 size={15} />
+                <span>Edit Store Profile</span>
+              </button>
+
               {/* LIVE STORE ON/OFF SWITCH */}
               <button
                 type="button"
@@ -1593,6 +1646,247 @@ export default function VendorDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* DEDICATED EDIT STORE PROFILE MODAL (ACCESSIBLE DIRECTLY FROM HERO) */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border p-6 md:p-8 shadow-2xl space-y-6 ${
+                isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
+              }`}
+            >
+              <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-zinc-800">
+                <div>
+                  <h3 className="font-heading font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <Store className="text-amber-500" size={20} />
+                    Edit Store Profile & Operational Settings
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Update your store branding, contact hotline, and delivery schedule.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-5">
+                {/* 1. BRANDING VISUALS */}
+                <div className="space-y-3">
+                  <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                    Store Branding
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Logo */}
+                    <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-2">
+                      <label className="block text-xs font-extrabold font-heading text-slate-700 dark:text-zinc-300">
+                        Store Logo
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden border border-indigo-200 dark:border-indigo-900 shadow-sm relative shrink-0 bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
+                          {storeLogo ? (
+                            <img src={storeLogo} alt="Store Logo" className="w-full h-full object-cover" />
+                          ) : (
+                            <Store size={22} className="text-slate-400" />
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => logoFileInputRef.current?.click()}
+                          className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-bold font-heading hover:bg-slate-50 flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                        >
+                          <Camera size={13} />
+                          <span>{storeLogo ? "Change" : "Upload"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Cover Banner */}
+                    <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-2">
+                      <label className="block text-xs font-extrabold font-heading text-slate-700 dark:text-zinc-300">
+                        Cover Banner
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-20 h-14 rounded-2xl overflow-hidden border border-indigo-200 dark:border-indigo-900 shadow-sm relative shrink-0 bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
+                          {storeCoverImage ? (
+                            <img src={storeCoverImage} alt="Cover Banner" className="w-full h-full object-cover" />
+                          ) : (
+                            <ImageIcon size={22} className="text-slate-400" />
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => coverFileInputRef.current?.click()}
+                          className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-bold font-heading hover:bg-slate-50 flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                        >
+                          <Upload size={13} />
+                          <span>{storeCoverImage ? "Change" : "Upload"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. STORE BUSINESS DETAILS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Store Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={storeName}
+                      onChange={(e) => setStoreName(e.target.value)}
+                      placeholder="e.g. Mama Cass Campus Kitchen"
+                      className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Owner / Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      placeholder="e.g. Chef Adebayo"
+                      className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                    Store Bio / Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={storeDesc}
+                    onChange={(e) => setStoreDesc(e.target.value)}
+                    placeholder="Welcome to our kitchen! Freshly made campus meals and fast delivery."
+                    className={`w-full p-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
+                    }`}
+                  />
+                </div>
+
+                {/* 3. CONTACT & HOTLINES */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      WhatsApp & Order Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={storePhone}
+                      onChange={(e) => setStorePhone(e.target.value)}
+                      placeholder="e.g. +2348012345678"
+                      className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">Receives instant order alerts on WhatsApp</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Registered Email
+                    </label>
+                    <input
+                      type="email"
+                      disabled
+                      value={storeEmail || "vendor@lightson.com"}
+                      className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border opacity-70 cursor-not-allowed ${
+                        isDark ? "bg-zinc-950/80 border-zinc-800 text-zinc-400" : "bg-slate-100 border-slate-200 text-slate-500"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* 4. OPERATIONS & DELIVERY SCHEDULE */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Opening Time
+                    </label>
+                    <input
+                      type="time"
+                      value={openingTime}
+                      onChange={(e) => setOpeningTime(e.target.value)}
+                      className={`w-full h-11 px-3 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Closing Time
+                    </label>
+                    <input
+                      type="time"
+                      value={closingTime}
+                      onChange={(e) => setClosingTime(e.target.value)}
+                      className={`w-full h-11 px-3 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                      Est. Delivery
+                    </label>
+                    <input
+                      type="text"
+                      value={deliveryEstimate}
+                      onChange={(e) => setDeliveryEstimate(e.target.value)}
+                      placeholder="e.g. 15-25 mins"
+                      className={`w-full h-11 px-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* SAVE BUTTON */}
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileModal(false)}
+                    className="flex-1 py-3 bg-slate-100 dark:bg-zinc-800 font-heading font-bold text-xs rounded-2xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="flex-1 py-3 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSavingProfile ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    <span>{isSavingProfile ? "Saving Profile..." : "Save Changes"}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ADD / EDIT PRODUCT MODAL */}
       <AnimatePresence>
