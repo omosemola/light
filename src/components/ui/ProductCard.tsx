@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { useUserStore } from "@/lib/userStore";
 
+import { parseProductImages } from "@/lib/productOptions";
+
 export interface ProductCardProps {
   id: string;
   name: string;
@@ -30,6 +32,7 @@ export function ProductCard({
   const { isProductFavorite, toggleProductFavorite } = useFavoritesStore();
   const { profile } = useUserStore();
   const isFavorite = isProductFavorite(id);
+  const mainImage = parseProductImages(image)[0] || image;
 
   const cardContent = (
     <motion.div
@@ -43,7 +46,7 @@ export function ProductCard({
         {/* ULTRA-COMPACT ASPECT RATIO (4/3) & REDUCED MARGIN */}
         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800/60 mb-1.5">
           <Image
-            src={image}
+            src={mainImage}
             alt={name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"

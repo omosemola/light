@@ -212,7 +212,11 @@ export default function Home() {
       try {
         const res = await getLiveHomepageData();
         if (isCurrent && res.success) {
-          if (res.products !== undefined) {
+          if (res.products !== undefined && res.products.length > 0) {
+            // Randomly shuffle available products so a fresh random set is featured
+            const shuffled = [...res.products].sort(() => 0.5 - Math.random());
+            setProducts(shuffled);
+          } else if (res.products !== undefined) {
             setProducts(res.products);
           }
           if (res.stores !== undefined) {
@@ -597,11 +601,11 @@ export default function Home() {
           </div>
 
           <ProductGrid 
-            products={filteredProducts.slice(0, 4)} 
+            products={filteredProducts.slice(0, Math.max(4, Math.min(8, filteredProducts.length)))} 
             onAddProduct={handleOpenCustomizer}
           />
 
-          {filteredProducts.length > 4 && (
+          {filteredProducts.length > 8 && (
             <div className="flex justify-center pt-3">
               <Link
                 href="/search"

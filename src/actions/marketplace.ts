@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { computeIsStoreOpen } from "@/lib/storeSchedule";
+import { parseProductImages } from "@/lib/productOptions";
 
 export async function getLiveHomepageData() {
   try {
@@ -12,7 +13,7 @@ export async function getLiveHomepageData() {
           store: true,
           category: true,
         },
-        take: 16,
+        take: 30,
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
@@ -38,20 +39,25 @@ export async function getLiveHomepageData() {
       }),
     ]);
 
-    const formattedProducts = products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      image: p.image,
-      description: p.description || "",
-      isAvailable: p.isAvailable,
-      rating: 4.8,
-      vendorId: p.storeId,
-      vendorName: p.store.name,
-      vendorIsOpen: computeIsStoreOpen(p.store),
-      vendorPrepTime: p.store.estimatedDelivery || "15-25 mins",
-      category: p.category?.name || "Pastries",
-    }));
+    const formattedProducts = products.map((p) => {
+      const parsed = parseProductImages(p.image);
+      const mainImage = parsed[0] || p.image;
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        image: mainImage,
+        rawImage: p.image,
+        description: p.description || "",
+        isAvailable: p.isAvailable,
+        rating: 4.8,
+        vendorId: p.storeId,
+        vendorName: p.store.name,
+        vendorIsOpen: computeIsStoreOpen(p.store),
+        vendorPrepTime: p.store.estimatedDelivery || "15-25 mins",
+        category: p.category?.name || "Pastries",
+      };
+    });
 
     const formattedStores = stores.map((s) => ({
       ...s,
