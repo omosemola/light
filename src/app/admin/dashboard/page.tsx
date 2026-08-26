@@ -60,44 +60,18 @@ export default function AdminDashboardPage() {
   const INITIAL_ADMIN_DATA = {
     success: true,
     metrics: {
-      totalUsers: 5,
-      totalStores: 1,
+      totalUsers: 0,
+      totalVendors: 0,
       totalOrders: 0,
-      totalProducts: 2,
+      totalProducts: 0,
       totalGMV: 0,
-      openTicketsCount: 1,
+      openTicketsCount: 0,
     },
-    stores: [
-      {
-        id: "cmst41xau0002tb705xlithpk",
-        name: "Mama Cass Continental",
-        isOpen: true,
-        rating: 4.9,
-        user: { email: "vendor@mamacass.com", name: "Mama Cass Manager" },
-        _count: { products: 2, orders: 0 },
-      },
-    ],
+    stores: [],
     users: [],
     recentOrders: [],
     tickets: [],
-    products: [
-      {
-        id: "cmst42xau0003tb709xlithpk",
-        name: "Jollof Rice with Chicken & Plantain",
-        price: 3500,
-        image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&q=80",
-        isAvailable: true,
-        store: { id: "cmst41xau0002tb705xlithpk", name: "Mama Cass Continental" },
-      },
-      {
-        id: "cmst43xau0004tb708xlithpk",
-        name: "Fried Rice Combo with Grilled Turkey",
-        price: 4200,
-        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80",
-        isAvailable: true,
-        store: { id: "cmst41xau0002tb705xlithpk", name: "Mama Cass Continental" },
-      },
-    ],
+    products: [],
     categories: [],
   };
 
@@ -812,7 +786,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </td>
                       <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
-                        {prod.store?.name || "Mama Cass"}
+                        {prod.store?.name || "Campus Store"}
                       </td>
                       <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-amber-400" : "text-[#312E81]"}`}>
                         ₦{prod.price?.toLocaleString()}
@@ -877,7 +851,7 @@ export default function AdminDashboardPage() {
                           <div className="text-[11px] text-zinc-400">{ord.user?.email || "No email"}</div>
                           {ord.user?.phone && <div className="text-[11px] text-zinc-500">{ord.user.phone}</div>}
                         </td>
-                        <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{ord.store?.name || "Mama Cass"}</td>
+                        <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{ord.store?.name || "Campus Store"}</td>
                         <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>₦{ord.totalAmount?.toLocaleString()}</td>
                         <td className="p-4">
                           <select

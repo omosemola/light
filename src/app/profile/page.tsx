@@ -707,7 +707,7 @@ export default function ProfilePage() {
             <input 
               type="text" 
               required
-              placeholder="e.g. Mama Cass Kitchen or Fresh Squeeze UI"
+              placeholder="e.g. Campus Delight Kitchen or QuickMart"
               value={vendorStoreName}
               onChange={(e) => setVendorStoreName(e.target.value)}
               className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"

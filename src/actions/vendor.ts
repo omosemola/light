@@ -523,22 +523,8 @@ export async function authenticateVendor(email: string, password?: string) {
       },
     });
 
-    // Auto-create demo vendor if needed
     if (!user) {
-      if (cleanEmail === "vendor@mamacass.com" || cleanEmail === "mamacass@campuslightson.com") {
-        user = await prisma.user.create({
-          data: {
-            email: cleanEmail,
-            name: "Mama Cass Merchant",
-            role: "VENDOR",
-          },
-          include: {
-            store: true,
-          },
-        });
-      } else {
-        return { success: false, error: "No merchant store registered with this email. Please register your store first." };
-      }
+      return { success: false, error: "No merchant store registered with this email. Please register your store first." };
     }
 
     // If user has a password and password was submitted, verify it

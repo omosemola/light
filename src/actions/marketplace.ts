@@ -16,17 +16,17 @@ export async function getLiveHomepageData() {
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
-        where: { isVerified: true },
         include: {
           products: {
             where: { isAvailable: true },
-            take: 4,
+            include: { category: true },
+            take: 8,
           },
           _count: {
             select: { products: true, orders: true },
           },
         },
-        take: 12,
+        take: 20,
         orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
       }),
       prisma.category.findMany({
@@ -50,7 +50,7 @@ export async function getLiveHomepageData() {
       vendorName: p.store.name,
       vendorIsOpen: computeIsStoreOpen(p.store),
       vendorPrepTime: p.store.estimatedDelivery || "15-25 mins",
-      category: p.category?.name || "Campus Item",
+      category: p.category?.name || "Pastries",
     }));
 
     const formattedStores = stores.map((s) => ({
@@ -75,7 +75,10 @@ export async function getLiveStoreById(storeId: string) {
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       include: {
-        products: true,
+        products: {
+          include: { category: true },
+          orderBy: { createdAt: "desc" },
+        },
         reviews: {
           include: {
             user: { select: { name: true, image: true } },
@@ -111,6 +114,10 @@ export async function getLiveProductById(productId: string) {
           include: {
             user: { select: { name: true, phone: true } },
             reviews: { take: 5 },
+            products: {
+              where: { isAvailable: true },
+              take: 6,
+            },
           },
         },
         category: true,
@@ -200,7 +207,6 @@ export async function searchLiveCatalog(query: string) {
       }),
       prisma.store.findMany({
         where: {
-          isVerified: true,
           OR: [
             { name: { contains: cleanQuery, mode: "insensitive" } },
             { description: { contains: cleanQuery, mode: "insensitive" } },

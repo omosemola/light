@@ -27,42 +27,11 @@ interface Product {
   reviewsCount: number;
 }
 
-const SEARCH_CATALOG: Product[] = [
-  {
-    id: "p1",
-    name: "Jollof Rice with Chicken & Plantain",
-    price: 3500,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    vendorRating: 4.9,
-    image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "Food",
-    rating: 4.9,
-    reviewsCount: 128,
-  },
-  {
-    id: "p1_2",
-    name: "Fried Rice Combo with Grilled Turkey",
-    price: 4200,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    vendorRating: 4.8,
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-    description: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "Food",
-    rating: 4.8,
-    reviewsCount: 76,
-  },
-];
+const SEARCH_CATALOG: Product[] = [];
 
-const CATEGORY_OPTIONS = ["All", "Food"];
-const VENDOR_OPTIONS = ["All Vendors", "Mama Cass"];
-const POPULAR_SUGGESTIONS = ["Jollof Rice", "Fried Rice Combo"];
+const CATEGORY_OPTIONS = ["All", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Medical", "Laundry"];
+const VENDOR_OPTIONS = ["All Vendors"];
+const POPULAR_SUGGESTIONS = ["Small Chops", "Pastries", "Snacks", "Drinks"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");

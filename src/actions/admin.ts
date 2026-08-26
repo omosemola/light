@@ -7,36 +7,8 @@ import { cookies } from "next/headers";
 import { sendEmail } from "@/lib/email";
 
 export async function getAdminDashboardData() {
-  const DEFAULT_FALLBACK_PRODUCTS = [
-    {
-      id: "cmst42xau0003tb709xlithpk",
-      name: "Jollof Rice with Chicken & Plantain",
-      price: 3500,
-      image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&q=80",
-      isAvailable: true,
-      store: { id: "cmst41xau0002tb705xlithpk", name: "Mama Cass Continental" },
-    },
-    {
-      id: "cmst43xau0004tb708xlithpk",
-      name: "Fried Rice Combo with Grilled Turkey",
-      price: 4200,
-      image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80",
-      isAvailable: true,
-      store: { id: "cmst41xau0002tb705xlithpk", name: "Mama Cass Continental" },
-    },
-  ];
-
-  const DEFAULT_FALLBACK_STORES = [
-    {
-      id: "cmst41xau0002tb705xlithpk",
-      name: "Mama Cass Continental",
-      isOpen: true,
-      isVerified: true,
-      rating: 4.9,
-      user: { email: "vendor@mamacass.com", name: "Mama Cass Manager" },
-      _count: { products: 2, orders: 0 },
-    },
-  ];
+  const DEFAULT_FALLBACK_PRODUCTS: any[] = [];
+  const DEFAULT_FALLBACK_STORES: any[] = [];
 
   try {
     const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>

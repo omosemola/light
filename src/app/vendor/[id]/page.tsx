@@ -28,80 +28,6 @@ import { Modal } from "@/components/ui/Modal";
 import { getLiveStoreById } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 
-// MOCK VENDORS DATABASE (MAMA CASS ONLY)
-const VENDORS_DATA: Record<string, {
-  id: string;
-  name: string;
-  category: string;
-  rating: number;
-  reviewsCount: number;
-  location: string;
-  prepTime: string;
-  isOpen: boolean;
-  avatar: string;
-  coverImage: string;
-  description: string;
-  phone: string;
-  ordersCount: number;
-  products: Array<{
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    description: string;
-    isAvailable: boolean;
-    rating: number;
-    category: string;
-  }>;
-  reviews: Array<{
-    id: string;
-    author: string;
-    avatar: string;
-    rating: number;
-    date: string;
-    comment: string;
-  }>;
-}> = {
-  v1: {
-    id: "v1",
-    name: "Mama Cass",
-    category: "Nigerian Food & Grills",
-    rating: 4.9,
-    reviewsCount: 128,
-    location: "Kafanchan Lodge, Mellanby Gate",
-    prepTime: "15-20 mins",
-    isOpen: true,
-    avatar: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-    coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-    description: "Serving piping hot Nigerian party Jollof, fried plantains, crispy peppered chicken, and swallows prepared fresh daily.",
-    phone: "+234 812 345 9900",
-    ordersCount: 1420,
-    products: [
-      {
-        id: "p1",
-        name: "Jollof Rice with Chicken & Plantain",
-        price: 3500,
-        image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-        description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
-        isAvailable: true,
-        rating: 4.9,
-        category: "Meals",
-      },
-      {
-        id: "p1_2",
-        name: "Fried Rice Combo with Grilled Turkey",
-        price: 4200,
-        image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-        description: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
-        isAvailable: true,
-        rating: 4.8,
-        category: "Meals",
-      },
-    ],
-    reviews: [],
-  },
-};
-
 export default function VendorStorefrontPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -157,8 +83,8 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
                 }))
               : [],
           });
-        } else if (active && (VENDORS_DATA[id] || id === "v1")) {
-          setVendor(VENDORS_DATA[id] || VENDORS_DATA.v1);
+        } else if (active) {
+          setVendor(null);
         }
       } catch (err) {
         console.error("Error loading live store:", err);

@@ -56,60 +56,22 @@ interface Review {
 
 
 
-// MOCK PRODUCTS DATABASE (MAMA CASS ONLY)
-const ALL_PRODUCTS: Record<string, {
-  id: string;
-  name: string;
-  price: number;
-  vendorId: string;
-  vendorName: string;
-  vendorRating: number;
-  image: string;
-  description: string;
-  details: string[];
-  prepTime: string;
-  isAvailable: boolean;
-  category: string;
-  rating: number;
-  reviewsCount: number;
-}> = {
-  p1: {
-    id: "p1",
-    name: "Jollof Rice with Chicken & Plantain",
-    price: 3500,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    vendorRating: 4.9,
-    image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg. Prepared fresh daily with premium spice blend.",
-    details: ["Includes 1x Jumbo Chicken Leg", "4x Fried Plantain Slices", "Option for Extra Pepper Sauce", "Halal Certified"],
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 4.9,
-    reviewsCount: 128,
-  },
-  p1_2: {
-    id: "p1_2",
-    name: "Fried Rice Combo with Grilled Turkey",
-    price: 4200,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    vendorRating: 4.8,
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-    description: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
-    details: ["Includes 1x Fried Turkey Wing", "Mixed Veggies", "Coleslaw Portion"],
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 4.8,
-    reviewsCount: 76,
-  },
+const DEFAULT_FALLBACK_PRODUCT = {
+  id: "item",
+  name: "Campus Item",
+  price: 0,
+  vendorId: "",
+  vendorName: "Campus Merchant",
+  vendorRating: 5.0,
+  image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+  description: "Freshly prepared campus delicacy.",
+  details: ["Freshly prepared on campus", "Fast hostel delivery"],
+  prepTime: "15-20 mins",
+  isAvailable: true,
+  category: "food",
+  rating: 5.0,
+  reviewsCount: 0,
 };
-
-// Aliases for IDs
-ALL_PRODUCTS.f1 = ALL_PRODUCTS.p1;
-ALL_PRODUCTS.f3 = ALL_PRODUCTS.p1_2;
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -118,8 +80,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const { reviewsByProduct, addProductReview, toggleLikeReview } = useReviewsStore();
   const { isProductFavorite, toggleProductFavorite } = useFavoritesStore();
 
-  const defaultProduct = ALL_PRODUCTS[id] || ALL_PRODUCTS.p1;
-  const [product, setProduct] = useState(defaultProduct);
+  const [product, setProduct] = useState(DEFAULT_FALLBACK_PRODUCT);
   const [quantity, setQuantity] = useState(1);
   const isLiked = isProductFavorite(product.id) || isProductFavorite(id);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
@@ -129,6 +90,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const averageRating = reviewsList.length > 0
     ? (reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length).toFixed(1)
     : "0.0";
+
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -141,18 +104,36 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             id: p.id,
             name: p.name,
             price: p.price,
-            image: p.image || defaultProduct.image,
-            description: p.description || defaultProduct.description,
+            image: p.image || DEFAULT_FALLBACK_PRODUCT.image,
+            description: p.description || DEFAULT_FALLBACK_PRODUCT.description,
             vendorId: p.storeId,
-            vendorName: p.store?.name || defaultProduct.vendorName,
+            vendorName: p.store?.name || DEFAULT_FALLBACK_PRODUCT.vendorName,
             vendorRating: p.store?.rating || 4.9,
-            details: defaultProduct.details || ["Freshly prepared on campus", "Fast delivery to all student hostels"],
+            details: DEFAULT_FALLBACK_PRODUCT.details || ["Freshly prepared on campus", "Fast delivery to all student hostels"],
             prepTime: p.store?.estimatedDelivery || "15-20 mins",
             isAvailable: p.isAvailable,
             category: p.category?.name?.toLowerCase() || "food",
             rating: p.store?.rating || 4.9,
             reviewsCount: p.store?.reviews?.length || 0,
           });
+
+          if (p.store?.products) {
+            const formattedRelated = p.store.products
+              .filter((prod: any) => prod.id !== p.id)
+              .map((prod: any) => ({
+                id: prod.id,
+                name: prod.name,
+                price: prod.price,
+                image: prod.image,
+                description: prod.description || "",
+                vendorId: p.storeId,
+                vendorName: p.store?.name || "Campus Vendor",
+                rating: 4.9,
+                isAvailable: prod.isAvailable,
+                category: p.category?.name || "Items",
+              }));
+            setRelatedProducts(formattedRelated);
+          }
         }
       } catch (err) {
         console.error("Error loading live product:", err);
@@ -294,13 +275,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const handlePrevReview = () => {
     setActiveReviewIndex((prev) => (prev - 1 + reviewsList.length) % reviewsList.length);
   };
-
-  const rawRelated = Object.values(ALL_PRODUCTS).filter(
-    (p) => p.vendorId === product.vendorId && p.id !== product.id
-  );
-  const relatedProducts = Array.from(
-    new Map(rawRelated.map((p) => [p.id, p])).values()
-  );
 
   return (
     <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">

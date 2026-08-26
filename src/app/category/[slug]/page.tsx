@@ -165,30 +165,7 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
   subcategory: string;
   isAvailable: boolean;
 }>> = {
-  food: [
-    {
-      id: "f1",
-      name: "Jollof Rice with Chicken & Plantain",
-      price: 3500,
-      vendorId: "cmst41xau0002tb705xlithpk",
-      vendorName: "Mama Cass",
-      image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-      description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg.",
-      subcategory: "Rice & Meals",
-      isAvailable: true,
-    },
-    {
-      id: "f3",
-      name: "Fried Rice Combo with Grilled Turkey",
-      price: 4200,
-      vendorId: "cmst41xau0002tb705xlithpk",
-      vendorName: "Mama Cass",
-      image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-      description: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
-      subcategory: "Rice & Meals",
-      isAvailable: true,
-    },
-  ],
+  food: [],
   snacks: [],
   drinks: [],
   groceries: [],
@@ -198,46 +175,24 @@ const CATEGORY_PRODUCTS: Record<string, Array<{
       id: "med1",
       name: "Campus First Aid Kit & Antiseptic Care Pack",
       price: 2500,
-      vendorId: "cmst41xau0002tb705xlithpk",
-      vendorName: "Campus Med Store",
-      image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?auto=format&fit=crop&w=800&q=80",
-      description: "Essential first aid kit including sterile gauze, bandages, antiseptic wipe, and pain relief balm.",
-      subcategory: "First Aid",
-      isAvailable: true,
-    },
-    {
-      id: "med2",
-      name: "Vitamin C 1000mg Effervescent (Pack of 20)",
-      price: 3200,
-      vendorId: "cmst41xau0002tb705xlithpk",
-      vendorName: "Campus Med Store",
+      vendorId: "med-store-1",
+      vendorName: "Campus Meds & Care",
       image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
-      description: "High potency Vitamin C + Zinc immune support effervescent tablets for campus study resilience.",
-      subcategory: "Vitamins & Supplements",
+      description: "Complete student first aid bundle with methyl spirit, band-aids, cotton wool, paracetamol & antiseptic liquid.",
+      subcategory: "First Aid & Hygiene",
       isAvailable: true,
     }
   ],
   laundry: [
     {
-      id: "lau1",
-      name: "Wash, Dry & Fold Laundry Service (Per Basket / 5kg)",
+      id: "lnd1",
+      name: "Standard Hostel Laundry Wash, Dry & Fold Bag",
       price: 3000,
-      vendorId: "cmst41xau0002tb705xlithpk",
-      vendorName: "Hostel Wash Pro",
+      vendorId: "lnd-store-1",
+      vendorName: "Campus Express Laundry",
       image: "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80",
-      description: "Full hostel laundry service with fabric softener, hygienic wash, machine dry, and neat fold.",
-      subcategory: "Wash & Fold",
-      isAvailable: true,
-    },
-    {
-      id: "lau2",
-      name: "Student Bedding & Duvet Deep Clean Service",
-      price: 4500,
-      vendorId: "cmst41xau0002tb705xlithpk",
-      vendorName: "Hostel Wash Pro",
-      image: "https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=800&q=80",
-      description: "Deep chemical sanitization and steam press for duvets, bedsheets, and pillow covers.",
-      subcategory: "Beddings & Duvets",
+      description: "Quick 24-hour turnaround hostel laundry wash, spin dry and neatly folded laundry service.",
+      subcategory: "Wash & Fold Bags",
       isAvailable: true,
     }
   ],
@@ -265,7 +220,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   };
 
   const CategoryIcon = category.Icon;
-  const defaultProducts = CATEGORY_PRODUCTS[slug] || CATEGORY_PRODUCTS.food;
+  const defaultProducts = CATEGORY_PRODUCTS[slug] || [];
   const [rawProducts, setRawProducts] = useState(defaultProducts);
 
   useEffect(() => {
@@ -273,7 +228,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     async function loadCategoryProducts() {
       try {
         const res = await getLiveCategoryProducts(slug);
-        if (active && res.success && res.products.length > 0) {
+        if (active && res.success && res.products) {
           const formatted = res.products.map((p: any) => ({
             id: p.id,
             name: p.name,

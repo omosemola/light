@@ -52,59 +52,32 @@ import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/Produ
 const PROMO_SLIDES = [
   {
     id: "promo-1",
-    tag: "🔥 BESTSELLER • Mama Cass Campus Kitchen",
-    title: "Smoky Jollof & Grilled Chicken Platter 🍗",
-    subtitle: "Piping hot Nigerian party Jollof rice, crispy plantains & succulent grilled chicken prepared fresh daily by Mama Cass.",
-    link: "/category/food",
-    buttonText: "Order Hot Lunch",
+    tag: "🔥 FRESH CAMPUS BAKERY • PastryHomebyLayo",
+    title: "Crispy Gourmet Small Chops Platter 🥟",
+    subtitle: "Freshly prepared spring rolls, samosas, peppered puff puff & succulent wings delivered hot to your hostel.",
+    link: "/category/pastries",
+    buttonText: "Order Small Chops",
     bgColor: "bg-[#1E1B4B]",
     badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
-    image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=600&q=80",
-    highlight: "⭐ 4.9 Top Rated • Mama Cass"
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    highlight: "⭐ 5.0 Top Rated • Campus Kitchen"
   },
   {
     id: "promo-2",
-    tag: "🍗 BESTSELLER • Vegetable Fried Rice Combo",
-    title: "Fried Rice Combo & Grilled Turkey 🍗",
-    subtitle: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
+    tag: "⚡ FAST HOSTEL DELIVERY • Campus Express",
+    title: "Fresh Campus Meals & Quick Bites 🍱",
+    subtitle: "Delicious meals, snacks, groceries, and essentials delivered right to your hostel porter's lodge in 15–25 minutes.",
     link: "/category/food",
-    buttonText: "Order Fried Rice",
+    buttonText: "Explore Marketplace",
     bgColor: "bg-[#1E1B4B]",
     badgeBg: "bg-amber-400 text-slate-950 font-black",
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
     highlight: "⚡ 15-20 Min Fast Delivery"
   }
 ];
 
-// POPULAR PRODUCTS (EXACTLY 2 DISHES)
-const POPULAR_PRODUCTS = [
-  {
-    id: "p1",
-    name: "Jollof Rice with Chicken & Plantain",
-    price: 3500,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
-    description: "Authentic Nigerian party Jollof rice served hot with crispy fried plantain and a grilled chicken leg. [OPTIONS:{\"sizes\":[{\"name\":\"Medium Pack\",\"price\":500},{\"name\":\"Large Pack (Jumbo)\",\"price\":1200}],\"addons\":[{\"name\":\"Extra Fried Plantain (Dodo)\",\"price\":500},{\"name\":\"Grilled Chicken Drumstick\",\"price\":1200},{\"name\":\"Chilled Coke 50cl\",\"price\":450}]}]",
-    isAvailable: true,
-    rating: 4.9,
-    vendorIsOpen: true,
-    vendorPrepTime: "15-20 mins",
-  },
-  {
-    id: "p1_2",
-    name: "Fried Rice Combo with Grilled Turkey",
-    price: 4200,
-    vendorId: "cmst41xau0002tb705xlithpk",
-    vendorName: "Mama Cass",
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80",
-    description: "Seasoned vegetable fried rice served with succulent grilled turkey wing, mixed vegetables, and fresh coleslaw.",
-    isAvailable: true,
-    rating: 4.8,
-    vendorIsOpen: true,
-    vendorPrepTime: "15-20 mins",
-  },
-];
+// INITIAL PLACEHOLDER PRODUCTS (EMPTY BY DEFAULT, HYDRATED FROM LIVE DATABASE)
+const POPULAR_PRODUCTS: any[] = [];
 
 // CATEGORIES METADATA WITH CLEAN ICONS & DESCRIPTIVE BADGES
 const CATEGORIES = [
@@ -239,10 +212,10 @@ export default function Home() {
       try {
         const res = await getLiveHomepageData();
         if (isCurrent && res.success) {
-          if (res.products && res.products.length > 0) {
+          if (res.products !== undefined) {
             setProducts(res.products);
           }
-          if (res.stores && res.stores.length > 0) {
+          if (res.stores !== undefined) {
             setStores(res.stores);
           }
         }

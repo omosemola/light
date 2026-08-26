@@ -1582,7 +1582,7 @@ export default function VendorDashboardPage() {
                       required
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
-                      placeholder="e.g. Mama Cass Campus Kitchen"
+                      placeholder="e.g. Pastry Haven or Campus Kitchen"
                       className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
@@ -1829,7 +1829,7 @@ export default function VendorDashboardPage() {
                       required
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
-                      placeholder="e.g. Mama Cass Campus Kitchen"
+                      placeholder="e.g. Pastry Haven or Campus Kitchen"
                       className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}

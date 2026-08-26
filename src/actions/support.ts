@@ -197,7 +197,7 @@ export async function getLiveUserOrdersForSupport(userEmail?: string) {
         id: o.id,
         totalAmount: o.totalAmount,
         status: o.status,
-        storeName: o.store?.name || "Mama Cass",
+        storeName: o.store?.name || "Campus Store",
         createdAt: o.createdAt.toISOString(),
       })),
     };

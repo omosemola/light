@@ -1168,7 +1168,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                 <div className="flex items-center justify-between p-3.5 bg-[#FAFAF7] dark:bg-zinc-800/60 rounded-2xl">
                   <div>
                     <p className="font-bold text-slate-800 dark:text-zinc-200">Order Updates (WhatsApp & SMS)</p>
-                    <span className="text-[10px] text-slate-400">Instant ping when Mama Cass accepts or dispatches food</span>
+                    <span className="text-[10px] text-slate-400">Instant ping when a vendor accepts or dispatches your order</span>
                   </div>
                   <input
                     type="checkbox"

@@ -55,7 +55,7 @@ interface UserOrderOption {
 const FAQS = [
   {
     q: "How fast is delivery to student hostels?",
-    a: "Orders from verified campus kitchens like Mama Cass are prepared hot and delivered to your hostel porter's lodge or gate within 15–25 minutes.",
+    a: "Orders from verified campus kitchens and stores are prepared hot and delivered to your hostel porter's lodge or gate within 15–25 minutes.",
   },
   {
     q: "What should I do if an item or drink is missing from my order?",
@@ -67,11 +67,11 @@ const FAQS = [
   },
   {
     q: "Can I change my delivery hostel or phone number after placing an order?",
-    a: "If your order has not been dispatched yet, call Mama Cass directly via the storefront phone number or message campus support immediately.",
+    a: "If your order has not been dispatched yet, call the store directly via the storefront phone number or message campus support immediately.",
   },
   {
-    q: "Are Mama Cass meals freshly prepared daily?",
-    a: "Yes! All dishes (Smoky Jollof, Fried Rice, Peppered Chicken, Egusi & Pounded Yam, Asun) are prepared in small batches each morning on campus to guarantee fresh flavor.",
+    q: "Are marketplace meals freshly prepared daily?",
+    a: "Yes! All dishes and bakery items are prepared fresh each morning by verified campus merchants to guarantee top flavor and quality.",
   },
 ];
 
@@ -492,7 +492,7 @@ export default function SupportPage() {
                   type="text"
                   value={faqSearch}
                   onChange={(e) => setFaqSearch(e.target.value)}
-                  placeholder="Search campus FAQs (e.g. delivery, refunds, Mama Cass)..."
+                  placeholder="Search campus FAQs (e.g. delivery, refunds, menu options)..."
                   className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -560,7 +560,7 @@ export default function SupportPage() {
                   <option value="Order Issue">Order Issue (Missing item, cold food)</option>
                   <option value="Delivery Delay">Delivery Delay (Over 30 mins)</option>
                   <option value="Payment / Refund">Payment / Paystack Refund</option>
-                  <option value="Mama Cass Kitchen">Mama Cass Menu & Portion Inquiry</option>
+                  <option value="Vendor / Menu Inquiry">Vendor Menu & Portion Inquiry</option>
                   <option value="Account / Profile">Account & Hostel Settings</option>
                   <option value="General Inquiry">General Campus Inquiry</option>
                 </select>
