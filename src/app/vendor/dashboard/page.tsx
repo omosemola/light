@@ -305,7 +305,7 @@ export default function VendorDashboardPage() {
     fetchDashboard(false);
     const interval = setInterval(() => {
       fetchDashboard(true);
-    }, 5000);
+    }, 12000);
     return () => clearInterval(interval);
   }, [isAlarmMuted]);
 

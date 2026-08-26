@@ -238,9 +238,13 @@ export async function createVendorProduct(data: {
   categoryId?: string;
 }) {
   try {
+    const numericPrice = typeof data.price === "number" && !isNaN(data.price) 
+      ? data.price 
+      : parseFloat(String(data.price)) || 0;
+
     let validCategoryId: string | null = null;
     if (data.categoryId && data.categoryId.trim().length > 0) {
-      const cleanCatId = data.categoryId.trim().toLowerCase();
+      const cleanCatId = data.categoryId.trim();
       const categoryExists = await prisma.category.findFirst({
         where: {
           OR: [
@@ -258,7 +262,7 @@ export async function createVendorProduct(data: {
       data: {
         name: data.name.trim(),
         description: data.description,
-        price: data.price,
+        price: numericPrice,
         image: data.image,
         storeId: data.storeId,
         categoryId: validCategoryId,
