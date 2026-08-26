@@ -601,11 +601,11 @@ export default function Home() {
           </div>
 
           <ProductGrid 
-            products={filteredProducts.slice(0, Math.max(4, Math.min(8, filteredProducts.length)))} 
+            products={filteredProducts} 
             onAddProduct={handleOpenCustomizer}
           />
 
-          {filteredProducts.length > 8 && (
+          {filteredProducts.length > 12 && (
             <div className="flex justify-center pt-3">
               <Link
                 href="/search"

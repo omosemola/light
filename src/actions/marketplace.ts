@@ -203,13 +203,15 @@ export async function searchLiveCatalog(query: string) {
           OR: [
             { name: { contains: cleanQuery, mode: "insensitive" } },
             { description: { contains: cleanQuery, mode: "insensitive" } },
+            { category: { name: { contains: cleanQuery, mode: "insensitive" } } },
+            { store: { name: { contains: cleanQuery, mode: "insensitive" } } },
           ],
         },
         include: {
           store: true,
           category: true,
         },
-        take: 20,
+        take: 30,
       }),
       prisma.store.findMany({
         where: {
@@ -219,13 +221,37 @@ export async function searchLiveCatalog(query: string) {
           ],
         },
         include: {
-          _count: { select: { products: true } },
+          _count: { select: { products: true, orders: true } },
         },
-        take: 10,
+        take: 15,
       }),
     ]);
 
-    return { success: true, products, stores };
+    const formattedProducts = products.map((p) => {
+      const parsed = parseProductImages(p.image);
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        image: parsed[0] || p.image,
+        rawImage: p.image,
+        description: p.description || "",
+        isAvailable: p.isAvailable,
+        rating: 4.9,
+        vendorId: p.storeId,
+        vendorName: p.store?.name || "Campus Vendor",
+        vendorIsOpen: computeIsStoreOpen(p.store),
+        vendorPrepTime: p.store?.estimatedDelivery || "15-25 mins",
+        category: p.category?.name || "Pastries",
+      };
+    });
+
+    const formattedStores = stores.map((s) => ({
+      ...s,
+      isCurrentlyOpen: computeIsStoreOpen(s),
+    }));
+
+    return { success: true, products: formattedProducts, stores: formattedStores };
   } catch (error: any) {
     console.error("Error searching live catalog:", error);
     return { success: false, products: [], stores: [] };

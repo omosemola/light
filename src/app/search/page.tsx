@@ -15,27 +15,29 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  image: string;
   vendorId: string;
   vendorName: string;
-  vendorRating: number;
-  image: string;
   description: string;
-  prepTime: string;
-  isAvailable: boolean;
-  category: string;
-  rating: number;
-  reviewsCount: number;
+  rawImage?: string;
+  vendorRating?: number;
+  vendorIsOpen?: boolean;
+  vendorPrepTime?: string;
+  prepTime?: string;
+  isAvailable?: boolean;
+  category?: string;
+  rating?: number;
+  reviewsCount?: number;
 }
 
 const SEARCH_CATALOG: Product[] = [];
 
-const CATEGORY_OPTIONS = ["All", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Medical", "Laundry"];
-const VENDOR_OPTIONS = ["All Vendors"];
-const POPULAR_SUGGESTIONS = ["Small Chops", "Pastries", "Snacks", "Drinks"];
+const CATEGORY_OPTIONS = ["All", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Medical", "Laundry", "Fashion", "Tech & Gadgets"];
+const POPULAR_SUGGESTIONS = ["Small Chops", "Pastries", "Snacks", "Drinks", "Meals"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [catalog, setCatalog] = useState<Product[]>(SEARCH_CATALOG);
+  const [catalog, setCatalog] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedVendor, setSelectedVendor] = useState("All Vendors");
   const [maxPrice, setMaxPrice] = useState<number>(8000);
@@ -50,19 +52,48 @@ export default function SearchPage() {
 
   const { addItem, confirmAndReplaceCart } = useCartStore();
 
+  const vendorOptions = useMemo(() => {
+    const storeNames = stores.map((s) => s.name).filter(Boolean);
+    return ["All Vendors", ...Array.from(new Set(storeNames))];
+  }, [stores]);
+
+  const mapProduct = (p: any): Product => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    image: p.image,
+    rawImage: p.rawImage || p.image,
+    vendorId: p.vendorId || p.storeId || "",
+    vendorName: p.vendorName || p.store?.name || "Campus Vendor",
+    description: p.description || "",
+    rating: p.rating || 4.9,
+    vendorRating: p.vendorRating || p.store?.rating || 4.9,
+    vendorIsOpen: p.vendorIsOpen,
+    vendorPrepTime: p.vendorPrepTime || p.store?.estimatedDelivery || "15-25 mins",
+    prepTime: p.prepTime || p.vendorPrepTime || "15-20 mins",
+    isAvailable: p.isAvailable !== false,
+    category: typeof p.category === "string" ? p.category : p.category?.name || "Pastries",
+    reviewsCount: p.reviewsCount || 0,
+  });
+
   useEffect(() => {
     let active = true;
-    async function loadStores() {
+    async function loadInitialData() {
       try {
         const data = await getLiveHomepageData();
-        if (active && data.success && data.stores) {
-          setStores(data.stores);
+        if (active && data.success) {
+          if (data.stores) {
+            setStores(data.stores);
+          }
+          if (data.products) {
+            setCatalog(data.products.map(mapProduct));
+          }
         }
       } catch (err) {
-        console.error("Error loading stores in search:", err);
+        console.error("Error loading initial data in search:", err);
       }
     }
-    loadStores();
+    loadInitialData();
     return () => {
       active = false;
     };
@@ -71,31 +102,23 @@ export default function SearchPage() {
   useEffect(() => {
     let active = true;
     async function performLiveSearch() {
-      if (!query.trim()) return;
+      if (!query.trim()) {
+        const data = await getLiveHomepageData();
+        if (active && data.success) {
+          if (data.products) setCatalog(data.products.map(mapProduct));
+          if (data.stores) setStores(data.stores);
+        }
+        return;
+      }
       try {
         const res = await searchLiveCatalog(query);
-        if (active && res.success && res.products.length > 0) {
-          const liveResults: Product[] = res.products.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            vendorId: p.storeId,
-            vendorName: p.store?.name || "Campus Vendor",
-            vendorRating: p.store?.rating || 4.9,
-            image: p.image,
-            description: p.description || "",
-            prepTime: "15-20 mins",
-            isAvailable: p.isAvailable,
-            category: p.category?.name || "Food",
-            rating: 4.9,
-            reviewsCount: 15,
-          }));
-
-          // Merge live results with unique IDs
-          setCatalog((prev) => {
-            const existingIds = new Set(liveResults.map((r) => r.id));
-            return [...liveResults, ...prev.filter((p) => !existingIds.has(p.id))];
-          });
+        if (active && res.success) {
+          if (res.products) {
+            setCatalog(res.products.map(mapProduct));
+          }
+          if (res.stores && res.stores.length > 0) {
+            setStores(res.stores);
+          }
         }
       } catch (err) {
         console.error("Error during live search:", err);
@@ -114,39 +137,46 @@ export default function SearchPage() {
     return catalog.filter((product) => {
       // Search query match (Name, Vendor, Description, Category)
       const q = query.toLowerCase().trim();
+      const name = (product.name || "").toLowerCase();
+      const vendor = (product.vendorName || "").toLowerCase();
+      const cat = (product.category || "").toLowerCase();
+      const desc = (product.description || "").toLowerCase();
+
       const matchesQuery = !q || 
-        product.name.toLowerCase().includes(q) ||
-        product.vendorName.toLowerCase().includes(q) ||
-        product.category.toLowerCase().includes(q) ||
-        product.description.toLowerCase().includes(q);
+        name.includes(q) ||
+        vendor.includes(q) ||
+        cat.includes(q) ||
+        desc.includes(q);
 
       // Category match
+      const selectedCatLower = selectedCategory.toLowerCase();
       const matchesCategory = selectedCategory === "All" || 
-        product.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
-        selectedCategory.toLowerCase().includes(product.category.toLowerCase());
+        cat.includes(selectedCatLower) ||
+        selectedCatLower.includes(cat);
 
       // Vendor match
-      const matchesVendor = selectedVendor === "All Vendors" || product.vendorName === selectedVendor;
+      const matchesVendor = selectedVendor === "All Vendors" || (product.vendorName || "") === selectedVendor;
 
       // Price match
-      const matchesPrice = product.price <= maxPrice;
+      const matchesPrice = (product.price || 0) <= maxPrice;
 
       // Availability match
-      const matchesStock = !inStockOnly || product.isAvailable;
+      const matchesStock = !inStockOnly || product.isAvailable !== false;
 
       // Prep Time match
       let matchesPrep = true;
+      const prepStr = product.prepTime || product.vendorPrepTime || "";
       if (maxPrepTime === "15") {
-        matchesPrep = product.prepTime.includes("5") || product.prepTime.includes("10") || product.prepTime.includes("15");
+        matchesPrep = prepStr.includes("5") || prepStr.includes("10") || prepStr.includes("15");
       } else if (maxPrepTime === "30") {
         matchesPrep = true;
       }
 
       return matchesQuery && matchesCategory && matchesVendor && matchesPrice && matchesStock && matchesPrep;
     }).sort((a, b) => {
-      if (sortBy === "price_low") return a.price - b.price;
-      if (sortBy === "price_high") return b.price - a.price;
-      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "price_low") return (a.price || 0) - (b.price || 0);
+      if (sortBy === "price_high") return (b.price || 0) - (a.price || 0);
+      if (sortBy === "rating") return (b.rating || 4.9) - (a.rating || 4.9);
       return 0;
     });
   }, [query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy]);
@@ -548,7 +578,7 @@ export default function SearchPage() {
               Campus Vendor
             </label>
             <div className="flex flex-wrap gap-2">
-              {VENDOR_OPTIONS.map((vendor) => (
+              {vendorOptions.map((vendor) => (
                 <button
                   key={vendor}
                   onClick={() => setSelectedVendor(vendor)}
