@@ -187,11 +187,16 @@ export default function VendorDashboardPage() {
     const files = e.target.files;
     if (files && files.length > 0) {
       for (const file of Array.from(files)) {
+        if (file.size > 12 * 1024 * 1024) {
+          showToast(`⚠️ File "${file.name}" is too large (max 12MB). Please select a smaller photo.`);
+          continue;
+        }
         try {
           const compressed = await compressImage(file, 1200, 0.82);
           setProductImages((prev) => [...prev, compressed]);
         } catch (err) {
           console.error("Error compressing product image:", err);
+          showToast(`⚠️ Could not process "${file.name}". Please choose a standard JPG or PNG image.`);
         }
       }
     }
@@ -205,11 +210,16 @@ export default function VendorDashboardPage() {
   const handleLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        showToast(`⚠️ Logo file is too large (max 10MB). Please select a smaller image.`);
+        return;
+      }
       try {
         const compressed = await compressImage(file, 400, 0.85);
         setStoreLogo(compressed);
       } catch (err) {
         console.error("Error compressing logo:", err);
+        showToast("⚠️ Could not process logo image. Please choose a JPG or PNG file.");
       }
     }
     if (e.target) e.target.value = "";
@@ -218,11 +228,16 @@ export default function VendorDashboardPage() {
   const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 12 * 1024 * 1024) {
+        showToast(`⚠️ Cover banner is too large (max 12MB). Please select a smaller image.`);
+        return;
+      }
       try {
         const compressed = await compressImage(file, 1400, 0.82);
         setStoreCoverImage(compressed);
       } catch (err) {
         console.error("Error compressing cover:", err);
+        showToast("⚠️ Could not process banner image. Please choose a JPG or PNG file.");
       }
     }
     if (e.target) e.target.value = "";
@@ -508,7 +523,18 @@ export default function VendorDashboardPage() {
       }
     } catch (err: any) {
       console.error("Error saving dish:", err);
-      showToast(err.message || "An unexpected error occurred while saving.");
+      const errMsg = err?.message || String(err);
+      if (
+        errMsg.includes("413") ||
+        errMsg.toLowerCase().includes("payload") ||
+        errMsg.toLowerCase().includes("large") ||
+        errMsg.toLowerCase().includes("body size") ||
+        errMsg.toLowerCase().includes("failed to fetch")
+      ) {
+        showToast("⚠️ File Too Large: Uploaded photos exceed allowed size limit. Please remove or upload smaller photos.");
+      } else {
+        showToast(errMsg || "An unexpected error occurred while saving.");
+      }
     } finally {
       setSubmittingProduct(false);
     }
@@ -562,7 +588,18 @@ export default function VendorDashboardPage() {
       }
     } catch (err: any) {
       console.error("Error updating vendor profile:", err);
-      showToast(err.message || "An unexpected error occurred while saving profile.");
+      const errMsg = err?.message || String(err);
+      if (
+        errMsg.includes("413") ||
+        errMsg.toLowerCase().includes("payload") ||
+        errMsg.toLowerCase().includes("large") ||
+        errMsg.toLowerCase().includes("body size") ||
+        errMsg.toLowerCase().includes("failed to fetch")
+      ) {
+        showToast("⚠️ File Too Large: Profile branding image exceeds allowed size limit. Please use a smaller photo.");
+      } else {
+        showToast(errMsg || "An unexpected error occurred while saving profile.");
+      }
     } finally {
       setIsSavingProfile(false);
     }

@@ -93,9 +93,34 @@ export default function VendorRegistrationPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setErrorMessage("⚠️ Image file is too large (maximum 10MB). Please select a smaller photo.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoUrl(reader.result as string);
+        const img = new (window as any).Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxWidth = 500;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setLogoUrl(canvas.toDataURL("image/jpeg", 0.85));
+          } else {
+            setLogoUrl(reader.result as string);
+          }
+        };
+        img.onerror = () => setLogoUrl(reader.result as string);
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
