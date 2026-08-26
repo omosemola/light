@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 export interface CartItem {
   id: string; // product id
+  slug?: string;
   cartItemId?: string; // unique instance id for distinct variations
   name: string;
   price: number;

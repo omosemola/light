@@ -231,6 +231,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         if (active && res.success && res.products) {
           const formatted = res.products.map((p: any) => ({
             id: p.id,
+            slug: p.slug || p.id,
             name: p.name,
             price: p.price,
             image: p.image,

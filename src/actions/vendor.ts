@@ -12,6 +12,7 @@ import {
   generateAdminNewVendorEmail 
 } from "@/lib/email";
 import { sendOrderDeliverySMS } from "@/lib/sms";
+import { generateUniqueProductSlug } from "@/lib/slugify";
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
@@ -258,9 +259,12 @@ export async function createVendorProduct(data: {
       }
     }
 
+    const productSlug = await generateUniqueProductSlug(prisma, data.name.trim());
+
     const product = await prisma.product.create({
       data: {
         name: data.name.trim(),
+        slug: productSlug,
         description: data.description,
         price: numericPrice,
         image: data.image,
@@ -327,9 +331,11 @@ export async function updateVendorProduct(data: {
       const cookieStore = await cookies();
       const storeId = data.storeId || cookieStore.get("lightson_vendor_store_id")?.value;
       if (storeId) {
+        const productSlug = await generateUniqueProductSlug(prisma, data.name.trim());
         const created = await prisma.product.create({
           data: {
             name: data.name.trim(),
+            slug: productSlug,
             description: data.description,
             price: numericPrice,
             image: data.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
@@ -348,10 +354,15 @@ export async function updateVendorProduct(data: {
       return { success: false, error: "Product record not found in database" };
     }
 
+    const updatedSlug = existing.name !== data.name.trim() || !existing.slug
+      ? await generateUniqueProductSlug(prisma, data.name.trim(), existing.id)
+      : existing.slug;
+
     const product = await prisma.product.update({
       where: { id: data.productId },
       data: {
         name: data.name.trim(),
+        slug: updatedSlug,
         description: data.description,
         price: numericPrice,
         ...(data.image ? { image: data.image } : {}),

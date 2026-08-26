@@ -10,6 +10,7 @@ import {
 
 export interface FavoriteProductItem {
   id: string;
+  slug?: string;
   name: string;
   price: number;
   image: string;

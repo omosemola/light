@@ -44,6 +44,7 @@ export async function getLiveHomepageData() {
       const mainImage = parsed[0] || p.image;
       return {
         id: p.id,
+        slug: p.slug || p.id,
         name: p.name,
         price: p.price,
         image: mainImage,
@@ -111,10 +112,17 @@ export async function getLiveStoreById(storeId: string) {
   }
 }
 
-export async function getLiveProductById(productId: string) {
+export async function getLiveProductBySlugOrId(slugOrId: string) {
   try {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    if (!slugOrId) {
+      return { success: false, error: "Missing product identifier" };
+    }
+
+    const clean = slugOrId.trim();
+
+    // 1. Try finding by unique slug
+    let product = await prisma.product.findUnique({
+      where: { slug: clean },
       include: {
         store: {
           include: {
@@ -130,6 +138,26 @@ export async function getLiveProductById(productId: string) {
       },
     });
 
+    // 2. Fallback to ID if not found by slug
+    if (!product) {
+      product = await prisma.product.findUnique({
+        where: { id: clean },
+        include: {
+          store: {
+            include: {
+              user: { select: { name: true, phone: true } },
+              reviews: { take: 5 },
+              products: {
+                where: { isAvailable: true },
+                take: 6,
+              },
+            },
+          },
+          category: true,
+        },
+      });
+    }
+
     if (!product) {
       return { success: false, error: "Product not found" };
     }
@@ -140,9 +168,13 @@ export async function getLiveProductById(productId: string) {
 
     return { success: true, product };
   } catch (error: any) {
-    console.error("Error fetching product by ID:", error);
+    console.error("Error fetching product by slug or ID:", error);
     return { success: false, error: error.message };
   }
+}
+
+export async function getLiveProductById(productId: string) {
+  return getLiveProductBySlugOrId(productId);
 }
 
 export async function getLiveCategoryProducts(categorySlug: string) {
@@ -231,6 +263,7 @@ export async function searchLiveCatalog(query: string) {
       const parsed = parseProductImages(p.image);
       return {
         id: p.id,
+        slug: p.slug || p.id,
         name: p.name,
         price: p.price,
         image: parsed[0] || p.image,

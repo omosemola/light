@@ -13,6 +13,7 @@ import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/Produ
 
 interface Product {
   id: string;
+  slug?: string;
   name: string;
   price: number;
   image: string;
@@ -59,6 +60,7 @@ export default function SearchPage() {
 
   const mapProduct = (p: any): Product => ({
     id: p.id,
+    slug: p.slug || p.id,
     name: p.name,
     price: p.price,
     image: p.image,

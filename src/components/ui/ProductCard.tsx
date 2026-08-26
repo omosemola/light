@@ -9,6 +9,7 @@ import { parseProductImages } from "@/lib/productOptions";
 
 export interface ProductCardProps {
   id: string;
+  slug?: string;
   name: string;
   price: number;
   image: string;
@@ -21,6 +22,7 @@ export interface ProductCardProps {
 
 export function ProductCard({
   id,
+  slug,
   name,
   price,
   image,
@@ -47,7 +49,7 @@ export function ProductCard({
         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800/60 mb-1.5">
           <Image
             src={mainImage}
-            alt={name}
+            alt={`${name} by ${vendorName} — Lightson Marketplace`}
             fill
             unoptimized={mainImage.startsWith("data:")}
             className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
@@ -120,5 +122,5 @@ export function ProductCard({
     return <div onClick={() => onClick(id)}>{cardContent}</div>;
   }
 
-  return <Link href={`/product/${id}`} className="block h-full">{cardContent}</Link>;
+  return <Link href={`/product/${slug || id}`} className="block h-full">{cardContent}</Link>;
 }
