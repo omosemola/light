@@ -77,7 +77,7 @@ import {
 } from "@/lib/productOptions";
 
 // Client-side image compression to prevent payload limits and ensure fast loading
-function compressImage(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
+function compressImage(file: File, maxWidth = 720, quality = 0.72): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {

@@ -291,6 +291,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           alt={product.name}
           fill
           priority
+          unoptimized={(productImages[activeImageIdx] || productImages[0] || "").startsWith("data:")}
           className="object-cover transition-all duration-300"
         />
 

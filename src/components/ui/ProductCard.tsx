@@ -49,6 +49,7 @@ export function ProductCard({
             src={mainImage}
             alt={name}
             fill
+            unoptimized={mainImage.startsWith("data:")}
             className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />

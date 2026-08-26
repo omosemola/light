@@ -27,6 +27,7 @@ import { useFavoritesStore } from "@/lib/favoritesStore";
 import { Modal } from "@/components/ui/Modal";
 import { getLiveStoreById } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
+import { parseProductImages } from "@/lib/productOptions";
 
 export default function VendorStorefrontPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -61,16 +62,20 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
             phone: dbStore.user?.phone || "",
             ordersCount: dbStore._count?.orders || 0,
             products: dbStore.products && dbStore.products.length > 0
-              ? dbStore.products.map((p: any) => ({
-                  id: p.id,
-                  name: p.name,
-                  price: p.price,
-                  image: p.image,
-                  description: p.description || "",
-                  isAvailable: p.isAvailable,
-                  rating: 4.8,
-                  category: p.category?.name || "Items",
-                }))
+              ? dbStore.products.map((p: any) => {
+                  const parsed = parseProductImages(p.image);
+                  return {
+                    id: p.id,
+                    name: p.name,
+                    price: p.price,
+                    image: parsed[0] || p.image,
+                    rawImage: p.image,
+                    description: p.description || "",
+                    isAvailable: p.isAvailable,
+                    rating: 4.8,
+                    category: p.category?.name || "Items",
+                  };
+                })
               : [],
             reviews: dbStore.reviews && dbStore.reviews.length > 0
               ? dbStore.reviews.map((r: any) => ({
@@ -198,6 +203,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
           alt={vendor.name}
           fill
           priority
+          unoptimized={vendor.coverImage?.startsWith("data:")}
           className="object-cover opacity-80"
         />
         <div className="absolute inset-0 bg-black/60" />
@@ -236,7 +242,7 @@ export default function VendorStorefrontPage({ params }: { params: Promise<{ id:
             
             <div className="flex items-center gap-4">
               <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl border-2 border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 shadow-md">
-                <Image src={vendor.avatar} alt={vendor.name} fill className="object-cover" />
+                <Image src={vendor.avatar} alt={vendor.name} fill unoptimized={vendor.avatar?.startsWith("data:")} className="object-cover" />
               </div>
 
               <div className="space-y-1">
