@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { computeIsStoreOpen } from "@/lib/storeSchedule";
 import { parseProductImages } from "@/lib/productOptions";
+import { slugify } from "@/lib/slugify";
 
 export async function getLiveHomepageData() {
   try {
@@ -118,60 +119,101 @@ export async function getLiveProductBySlugOrId(slugOrId: string) {
       return { success: false, error: "Missing product identifier" };
     }
 
-    const clean = slugOrId.trim();
+    let raw = "";
+    try {
+      raw = decodeURIComponent(slugOrId).trim();
+    } catch {
+      raw = slugOrId.trim();
+    }
 
-    // 1. Try finding by unique slug
-    let product: any = await prisma.product.findUnique({
-      where: { slug: clean },
-      include: {
-        store: {
-          include: {
-            user: { select: { name: true, phone: true } },
-            reviews: {
-              include: {
-                user: { select: { name: true, image: true } },
-              },
-              orderBy: { createdAt: "desc" },
-              take: 20,
+    const cleanSlug = slugify(raw);
+
+    const productInclude = {
+      store: {
+        include: {
+          user: { select: { name: true, phone: true } },
+          reviews: {
+            include: {
+              user: { select: { name: true, image: true } },
             },
-            products: {
-              where: { isAvailable: true },
-              take: 8,
-            },
+            orderBy: { createdAt: "desc" as const },
+            take: 20,
+          },
+          products: {
+            where: { isAvailable: true },
+            take: 8,
           },
         },
-        category: true,
       },
+      category: true,
+    };
+
+    // Strategy 1: Find by exact or case-insensitive slug
+    let product: any = await prisma.product.findFirst({
+      where: {
+        OR: [
+          { slug: raw },
+          { slug: { equals: raw, mode: "insensitive" } },
+          { slug: cleanSlug },
+          { slug: { equals: cleanSlug, mode: "insensitive" } },
+        ],
+      },
+      include: productInclude,
     });
 
-    // 2. Fallback to ID if not found by slug
+    // Strategy 2: Find by database ID (e.g. cuid)
     if (!product) {
       product = await prisma.product.findUnique({
-        where: { id: clean },
-        include: {
-          store: {
-            include: {
-              user: { select: { name: true, phone: true } },
-              reviews: {
-                include: {
-                  user: { select: { name: true, image: true } },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 20,
-              },
-              products: {
-                where: { isAvailable: true },
-                take: 8,
-              },
-            },
-          },
-          category: true,
-        },
+        where: { id: raw },
+        include: productInclude,
       });
+    }
+
+    // Strategy 3: Find by exact or case-insensitive product name
+    if (!product) {
+      const spaceName = raw.replace(/-/g, " ").trim();
+      const cleanSpaceName = cleanSlug.replace(/-/g, " ").trim();
+      product = await prisma.product.findFirst({
+        where: {
+          OR: [
+            { name: { equals: raw, mode: "insensitive" } },
+            { name: { equals: spaceName, mode: "insensitive" } },
+            { name: { equals: cleanSpaceName, mode: "insensitive" } },
+          ],
+        },
+        include: productInclude,
+      });
+    }
+
+    // Strategy 4: Find by substring or word fragment match
+    if (!product) {
+      const words = raw.replace(/[-_]/g, " ").trim();
+      if (words.length > 2) {
+        product = await prisma.product.findFirst({
+          where: {
+            name: { contains: words, mode: "insensitive" },
+          },
+          include: productInclude,
+        });
+      }
     }
 
     if (!product) {
       return { success: false, error: "Product not found" };
+    }
+
+    // Auto-heal missing slug in database so all future lookups & SEO canonical URLs are instant
+    if (!product.slug && product.name) {
+      try {
+        const autoSlug = slugify(product.name);
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { slug: autoSlug },
+        });
+        product.slug = autoSlug;
+      } catch (err) {
+        // Ignore duplicate slug collision on auto-heal
+      }
     }
 
     if (product.store) {

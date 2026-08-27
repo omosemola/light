@@ -470,7 +470,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                         key={prod.id}
                         className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-center justify-between gap-3 hover:border-indigo-200 dark:hover:border-indigo-900/60 transition-all"
                       >
-                        <Link href={`/product/${prod.id}`} className="flex items-center gap-3 min-w-0 flex-1 group">
+                        <Link href={`/product/${prod.slug || prod.id}`} className="flex items-center gap-3 min-w-0 flex-1 group">
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800">
                             {(() => {
                               const safeProdImg = getSafeImageUrl(prod.image);
@@ -500,7 +500,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           <Link
-                            href={`/product/${prod.id}`}
+                            href={`/product/${prod.slug || prod.id}`}
                             className="px-3 py-1.5 bg-[#F4F3FF] dark:bg-indigo-950/80 hover:bg-[#312E81] hover:text-white text-[#312E81] dark:text-indigo-300 font-heading font-bold text-xs rounded-xl transition-all"
                           >
                             Order

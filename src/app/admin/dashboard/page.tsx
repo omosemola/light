@@ -816,7 +816,7 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="p-4 text-right">
                         <Link
-                          href={`/product/${prod.id}`}
+                          href={`/product/${prod.slug || prod.id}`}
                           className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
                         >
                           <span>View on Site</span>
