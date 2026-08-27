@@ -32,6 +32,8 @@ function GoogleIcon() {
   );
 }
 
+import { getUserProfileDb } from "@/actions/account";
+
 export default function LoginPage() {
   const router = useRouter();
   const { setHasSeenOnboarding, updateProfile } = useUserStore();
@@ -44,20 +46,36 @@ export default function LoginPage() {
 
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
 
-  const handleFinishLogin = (userEmail = email) => {
+  const handleFinishLogin = async (userEmail = email) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
+    const cleanEmail = userEmail.trim().toLowerCase();
+
+    let dbProfile: any = null;
+    if (cleanEmail) {
+      try {
+        const res = await getUserProfileDb(cleanEmail);
+        if (res.success && res.user) {
+          dbProfile = res.user;
+        }
+      } catch (err) {
+        console.error("Error loading user profile on login:", err);
+      }
+    }
+
     updateProfile({
-      name: userEmail.includes("@") ? userEmail.split("@")[0].replace(".", " ") : "Alex Johnson",
-      email: userEmail || "alex.johnson@gmail.com",
-      avatar: DEFAULT_HUMAN_AVATAR,
+      name: dbProfile?.name || (cleanEmail.includes("@") ? cleanEmail.split("@")[0].replace(".", " ") : "Student"),
+      email: cleanEmail || "student@lightsonmarketplace.com",
+      phone: dbProfile?.phone || "",
+      avatar: dbProfile?.image || DEFAULT_HUMAN_AVATAR,
+      role: dbProfile?.role || "STUDENT",
       isVisitor: false,
     });
 
     setToastMessage("Welcome back to Lightson Marketplace! 🚀");
     setTimeout(() => {
       window.location.href = "/";
-    }, 1000);
+    }, 800);
   };
 
   const handleVisitorLogin = () => {

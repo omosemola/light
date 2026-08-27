@@ -22,81 +22,66 @@ export async function getVendorDashboardData(vendorUserId?: string) {
 
     const targetUserId = vendorUserId || sessionUserId;
 
+    const storeInclude = {
+      user: { select: { email: true, phone: true, name: true } },
+      products: {
+        include: {
+          category: true,
+        },
+        orderBy: { createdAt: "desc" as const },
+      },
+      orders: {
+        include: {
+          user: true,
+          items: {
+            include: {
+              product: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" as const },
+      },
+      chatMessages: {
+        include: {
+          user: { select: { name: true, email: true, image: true } },
+          order: { select: { id: true, totalAmount: true } },
+        },
+        orderBy: { createdAt: "desc" as const },
+      },
+      reviews: {
+        include: {
+          user: { select: { name: true, image: true } },
+        },
+        orderBy: { createdAt: "desc" as const },
+      },
+    };
+
     let store = null;
 
     if (targetUserId) {
       store = await prisma.store.findFirst({
-        where: { userId: targetUserId },
-        include: {
-          user: { select: { email: true, phone: true, name: true } },
-          products: {
-            include: {
-              category: true,
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          orders: {
-            include: {
-              user: true,
-              items: {
-                include: {
-                  product: true,
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          chatMessages: {
-            include: {
-              user: { select: { name: true, email: true, image: true } },
-              order: { select: { id: true, totalAmount: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          reviews: {
-            include: {
-              user: { select: { name: true, image: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          },
+        where: {
+          OR: [
+            { userId: targetUserId },
+            { id: targetUserId },
+            { user: { email: { equals: targetUserId, mode: "insensitive" } } },
+          ],
         },
+        include: storeInclude,
       });
-    } else if (sessionStoreId) {
+    }
+
+    if (!store && sessionStoreId) {
       store = await prisma.store.findUnique({
         where: { id: sessionStoreId },
-        include: {
-          user: { select: { email: true, phone: true, name: true } },
-          products: {
-            include: {
-              category: true,
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          orders: {
-            include: {
-              user: true,
-              items: {
-                include: {
-                  product: true,
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          chatMessages: {
-            include: {
-              user: { select: { name: true, email: true, image: true } },
-              order: { select: { id: true, totalAmount: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          reviews: {
-            include: {
-              user: { select: { name: true, image: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-        },
+        include: storeInclude,
+      });
+    }
+
+    if (!store) {
+      // Auto-fallback to first registered store if single store environment
+      store = await prisma.store.findFirst({
+        include: storeInclude,
       });
     }
 
@@ -527,26 +512,49 @@ export async function registerVendorStore(data: {
 export async function authenticateVendor(email: string, password?: string) {
   try {
     if (!email || !email.trim()) {
-      return { success: false, error: "Please enter your vendor email address." };
+      return { success: false, error: "Please enter your vendor email address or store name." };
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanInput = email.trim();
+    const cleanEmail = cleanInput.toLowerCase();
 
-    // Query database for vendor user
+    // 1. Try finding user by email, phone, or matching store
     let user = await prisma.user.findFirst({
       where: {
-        email: {
-          equals: cleanEmail,
-          mode: "insensitive",
-        },
+        OR: [
+          { email: { equals: cleanEmail, mode: "insensitive" } },
+          { phone: { equals: cleanInput } },
+        ],
       },
       include: {
         store: true,
       },
     });
 
+    // 2. Fallback: Check if store exists with matching name
     if (!user) {
-      return { success: false, error: "No merchant store registered with this email. Please register your store first." };
+      const storeWithUser = await prisma.store.findFirst({
+        where: {
+          OR: [
+            { name: { equals: cleanInput, mode: "insensitive" } },
+            { user: { email: { equals: cleanEmail, mode: "insensitive" } } },
+          ],
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      if (storeWithUser && storeWithUser.user) {
+        user = { ...storeWithUser.user, store: storeWithUser } as any;
+      }
+    }
+
+    if (!user) {
+      return { 
+        success: false, 
+        error: "No merchant store registered with this email or name. Please register your store first." 
+      };
     }
 
     // If user has a password and password was submitted, verify it
@@ -564,6 +572,12 @@ export async function authenticateVendor(email: string, password?: string) {
 
     let targetStore = user.store;
 
+    if (!targetStore) {
+      targetStore = await prisma.store.findUnique({
+        where: { userId: user.id },
+      });
+    }
+
     // If user has no store yet, initialize their merchant store
     if (!targetStore) {
       targetStore = await prisma.store.create({
@@ -573,11 +587,19 @@ export async function authenticateVendor(email: string, password?: string) {
           userId: user.id,
           rating: 5.0,
           estimatedDelivery: "20-30 mins",
-          isOpen: false,
-          isVerified: false,
+          isOpen: true,
+          isVerified: true,
           logo: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
           coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
         },
+      });
+    }
+
+    // Ensure user role is VENDOR
+    if (user.role !== "VENDOR" && user.role !== "ADMIN") {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { role: "VENDOR" },
       });
     }
 
@@ -609,7 +631,7 @@ export async function authenticateVendor(email: string, password?: string) {
     };
   } catch (error: any) {
     console.error("Error authenticating vendor:", error);
-    return { success: false, error: error.message || "Failed to authenticate vendor" };
+    return { success: false, error: error.message || "Failed to authenticate vendor. Please try again." };
   }
 }
 

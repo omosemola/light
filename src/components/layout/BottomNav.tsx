@@ -20,14 +20,22 @@ export function BottomNav() {
     setIsMounted(true);
   }, []);
 
-  // Only hide on vendor/admin portal management dashboards and full-screen splash onboarding
+  // Hide on vendor portal management, admin portal, signup, and login pages
   if (
     isMounted &&
     (pathname === "/welcome" ||
-      pathname === "/admin/dashboard" ||
-      pathname.startsWith("/admin/dashboard/") ||
+      pathname === "/login" ||
+      pathname.startsWith("/login/") ||
+      pathname === "/signup" ||
+      pathname.startsWith("/signup/") ||
+      pathname === "/vendor/login" ||
+      pathname.startsWith("/vendor/login/") ||
+      pathname === "/vendor/register" ||
+      pathname.startsWith("/vendor/register/") ||
       pathname === "/vendor/dashboard" ||
-      pathname.startsWith("/vendor/dashboard/"))
+      pathname.startsWith("/vendor/dashboard/") ||
+      pathname === "/admin/login" ||
+      pathname.startsWith("/admin"))
   ) {
     return null;
   }

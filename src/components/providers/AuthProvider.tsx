@@ -3,6 +3,7 @@
 import { SessionProvider, useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { useUserStore } from "@/lib/userStore";
+import { getUserProfileDb } from "@/actions/account";
 
 function SessionSync({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -21,12 +22,25 @@ function SessionSync({ children }: { children: React.ReactNode }) {
         profile.role === "ADMIN" ||
         profile.isVisitor
       ) {
-        updateProfile({
-          name: session.user.name || session.user.email.split("@")[0],
-          email: session.user.email,
-          avatar: session.user.image || profile.avatar,
-          role: "STUDENT",
-          isVisitor: false,
+        getUserProfileDb(sessionEmail).then((res) => {
+          if (res.success && res.user) {
+            updateProfile({
+              name: res.user.name || session.user.name || session.user.email?.split("@")[0] || "Student",
+              email: session.user.email || "",
+              phone: res.user.phone || profile.phone || "",
+              avatar: res.user.image || session.user.image || profile.avatar,
+              role: (res.user.role as any) || "STUDENT",
+              isVisitor: false,
+            });
+          } else {
+            updateProfile({
+              name: session.user.name || session.user.email?.split("@")[0] || "Student",
+              email: session.user.email || "",
+              avatar: session.user.image || profile.avatar,
+              role: "STUDENT",
+              isVisitor: false,
+            });
+          }
         });
       }
     } else if (status === "unauthenticated") {

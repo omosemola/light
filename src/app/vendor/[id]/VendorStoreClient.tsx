@@ -28,6 +28,7 @@ import { getLiveStoreById } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { parseProductImages, getSafeImageUrl } from "@/lib/productOptions";
 import { formatReviewDate } from "@/lib/formatDate";
+import { getStoreScheduleStatus, computeIsStoreOpen } from "@/lib/storeSchedule";
 
 interface VendorStoreClientProps {
   initialStore?: any;
@@ -51,10 +52,12 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
       location: "University Campus",
       prepTime: dbStore.estimatedDelivery || "15-25 mins",
       isOpen: dbStore.isOpen !== false,
+      openingTime: dbStore.openingTime || "08:00",
+      closingTime: dbStore.closingTime || "22:00",
       isVerified: dbStore.isVerified !== false,
       avatar: avatarImg,
       description: dbStore.description || `Welcome to ${dbStore.name} on campus. Order fresh food & campus items delivered fast.`,
-      phone: dbStore.user?.phone || "",
+      phone: dbStore.phone || dbStore.user?.phone || "",
       ordersCount: dbStore._count?.orders || 12,
       products: dbStore.products && dbStore.products.length > 0
         ? dbStore.products.map((p: any) => {
@@ -311,29 +314,46 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
             {vendor.description}
           </p>
 
-          {/* Quick Stats Badges */}
-          <div className="grid grid-cols-3 gap-3 pt-2">
-            <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
-              <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Prep Time</span>
-              <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 flex items-center justify-center gap-1 mt-0.5">
-                <Clock size={14} className="text-[#312E81] dark:text-indigo-400" /> {vendor.prepTime}
-              </span>
-            </div>
+          {/* Quick Stats Badges with Auto Hours */}
+          {(() => {
+            const sched = getStoreScheduleStatus(vendor);
+            return (
+              <>
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
+                    <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Prep Time</span>
+                    <span className="font-heading font-extrabold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 flex items-center justify-center gap-1 mt-0.5">
+                      <Clock size={14} className="text-[#312E81] dark:text-indigo-400" /> {vendor.prepTime}
+                    </span>
+                  </div>
 
-            <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
-              <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Status</span>
-              <span className={`font-heading font-extrabold text-sm flex items-center justify-center gap-1 mt-0.5 ${vendor.isOpen ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
-                <CheckCircle2 size={14} /> {vendor.isOpen ? "Open Now" : "Closed"}
-              </span>
-            </div>
+                  <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
+                    <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Operating Hours</span>
+                    <span className="font-heading font-extrabold text-[11px] md:text-xs text-slate-700 dark:text-zinc-300 flex items-center justify-center gap-1 mt-0.5">
+                      {sched.scheduleText}
+                    </span>
+                  </div>
 
-            <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
-              <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Orders Fulfilled</span>
-              <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 flex items-center justify-center gap-1 mt-0.5">
-                <Award size={14} className="text-amber-500" /> {vendor.ordersCount}+
-              </span>
-            </div>
-          </div>
+                  <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
+                    <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Status</span>
+                    <span className={`font-heading font-extrabold text-xs md:text-sm flex items-center justify-center gap-1 mt-0.5 ${sched.isOpenNow ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                      <CheckCircle2 size={14} /> {sched.isOpenNow ? "Open Now" : "Closed"}
+                    </span>
+                  </div>
+                </div>
+
+                {!sched.isOpenNow && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300">
+                    <Clock size={18} className="shrink-0 text-amber-600" />
+                    <div>
+                      <strong className="font-bold block">Store Currently Closed</strong>
+                      <span>Daily operating hours are <strong>{sched.scheduleText}</strong>. Orders placed will be queued for preparation once the store opens.</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </motion.div>
 
         {/* IN-STORE SEARCH & CATEGORY FILTER */}

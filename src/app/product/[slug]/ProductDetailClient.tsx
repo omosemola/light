@@ -42,6 +42,7 @@ import {
   VariationOption, 
   AddOnOption 
 } from "@/lib/productOptions";
+import { getStoreScheduleStatus } from "@/lib/storeSchedule";
 import { formatReviewDate } from "@/lib/formatDate";
 
 interface ProductDetailClientProps {
@@ -69,6 +70,9 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         description: initialProduct.description || "",
         details: ["Freshly prepared on campus", "Fast hostel delivery"],
         prepTime: initialProduct.store?.estimatedDelivery || "15-20 mins",
+        isOpen: initialProduct.store?.isOpen !== false,
+        openingTime: initialProduct.store?.openingTime || "08:00",
+        closingTime: initialProduct.store?.closingTime || "22:00",
         isAvailable: initialProduct.isAvailable !== false,
         category: initialProduct.category?.name?.toLowerCase() || "pastries",
         rating: initialProduct.store?.rating || 4.9,
@@ -133,6 +137,9 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             vendorRating: p.store?.rating || 4.9,
             details: ["Freshly prepared on campus", "Fast delivery to all student hostels"],
             prepTime: p.store?.estimatedDelivery || "15-20 mins",
+            isOpen: p.store?.isOpen !== false,
+            openingTime: p.store?.openingTime || "08:00",
+            closingTime: p.store?.closingTime || "22:00",
             isAvailable: p.isAvailable,
             category: p.category?.name?.toLowerCase() || "pastries",
             rating: p.store?.rating || 4.9,
@@ -430,9 +437,9 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
           transition={{ duration: 0.4 }}
           className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-3"
         >
-          {/* VENDOR LINK */}
+          {/* VENDOR LINK & SCHEDULE BADGE */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Link 
                 href={`/vendor/${product.vendorId}`}
                 className="group/vendor inline-flex items-center gap-1.5 text-xs font-body font-semibold text-[#312E81] dark:text-indigo-300 hover:text-[#1E1B4B] dark:hover:text-white transition-colors"
@@ -446,6 +453,23 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
                   (Store ↗)
                 </span>
               </Link>
+
+              {(() => {
+                const sched = getStoreScheduleStatus({
+                  isOpen: (product as any).isOpen,
+                  openingTime: (product as any).openingTime,
+                  closingTime: (product as any).closingTime,
+                });
+                return (
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                    sched.isOpenNow
+                      ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                      : "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                  }`}>
+                    {sched.isOpenNow ? `Open • ${sched.scheduleText}` : `Closed • Opens ${sched.openTimeFormatted}`}
+                  </span>
+                );
+              })()}
             </div>
 
             {reviewsList.length > 0 ? (

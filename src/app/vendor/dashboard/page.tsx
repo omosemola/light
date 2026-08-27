@@ -799,14 +799,14 @@ export default function VendorDashboardPage() {
                 <span>{isAlarmMuted ? "Audio Muted" : "Live Alarms ON"}</span>
               </button>
 
-              {/* BACK TO MARKETPLACE STOREFRONT */}
+              {/* BACK TO OFFICIAL MARKETPLACE */}
               <Link
                 href="/"
                 className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
-                title="Back to Marketplace Storefront"
+                title="Go to Official Lightson Marketplace Website"
               >
                 <ArrowLeft size={14} className="text-amber-300" />
-                <span>Marketplace</span>
+                <span>Marketplace Website</span>
               </Link>
 
               {/* STOREFRONT PREVIEW LINK */}

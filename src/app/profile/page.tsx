@@ -38,6 +38,7 @@ import { getUserOrders } from "@/actions/orders";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews } from "@/actions/reviews";
+import { updateUserProfileDb, getUserProfileDb } from "@/actions/account";
 
 const ABSTRACT_AVATARS = [
   {
@@ -98,12 +99,25 @@ export default function ProfilePage() {
     async function loadStats() {
       if (profile.email) {
         try {
-          const res = await getUserOrders(profile.email);
-          if (active && res.success && res.orders) {
-            setUserOrdersCount(res.orders.length);
+          const [orderRes, userRes] = await Promise.all([
+            getUserOrders(profile.email),
+            getUserProfileDb(profile.email),
+          ]);
+          if (active) {
+            if (orderRes.success && orderRes.orders) {
+              setUserOrdersCount(orderRes.orders.length);
+            }
+            if (userRes.success && userRes.user) {
+              updateProfile({
+                name: userRes.user.name || profile.name,
+                phone: userRes.user.phone || profile.phone,
+                avatar: userRes.user.image || profile.avatar,
+                role: userRes.user.role || profile.role,
+              });
+            }
           }
         } catch (e) {
-          console.error("Error loading user orders count:", e);
+          console.error("Error loading user profile & orders:", e);
         }
       }
     }
@@ -159,7 +173,7 @@ export default function ProfilePage() {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile({
       name: editName,
@@ -168,6 +182,16 @@ export default function ProfilePage() {
       phone: editPhone,
       avatar: editAvatar,
     });
+
+    if (editEmail || profile.email) {
+      await updateUserProfileDb(editEmail || profile.email, {
+        name: editName,
+        phone: editPhone,
+        image: editAvatar,
+      });
+    }
+
+    setToastMessage("Profile details successfully updated and saved! ✨");
     setIsEditModalOpen(false);
   };
 
