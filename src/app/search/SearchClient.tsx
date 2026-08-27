@@ -100,12 +100,21 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     let active = true;
     async function performLiveSearch() {
       if (!query.trim()) {
-        const data = await getLiveHomepageData();
-        if (active && data.success) {
-          if (data.products) setCatalog(data.products.map(mapProduct));
-          if (data.stores) setStores(data.stores);
+        try {
+          const data = await getLiveHomepageData();
+          if (active && data.success) {
+            if (data.products && data.products.length > 0) {
+              setCatalog(data.products.map(mapProduct));
+            }
+            if (data.stores && data.stores.length > 0) {
+              setStores(data.stores);
+            }
+          }
+        } catch (err) {
+          console.error("Error loading default search catalog:", err);
+        } finally {
+          if (active) setIsLoading(false);
         }
-        setIsLoading(false);
         return;
       }
 

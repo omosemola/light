@@ -40,6 +40,9 @@ model User {
   password      String?
   phone         String?
   role          Role      @default(STUDENT)
+  hostel        String?
+  addressDetail String?
+  savedLocations String[] @default([])
   favoriteProductIds String[] @default([])
   favoriteStoreIds   String[] @default([])
   createdAt     DateTime  @default(now())

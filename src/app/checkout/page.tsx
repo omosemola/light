@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/lib/store";
 import { useUserStore } from "@/lib/userStore";
@@ -32,14 +33,21 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"paystack" | "cash">("paystack");
 
   const [formData, setFormData] = useState({
-    location: profile.hostel ? `${profile.hostel}${profile.addressDetail ? `, ${profile.addressDetail}` : ""}` : "Mellanby Hall, Block B Room 14",
-    phone: profile.phone || "+234 812 345 6789",
+    location: profile.hostel ? `${profile.hostel}${profile.addressDetail ? `, ${profile.addressDetail}` : ""}` : "",
+    phone: profile.phone || "",
     instructions: "",
   });
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (profile.hostel && !formData.location) {
+      setFormData((prev) => ({
+        ...prev,
+        location: `${profile.hostel}${profile.addressDetail ? `, ${profile.addressDetail}` : ""}`,
+        phone: prev.phone || profile.phone || "",
+      }));
+    }
+  }, [profile.hostel, profile.addressDetail, profile.phone]);
 
   useEffect(() => {
     if (isMounted && items.length === 0 && !isProcessing) {
@@ -171,15 +179,44 @@ export default function CheckoutPage() {
           
           <div className="space-y-3.5">
             <div>
-              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1 flex items-center gap-1.5">
-                <MapPin size={13} /> Hostel / Block / Room Number
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 flex items-center gap-1.5">
+                  <MapPin size={13} /> Hostel / Block / Room Number
+                </label>
+                <Link href="/profile/locations" className="text-[11px] font-bold text-[#312E81] dark:text-indigo-400 hover:underline">
+                  Manage Addresses ↗
+                </Link>
+              </div>
+
+              {profile.savedLocations && profile.savedLocations.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar mb-2">
+                  {profile.savedLocations.map((loc) => {
+                    const fullAddr = `${loc.title}, ${loc.address}`;
+                    const isSelected = formData.location === fullAddr;
+                    return (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, location: fullAddr })}
+                        className={`text-[11px] px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                          isSelected
+                            ? "bg-[#312E81] text-white border-[#312E81] shadow-2xs"
+                            : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:border-indigo-400"
+                        }`}
+                      >
+                        📍 {loc.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               <input 
                 type="text" 
                 required
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="e.g. Mellanby Hall, Block C, Room 204"
+                placeholder="e.g. Hostel Name, Block & Room Number"
                 className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100"
               />
             </div>

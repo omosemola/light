@@ -9,26 +9,24 @@ export async function getLiveHomepageData() {
   try {
     const [products, stores, categories] = await Promise.all([
       prisma.product.findMany({
-        where: { isAvailable: true },
         include: {
           store: true,
           category: true,
         },
-        take: 30,
+        take: 60,
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
         include: {
           products: {
-            where: { isAvailable: true },
             include: { category: true },
-            take: 8,
+            take: 12,
           },
           _count: {
             select: { products: true, orders: true },
           },
         },
-        take: 20,
+        take: 25,
         orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
       }),
       prisma.category.findMany({
@@ -285,7 +283,6 @@ export async function searchLiveCatalog(query: string) {
     const [products, stores] = await Promise.all([
       prisma.product.findMany({
         where: {
-          isAvailable: true,
           OR: [
             { name: { contains: cleanQuery, mode: "insensitive" } },
             { description: { contains: cleanQuery, mode: "insensitive" } },
@@ -297,7 +294,7 @@ export async function searchLiveCatalog(query: string) {
           store: true,
           category: true,
         },
-        take: 30,
+        take: 50,
       }),
       prisma.store.findMany({
         where: {

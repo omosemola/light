@@ -9,6 +9,7 @@ import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { sendStudentWelcomeNotification } from "@/actions/support";
 import { signIn } from "next-auth/react";
+import { updateUserProfileDb, saveUserLocationDb } from "@/actions/account";
 
 function GoogleIcon() {
   return (
@@ -40,11 +41,11 @@ export default function SignupPage() {
   // Student Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState("");
   const [hostel, setHostel] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
-
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -52,30 +53,54 @@ export default function SignupPage() {
 
   const { ensureWelcomeNotification } = useNotificationStore();
 
-  const handleFinishSignup = (userEmail = email, userName = name) => {
+  const handleFinishSignup = async (userEmail = email, userName = name) => {
     setIsSubmitting(true);
     setHasSeenOnboarding(true);
+    const cleanEmail = userEmail.trim().toLowerCase();
+
     updateProfile({
-      name: userName || "Alex Johnson",
-      email: userEmail || "alex.johnson@gmail.com",
-      hostel: hostel || "Mellanby Hall",
-      addressDetail: addressDetail || "Block C, Room 14",
+      name: userName || cleanEmail.split("@")[0],
+      email: cleanEmail,
+      phone: phone || "",
+      hostel: hostel || "",
+      addressDetail: addressDetail || "",
       avatar: DEFAULT_HUMAN_AVATAR,
       isVisitor: false,
     });
 
-    if (userEmail) {
-      ensureWelcomeNotification(userEmail, userName);
+    if (cleanEmail) {
+      ensureWelcomeNotification(cleanEmail, userName);
       sendStudentWelcomeNotification({
-        email: userEmail,
+        email: cleanEmail,
         name: userName || "Student",
       }).catch((e) => console.error("Welcome email failed:", e));
+
+      // Persist profile and location directly to database
+      try {
+        await updateUserProfileDb(cleanEmail, {
+          name: userName || cleanEmail.split("@")[0],
+          phone: phone || "",
+          hostel: hostel || "",
+          addressDetail: addressDetail || "",
+          image: DEFAULT_HUMAN_AVATAR,
+        });
+
+        if (hostel.trim()) {
+          await saveUserLocationDb(cleanEmail, {
+            title: hostel.trim(),
+            address: addressDetail.trim() || "Hostel Room / Porter's Lodge",
+            isDefault: true,
+          });
+        }
+      } catch (err) {
+        console.error("Error saving user profile to DB on signup:", err);
+      }
     }
 
     setToastMessage(`Account created! Welcome to Lightson, ${(userName || "Student").split(" ")[0]}! 🎉`);
     setTimeout(() => {
       window.location.href = "/";
-    }, 1000);
+    }, 900);
   };
 
   const handleVisitorLogin = () => {

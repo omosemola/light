@@ -113,6 +113,9 @@ export default function ProfilePage() {
                 phone: userRes.user.phone || profile.phone,
                 avatar: userRes.user.image || profile.avatar,
                 role: userRes.user.role || profile.role,
+                hostel: userRes.user.hostel || profile.hostel,
+                addressDetail: userRes.user.addressDetail || profile.addressDetail,
+                savedLocations: userRes.user.savedLocations || profile.savedLocations,
               });
             }
           }
@@ -151,14 +154,17 @@ export default function ProfilePage() {
     window.location.href = "/welcome";
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const result = reader.result as string;
         setEditAvatar(result);
         updateProfile({ avatar: result });
+        if (profile.email) {
+          await updateUserProfileDb(profile.email, { image: result });
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -188,6 +194,7 @@ export default function ProfilePage() {
         name: editName,
         phone: editPhone,
         image: editAvatar,
+        hostel: editHostel,
       });
     }
 

@@ -48,6 +48,7 @@ import { useFavoritesStore } from "@/lib/favoritesStore";
 import WelcomePage from "@/app/welcome/page";
 import { getLiveHomepageData } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
+import { useSession } from "next-auth/react";
 
 const PROMO_SLIDES = [
   {
@@ -185,12 +186,13 @@ interface HomeClientProps {
 export default function HomeClient({ initialProducts = [], initialStores = [] }: HomeClientProps) {
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { isDark, toggleTheme } = useTheme();
+  const { data: session, status } = useSession();
   const { profile, hasSeenOnboarding } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [stores, setStores] = useState<any[]>(initialStores);
-  const [isLoading, setIsLoading] = useState<boolean>(initialProducts.length === 0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "open" | "fast" | "top">("all");
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
@@ -212,27 +214,17 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
     async function loadLiveProducts() {
       try {
-        if (products.length === 0) {
-          setIsLoading(true);
-        }
         const res = await getLiveHomepageData();
         if (isCurrent && res.success) {
-          if (res.products !== undefined && res.products.length > 0) {
-            const shuffled = [...res.products].sort(() => 0.5 - Math.random());
-            setProducts(shuffled);
-          } else if (res.products !== undefined) {
+          if (res.products && res.products.length > 0) {
             setProducts(res.products);
           }
-          if (res.stores !== undefined) {
+          if (res.stores && res.stores.length > 0) {
             setStores(res.stores);
           }
         }
       } catch (e) {
         console.error("Error loading live homepage products:", e);
-      } finally {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
       }
     }
 
@@ -244,13 +236,13 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     return () => {
       isCurrent = false;
     };
-  }, [profile.email, profile.name]);
+  }, []);
 
   if (!isMounted) {
     return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
   }
 
-  if (!hasSeenOnboarding) {
+  if (!hasSeenOnboarding && status !== "authenticated") {
     return <WelcomePage />;
   }
 
@@ -291,15 +283,20 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     return true;
   });
 
-  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app" || !profile.email;
-  const rawName = profile.name && profile.name !== "Platform Super Admin" && profile.name !== "Visitor" 
-    ? profile.name 
-    : (isVisitor ? "Explorer" : "Student");
-  const firstName = rawName.split(" ")[0];
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
-  const userAvatar = isVisitor
-    ? (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_VISITOR_CARTOON_AVATAR)
-    : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
+
+  // Seamless Identity Resolution: check active session or store email first to prevent any visitor flash
+  const isAuthenticated = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
+
+  const rawName = session?.user?.name || (profile.name && profile.name !== "Visitor" && profile.name !== "Platform Super Admin" 
+    ? profile.name 
+    : (isAuthenticated ? (session?.user?.email?.split("@")[0] || profile.email?.split("@")[0] || "Student") : "Explorer"));
+
+  const firstName = rawName.split(" ")[0];
+
+  const userAvatar = session?.user?.image || (profile.avatar && profile.avatar !== "/visitor-avatar.png" 
+    ? profile.avatar 
+    : (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">

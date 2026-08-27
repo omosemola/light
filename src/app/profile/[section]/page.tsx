@@ -40,7 +40,8 @@ import {
   AlertTriangle,
   RefreshCw,
   Save,
-  Check
+  Check,
+  Edit3
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -52,7 +53,16 @@ import { getSafeImageUrl } from "@/lib/productOptions";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
-import { updateUserProfileDb, changeUserPasswordDb, deleteUserAccountSelf } from "@/actions/account";
+import { 
+  updateUserProfileDb, 
+  changeUserPasswordDb, 
+  deleteUserAccountSelf,
+  getUserLocationsDb,
+  saveUserLocationDb,
+  deleteUserLocationDb,
+  setDefaultLocationDb,
+  SavedLocationItem
+} from "@/actions/account";
 
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
@@ -60,28 +70,133 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   const { profile, updateProfile } = useUserStore();
   const { isDark, setTheme, theme } = useTheme();
 
-  // LOCATIONS STATE
-  const [locations, setLocations] = useState([
-    { id: 1, title: "Main Hostel (Mellanby)", address: "Room B12, Mellanby Hall, Main Campus", isDefault: true },
-    { id: 2, title: "Faculty of Technology", address: "Tech Lecture Theater, Block C", isDefault: false },
-    { id: 3, title: "University Library Lodge", address: "KDL Quiet Zone Entrance", isDefault: false },
-  ]);
+  // LOCATIONS STATE (SYNCED WITH DATABASE)
+  const [locations, setLocations] = useState<SavedLocationItem[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [newLocTitle, setNewLocTitle] = useState("");
   const [newLocAddress, setNewLocAddress] = useState("");
+  const [editingLocId, setEditingLocId] = useState<string | null>(null);
+  const [editLocTitle, setEditLocTitle] = useState("");
+  const [editLocAddress, setEditLocAddress] = useState("");
+  const [isSavingLoc, setIsSavingLoc] = useState(false);
+  const [locToast, setLocToast] = useState("");
 
-  const handleAddLocation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newLocTitle || !newLocAddress) return;
-    setLocations([
-      ...locations,
-      { id: Date.now(), title: newLocTitle, address: newLocAddress, isDefault: false },
-    ]);
-    setNewLocTitle("");
-    setNewLocAddress("");
+  const showLocToast = (msg: string) => {
+    setLocToast(msg);
+    setTimeout(() => setLocToast(""), 2500);
   };
 
-  const handleDeleteLocation = (id: number) => {
-    setLocations(locations.filter((l) => l.id !== id));
+  useEffect(() => {
+    if (section === "locations" && profile.email) {
+      setIsLoadingLocations(true);
+      getUserLocationsDb(profile.email)
+        .then((res) => {
+          if (res.success && res.locations) {
+            setLocations(res.locations);
+            updateProfile({ savedLocations: res.locations });
+          }
+        })
+        .finally(() => setIsLoadingLocations(false));
+    }
+  }, [section, profile.email]);
+
+  const handleAddLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLocTitle.trim() || !newLocAddress.trim()) return;
+    setIsSavingLoc(true);
+
+    try {
+      const res = await saveUserLocationDb(profile.email, {
+        title: newLocTitle.trim(),
+        address: newLocAddress.trim(),
+      });
+
+      if (res.success && res.locations) {
+        setLocations(res.locations);
+        const def = res.locations.find((l) => l.isDefault);
+        updateProfile({
+          savedLocations: res.locations,
+          hostel: def?.title || profile.hostel,
+          addressDetail: def?.address || profile.addressDetail,
+        });
+        setNewLocTitle("");
+        setNewLocAddress("");
+        showLocToast("Delivery location saved to database! 📍");
+      }
+    } catch (err) {
+      console.error("Error saving location:", err);
+    } finally {
+      setIsSavingLoc(false);
+    }
+  };
+
+  const handleSetDefaultLocation = async (locId: string) => {
+    try {
+      const res: any = await setDefaultLocationDb(profile.email, locId);
+      if (res.success && res.locations) {
+        setLocations(res.locations);
+        if (res.defaultLocation) {
+          updateProfile({
+            hostel: res.defaultLocation.title,
+            addressDetail: res.defaultLocation.address,
+            savedLocations: res.locations,
+          });
+        }
+        showLocToast("Default delivery location updated! ✨");
+      }
+    } catch (err) {
+      console.error("Error setting default location:", err);
+    }
+  };
+
+  const handleDeleteLocation = async (id: string) => {
+    try {
+      const res = await deleteUserLocationDb(profile.email, id);
+      if (res.success && res.locations) {
+        setLocations(res.locations);
+        const def = res.locations.find((l) => l.isDefault);
+        updateProfile({
+          savedLocations: res.locations,
+          hostel: def ? def.title : "",
+          addressDetail: def ? def.address : "",
+        });
+        showLocToast("Location removed! 🗑️");
+      }
+    } catch (err) {
+      console.error("Error deleting location:", err);
+    }
+  };
+
+  const handleSaveEditLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLocId || !editLocTitle.trim() || !editLocAddress.trim()) return;
+    setIsSavingLoc(true);
+
+    try {
+      const locToEdit = locations.find((l) => l.id === editingLocId);
+      const res = await saveUserLocationDb(profile.email, {
+        id: editingLocId,
+        title: editLocTitle.trim(),
+        address: editLocAddress.trim(),
+        isDefault: locToEdit?.isDefault ?? false,
+      });
+
+      if (res.success && res.locations) {
+        setLocations(res.locations);
+        const def = res.locations.find((l) => l.isDefault);
+        updateProfile({
+          savedLocations: res.locations,
+          hostel: def?.title || profile.hostel,
+          addressDetail: def?.address || profile.addressDetail,
+        });
+        setEditingLocId(null);
+        showLocToast("Location updated successfully! 📍");
+      }
+    } catch (err) {
+      console.error("Error editing location:", err);
+    } finally {
+      setIsSavingLoc(false);
+    }
   };
 
   // FAVORITES STATE (SYNCED WITH USER ACCOUNT & DATABASE)
@@ -238,6 +353,8 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
         await updateUserProfileDb(profile.email, {
           name: editName,
           phone: editPhone,
+          hostel: editHostel,
+          addressDetail: editAddressDetail,
         });
       }
 
@@ -335,66 +452,176 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
       <div className="max-w-3xl mx-auto w-full px-5 py-6 space-y-6">
 
-        {/* SECTION: LOCATIONS */}
+        {/* SECTION: LOCATIONS (FULL DATABASE INTEGRATION) */}
         {section === "locations" && (
           <div className="space-y-6">
+            {locToast && (
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-between shadow-sm">
+                <span>{locToast}</span>
+              </div>
+            )}
+
+            {/* ADD / EDIT LOCATION CARD */}
             <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
               <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
                 <MapPin className="text-[#312E81] dark:text-indigo-400" size={20} />
-                Add New Delivery Location
+                {editingLocId ? "Edit Delivery Location" : "Add New Delivery Location"}
               </h2>
 
-              <form onSubmit={handleAddLocation} className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Location Name (e.g. Mellanby Room B12)"
-                  value={newLocTitle}
-                  onChange={(e) => setNewLocTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Full Address / Landmark"
-                  value={newLocAddress}
-                  onChange={(e) => setNewLocAddress(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
-                >
-                  <Plus size={16} /> Save Location
-                </button>
-              </form>
+              {editingLocId ? (
+                <form onSubmit={handleSaveEditLocation} className="space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Location / Hostel Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mellanby Hall, Tedder, Queen Idia, Off-Campus"
+                      value={editLocTitle}
+                      onChange={(e) => setEditLocTitle(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Room Number / Block / Delivery Landmark</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Block B, Room 14 (or Porter's Lodge)"
+                      value={editLocAddress}
+                      onChange={(e) => setEditLocAddress(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={isSavingLoc}
+                      className="flex-1 py-2.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Save size={15} />
+                      <span>{isSavingLoc ? "Saving..." : "Update Location"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingLocId(null)}
+                      className="px-4 py-2.5 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-heading font-bold text-xs rounded-xl transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleAddLocation} className="space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Location / Hostel Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mellanby Hall, Tedder, Queen Idia, Kuti Hall, Off-Campus"
+                      value={newLocTitle}
+                      onChange={(e) => setNewLocTitle(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Room Number / Block / Delivery Landmark</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Block C, Room 204 or Porter's Lodge"
+                      value={newLocAddress}
+                      onChange={(e) => setNewLocAddress(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingLoc}
+                    className="w-full py-2.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus size={16} />
+                    <span>{isSavingLoc ? "Saving Location..." : "Save Delivery Location"}</span>
+                  </button>
+                </form>
+              )}
             </div>
 
+            {/* SAVED LOCATIONS LIST */}
             <div className="space-y-3">
-              <h3 className="font-heading font-bold text-sm text-[#71717A] dark:text-zinc-400">Your Saved Locations</h3>
-              {locations.map((loc) => (
-                <div key={loc.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100">{loc.title}</span>
-                      {loc.isDefault && (
-                        <span className="text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[#71717A] dark:text-zinc-400">{loc.address}</p>
-                  </div>
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading font-bold text-sm text-[#71717A] dark:text-zinc-400">
+                  Your Saved Delivery Addresses ({locations.length})
+                </h3>
+              </div>
 
-                  {!loc.isDefault && (
-                    <button
-                      onClick={() => handleDeleteLocation(loc.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors"
-                      title="Delete Location"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+              {isLoadingLocations ? (
+                <div className="py-8 text-center text-xs text-slate-400">Loading your saved delivery locations...</div>
+              ) : locations.length === 0 ? (
+                <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 text-center space-y-2">
+                  <MapPin size={32} className="mx-auto text-slate-300 dark:text-zinc-600" />
+                  <h4 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-200">No Saved Delivery Locations Yet</h4>
+                  <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
+                    Add your hostel or room details above so campus kitchens and couriers know exactly where to deliver your food.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                locations.map((loc) => (
+                  <div 
+                    key={loc.id} 
+                    className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                      loc.isDefault 
+                        ? "border-[#312E81] dark:border-indigo-500 shadow-xs ring-1 ring-indigo-500/20" 
+                        : "border-slate-200 dark:border-zinc-800 shadow-xs"
+                    }`}
+                  >
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 truncate">
+                          {loc.title}
+                        </span>
+                        {loc.isDefault ? (
+                          <span className="text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                            ✓ Default Address
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetDefaultLocation(loc.id)}
+                            className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                          >
+                            Set as Default
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#71717A] dark:text-zinc-400 truncate">{loc.address}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingLocId(loc.id);
+                          setEditLocTitle(loc.title);
+                          setEditLocAddress(loc.address);
+                        }}
+                        className="p-2 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+                        title="Edit Location"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteLocation(loc.id)}
+                        className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                        title="Delete Location"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

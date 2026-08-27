@@ -12,6 +12,7 @@ export interface UserProfile {
   avatar: string;
   points: number;
   savedStoresCount: number;
+  savedLocations?: Array<{ id: string; title: string; address: string; isDefault: boolean }>;
   isVisitor?: boolean;
   role?: string;
 }
@@ -36,6 +37,7 @@ export const useUserStore = create<UserState>()(
         avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
         points: 0,
         savedStoresCount: 0,
+        savedLocations: [],
         isVisitor: true,
       },
       hasSeenOnboarding: false,
@@ -55,13 +57,14 @@ export const useUserStore = create<UserState>()(
             avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
             points: 0,
             savedStoresCount: 0,
+            savedLocations: [],
             isVisitor: true,
           },
           hasSeenOnboarding: false,
         }),
     }),
     {
-      name: "lightson-user-app-storage-v8",
+      name: "lightson-user-app-storage-v9",
     }
   )
 );
