@@ -559,9 +559,9 @@ export default function AdminDashboardPage() {
             {/* QUICK ACTIONS & LINKS */}
             <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
               <Link
-                href="/"
+                href="/welcome"
                 className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-                title="Back to Marketplace Storefront"
+                title="Back to Marketplace Onboarding"
               >
                 <ArrowLeft size={14} className="text-amber-300" />
                 <span>Marketplace</span>
@@ -761,7 +761,7 @@ export default function AdminDashboardPage() {
                   isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
                 }`}>
                   <tr>
-                    <th className="p-4">Dish / Product</th>
+                    <th className="p-4">Product Name</th>
                     <th className="p-4">Vendor Store</th>
                     <th className="p-4">Price</th>
                     <th className="p-4">Live Status</th>
@@ -917,7 +917,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
-                <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400">Open Kitchens</span>
+                <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400">Open Stores</span>
                 <div className="text-xl font-heading font-black text-indigo-500 mt-1">
                   {adminData?.stores?.filter((s: any) => s.isOpen !== false).length || 0}
                 </div>
@@ -936,9 +936,9 @@ export default function AdminDashboardPage() {
                     <tr>
                       <th className="p-4">Store & Owner</th>
                       <th className="p-4">Contact Info</th>
-                      <th className="p-4">Dishes & Orders</th>
+                      <th className="p-4">Products & Orders</th>
                       <th className="p-4">Verification Status</th>
-                      <th className="p-4">Kitchen State</th>
+                      <th className="p-4">Store Status</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -954,7 +954,7 @@ export default function AdminDashboardPage() {
                               </div>
                               <div>
                                 <div className={`font-heading font-bold text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>
-                                  {st.name || "Campus Kitchen"}
+                                  {st.name || "Campus Store"}
                                 </div>
                                 <div className="text-[10px] text-zinc-400 font-mono">
                                   Owner: <strong className={isDark ? "text-zinc-200" : "text-zinc-700"}>{st.user?.name || "Merchant"}</strong>
@@ -984,10 +984,10 @@ export default function AdminDashboardPage() {
                             )}
                           </td>
 
-                          {/* Dishes & Orders */}
+                          {/* Products & Orders */}
                           <td className="p-4">
                             <div className={`font-bold ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>
-                              {st._count?.products || 0} menu items
+                              {st._count?.products || 0} products
                             </div>
                             <div className="text-[11px] text-zinc-400">
                               {st._count?.orders || 0} orders completed
@@ -1009,7 +1009,7 @@ export default function AdminDashboardPage() {
                             )}
                           </td>
 
-                          {/* Live Kitchen Toggle */}
+                          {/* Live Store Toggle */}
                           <td className="p-4">
                             <button
                               type="button"
@@ -1019,7 +1019,7 @@ export default function AdminDashboardPage() {
                                   ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
                                   : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
                               }`}
-                              title="Click to toggle live kitchen status"
+                              title="Click to toggle live store status"
                             >
                               {st.isOpen !== false ? "✓ ACTIVE & OPEN" : "✕ CLOSED / PAUSED"}
                             </button>
@@ -1319,7 +1319,7 @@ export default function AdminDashboardPage() {
 
               <p className={`text-xs leading-relaxed mb-5 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>
                 Are you sure you want to permanently delete store <strong className={isDark ? "text-white" : "text-zinc-900"}>"{storeToDelete.name}"</strong>? 
-                This will delete all its dishes, catalog items, reviews, and linked chat history from the live database.
+                This will delete all its products, catalog items, reviews, and linked chat history from the live database.
               </p>
 
               <div className="flex gap-3">

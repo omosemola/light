@@ -136,7 +136,7 @@ function TermsContent() {
                 <Store size={18} /> Official Campus Merchant Charter & Fast Delivery Commitment
               </div>
               <p className="text-xs text-[#71717A] dark:text-zinc-300 mt-1">
-                This standard protocol governs all campus kitchens, student bakeries, retail stores, and delivery couriers operating on the Lightson Marketplace platform.
+                This standard protocol governs all campus stores, merchant outlets, retail vendors, and delivery couriers operating on the Lightson Marketplace platform.
               </p>
             </div>
 
@@ -148,13 +148,13 @@ function TermsContent() {
               </h2>
               <ul className="space-y-2 pl-4 list-disc marker:text-[#312E81] dark:marker:text-indigo-400">
                 <li>
-                  <strong className="text-slate-900 dark:text-white">Verified Campus Operations:</strong> Any food kitchen, cafeteria, student entrepreneur, tech vendor, or hostel service provider must register with verified contact info, active phone/WhatsApp numbers, and valid outlet location details.
+                  <strong className="text-slate-900 dark:text-white">Verified Campus Operations:</strong> Any retail store, food outlet, student entrepreneur, tech vendor, or hostel service provider must register with verified contact info, active phone/WhatsApp numbers, and valid outlet location details.
                 </li>
                 <li>
-                  <strong className="text-slate-900 dark:text-white">Food Safety & Kitchen Hygiene:</strong> All meals, combos, pastries, and drinks must be prepared under strict hygienic conditions. Perishable food items must be freshly cooked and packed in sanitized, food-grade disposable containers.
+                  <strong className="text-slate-900 dark:text-white">Product Quality & Safety Standards:</strong> All products, items, and packages must be delivered in pristine condition and packed in safe, sanitized containers. Perishable goods must be handled with hygiene.
                 </li>
                 <li>
-                  <strong className="text-slate-900 dark:text-white">Stock Accuracy in POS:</strong> Vendors are required to keep their POS terminal synchronized. Any out-of-stock meal or item must be marked &quot;Out of Stock&quot; immediately to prevent rejected orders and student dissatisfaction.
+                  <strong className="text-slate-900 dark:text-white">Stock Accuracy in POS:</strong> Vendors are required to keep their POS terminal synchronized. Any out-of-stock item or product must be marked &quot;Out of Stock&quot; immediately to prevent rejected orders and student dissatisfaction.
                 </li>
               </ul>
             </section>
@@ -172,7 +172,7 @@ function TermsContent() {
                     <Clock size={16} />
                   </div>
                   <h4 className="font-bold text-xs text-slate-900 dark:text-white">2-Minute Order Acknowledgment</h4>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">Kitchens must accept incoming student orders within 2 minutes of the POS alarm chime.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">Stores must accept incoming student orders within 2 minutes of the POS alarm chime.</p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/60">
@@ -275,7 +275,7 @@ function TermsContent() {
                 3. Refunds & Cancellation Policy
               </h2>
               <p>
-                Cancellations can be made within 3 minutes of placing an order before the vendor begins kitchen preparation. If a delivered food item is incorrect, spilled, or damaged, full refunds or replacements are issued within 24 hours via Paystack or direct campus wallet credit.
+                Cancellations can be made within 3 minutes of placing an order before the vendor begins order preparation. If a delivered item is incorrect, missing, or damaged, full refunds or replacements are issued within 24 hours via Paystack or direct campus wallet credit.
               </p>
             </section>
           </motion.div>

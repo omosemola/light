@@ -325,10 +325,10 @@ export function generateVendorNewOrderAlertEmail({
         <div class="container">
           <div class="header">
             <h1 style="margin: 0; font-size: 24px; font-weight: 900;">🚨 NEW ORDER RECEIVED!</h1>
-            <p style="margin: 6px 0 0 0; font-size: 13px; color: #fde68a;">Lightson Merchant Kitchen & Store POS</p>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #fde68a;">Lightson Merchant Store POS</p>
           </div>
           <div class="body-content">
-            <div class="badge">ACTION REQUIRED • PREPARE ORDER</div>
+            <div class="badge">ACTION REQUIRED • FULFILL ORDER</div>
             <h2 style="font-size: 20px; font-weight: 900; color: ${BRAND_NAVY}; margin-top: 0; margin-bottom: 6px;">
               ${storeName}, you have a new order!
             </h2>
@@ -354,11 +354,11 @@ export function generateVendorNewOrderAlertEmail({
             </div>
 
             <div style="text-align: center; margin: 28px 0 16px 0;">
-              <a href="https://campuslightson.com/vendor/dashboard" class="btn">Open Kitchen POS Terminal ➔</a>
+              <a href="https://campuslightson.com/vendor/dashboard" class="btn">Open Merchant POS Terminal ➔</a>
             </div>
 
             <p style="font-size: 12px; color: #71717a; text-align: center; margin: 0;">
-              Please accept and start preparing the order promptly to maintain your store rating.
+              Please accept and prepare the order promptly to maintain your store rating.
             </p>
           </div>
           <div class="footer">Lightson Vendor Partner Portal • Instant Order Notification</div>
@@ -529,7 +529,7 @@ export function generateAdminPlatformOrderAlertEmail({
           <div class="content">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
               <div>
-                <span style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Store / Kitchen</span>
+                <span style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Store / Merchant</span>
                 <strong style="font-size: 16px; color: #1e1b4b;">${storeName}</strong>
               </div>
               <div style="text-align: right;">

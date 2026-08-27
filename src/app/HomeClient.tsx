@@ -61,7 +61,7 @@ const PROMO_SLIDES = [
     bgColor: "bg-[#1E1B4B]",
     badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
     image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
-    highlight: "⭐ 5.0 Top Rated • Campus Kitchen"
+    highlight: "⭐ 5.0 Top Rated • Verified Merchant"
   },
   {
     id: "promo-2",

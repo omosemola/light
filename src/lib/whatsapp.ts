@@ -67,10 +67,10 @@ ${deliveryInstructions ? `📝 *Special Note:* "${deliveryInstructions}"\n` : ""
 ${itemsList}
 
 ━━━━━━━━━━━━━━━━━━━━
-👉 *Open Kitchen POS Terminal:*
+👉 *Open Merchant POS Terminal:*
 https://lightsonmarketplace.com/vendor/dashboard
 
-_Please accept and start preparing this order promptly!_`;
+_Please accept and fulfill this order promptly!_`;
 }
 
 /**

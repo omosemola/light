@@ -211,7 +211,7 @@ export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
             <p style="font-size: 14px; color: #334155; line-height: 1.6;">Great news! Campus Administrators have officially reviewed and <strong>approved</strong> your merchant store application.</p>
             <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 8px;">
               <p style="margin: 0; font-size: 13px; color: #065f46; font-weight: 700;">✓ Store Status: VERIFIED & ACTIVE</p>
-              <p style="margin: 4px 0 0; font-size: 13px; color: #334155;">Your storefront is now visible to all students across campus. You can now log into your Merchant POS terminal to add dishes, manage prices, and fulfill live orders.</p>
+              <p style="margin: 4px 0 0; font-size: 13px; color: #334155;">Your storefront is now visible to all students across campus. You can now log into your Merchant POS terminal to add products, manage prices, and fulfill live orders.</p>
             </div>
             <div style="text-align: center; margin: 30px 0;">
               <a href="https://campuslightson.com/vendor/login" style="display: inline-block; background-color: #312E81; color: #ffffff; font-weight: 800; font-size: 14px; padding: 12px 28px; border-radius: 10px; text-decoration: none;">Launch Merchant Terminal</a>

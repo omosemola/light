@@ -393,7 +393,7 @@ export default function VendorDashboardPage() {
       ),
     }));
     await toggleProductAvailability(productId, !current);
-    showToast(`Dish is now ${!current ? "IN STOCK" : "OUT OF STOCK"}`);
+    showToast(`Product is now ${!current ? "IN STOCK" : "OUT OF STOCK"}`);
   };
 
   const openAddProductModal = () => {
@@ -428,7 +428,7 @@ export default function VendorDashboardPage() {
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to remove this dish from your store catalogue?")) return;
+    if (!confirm("Are you sure you want to remove this product from your store catalogue?")) return;
     
     setStoreData((prev: any) => ({
       ...prev,
@@ -436,13 +436,13 @@ export default function VendorDashboardPage() {
     }));
 
     await deleteVendorProduct(productId);
-    showToast("Dish removed from store catalogue.");
+    showToast("Product removed from store catalogue.");
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productName.trim()) {
-      showToast("Please enter the dish name.");
+      showToast("Please enter the product name.");
       return;
     }
     if (productPrice === "" || isNaN(parseFloat(productPrice))) {
@@ -452,7 +452,7 @@ export default function VendorDashboardPage() {
     setSubmittingProduct(true);
 
     try {
-      // 1. Process ingredients (comma or newline separated)
+      // 1. Process ingredients/tags (comma or newline separated)
       const ingredientsList = productIngredients
         .split(/[,\n]/)
         .map((i) => i.trim())
@@ -492,13 +492,13 @@ export default function VendorDashboardPage() {
             };
           });
           setShowProductModal(false);
-          showToast("✓ Dish updated successfully!");
+          showToast("✓ Product updated successfully!");
         } else {
-          showToast(res.error || "Failed to update dish. Please check your inputs.");
+          showToast(res.error || "Failed to update product. Please check your inputs.");
         }
       } else {
         if (!storeData?.id) {
-          showToast("Please log in again as vendor to add a dish.");
+          showToast("Please log in again as vendor to add a product.");
           return;
         }
         const res = await createVendorProduct({
@@ -516,13 +516,13 @@ export default function VendorDashboardPage() {
             products: [res.product, ...(prev?.products || [])],
           }));
           setShowProductModal(false);
-          showToast("✓ New dish added to store catalogue!");
+          showToast("✓ New product added to store catalogue!");
         } else {
-          showToast(res.error || "Failed to create dish. Please try again.");
+          showToast(res.error || "Failed to create product. Please try again.");
         }
       }
     } catch (err: any) {
-      console.error("Error saving dish:", err);
+      console.error("Error saving product:", err);
       const errMsg = err?.message || String(err);
       if (
         errMsg.includes("413") ||
@@ -709,7 +709,7 @@ export default function VendorDashboardPage() {
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-heading font-black tracking-tight text-white leading-tight">
-                    {storeData?.name || "Campus Kitchen POS"}
+                    {storeData?.name || "Merchant Store POS"}
                   </h1>
 
                   <button
@@ -880,7 +880,7 @@ export default function VendorDashboardPage() {
                     Store Application Under Review ⏳
                   </h2>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    Your merchant account and store profile are currently being verified by Lightson campus administrators. You can configure your menu dishes, opening hours, and pricing while waiting for activation.
+                    Your merchant account and store profile are currently being verified by Lightson campus administrators. You can configure your store products, opening hours, and pricing while waiting for activation.
                   </p>
                 </div>
               </div>
@@ -910,7 +910,7 @@ export default function VendorDashboardPage() {
                   🚨 {pendingCount} NEW INCOMING {pendingCount === 1 ? "ORDER" : "ORDERS"} WAITING!
                 </h2>
                 <p className="text-xs text-slate-900 font-bold">
-                  Fresh student orders awaiting kitchen confirmation.
+                  Fresh student orders awaiting store confirmation.
                 </p>
               </div>
             </div>
@@ -989,10 +989,10 @@ export default function VendorDashboardPage() {
                 : "bg-white border-slate-200 hover:border-indigo-500 shadow-xs"
             }`}
           >
-            <Utensils className="w-5 h-5 text-indigo-500 mb-1.5" />
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Menu Dishes</span>
+            <Package className="w-5 h-5 text-indigo-500 mb-1.5" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Store Products</span>
             <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>
-              {storeData?.products?.length || 0} Dishes
+              {storeData?.products?.length || 0} Products
             </h3>
           </motion.div>
 
@@ -1044,8 +1044,8 @@ export default function VendorDashboardPage() {
                 : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
             }`}
           >
-            <Utensils size={15} />
-            <span>Menu & Dishes ({storeData?.products?.length || 0})</span>
+            <Package size={15} />
+            <span>Products & Catalog ({storeData?.products?.length || 0})</span>
           </button>
 
           <button
@@ -1164,18 +1164,18 @@ export default function VendorDashboardPage() {
                     {/* ITEMS LIST */}
                     <div className="space-y-2">
                       <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">
-                        Dishes to Prepare:
+                        Items to Prepare:
                       </h4>
                       <div className="space-y-1.5">
                         {order.items?.map((item: any) => (
                           <div key={item.id} className="flex justify-between items-center text-xs p-2 rounded-xl bg-slate-50 dark:bg-zinc-800/60 font-medium">
                             <div>
                               <span className="font-bold text-slate-900 dark:text-white">
-                                {item.quantity}x {item.product?.name || "Campus Meal"}
+                                {item.quantity}x {item.product?.name || "Store Item"}
                               </span>
                               {item.selectedSize && (
                                 <span className="block text-[10px] text-indigo-600 dark:text-indigo-400">
-                                  Portion: {item.selectedSize}
+                                  Size/Option: {item.selectedSize}
                                 </span>
                               )}
                               {item.selectedAddOns && item.selectedAddOns.length > 0 && (
@@ -1233,7 +1233,7 @@ export default function VendorDashboardPage() {
                           onClick={() => handleStatusChange(order.id, OrderStatus.PREPARING)}
                           className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-black text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                         >
-                          {updatingId === order.id ? "Updating..." : "🍳 Start Cooking / Prepare"}
+                          {updatingId === order.id ? "Updating..." : "📦 Start Preparing Order"}
                         </button>
                       )}
 
@@ -1281,7 +1281,7 @@ export default function VendorDashboardPage() {
           </div>
         )}
 
-        {/* 2. MENU & DISHES CATALOGUE TAB */}
+        {/* 2. PRODUCTS & CATALOG TAB */}
         {selectedTab === "products" && (
           <div className="space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1291,7 +1291,7 @@ export default function VendorDashboardPage() {
                   type="text"
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Search dishes by name or ingredients..."
+                  placeholder="Search products by name or details..."
                   className={`w-full h-11 pl-10 pr-4 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 border ${
                     isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
                   }`}
@@ -1304,7 +1304,7 @@ export default function VendorDashboardPage() {
                 className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Plus size={16} />
-                <span>Add New Dish</span>
+                <span>Add New Product</span>
               </button>
             </div>
 
@@ -1312,19 +1312,19 @@ export default function VendorDashboardPage() {
               <div className={`p-12 text-center rounded-3xl border ${
                 isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
               }`}>
-                <Utensils size={32} className="text-slate-400 mx-auto mb-3" />
+                <Package size={32} className="text-slate-400 mx-auto mb-3" />
                 <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
-                  No dishes found
+                  No products found
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
-                  Add your first meal item with customizable portion sizes and extra toppings.
+                  Add your first store product with customizable options, sizes, or variations.
                 </p>
                 <button
                   type="button"
                   onClick={openAddProductModal}
                   className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
                 >
-                  + Add First Dish
+                  + Add First Product
                 </button>
               </div>
             ) : (
@@ -1373,7 +1373,7 @@ export default function VendorDashboardPage() {
                           {prod.name}
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                          {parseProductDescription(prod.description).description || "Delicious freshly prepared meal."}
+                          {parseProductDescription(prod.description).description || "Verified store item."}
                         </p>
                         {parseProductDescription(prod.description).ingredients.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
@@ -1398,14 +1398,14 @@ export default function VendorDashboardPage() {
                           className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white font-heading font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
                         >
                           <Edit3 size={13} />
-                          <span>Edit Dish</span>
+                          <span>Edit Product</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleDeleteProduct(prod.id)}
                           className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition cursor-pointer"
-                          title="Delete Dish"
+                          title="Delete Product"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -1430,7 +1430,7 @@ export default function VendorDashboardPage() {
                     Customer Ratings & Reviews
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Verified feedback submitted by students who ordered from your kitchen.
+                    Verified feedback submitted by students who ordered from your store.
                   </p>
                 </div>
                 <div className="text-right">
@@ -1583,7 +1583,7 @@ export default function VendorDashboardPage() {
                       required
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
-                      placeholder="e.g. Pastry Haven or Campus Kitchen"
+                      placeholder="e.g. Pastry Haven or Campus Store"
                       className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
@@ -1598,7 +1598,7 @@ export default function VendorDashboardPage() {
                       type="text"
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      placeholder="e.g. Chief Chef Adebayo"
+                      placeholder="e.g. Adebayo Stores"
                       className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
@@ -1614,7 +1614,7 @@ export default function VendorDashboardPage() {
                     rows={3}
                     value={storeDesc}
                     onChange={(e) => setStoreDesc(e.target.value)}
-                    placeholder="Welcome to our kitchen! Freshly made Nigerian party jollof, proteins, drinks, and express hostel delivery."
+                    placeholder="Welcome to our store! Quality campus products, snacks, provisions, and express hostel delivery."
                     className={`w-full p-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                       isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
                     }`}
@@ -1665,7 +1665,7 @@ export default function VendorDashboardPage() {
               {/* 4. OPERATIONS & DELIVERY SCHEDULE */}
               <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
                 <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
-                  4. Operations & Daily Kitchen Hours
+                  4. Operations & Daily Store Hours
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1830,7 +1830,7 @@ export default function VendorDashboardPage() {
                       required
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
-                      placeholder="e.g. Pastry Haven or Campus Kitchen"
+                      placeholder="e.g. Pastry Haven or Campus Store"
                       className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
@@ -1845,7 +1845,7 @@ export default function VendorDashboardPage() {
                       type="text"
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      placeholder="e.g. Chef Adebayo"
+                      placeholder="e.g. Adebayo Stores"
                       className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
@@ -1861,7 +1861,7 @@ export default function VendorDashboardPage() {
                     rows={2}
                     value={storeDesc}
                     onChange={(e) => setStoreDesc(e.target.value)}
-                    placeholder="Welcome to our kitchen! Freshly made campus meals and fast delivery."
+                    placeholder="Welcome to our store! Quality campus products, snacks, provisions, and fast delivery."
                     className={`w-full p-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                       isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
                     }`}
@@ -1985,7 +1985,7 @@ export default function VendorDashboardPage() {
             >
               <div className="flex items-center justify-between border-b pb-3 border-slate-100 dark:border-zinc-800">
                 <h3 className="font-heading font-black text-lg text-slate-900 dark:text-white">
-                  {editingProductId ? "Edit Dish Details" : "Add New Dish to Menu"}
+                  {editingProductId ? "Edit Product Details" : "Add New Product"}
                 </h3>
                 <button
                   type="button"
@@ -1999,7 +1999,7 @@ export default function VendorDashboardPage() {
               <form onSubmit={handleSaveProduct} className="space-y-4">
                 <div>
                   <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Dish Name
+                    Product Name
                   </label>
                   <input
                     type="text"
@@ -2039,7 +2039,7 @@ export default function VendorDashboardPage() {
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
                     >
-                      <option value="">Select Category (Default: Food)</option>
+                      <option value="">Select Category (Default: General)</option>
                       <option value="food">Food & Meals</option>
                       <option value="snacks">Snacks & Treats</option>
                       <option value="drinks">Drinks & Smoothies</option>
@@ -2058,11 +2058,11 @@ export default function VendorDashboardPage() {
                   </div>
                 </div>
 
-                {/* MULTIPLE DISH PHOTOS MANAGER */}
+                {/* MULTIPLE PRODUCT PHOTOS MANAGER */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-extrabold uppercase text-slate-500 font-heading">
-                      Dish Photos ({productImages.length})
+                      Product Photos ({productImages.length})
                     </label>
                     <span className="text-[11px] text-slate-400">Upload multiple photos from device</span>
                   </div>
@@ -2083,7 +2083,7 @@ export default function VendorDashboardPage() {
                     className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-100/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold font-heading flex items-center justify-center gap-2 transition cursor-pointer active:scale-[0.99]"
                   >
                     <Camera size={16} className="text-indigo-600 dark:text-indigo-400" />
-                    <span>{productImages.length === 0 ? "Click to Upload Dish Photos (Multiple Allowed)" : "+ Add More Photos"}</span>
+                    <span>{productImages.length === 0 ? "Click to Upload Product Photos (Multiple Allowed)" : "+ Add More Photos"}</span>
                   </button>
 
                   {/* PHOTOS PREVIEW & DELETION GRID */}
@@ -2096,7 +2096,7 @@ export default function VendorDashboardPage() {
                         >
                           <img
                             src={img}
-                            alt={`Dish photo ${idx + 1}`}
+                            alt={`Product photo ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
 
@@ -2122,27 +2122,27 @@ export default function VendorDashboardPage() {
                   )}
                 </div>
 
-                {/* DISH DESCRIPTION */}
+                {/* PRODUCT DESCRIPTION */}
                 <div>
                   <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                    Dish Description
+                    Product Description
                   </label>
                   <textarea
                     rows={2}
                     value={productDesc}
                     onChange={(e) => setProductDesc(e.target.value)}
-                    placeholder="Describe taste, serving size, and special preparation details..."
+                    placeholder="Describe quality, materials, sizes, specifications, and special details..."
                     className={`w-full p-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                       isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
                     }`}
                   />
                 </div>
 
-                {/* KEY INGREDIENTS */}
+                {/* KEY TAGS / HIGHLIGHTS */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-extrabold uppercase text-slate-500 font-heading">
-                      Key Ingredients
+                      Key Highlights / Tags
                     </label>
                     <span className="text-[11px] text-slate-400">Comma separated</span>
                   </div>
@@ -2150,25 +2150,25 @@ export default function VendorDashboardPage() {
                     type="text"
                     value={productIngredients}
                     onChange={(e) => setProductIngredients(e.target.value)}
-                    placeholder="e.g. Long grain rice, Fresh tomatoes, Bell peppers, Fried plantains, Grilled chicken"
+                    placeholder="e.g. Size M, 100% Cotton, Brand New, Express Delivery"
                     className={`w-full h-11 px-3.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                       isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
                     }`}
                   />
                 </div>
 
-                {/* PORTION SIZES BUILDER */}
+                {/* SIZES / VARIATIONS BUILDER */}
                 <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold font-heading text-slate-700 dark:text-zinc-300">
-                      Portion Sizes (Optional)
+                      Sizes / Variations (Optional)
                     </span>
                     <button
                       type="button"
                       onClick={addVariationRow}
                       className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <PlusCircle size={13} /> + Add Portion
+                      <PlusCircle size={13} /> + Add Size/Variation
                     </button>
                   </div>
                   {variations.map((v, i) => (
@@ -2181,7 +2181,7 @@ export default function VendorDashboardPage() {
                           copy[i].name = e.target.value;
                           setVariations(copy);
                         }}
-                        placeholder="e.g. Large / Jumbo Pack"
+                        placeholder="e.g. Large / Size 42 / Pack of 3"
                         className="flex-1 h-9 px-3 text-xs rounded-xl border bg-white dark:bg-zinc-950"
                       />
                       <input
@@ -2230,7 +2230,7 @@ export default function VendorDashboardPage() {
                           copy[i].name = e.target.value;
                           setAddOns(copy);
                         }}
-                        placeholder="e.g. Extra Fried Plantain / Egg"
+                        placeholder="e.g. Extra Packaging / Add-on"
                         className="flex-1 h-9 px-3 text-xs rounded-xl border bg-white dark:bg-zinc-950"
                       />
                       <input
@@ -2269,7 +2269,7 @@ export default function VendorDashboardPage() {
                     className="flex-1 py-3 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     {submittingProduct ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                    <span>{editingProductId ? "Update Dish" : "Publish Dish"}</span>
+                    <span>{editingProductId ? "Update Product" : "Publish Product"}</span>
                   </button>
                 </div>
               </form>

@@ -84,7 +84,7 @@ const getStatusDisplay = (status: string) => {
     case "ACCEPTED":
     case "PREPARING":
       return {
-        label: "Kitchen Preparing Your Order",
+        label: "Store Preparing Your Order",
         color: "bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
       };
     case "READY_FOR_DELIVERY":

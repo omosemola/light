@@ -338,7 +338,7 @@ export default function SignupPage() {
                 Are you a vendor?
               </span>
               <span className="block text-[11px] text-slate-600 dark:text-zinc-400 font-medium">
-                Sell dishes, snacks & items to students
+                Sell products, groceries, fashion & gadgets to students
               </span>
             </div>
           </div>

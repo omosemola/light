@@ -140,14 +140,14 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
       let statusDesc = `Your order status has been updated to ${newStatus}.`;
 
       if (newStatus === OrderStatus.ACCEPTED || newStatus === OrderStatus.PREPARING) {
-        statusTitle = "Kitchen Preparing Meal 👨‍🍳";
-        statusDesc = `${updatedOrder.store.name} has accepted your order and is packaging your meal.`;
+        statusTitle = "Store Preparing Order 📦";
+        statusDesc = `${updatedOrder.store.name} has accepted your order and is packaging your items.`;
       } else if (newStatus === OrderStatus.OUT_FOR_DELIVERY) {
-        statusTitle = "Out for Self-Delivery 🛵";
-        statusDesc = `${updatedOrder.store.name}'s self-delivery team is en route to your hostel location (${updatedOrder.deliveryLocation}).`;
+        statusTitle = "Out for Delivery 🛵";
+        statusDesc = `${updatedOrder.store.name}'s delivery team is en route to your hostel location (${updatedOrder.deliveryLocation}).`;
       } else if (newStatus === OrderStatus.DELIVERED) {
         statusTitle = "Order Delivered 🎉";
-        statusDesc = `Your meal from ${updatedOrder.store.name} has been delivered to ${updatedOrder.deliveryLocation}. Enjoy your food!`;
+        statusDesc = `Your order from ${updatedOrder.store.name} has been delivered to ${updatedOrder.deliveryLocation}. Thank you for shopping on Lightson!`;
       }
 
       const emailHtml = generateStudentStatusUpdateEmail({

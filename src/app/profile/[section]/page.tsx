@@ -565,7 +565,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   <MapPin size={32} className="mx-auto text-slate-300 dark:text-zinc-600" />
                   <h4 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-200">No Saved Delivery Locations Yet</h4>
                   <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
-                    Add your hostel or room details above so campus kitchens and couriers know exactly where to deliver your food.
+                    Add your hostel or room details above so campus stores and couriers know exactly where to deliver your orders.
                   </p>
                 </div>
               ) : (
@@ -764,7 +764,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                       No saved vendors yet
                     </h3>
                     <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
-                      Favorite your trusted campus kitchens and snack bars to quickly jump straight to their menu.
+                      Favorite your trusted campus stores and merchants to quickly jump straight to their products.
                     </p>
                     <Link
                       href="/"
@@ -1012,7 +1012,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                 In-App Vendor Messaging
               </h2>
               <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto font-body">
-                Direct in-app messaging with campus kitchens and stores will be available in the upcoming platform version. For questions, you can reach vendors directly via phone or WhatsApp on their store pages.
+                Direct in-app messaging with campus stores and merchants will be available in the upcoming platform version. For questions, you can reach vendors directly via phone or WhatsApp on their store pages.
               </p>
             </div>
             <div className="pt-2 flex justify-center gap-3">
@@ -1042,7 +1042,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   <span>My Ratings & Reviews</span>
                 </h2>
                 <p className="text-xs text-[#71717A] dark:text-zinc-400">
-                  Reviews and feedback you have posted for campus kitchens and stores.
+                  Reviews and feedback you have posted for campus stores and merchants.
                 </p>
               </div>
               <span className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-full">

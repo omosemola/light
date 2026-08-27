@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { useCartStore } from "@/lib/store";
 import { useUserStore } from "@/lib/userStore";
 import { 
@@ -20,32 +21,57 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createLiveOrder } from "@/actions/orders";
+import { getUserLocationsDb, SavedLocationItem } from "@/actions/account";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { items, getTotal, vendorName, vendorId, clearCart } = useCartStore();
   const { addNotification } = useNotificationStore();
-  const { profile } = useUserStore();
+  const { profile, updateProfile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"paystack" | "cash">("paystack");
 
-  const [formData, setFormData] = useState({
-    location: profile.hostel ? `${profile.hostel}${profile.addressDetail ? `, ${profile.addressDetail}` : ""}` : "",
-    phone: profile.phone || "",
-    instructions: "",
-  });
+  const effectiveEmail = session?.user?.email || profile.email || "";
+
+  // 2-field Location Schema & DB Saved Locations
+  const [houseName, setHouseName] = useState(() => profile.hostel || "");
+  const [streetLocation, setStreetLocation] = useState(() => profile.addressDetail || "");
+  const [phone, setPhone] = useState(() => profile.phone || "");
+  const [instructions, setInstructions] = useState("");
+  const [savedLocationsList, setSavedLocationsList] = useState<SavedLocationItem[]>(() => profile.savedLocations || []);
 
   useEffect(() => {
     setIsMounted(true);
-    if (profile.hostel && !formData.location) {
-      setFormData((prev) => ({
-        ...prev,
-        location: `${profile.hostel}${profile.addressDetail ? `, ${profile.addressDetail}` : ""}`,
-        phone: prev.phone || profile.phone || "",
-      }));
+    if (effectiveEmail) {
+      getUserLocationsDb(effectiveEmail).then((res) => {
+        if (res.success && res.locations && res.locations.length > 0) {
+          setSavedLocationsList(res.locations);
+          updateProfile({ savedLocations: res.locations });
+
+          // If houseName is empty, auto-fill from default saved location
+          const defaultLoc = res.locations.find((l) => l.isDefault) || res.locations[0];
+          if (defaultLoc) {
+            setHouseName((prev) => prev || defaultLoc.title);
+            setStreetLocation((prev) => prev || defaultLoc.address);
+          }
+        }
+      });
+    }
+  }, [effectiveEmail]);
+
+  useEffect(() => {
+    if (profile.hostel && !houseName) {
+      setHouseName(profile.hostel);
+    }
+    if (profile.addressDetail && !streetLocation) {
+      setStreetLocation(profile.addressDetail);
+    }
+    if (profile.phone && !phone) {
+      setPhone(profile.phone);
     }
   }, [profile.hostel, profile.addressDetail, profile.phone]);
 
@@ -65,9 +91,22 @@ export default function CheckoutPage() {
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!houseName.trim() || !streetLocation.trim()) {
+      alert("Please provide both your House/Hostel Name and Location or Street.");
+      return;
+    }
     setIsProcessing(true);
 
-    // Format item customization notes for kitchen POS
+    const fullDeliveryLocation = `${houseName.trim()}, ${streetLocation.trim()}`;
+
+    // Update profile cache
+    updateProfile({
+      hostel: houseName.trim(),
+      addressDetail: streetLocation.trim(),
+      phone: phone.trim() || profile.phone,
+    });
+
+    // Format item customization notes for store POS
     const customizationSummary = items
       .map((i) => {
         const parts = [];
@@ -82,7 +121,7 @@ export default function CheckoutPage() {
       .join("; ");
 
     const combinedInstructions = [
-      formData.instructions,
+      instructions,
       customizationSummary ? `[Item Options: ${customizationSummary}]` : "",
     ]
       .filter(Boolean)
@@ -91,11 +130,11 @@ export default function CheckoutPage() {
     const targetStoreId = vendorId || items[0]?.vendorId;
 
     const res = await createLiveOrder({
-      userEmail: profile.email,
+      userEmail: profile.email || effectiveEmail,
       userName: profile.name,
       storeId: targetStoreId,
       totalAmount: total,
-      deliveryLocation: formData.location,
+      deliveryLocation: fullDeliveryLocation,
       deliveryInstructions: combinedInstructions,
       paymentMethod: paymentMethod === "paystack" ? "Paystack (Card/Transfer)" : "Pay on Arrival",
       paymentReference: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -110,7 +149,7 @@ export default function CheckoutPage() {
 
     const orderId = res.success && res.order ? res.order.id : `ORD-${Date.now().toString().slice(-4)}`;
     addNotification({
-      userEmail: profile.email || "visitor@light.app",
+      userEmail: profile.email || effectiveEmail || "visitor@light.app",
       title: "Order Placed Successfully! 🛍️",
       desc: `Your order for ₦${total.toLocaleString()} (${items.length} item${items.length === 1 ? "" : "s"}) has been sent to the store.`,
       type: "order",
@@ -138,7 +177,7 @@ export default function CheckoutPage() {
           <div className="flex items-center justify-between">
             <button 
               onClick={() => router.back()} 
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center justify-center active:scale-90 transition-all"
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
               aria-label="Go back"
             >
               <ArrowLeft size={20} />
@@ -154,7 +193,7 @@ export default function CheckoutPage() {
               Checkout & Delivery
             </h1>
             <p className="text-xs text-slate-300 dark:text-zinc-400 font-normal mt-0.5">
-              Confirm your hostel room and complete payment securely
+              Confirm your campus delivery address and complete payment securely
             </p>
           </div>
         </div>
@@ -170,79 +209,100 @@ export default function CheckoutPage() {
           transition={{ duration: 0.4 }}
           className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-4"
         >
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
-            <MapPin size={18} className="text-[#312E81] dark:text-indigo-400" />
-            <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-              Campus Delivery Location
-            </h2>
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center gap-2">
+              <MapPin size={18} className="text-[#312E81] dark:text-indigo-400" />
+              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+                Campus Delivery Location
+              </h2>
+            </div>
+            <Link href="/profile/locations" className="text-xs font-bold text-[#312E81] dark:text-indigo-400 hover:underline">
+              Manage Saved Addresses ↗
+            </Link>
           </div>
-          
-          <div className="space-y-3.5">
+
+          {/* QUICK-PICK SAVED LOCATIONS PILLS */}
+          {savedLocationsList && savedLocationsList.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 flex items-center gap-1.5">
-                  <MapPin size={13} /> Hostel / Block / Room Number
-                </label>
-                <Link href="/profile/locations" className="text-[11px] font-bold text-[#312E81] dark:text-indigo-400 hover:underline">
-                  Manage Addresses ↗
-                </Link>
+              <span className="text-[11px] font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5">
+                Quick Select Saved Location:
+              </span>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-0.5 no-scrollbar">
+                {savedLocationsList.map((loc) => {
+                  const isSelected = houseName === loc.title && streetLocation === loc.address;
+                  return (
+                    <button
+                      key={loc.id}
+                      type="button"
+                      onClick={() => {
+                        setHouseName(loc.title);
+                        setStreetLocation(loc.address);
+                      }}
+                      className={`text-xs px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                        isSelected
+                          ? "bg-[#312E81] text-white border-[#312E81] shadow-2xs"
+                          : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:border-indigo-400"
+                      }`}
+                    >
+                      📍 {loc.title} {loc.isDefault ? "• Default" : ""}
+                    </button>
+                  );
+                })}
               </div>
-
-              {profile.savedLocations && profile.savedLocations.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar mb-2">
-                  {profile.savedLocations.map((loc) => {
-                    const fullAddr = `${loc.title}, ${loc.address}`;
-                    const isSelected = formData.location === fullAddr;
-                    return (
-                      <button
-                        key={loc.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, location: fullAddr })}
-                        className={`text-[11px] px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
-                          isSelected
-                            ? "bg-[#312E81] text-white border-[#312E81] shadow-2xs"
-                            : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:border-indigo-400"
-                        }`}
-                      >
-                        📍 {loc.title}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
+            </div>
+          )}
+          
+          <div className="space-y-4">
+            {/* 1. House / Hostel Name */}
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5">
+                House/Hostel Name
+              </label>
               <input 
                 type="text" 
                 required
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="e.g. Hostel Name, Block & Room Number"
+                value={houseName}
+                onChange={(e) => setHouseName(e.target.value)}
+                className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100"
+              />
+            </div>
+
+            {/* 2. Location or Street */}
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5">
+                Location or Street
+              </label>
+              <input 
+                type="text" 
+                required
+                value={streetLocation}
+                onChange={(e) => setStreetLocation(e.target.value)}
                 className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100"
               />
             </div>
             
+            {/* Phone Number */}
             <div>
-              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1 flex items-center gap-1.5">
-                <Phone size={13} /> Phone Number (For Delivery Contact)
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5">
+                Phone Number (For Delivery Contact)
               </label>
               <input 
                 type="tel" 
                 required
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                placeholder="+234 800 000 0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100"
               />
             </div>
 
+            {/* Optional Instructions */}
             <div>
-              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1 flex items-center gap-1.5">
-                <MessageSquare size={13} /> Delivery Note to Store / Kitchen (Optional)
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5 flex items-center gap-1.5">
+                <MessageSquare size={13} /> Delivery Note to Store / Merchant (Optional)
               </label>
               <textarea 
-                value={formData.instructions}
-                onChange={(e) => setFormData({...formData, instructions: e.target.value})}
-                placeholder="E.g. Please call when you arrive at the main hostel porter's lodge."
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
                 rows={2}
                 className="w-full p-3 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs text-[#18181B] dark:text-zinc-100 resize-none"
               />

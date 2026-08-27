@@ -15,7 +15,7 @@ export function ProductGrid({
   onAddProduct,
   onClickProduct,
   isLoading = false,
-  emptyMessage = "No dishes or items currently found in this category.",
+  emptyMessage = "No products or items currently found in this category.",
 }: ProductGridProps) {
   if (isLoading) {
     return (

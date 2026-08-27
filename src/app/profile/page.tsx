@@ -208,7 +208,7 @@ export default function ProfilePage() {
 
     try {
       const res = await registerVendorStore({
-        storeName: vendorStoreName || `${profile.name}'s Kitchen`,
+        storeName: vendorStoreName || `${profile.name}'s Store`,
         ownerName: profile.name,
         email: vendorEmail || profile.email,
         phone: vendorPhone || profile.phone,
@@ -482,7 +482,7 @@ export default function ProfilePage() {
                   Open Admin Command Center
                 </h3>
                 <p className="text-[11px] text-indigo-200">
-                  Manage dishes, live orders, stores & tickets
+                  Manage products, live orders, stores & tickets
                 </p>
               </div>
             </div>
@@ -727,7 +727,7 @@ export default function ProfilePage() {
             <Store size={20} className="text-[#312E81] dark:text-indigo-400 shrink-0 mt-0.5" />
             <div>
               <strong className="block font-heading font-black text-[#312E81] dark:text-indigo-300 mb-0.5">Start Selling on Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Campus Marketplace</strong>
-              Register your store name and details below to unlock your Vendor Merchant Dashboard, live order terminal, and menu manager!
+              Register your store name and details below to unlock your Vendor Merchant Dashboard, live order terminal, and catalog manager!
             </div>
           </div>
 
@@ -738,7 +738,7 @@ export default function ProfilePage() {
             <input 
               type="text" 
               required
-              placeholder="e.g. Campus Delight Kitchen or QuickMart"
+              placeholder="e.g. Campus Fashion Hub, TechMart, or Pastry Haven"
               value={vendorStoreName}
               onChange={(e) => setVendorStoreName(e.target.value)}
               className="w-full h-11 px-3.5 bg-[#FAFAF7] dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] text-xs font-medium"

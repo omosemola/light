@@ -197,7 +197,7 @@ export async function createLiveOrder(input: CreateOrderInput) {
 
       sendEmail({
         to: vendorEmail,
-        subject: `🚨 NEW ORDER #${displayOrderId} - ${order.store.name} Kitchen Alert!`,
+        subject: `🚨 NEW ORDER #${displayOrderId} - ${order.store.name} Store Alert!`,
         html: vendorHtml,
       }).catch((e) => console.error("Failed to send vendor alert email:", e));
     }

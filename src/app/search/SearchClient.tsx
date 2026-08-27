@@ -383,7 +383,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
           </motion.div>
         )}
 
-        {/* CAMPUS KITCHENS & STORES SECTION */}
+        {/* CAMPUS STORES & MERCHANTS SECTION */}
         {stores.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 15 }}
@@ -394,7 +394,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
               <div>
                 <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
                   <Store size={18} className="text-[#312E81] dark:text-indigo-400" />
-                  Campus Kitchens & Stores
+                  Campus Stores & Merchants
                 </h3>
                 <p className="text-[11px] text-[#71717A] dark:text-zinc-400 font-body">Verified campus vendors with live store fulfillment</p>
               </div>

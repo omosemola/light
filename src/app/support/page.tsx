@@ -55,10 +55,10 @@ interface UserOrderOption {
 const FAQS = [
   {
     q: "How fast is delivery to student hostels?",
-    a: "Orders from verified campus kitchens and stores are prepared hot and delivered to your hostel porter's lodge or gate within 15–25 minutes.",
+    a: "Orders from verified campus stores and merchants are fulfilled promptly and delivered to your hostel porter's lodge or room within 15–25 minutes.",
   },
   {
-    q: "What should I do if an item or drink is missing from my order?",
+    q: "What should I do if an item is missing or damaged from my order?",
     a: "Open a support ticket under 'Order Issue' selecting your specific Order ID, or message our direct WhatsApp support desk immediately. Our campus reps will resolve or replace it promptly.",
   },
   {
@@ -70,8 +70,8 @@ const FAQS = [
     a: "If your order has not been dispatched yet, call the store directly via the storefront phone number or message campus support immediately.",
   },
   {
-    q: "Are marketplace meals freshly prepared daily?",
-    a: "Yes! All dishes and bakery items are prepared fresh each morning by verified campus merchants to guarantee top flavor and quality.",
+    q: "Are marketplace items verified for high quality?",
+    a: "Yes! All products and items are prepared and packed with verified quality standards by campus merchants.",
   },
 ];
 
@@ -557,10 +557,10 @@ export default function SupportPage() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium"
                 >
-                  <option value="Order Issue">Order Issue (Missing item, cold food)</option>
+                  <option value="Order Issue">Order Issue (Missing item, wrong product)</option>
                   <option value="Delivery Delay">Delivery Delay (Over 30 mins)</option>
                   <option value="Payment / Refund">Payment / Paystack Refund</option>
-                  <option value="Vendor / Menu Inquiry">Vendor Menu & Portion Inquiry</option>
+                  <option value="Vendor / Product Inquiry">Vendor Product & Item Inquiry</option>
                   <option value="Account / Profile">Account & Hostel Settings</option>
                   <option value="General Inquiry">General Campus Inquiry</option>
                 </select>

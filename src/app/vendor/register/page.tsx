@@ -33,7 +33,7 @@ import { registerVendorStore } from "@/actions/vendor";
 import { useUserStore } from "@/lib/userStore";
 
 const CAMPUS_CATEGORIES = [
-  "Campus Hot Kitchen & Meals",
+  "Campus Food & Meals",
   "Cafeteria & Snacks Combos",
   "Provisions & Hostel Groceries",
   "Tech, Gadgets & Accessories",
@@ -136,8 +136,8 @@ export default function VendorRegistrationPage() {
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      if (!location) {
-        setErrorMessage("Please specify your store, kitchen, or campus outlet location.");
+      if (!location.trim()) {
+        setErrorMessage("Please specify your campus store, outlet, or dispatch location.");
         return;
       }
       setCurrentStep(3);
@@ -365,7 +365,7 @@ export default function VendorRegistrationPage() {
                   </span>
                   <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400">
                     {currentStep === 1 && "Business & Contact"}
-                    {currentStep === 2 && "Kitchen & Location"}
+                    {currentStep === 2 && "Store & Location"}
                     {currentStep === 3 && "Bank Settlements"}
                   </span>
                 </div>
@@ -393,7 +393,7 @@ export default function VendorRegistrationPage() {
                 >
                   <div>
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                      Store / Kitchen Name <span className="text-red-500">*</span>
+                      Store / Business Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -510,7 +510,7 @@ export default function VendorRegistrationPage() {
                 >
                   <div>
                     <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1">
-                      Campus Store / Kitchen / Outlet Location <span className="text-red-500">*</span>
+                      Campus Store / Outlet / Dispatch Location <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -739,7 +739,7 @@ export default function VendorRegistrationPage() {
                 <div className="space-y-1.5">
                   <h4 className="font-heading font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                     <Building2 size={16} className="text-indigo-600 dark:text-indigo-400" />
-                    1. Kitchen Hygiene & Inventory Quality
+                    1. Store Quality & Inventory Standards
                   </h4>
                   <p className="text-xs leading-relaxed">
                     All food items must be freshly cooked and packed in sanitized, food-grade disposable containers. Out-of-stock items must be paused immediately on your POS terminal to avoid student order cancellations.

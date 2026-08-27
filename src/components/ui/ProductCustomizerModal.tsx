@@ -305,13 +305,13 @@ export function ProductCustomizerModal({
             <div className="space-y-2">
               <h4 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                 <MessageSquare size={16} className="text-slate-400" />
-                Kitchen Preparation Notes
+                Order & Preparation Notes
               </h4>
               <textarea
                 rows={2}
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
-                placeholder="e.g. Less spicy, extra sauce, pack chicken separately..."
+                placeholder="e.g. Specific preferences, packaging notes, or special instructions..."
                 className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50 text-xs focus:ring-2 focus:ring-[#312E81] focus:outline-hidden"
               />
             </div>
