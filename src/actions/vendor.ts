@@ -698,8 +698,8 @@ export async function updateVendorProfile(data: {
         openingTime: data.openingTime || undefined,
         closingTime: data.closingTime || undefined,
         estimatedDelivery: data.estimatedDelivery || undefined,
-        ...(data.logo ? { logo: data.logo } : {}),
-        ...(data.coverImage ? { coverImage: data.coverImage } : {}),
+        ...(data.logo !== undefined ? { logo: data.logo } : {}),
+        ...(data.coverImage !== undefined ? { coverImage: data.coverImage } : {}),
       },
       include: {
         user: true,
@@ -720,6 +720,7 @@ export async function updateVendorProfile(data: {
 
     revalidatePath("/vendor/dashboard");
     revalidatePath("/");
+    revalidatePath("/search");
     revalidatePath(`/vendor/${data.storeId}`);
 
     return { 

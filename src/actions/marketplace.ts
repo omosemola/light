@@ -5,8 +5,21 @@ import { computeIsStoreOpen } from "@/lib/storeSchedule";
 import { parseProductImages } from "@/lib/productOptions";
 import { slugify } from "@/lib/slugify";
 
+// Fast server in-memory cache (15-second TTL) for instant 1-click page transitions
+let cachedHomepageData: { timestamp: number; data: any } | null = null;
+const CACHE_TTL_MS = 15000;
+
+export async function clearMarketplaceCache() {
+  cachedHomepageData = null;
+}
+
 export async function getLiveHomepageData() {
   try {
+    const now = Date.now();
+    if (cachedHomepageData && now - cachedHomepageData.timestamp < CACHE_TTL_MS) {
+      return cachedHomepageData.data;
+    }
+
     const [products, stores, categories] = await Promise.all([
       prisma.product.findMany({
         include: {
@@ -64,12 +77,19 @@ export async function getLiveHomepageData() {
       isCurrentlyOpen: computeIsStoreOpen(s),
     }));
 
-    return {
+    const result = {
       success: true,
       products: formattedProducts,
       stores: formattedStores,
       categories,
     };
+
+    cachedHomepageData = {
+      timestamp: Date.now(),
+      data: result,
+    };
+
+    return result;
   } catch (error: any) {
     console.error("Error fetching live homepage data:", error);
     return { success: false, products: [], stores: [], categories: [] };
@@ -278,35 +298,78 @@ export async function searchLiveCatalog(query: string) {
       return { success: true, products: [], stores: [] };
     }
 
-    const cleanQuery = query.trim();
+    const cleanQuery = query.trim().toLowerCase();
+    const tokens = cleanQuery.split(/\s+/).filter((w) => w.length > 0);
+
+    // Build flexible multi-term OR conditions
+    const productOrConditions: any[] = [
+      { name: { contains: cleanQuery, mode: "insensitive" } },
+      { description: { contains: cleanQuery, mode: "insensitive" } },
+      { category: { name: { contains: cleanQuery, mode: "insensitive" } } },
+      { category: { id: { contains: cleanQuery, mode: "insensitive" } } },
+      { store: { name: { contains: cleanQuery, mode: "insensitive" } } },
+    ];
+
+    for (const token of tokens) {
+      if (token !== cleanQuery) {
+        productOrConditions.push(
+          { name: { contains: token, mode: "insensitive" } },
+          { description: { contains: token, mode: "insensitive" } },
+          { category: { name: { contains: token, mode: "insensitive" } } },
+          { category: { id: { contains: token, mode: "insensitive" } } },
+          { store: { name: { contains: token, mode: "insensitive" } } }
+        );
+      }
+    }
+
+    // Synonym mapping: e.g. "food" -> include food, pastries, snacks, meals
+    if (cleanQuery.includes("food") || cleanQuery.includes("meal") || cleanQuery.includes("eat") || cleanQuery.includes("chop")) {
+      productOrConditions.push(
+        { categoryId: "food" },
+        { categoryId: "pastries" },
+        { categoryId: "snacks" }
+      );
+    }
+    if (cleanQuery.includes("drink") || cleanQuery.includes("beverage") || cleanQuery.includes("juice") || cleanQuery.includes("water") || cleanQuery.includes("zobo")) {
+      productOrConditions.push({ categoryId: "drinks" });
+    }
+    if (cleanQuery.includes("cloth") || cleanQuery.includes("wear") || cleanQuery.includes("fashion") || cleanQuery.includes("hoodie") || cleanQuery.includes("shirt")) {
+      productOrConditions.push({ categoryId: "wears" }, { categoryId: "accessories" });
+    }
+
+    const storeOrConditions: any[] = [
+      { name: { contains: cleanQuery, mode: "insensitive" } },
+      { description: { contains: cleanQuery, mode: "insensitive" } },
+    ];
+    for (const token of tokens) {
+      if (token !== cleanQuery) {
+        storeOrConditions.push(
+          { name: { contains: token, mode: "insensitive" } },
+          { description: { contains: token, mode: "insensitive" } }
+        );
+      }
+    }
 
     const [products, stores] = await Promise.all([
       prisma.product.findMany({
         where: {
-          OR: [
-            { name: { contains: cleanQuery, mode: "insensitive" } },
-            { description: { contains: cleanQuery, mode: "insensitive" } },
-            { category: { name: { contains: cleanQuery, mode: "insensitive" } } },
-            { store: { name: { contains: cleanQuery, mode: "insensitive" } } },
-          ],
+          OR: productOrConditions,
         },
         include: {
           store: true,
           category: true,
         },
-        take: 50,
+        take: 60,
+        orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
         where: {
-          OR: [
-            { name: { contains: cleanQuery, mode: "insensitive" } },
-            { description: { contains: cleanQuery, mode: "insensitive" } },
-          ],
+          OR: storeOrConditions,
         },
         include: {
           _count: { select: { products: true, orders: true } },
         },
-        take: 15,
+        take: 20,
       }),
     ]);
 

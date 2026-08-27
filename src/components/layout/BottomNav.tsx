@@ -85,6 +85,7 @@ export function BottomNav() {
             <Link
               key={item.name}
               href={item.href}
+              prefetch={true}
               className={clsx(
                 "flex flex-col items-center justify-center w-full h-full min-h-[48px] min-w-[48px] transition-colors relative",
                 isActive ? "text-[#312E81] dark:text-indigo-400" : "text-[#71717A] dark:text-zinc-400 hover:text-[#18181B] dark:hover:text-zinc-200"

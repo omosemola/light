@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Flame, 
@@ -238,13 +238,33 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     };
   }, []);
 
-  if (!isMounted) {
-    return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
-  }
+  useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      setProducts(initialProducts);
+    }
+    if (initialStores && initialStores.length > 0) {
+      setStores(initialStores);
+    }
+  }, [initialProducts, initialStores]);
 
-  if (!hasSeenOnboarding && status !== "authenticated") {
-    return <WelcomePage />;
-  }
+  // Featured Homepage Products: Strictly at most 4 random/top items (if only 1 exists, only 1 shows)
+  const featuredProducts = useMemo(() => {
+    const list = products.filter((p) => {
+      if (selectedFilter === "open") {
+        return p.vendorIsOpen !== false;
+      }
+      if (selectedFilter === "fast") {
+        const timeStr = p.vendorPrepTime || "";
+        return timeStr.includes("10") || timeStr.includes("15") || timeStr.includes("20");
+      }
+      if (selectedFilter === "top") {
+        return (p.rating || 4.8) >= 4.8;
+      }
+      return true;
+    });
+
+    return list.slice(0, 4);
+  }, [products, selectedFilter]);
 
   const handleOpenCustomizer = (productId: string) => {
     const product = products.find((p) => p.id === productId);
@@ -269,20 +289,6 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     }
   };
 
-  const filteredProducts = products.filter((p) => {
-    if (selectedFilter === "open") {
-      return p.vendorIsOpen !== false;
-    }
-    if (selectedFilter === "fast") {
-      const timeStr = p.vendorPrepTime || "";
-      return timeStr.includes("10") || timeStr.includes("15") || timeStr.includes("20");
-    }
-    if (selectedFilter === "top") {
-      return (p.rating || 4.8) >= 4.8;
-    }
-    return true;
-  });
-
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
 
   // Seamless Identity Resolution: check active session or store email first to prevent any visitor flash
@@ -297,6 +303,14 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const userAvatar = session?.user?.image || (profile.avatar && profile.avatar !== "/visitor-avatar.png" 
     ? profile.avatar 
     : (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
+
+  if (!isMounted) {
+    return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
+  }
+
+  if (!hasSeenOnboarding && status !== "authenticated") {
+    return <WelcomePage />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">
@@ -585,19 +599,19 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
           </div>
 
           <ProductGrid 
-            products={filteredProducts} 
+            products={featuredProducts} 
             onAddProduct={handleOpenCustomizer}
             isLoading={isLoading}
             emptyMessage="No available products found right now."
           />
 
-          {filteredProducts.length > 12 && (
+          {products.length > 4 && (
             <div className="flex justify-center pt-3">
               <Link
                 href="/search"
                 className="px-6 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-2 group"
               >
-                <span>Explore Full Catalog ({filteredProducts.length}+ Items)</span>
+                <span>Explore All Marketplace Products ({products.length} Items)</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>

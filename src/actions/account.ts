@@ -157,6 +157,15 @@ export async function getUserLocationsDb(email: string) {
       }
     });
 
+    if (locations.length === 0 && user.hostel && user.hostel.trim().length > 0) {
+      locations.push({
+        id: "default_primary_loc",
+        title: user.hostel.trim(),
+        address: (user.addressDetail || user.hostel).trim(),
+        isDefault: true,
+      });
+    }
+
     return { success: true, locations };
   } catch (error: any) {
     console.error("Error fetching user locations from DB:", error);

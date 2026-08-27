@@ -52,7 +52,8 @@ interface SearchClientProps {
 
 export default function SearchClient({ initialCatalog = [], initialStores = [] }: SearchClientProps) {
   const [query, setQuery] = useState("");
-  const [catalog, setCatalog] = useState<Product[]>(() => initialCatalog.map(mapProduct));
+  const [masterCatalog, setMasterCatalog] = useState<Product[]>(() => initialCatalog.map(mapProduct));
+  const [serverSearchResults, setServerSearchResults] = useState<Product[] | null>(null);
   const [stores, setStores] = useState<any[]>(initialStores);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -91,39 +92,67 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     };
   }
 
+  // Sync with initial props
+  useEffect(() => {
+    if (initialCatalog && initialCatalog.length > 0) {
+      setMasterCatalog((prev) => {
+        const incoming = initialCatalog.map(mapProduct);
+        return incoming.length >= prev.length ? incoming : prev;
+      });
+    }
+    if (initialStores && initialStores.length > 0) {
+      setStores(initialStores);
+    }
+  }, [initialCatalog, initialStores]);
+
+  // Always fetch full live catalog on mount if empty
+  useEffect(() => {
+    let active = true;
+    async function loadFreshMaster() {
+      try {
+        const data = await getLiveHomepageData();
+        if (active && data.success) {
+          if (data.products && data.products.length > 0) {
+            setMasterCatalog(data.products.map(mapProduct));
+          }
+          if (data.stores && data.stores.length > 0) {
+            setStores(data.stores);
+          }
+        }
+      } catch (e) {
+        console.error("Error loading master catalog for search:", e);
+      }
+    }
+    loadFreshMaster();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const vendorOptions = useMemo(() => {
     const storeNames = stores.map((s) => s.name).filter(Boolean);
     return ["All Vendors", ...Array.from(new Set(storeNames))];
   }, [stores]);
 
+  // Debounced server search to complement client-side filtering
   useEffect(() => {
-    let active = true;
-    async function performLiveSearch() {
-      if (!query.trim()) {
-        try {
-          const data = await getLiveHomepageData();
-          if (active && data.success) {
-            if (data.products && data.products.length > 0) {
-              setCatalog(data.products.map(mapProduct));
-            }
-            if (data.stores && data.stores.length > 0) {
-              setStores(data.stores);
-            }
-          }
-        } catch (err) {
-          console.error("Error loading default search catalog:", err);
-        } finally {
-          if (active) setIsLoading(false);
-        }
-        return;
-      }
+    if (!query.trim()) {
+      setServerSearchResults(null);
+      setIsLoading(false);
+      return;
+    }
 
-      setIsLoading(true);
+    let active = true;
+    setIsLoading(true);
+
+    const timer = setTimeout(async () => {
       try {
         const res = await searchLiveCatalog(query);
         if (active && res.success) {
-          if (res.products) {
-            setCatalog(res.products.map(mapProduct));
+          if (res.products && res.products.length > 0) {
+            setServerSearchResults(res.products.map(mapProduct));
+          } else {
+            setServerSearchResults([]);
           }
           if (res.stores && res.stores.length > 0) {
             setStores(res.stores);
@@ -132,39 +161,68 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       } catch (err) {
         console.error("Error during live search:", err);
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
-    }
+    }, 150);
 
-    const timer = setTimeout(performLiveSearch, 200);
     return () => {
       active = false;
       clearTimeout(timer);
     };
   }, [query]);
 
-  // FILTER LOGIC
+  function isCategoryMatch(productCat: string, selectedCat: string): boolean {
+    if (selectedCat === "All") return true;
+    const p = (productCat || "").toLowerCase().trim();
+    const s = selectedCat.toLowerCase().trim();
+    if (p === s || p.includes(s) || s.includes(p)) return true;
+
+    // Campus smart category aliases
+    if (s === "food" && (p.includes("pastr") || p.includes("snack") || p.includes("meal") || p.includes("food") || p.includes("bakery"))) return true;
+    if (s === "pastries" && (p.includes("pastr") || p.includes("snack") || p.includes("bakery") || p.includes("bread") || p.includes("roll"))) return true;
+    if (s === "snacks" && (p.includes("snack") || p.includes("pastr") || p.includes("pie") || p.includes("roll") || p.includes("chops"))) return true;
+    if (s === "drinks" && (p.includes("drink") || p.includes("juice") || p.includes("beverage") || p.includes("zobo") || p.includes("shake") || p.includes("cooler"))) return true;
+    if ((s === "fashion" || s === "wears") && (p.includes("wear") || p.includes("cloth") || p.includes("hoodie") || p.includes("shirt") || p.includes("pant") || p.includes("accessor") || p.includes("bag"))) return true;
+    if (s === "tech & gadgets" && (p.includes("gadget") || p.includes("electr") || p.includes("tech") || p.includes("phone"))) return true;
+    return false;
+  }
+
+  // Combine client-side instant search on masterCatalog with server results
+  const baseProducts = useMemo(() => {
+    if (!query.trim()) {
+      return masterCatalog;
+    }
+    // If server search results exist, merge with master catalog without duplicate IDs
+    const merged = [...masterCatalog];
+    if (serverSearchResults && serverSearchResults.length > 0) {
+      for (const item of serverSearchResults) {
+        if (!merged.some((m) => m.id === item.id)) {
+          merged.push(item);
+        }
+      }
+    }
+    return merged;
+  }, [masterCatalog, serverSearchResults, query]);
+
+  // Comprehensive Filter & Sorting Logic
   const filteredProducts = useMemo(() => {
-    return catalog.filter((product) => {
+    return baseProducts.filter((product) => {
       const q = query.toLowerCase().trim();
       const name = (product.name || "").toLowerCase();
       const vendor = (product.vendorName || "").toLowerCase();
       const cat = (product.category || "").toLowerCase();
       const desc = (product.description || "").toLowerCase();
 
-      const matchesQuery = !q || 
-        name.includes(q) ||
-        vendor.includes(q) ||
-        cat.includes(q) ||
-        desc.includes(q);
+      // Multi-word matching
+      let matchesQuery = true;
+      if (q) {
+        const tokens = q.split(/\s+/).filter(Boolean);
+        matchesQuery = tokens.every(
+          (t) => name.includes(t) || vendor.includes(t) || cat.includes(t) || desc.includes(t)
+        );
+      }
 
-      const selectedCatLower = selectedCategory.toLowerCase();
-      const matchesCategory = selectedCategory === "All" || 
-        cat.includes(selectedCatLower) ||
-        selectedCatLower.includes(cat);
-
+      const matchesCategory = isCategoryMatch(product.category || "", selectedCategory);
       const matchesVendor = selectedVendor === "All Vendors" || (product.vendorName || "") === selectedVendor;
       const matchesPrice = (product.price || 0) <= maxPrice;
       const matchesStock = !inStockOnly || product.isAvailable !== false;
@@ -173,8 +231,6 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       const prepStr = product.prepTime || product.vendorPrepTime || "";
       if (maxPrepTime === "15") {
         matchesPrep = prepStr.includes("5") || prepStr.includes("10") || prepStr.includes("15");
-      } else if (maxPrepTime === "30") {
-        matchesPrep = true;
       }
 
       return matchesQuery && matchesCategory && matchesVendor && matchesPrice && matchesStock && matchesPrep;
@@ -184,7 +240,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       if (sortBy === "rating") return (b.rating || 4.9) - (a.rating || 4.9);
       return 0;
     });
-  }, [catalog, query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy]);
+  }, [baseProducts, query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy]);
 
   const activeFiltersCount = (selectedCategory !== "All" ? 1 : 0) +
     (selectedVendor !== "All Vendors" ? 1 : 0) +
@@ -203,7 +259,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
   };
 
   const handleOpenCustomizer = (productId: string) => {
-    const product = catalog.find((p) => p.id === productId);
+    const product = baseProducts.find((p: Product) => p.id === productId);
     if (!product) return;
 
     setCustomizerProduct({

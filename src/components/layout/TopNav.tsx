@@ -43,14 +43,14 @@ export function TopNav() {
   return (
     <header className="hidden md:flex items-center justify-between px-8 h-20 bg-white dark:bg-[#121215] border-b border-slate-200 dark:border-zinc-800/80 sticky top-0 z-50 shadow-sm font-body transition-colors duration-200">
       <div className="flex items-center gap-8">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" prefetch={true} className="flex items-center gap-3 group">
           <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-12 w-auto object-contain group-hover:scale-105 transition-transform" />
           <span className="text-2xl font-[900] text-[#312E81] dark:text-indigo-300 font-heading tracking-tight">
             Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace
           </span>
         </Link>
         
-        <Link href="/search" className="relative w-96 block font-body">
+        <Link href="/search" prefetch={true} className="relative w-96 block font-body">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#71717A] dark:text-zinc-400">
             <CustomSearchIcon size={18} />
           </div>
@@ -63,6 +63,7 @@ export function TopNav() {
       <nav className="flex items-center gap-4 font-body">
         <Link
           href="/vendor/register"
+          prefetch={true}
           className="hidden lg:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 hover:bg-[#F4F3FF] dark:hover:bg-zinc-800 transition-all border border-slate-200/80 dark:border-zinc-700/80"
         >
           <Store size={14} className="text-[#F5A623]" />
@@ -85,6 +86,7 @@ export function TopNav() {
 
         <Link 
           href="/cart" 
+          prefetch={true}
           className="relative p-3 rounded-full text-[#18181B] dark:text-zinc-100 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-[#F4F3FF] dark:hover:bg-zinc-800 transition-all"
           aria-label="View Cart"
         >
@@ -98,6 +100,7 @@ export function TopNav() {
 
         <Link 
           href="/profile" 
+          prefetch={true}
           className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#F4F3FF] dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-200 transition-all font-body font-semibold text-sm border border-indigo-100 dark:border-indigo-800/50"
         >
           <CustomProfileIcon size={18} />

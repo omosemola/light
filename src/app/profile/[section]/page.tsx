@@ -47,6 +47,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { getSafeImageUrl } from "@/lib/productOptions";
@@ -67,12 +68,15 @@ import {
 export default function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
   const router = useRouter();
+  const { data: session } = useSession();
   const { profile, updateProfile } = useUserStore();
   const { isDark, setTheme, theme } = useTheme();
 
+  const effectiveEmail = session?.user?.email || profile.email || "";
+
   // LOCATIONS STATE (SYNCED WITH DATABASE)
-  const [locations, setLocations] = useState<SavedLocationItem[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+  const [locations, setLocations] = useState<SavedLocationItem[]>(() => profile.savedLocations || []);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(() => !(profile.savedLocations && profile.savedLocations.length > 0));
   const [newLocTitle, setNewLocTitle] = useState("");
   const [newLocAddress, setNewLocAddress] = useState("");
   const [editingLocId, setEditingLocId] = useState<string | null>(null);
@@ -87,9 +91,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   };
 
   useEffect(() => {
-    if (section === "locations" && profile.email) {
+    if (section === "locations" && effectiveEmail) {
       setIsLoadingLocations(true);
-      getUserLocationsDb(profile.email)
+      getUserLocationsDb(effectiveEmail)
         .then((res) => {
           if (res.success && res.locations) {
             setLocations(res.locations);
@@ -98,15 +102,15 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
         })
         .finally(() => setIsLoadingLocations(false));
     }
-  }, [section, profile.email]);
+  }, [section, effectiveEmail]);
 
   const handleAddLocation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLocTitle.trim() || !newLocAddress.trim()) return;
+    if (!newLocTitle.trim() || !newLocAddress.trim() || !effectiveEmail) return;
     setIsSavingLoc(true);
 
     try {
-      const res = await saveUserLocationDb(profile.email, {
+      const res = await saveUserLocationDb(effectiveEmail, {
         title: newLocTitle.trim(),
         address: newLocAddress.trim(),
       });
@@ -131,8 +135,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   };
 
   const handleSetDefaultLocation = async (locId: string) => {
+    if (!effectiveEmail) return;
     try {
-      const res: any = await setDefaultLocationDb(profile.email, locId);
+      const res: any = await setDefaultLocationDb(effectiveEmail, locId);
       if (res.success && res.locations) {
         setLocations(res.locations);
         if (res.defaultLocation) {
@@ -150,8 +155,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   };
 
   const handleDeleteLocation = async (id: string) => {
+    if (!effectiveEmail) return;
     try {
-      const res = await deleteUserLocationDb(profile.email, id);
+      const res = await deleteUserLocationDb(effectiveEmail, id);
       if (res.success && res.locations) {
         setLocations(res.locations);
         const def = res.locations.find((l) => l.isDefault);
@@ -169,16 +175,16 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
   const handleSaveEditLocation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingLocId || !editLocTitle.trim() || !editLocAddress.trim()) return;
+    if (!editingLocId || !editLocTitle.trim() || !editLocAddress.trim() || !effectiveEmail) return;
     setIsSavingLoc(true);
 
     try {
       const locToEdit = locations.find((l) => l.id === editingLocId);
-      const res = await saveUserLocationDb(profile.email, {
+      const res = await saveUserLocationDb(effectiveEmail, {
         id: editingLocId,
         title: editLocTitle.trim(),
         address: editLocAddress.trim(),
-        isDefault: locToEdit?.isDefault ?? false,
+        isDefault: locToEdit?.isDefault,
       });
 
       if (res.success && res.locations) {
@@ -190,10 +196,12 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
           addressDetail: def?.address || profile.addressDetail,
         });
         setEditingLocId(null);
-        showLocToast("Location updated successfully! 📍");
+        setEditLocTitle("");
+        setEditLocAddress("");
+        showLocToast("Delivery location updated in database! ✨");
       }
     } catch (err) {
-      console.error("Error editing location:", err);
+      console.error("Error updating location:", err);
     } finally {
       setIsSavingLoc(false);
     }
@@ -471,10 +479,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
               {editingLocId ? (
                 <form onSubmit={handleSaveEditLocation} className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Location / Hostel Name</label>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">House/Hostel Name</label>
                     <input
                       type="text"
-                      placeholder="e.g. Mellanby Hall, Tedder, Queen Idia, Off-Campus"
                       value={editLocTitle}
                       onChange={(e) => setEditLocTitle(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
@@ -482,10 +489,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Room Number / Block / Delivery Landmark</label>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Location or Street</label>
                     <input
                       type="text"
-                      placeholder="e.g. Block B, Room 14 (or Porter's Lodge)"
                       value={editLocAddress}
                       onChange={(e) => setEditLocAddress(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
@@ -513,10 +519,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
               ) : (
                 <form onSubmit={handleAddLocation} className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Location / Hostel Name</label>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">House/Hostel Name</label>
                     <input
                       type="text"
-                      placeholder="e.g. Mellanby Hall, Tedder, Queen Idia, Kuti Hall, Off-Campus"
                       value={newLocTitle}
                       onChange={(e) => setNewLocTitle(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"
@@ -524,10 +529,9 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Room Number / Block / Delivery Landmark</label>
+                    <label className="text-[11px] font-bold text-[#71717A] dark:text-zinc-400 mb-1 block">Location or Street</label>
                     <input
                       type="text"
-                      placeholder="e.g. Block C, Room 204 or Porter's Lodge"
                       value={newLocAddress}
                       onChange={(e) => setNewLocAddress(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-[#FAFAF7] dark:bg-zinc-800 text-sm focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium"

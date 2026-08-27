@@ -59,7 +59,7 @@ const MOCK_ORDERS: Record<string, OrderDetail> = {
     serviceFee: 100,
     paymentMethod: "Paystack (Card)",
     paymentStatus: "PAID",
-    hostelAddress: "Main Campus • Mellanby Hall, Block B Room 14",
+    hostelAddress: "Campus Residence Address",
     date: "Today, 12:45 PM",
     status: "PREPARING",
     items: [

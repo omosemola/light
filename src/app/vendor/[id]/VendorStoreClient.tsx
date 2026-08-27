@@ -43,6 +43,9 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
   const formatStoreData = (dbStore: any) => {
     if (!dbStore) return null;
     const avatarImg = dbStore.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80";
+    const coverImg = dbStore.coverImage || avatarImg;
+    const hasCustomCover = Boolean(dbStore.coverImage && dbStore.coverImage !== dbStore.logo);
+
     return {
       id: dbStore.id,
       name: dbStore.name,
@@ -56,6 +59,8 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
       closingTime: dbStore.closingTime || "22:00",
       isVerified: dbStore.isVerified !== false,
       avatar: avatarImg,
+      coverImage: coverImg,
+      hasCustomCover,
       description: dbStore.description || `Welcome to ${dbStore.name} on campus. Order fresh food & campus items delivered fast.`,
       phone: dbStore.phone || dbStore.user?.phone || "",
       ordersCount: dbStore._count?.orders || 12,
@@ -208,21 +213,26 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
   }
 
     const safeAvatar = getSafeImageUrl(vendor.avatar);
+    const safeBanner = getSafeImageUrl(vendor.coverImage || vendor.avatar);
 
     return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
       
-      {/* BLURRED MERCHANT DISPLAY PICTURE AS HERO BANNER */}
+      {/* VENDOR HERO BANNER (LIVE EDITED COVER BANNER OR AMBIENT BLUR) */}
       <div className="relative w-full h-56 md:h-72 bg-[#1E1B4B] overflow-hidden">
         <Image
-          src={safeAvatar}
-          alt={`${vendor.name} Ambient Banner`}
+          src={safeBanner}
+          alt={`${vendor.name} Banner`}
           fill
           priority
-          unoptimized={safeAvatar.startsWith("data:")}
-          className="object-cover scale-125 blur-2xl opacity-60 dark:opacity-40 transition-all duration-500"
+          unoptimized={safeBanner.startsWith("data:")}
+          className={`object-cover transition-all duration-500 ${
+            vendor.hasCustomCover
+              ? "object-center opacity-90 dark:opacity-80"
+              : "scale-125 blur-2xl opacity-60 dark:opacity-40"
+          }`}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#FAFAF7] dark:from-[#09090B] via-black/50 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#FAFAF7] dark:from-[#09090B] via-black/40 to-black/30" />
 
         {/* Top Controls */}
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">

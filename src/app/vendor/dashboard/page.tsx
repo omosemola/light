@@ -684,10 +684,11 @@ export default function VendorDashboardPage() {
       {/* SIGNATURE HERO BANNER & HEADER */}
       <div className="relative bg-[#1E1B4B] dark:bg-zinc-950 text-white overflow-hidden shadow-lg border-b border-indigo-950 dark:border-zinc-800">
         <Image
-          src="/support-banner.jpg"
+          src={storeData?.coverImage || "/support-banner.jpg"}
           alt="Vendor Header Background"
           fill
           priority
+          unoptimized={Boolean(storeData?.coverImage?.startsWith("data:"))}
           className="object-cover object-center pointer-events-none opacity-40"
         />
         <div className="absolute inset-0 bg-[#1E1B4B]/90 dark:bg-[#09090B]/95" />
