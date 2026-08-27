@@ -1,11 +1,20 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useUserStore } from "@/lib/userStore";
 
 export function MainContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const { hasSeenOnboarding } = useUserStore();
+
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+
   const isNoNav =
+    isVisitorOnboarding ||
     pathname === "/welcome" ||
+    pathname.startsWith("/welcome/") ||
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/signup" ||

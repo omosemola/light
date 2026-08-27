@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { useSession } from "next-auth/react";
 import { useCartStore } from "@/lib/store";
+import { useUserStore } from "@/lib/userStore";
 import { CustomHomeIcon } from "@/components/icons/CustomHomeIcon";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
@@ -13,6 +15,8 @@ import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const { hasSeenOnboarding } = useUserStore();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
 
@@ -20,23 +24,27 @@ export function BottomNav() {
     setIsMounted(true);
   }, []);
 
-  // Hide on vendor portal management, admin portal, signup, and login pages
-  if (
-    isMounted &&
-    (pathname === "/welcome" ||
-      pathname === "/login" ||
-      pathname.startsWith("/login/") ||
-      pathname === "/signup" ||
-      pathname.startsWith("/signup/") ||
-      pathname === "/vendor/login" ||
-      pathname.startsWith("/vendor/login/") ||
-      pathname === "/vendor/register" ||
-      pathname.startsWith("/vendor/register/") ||
-      pathname === "/vendor/dashboard" ||
-      pathname.startsWith("/vendor/dashboard/") ||
-      pathname === "/admin/login" ||
-      pathname.startsWith("/admin"))
-  ) {
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+
+  // Hide on onboarding, auth, vendor, and admin pages
+  const isNoNav =
+    isVisitorOnboarding ||
+    pathname === "/welcome" ||
+    pathname.startsWith("/welcome/") ||
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/signup" ||
+    pathname.startsWith("/signup/") ||
+    pathname === "/vendor/login" ||
+    pathname.startsWith("/vendor/login/") ||
+    pathname === "/vendor/register" ||
+    pathname.startsWith("/vendor/register/") ||
+    pathname === "/vendor/dashboard" ||
+    pathname.startsWith("/vendor/dashboard/") ||
+    pathname === "/admin/login" ||
+    pathname.startsWith("/admin");
+
+  if (!isMounted || isNoNav) {
     return null;
   }
 
