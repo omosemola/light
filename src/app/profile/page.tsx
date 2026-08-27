@@ -540,7 +540,7 @@ export default function ProfilePage() {
 
               <div className="flex items-center gap-3.5">
                 <div className="relative w-14 h-14 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shrink-0 bg-white shadow-sm">
-                  <Image src={editAvatar || userAvatar} alt="Avatar preview" fill className="object-cover rounded-full" />
+                  <Image src={editAvatar || userAvatar} alt="Avatar preview" fill unoptimized={(editAvatar || userAvatar).startsWith("data:")} className="object-cover rounded-full" />
                 </div>
 
                 <button

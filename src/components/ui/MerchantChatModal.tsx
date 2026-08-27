@@ -311,7 +311,7 @@ export function MerchantChatModal({
                     >
                       {msg.image && (
                         <div className="relative w-48 h-32 rounded-xl overflow-hidden mb-2 border border-black/10">
-                          <Image src={msg.image} alt="Attachment" fill className="object-cover" />
+                          <Image src={msg.image} alt="Attachment" fill unoptimized className="object-cover" />
                         </div>
                       )}
                       <p className="whitespace-pre-wrap font-body">{msg.text}</p>
@@ -347,7 +347,7 @@ export function MerchantChatModal({
             <div className="px-4 py-2 bg-slate-100 dark:bg-zinc-800 flex items-center justify-between border-t border-slate-200 dark:border-zinc-700 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-300">
-                  <Image src={selectedImage} alt="Attachment preview" fill className="object-cover" />
+                  <Image src={selectedImage} alt="Attachment preview" fill unoptimized className="object-cover" />
                 </div>
                 <span className="text-xs font-medium text-[#18181B] dark:text-zinc-200">Image attached</span>
               </div>

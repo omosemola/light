@@ -15,26 +15,45 @@ export interface ProductStructuredData {
   addons: AddOnOption[];
 }
 
-const DEFAULT_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
+export const DEFAULT_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
 
 /**
  * Extracts an array of image URLs/data URIs from a product's image field.
- * Supports both JSON stringified arrays and single URL strings.
+ * Supports both JSON stringified arrays, data URIs, and single URL strings.
  */
-export function parseProductImages(imageField?: string | null): string[] {
+export function parseProductImages(imageField?: string | null | any): string[] {
   if (!imageField) return [DEFAULT_FALLBACK_IMAGE];
+  if (typeof imageField !== "string") {
+    if (Array.isArray(imageField) && imageField.length > 0) {
+      const valid = imageField.map((img) => String(img || "").trim()).filter(Boolean);
+      return valid.length > 0 ? valid : [DEFAULT_FALLBACK_IMAGE];
+    }
+    return [DEFAULT_FALLBACK_IMAGE];
+  }
   const trimmed = imageField.trim();
-  if (trimmed.startsWith("[")) {
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.filter((img) => typeof img === "string" && img.trim().length > 0);
+        const valid = parsed.filter((img) => typeof img === "string" && img.trim().length > 0);
+        if (valid.length > 0) return valid;
       }
     } catch {
       // Fallback
     }
   }
-  return [trimmed || DEFAULT_FALLBACK_IMAGE];
+  if (!trimmed || trimmed === "[]" || trimmed === "null" || trimmed === "undefined") {
+    return [DEFAULT_FALLBACK_IMAGE];
+  }
+  return [trimmed];
+}
+
+/**
+ * Returns a single safe URL or data URI from any image field (JSON array string, data URI, or URL).
+ */
+export function getSafeImageUrl(imageField?: string | null | any): string {
+  const images = parseProductImages(imageField);
+  return images[0] || DEFAULT_FALLBACK_IMAGE;
 }
 
 /**

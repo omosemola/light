@@ -52,6 +52,7 @@ import {
 } from "@/actions/admin";
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
+import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -773,9 +774,18 @@ export default function AdminDashboardPage() {
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-zinc-800 overflow-hidden relative border border-slate-200 dark:border-zinc-700 shrink-0">
-                            {prod.image ? (
-                              <Image src={prod.image} alt={prod.name} fill className="object-cover" />
-                            ) : (
+                            {prod.image ? (() => {
+                              const safeProdImg = getSafeImageUrl(prod.image);
+                              return (
+                                <Image
+                                  src={safeProdImg}
+                                  alt={prod.name}
+                                  fill
+                                  unoptimized={safeProdImg.startsWith("data:")}
+                                  className="object-cover"
+                                />
+                              );
+                            })() : (
                               <Utensils size={18} className="m-auto text-indigo-500" />
                             )}
                           </div>

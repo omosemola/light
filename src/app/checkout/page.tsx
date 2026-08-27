@@ -20,10 +20,11 @@ import {
 import { motion } from "framer-motion";
 import { createLiveOrder } from "@/actions/orders";
 import { useNotificationStore } from "@/lib/notificationStore";
+import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotal, vendorName, clearCart } = useCartStore();
+  const { items, getTotal, vendorName, vendorId, clearCart } = useCartStore();
   const { addNotification } = useNotificationStore();
   const { profile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
@@ -79,9 +80,12 @@ export default function CheckoutPage() {
       .filter(Boolean)
       .join(" - ");
 
+    const targetStoreId = vendorId || items[0]?.vendorId;
+
     const res = await createLiveOrder({
       userEmail: profile.email,
       userName: profile.name,
+      storeId: targetStoreId,
       totalAmount: total,
       deliveryLocation: formData.location,
       deliveryInstructions: combinedInstructions,
@@ -297,37 +301,46 @@ export default function CheckoutPage() {
           </div>
 
           <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.cartItemId || item.id} className="flex items-center justify-between gap-3 text-xs font-body">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 shrink-0 border border-slate-100 dark:border-zinc-700">
-                    <Image src={item.image} alt={item.name} fill className="object-cover" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="font-bold text-[#18181B] dark:text-zinc-100 truncate block">
-                      {item.name}
-                    </span>
-                    <div className="text-[#71717A] dark:text-zinc-400 text-[11px] space-y-0.5">
-                      <span>Qty: {item.quantity} × ₦{item.price.toLocaleString()}</span>
-                      {item.selectedSize && (
-                        <span className="block text-indigo-600 dark:text-indigo-400 font-medium">
-                          Size: {item.selectedSize.name}
-                        </span>
-                      )}
-                      {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                        <span className="block text-amber-600 dark:text-amber-400 font-medium">
-                          Extras: {item.selectedAddOns.map(a => a.name).join(", ")}
-                        </span>
-                      )}
+            {items.map((item) => {
+              const itemImg = getSafeImageUrl(item.image);
+              return (
+                <div key={item.cartItemId || item.id} className="flex items-center justify-between gap-3 text-xs font-body">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 shrink-0 border border-slate-100 dark:border-zinc-700">
+                      <Image
+                        src={itemImg}
+                        alt={item.name}
+                        fill
+                        unoptimized={itemImg.startsWith("data:")}
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-bold text-[#18181B] dark:text-zinc-100 truncate block">
+                        {item.name}
+                      </span>
+                      <div className="text-[#71717A] dark:text-zinc-400 text-[11px] space-y-0.5">
+                        <span>Qty: {item.quantity} × ₦{item.price.toLocaleString()}</span>
+                        {item.selectedSize && (
+                          <span className="block text-indigo-600 dark:text-indigo-400 font-medium">
+                            Size: {item.selectedSize.name}
+                          </span>
+                        )}
+                        {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                          <span className="block text-amber-600 dark:text-amber-400 font-medium">
+                            Extras: {item.selectedAddOns.map(a => a.name).join(", ")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <span className="font-extrabold text-[#312E81] dark:text-indigo-400 shrink-0">
-                  ₦{(item.price * item.quantity).toLocaleString()}
-                </span>
-              </div>
-            ))}
+                  <span className="font-extrabold text-[#312E81] dark:text-indigo-400 shrink-0">
+                    ₦{(item.price * item.quantity).toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="border-t border-slate-100 dark:border-zinc-800 pt-3 space-y-2 text-xs font-body">

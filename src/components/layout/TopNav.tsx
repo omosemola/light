@@ -10,20 +10,24 @@ import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
-import { useUserStore } from "@/lib/userStore";
-
 export function TopNav() {
   const pathname = usePathname();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
   const { isDark, toggleTheme } = useTheme();
-  const { hasSeenOnboarding } = useUserStore();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (isMounted && (!hasSeenOnboarding || pathname === "/welcome" || pathname === "/signup" || pathname === "/login" || pathname.startsWith("/vendor") || pathname.startsWith("/admin"))) {
+  if (
+    isMounted &&
+    (pathname === "/welcome" ||
+      pathname === "/admin/dashboard" ||
+      pathname.startsWith("/admin/dashboard/") ||
+      pathname === "/vendor/dashboard" ||
+      pathname.startsWith("/vendor/dashboard/"))
+  ) {
     return null;
   }
 

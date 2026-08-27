@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const product = res.product;
+  const product: any = res.product;
   const storeName = product.store?.name || "Campus Vendor";
   const parsedImages = parseProductImages(product.image);
   const mainImage = parsedImages[0] || product.image || "https://lightsonmarketplace.com/support-banner.jpg";
@@ -70,7 +70,7 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  const product = res.product;
+  const product: any = res.product;
   const storeName = product.store?.name || "Campus Vendor";
   const parsedImages = parseProductImages(product.image);
   const mainImage = parsedImages[0] || product.image;

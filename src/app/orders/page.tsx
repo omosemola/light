@@ -17,6 +17,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useUserStore } from "@/lib/userStore";
 import { getUserOrders } from "@/actions/orders";
+import { getSafeImageUrl } from "@/lib/productOptions";
 
 interface OrderSummaryItem {
   id: string;
@@ -148,7 +149,18 @@ function OrdersContent() {
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-700 shrink-0 bg-white">
-                    <Image src={order.vendorAvatar} alt={order.vendorName} fill className="object-cover" />
+                    {(() => {
+                      const safeAvatar = getSafeImageUrl(order.vendorAvatar);
+                      return (
+                        <Image
+                          src={safeAvatar}
+                          alt={order.vendorName}
+                          fill
+                          unoptimized={safeAvatar.startsWith("data:")}
+                          className="object-cover"
+                        />
+                      );
+                    })()}
                   </div>
                   <div>
                     <h3 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100">

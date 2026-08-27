@@ -121,16 +121,22 @@ export async function getLiveProductBySlugOrId(slugOrId: string) {
     const clean = slugOrId.trim();
 
     // 1. Try finding by unique slug
-    let product = await prisma.product.findUnique({
+    let product: any = await prisma.product.findUnique({
       where: { slug: clean },
       include: {
         store: {
           include: {
             user: { select: { name: true, phone: true } },
-            reviews: { take: 5 },
+            reviews: {
+              include: {
+                user: { select: { name: true, image: true } },
+              },
+              orderBy: { createdAt: "desc" },
+              take: 20,
+            },
             products: {
               where: { isAvailable: true },
-              take: 6,
+              take: 8,
             },
           },
         },
@@ -146,10 +152,16 @@ export async function getLiveProductBySlugOrId(slugOrId: string) {
           store: {
             include: {
               user: { select: { name: true, phone: true } },
-              reviews: { take: 5 },
+              reviews: {
+                include: {
+                  user: { select: { name: true, image: true } },
+                },
+                orderBy: { createdAt: "desc" },
+                take: 20,
+              },
               products: {
                 where: { isAvailable: true },
-                take: 6,
+                take: 8,
               },
             },
           },

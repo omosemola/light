@@ -570,7 +570,7 @@ export default function VendorRegistrationPage() {
                       </button>
                       {logoUrl && (
                         <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 relative">
-                          <Image src={logoUrl} alt="Preview" fill className="object-cover" />
+                          <Image src={logoUrl} alt="Preview" fill unoptimized={logoUrl.startsWith("data:")} className="object-cover" />
                         </div>
                       )}
                     </div>

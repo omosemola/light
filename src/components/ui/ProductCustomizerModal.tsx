@@ -9,6 +9,7 @@ import { useCartStore } from "@/lib/store";
 import { 
   parseProductDescription, 
   parseProductImages, 
+  getSafeImageUrl,
   VariationOption, 
   AddOnOption 
 } from "@/lib/productOptions";
@@ -88,7 +89,7 @@ export function ProductCustomizerModal({
       id: product.id,
       name: product.name,
       price: singleItemFinalPrice,
-      image: product.image,
+      image: getSafeImageUrl(images[0] || product.image),
       vendorId: product.storeId,
       vendorName: product.storeName,
       selectedSize: selectedSize || undefined,
@@ -113,6 +114,8 @@ export function ProductCustomizerModal({
 
   if (!isOpen || !product) return null;
 
+  const currentActiveImg = getSafeImageUrl(images[activeImageIdx] || images[0] || product.image);
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
@@ -126,9 +129,10 @@ export function ProductCustomizerModal({
           {/* PRODUCT BANNER IMAGE & CLOSE BUTTON */}
           <div className="relative h-48 sm:h-56 w-full bg-slate-100 dark:bg-zinc-800 shrink-0">
             <Image
-              src={images[activeImageIdx] || images[0]}
+              src={currentActiveImg}
               alt={product.name}
               fill
+              unoptimized={currentActiveImg.startsWith("data:")}
               className="object-cover transition-all duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40" />

@@ -8,13 +8,19 @@ import {
   Heart, 
   Plus, 
   Store, 
+  CheckCircle2, 
+  MessageSquare, 
   ThumbsUp, 
   Send, 
   ChevronLeft, 
   ChevronRight, 
-  Layers, 
-  Check, 
-  Image as ImageIcon 
+  Quote, 
+  Info, 
+  Edit3,
+  Sparkles,
+  Layers,
+  Check,
+  Image as ImageIcon
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,9 +38,11 @@ import { submitStudentReview } from "@/actions/reviews";
 import { 
   parseProductDescription, 
   parseProductImages, 
+  getSafeImageUrl,
   VariationOption, 
   AddOnOption 
 } from "@/lib/productOptions";
+import { formatReviewDate } from "@/lib/formatDate";
 
 interface ProductDetailClientProps {
   initialProduct?: any;
@@ -47,30 +55,59 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
   const { reviewsByProduct, addProductReview, toggleLikeReview } = useReviewsStore();
   const { isProductFavorite, toggleProductFavorite } = useFavoritesStore();
 
-  const [product, setProduct] = useState(initialProduct || {
-    id: "item",
-    slug: slug,
-    name: "Campus Item",
-    price: 0,
-    vendorId: "",
-    vendorName: "Campus Merchant",
-    vendorRating: 5.0,
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-    description: "Freshly prepared campus delicacy.",
-    details: ["Freshly prepared on campus", "Fast hostel delivery"],
-    prepTime: "15-20 mins",
-    isAvailable: true,
-    category: "food",
-    rating: 5.0,
-    reviewsCount: 0,
+  const [product, setProduct] = useState(() => {
+    if (initialProduct) {
+      return {
+        id: initialProduct.id,
+        slug: initialProduct.slug || slug,
+        name: initialProduct.name,
+        price: initialProduct.price,
+        vendorId: initialProduct.storeId || initialProduct.vendorId || initialProduct.store?.id || "",
+        vendorName: initialProduct.store?.name || initialProduct.vendorName || "Campus Merchant",
+        vendorRating: initialProduct.store?.rating || 4.9,
+        image: initialProduct.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+        description: initialProduct.description || "",
+        details: ["Freshly prepared on campus", "Fast hostel delivery"],
+        prepTime: initialProduct.store?.estimatedDelivery || "15-20 mins",
+        isAvailable: initialProduct.isAvailable !== false,
+        category: initialProduct.category?.name?.toLowerCase() || "pastries",
+        rating: initialProduct.store?.rating || 4.9,
+        reviewsCount: initialProduct.store?.reviews?.length || 0,
+      };
+    }
+    return {
+      id: "item",
+      slug: slug,
+      name: "Campus Item",
+      price: 0,
+      vendorId: "",
+      vendorName: "Campus Merchant",
+      vendorRating: 5.0,
+      image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+      description: "Freshly prepared campus delicacy.",
+      details: ["Freshly prepared on campus", "Fast hostel delivery"],
+      prepTime: "15-20 mins",
+      isAvailable: true,
+      category: "food",
+      rating: 5.0,
+      reviewsCount: 0,
+    };
   });
 
   const [quantity, setQuantity] = useState(1);
   const isLiked = isProductFavorite(product.id) || isProductFavorite(slug);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
 
-  // SYNCHRONIZED PER-PRODUCT REVIEWS
-  const reviewsList = reviewsByProduct[product.id] || reviewsByProduct[slug] || [];
+  // SYNCHRONIZED REVIEWS WITH ACCURATE TIMESTAMPS
+  const [dbReviews, setDbReviews] = useState<any[]>([]);
+  const clientReviews = reviewsByProduct[product.id] || reviewsByProduct[slug] || [];
+  
+  const reviewsList = useMemo(() => {
+    const clientIds = new Set(clientReviews.map((r) => r.id));
+    const filteredDb = dbReviews.filter((r) => !clientIds.has(r.id));
+    return [...clientReviews, ...filteredDb];
+  }, [clientReviews, dbReviews]);
+
   const averageRating = reviewsList.length > 0
     ? (reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length).toFixed(1)
     : "0.0";
@@ -83,7 +120,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       try {
         const res = await getLiveProductBySlugOrId(slug);
         if (active && res.success && res.product) {
-          const p = res.product;
+          const p: any = res.product;
           setProduct({
             id: p.id,
             slug: p.slug || p.id,
@@ -101,6 +138,21 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             rating: p.store?.rating || 4.9,
             reviewsCount: p.store?.reviews?.length || 0,
           });
+
+          if (p.store?.reviews && p.store.reviews.length > 0) {
+            const formatted = p.store.reviews.map((r: any) => ({
+              id: r.id,
+              author: r.user?.name || "Campus Student",
+              avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+              hostel: "Student Hostel",
+              rating: r.rating || 5,
+              date: formatReviewDate(r.createdAt),
+              comment: r.comment || "",
+              likes: 0,
+              isLiked: false,
+            }));
+            setDbReviews(formatted);
+          }
 
           if (p.store?.products) {
             const formattedRelated = p.store.products
@@ -183,9 +235,9 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       slug: product.slug || slug,
       name: customizedName,
       price: unitPrice,
-      image: productImages[0] || product.image,
-      vendorId: product.vendorId || "v1",
-      vendorName: product.vendorName || "Campus Vendor",
+      image: getSafeImageUrl(productImages[0] || product.image),
+      vendorId: product.vendorId || "vendor",
+      vendorName: product.vendorName || "Campus Merchant",
       selectedSize: selectedSize || undefined,
       selectedAddOns: selectedAddOns.length > 0 ? selectedAddOns : undefined,
     };
@@ -223,7 +275,6 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       : (profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80");
     const authorHostel = profile.hostel || "Main Hostel";
 
-    // 1. Submit to Live Prisma DB
     if (profile.email && !profile.isVisitor) {
       await submitStudentReview({
         userEmail: profile.email,
@@ -233,7 +284,6 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       });
     }
 
-    // 2. Add to Local Zustand Store
     addProductReview(product.id, {
       author: authorName,
       avatar: authorAvatar,
@@ -250,8 +300,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
     setTimeout(() => setToastMessage(""), 2500);
   };
 
+  const currentReview = reviewsList[activeReviewIndex] || null;
+
   return (
-    <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
+    <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
       
       {/* Toast Notification */}
       {toastMessage && (
@@ -304,7 +356,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             </button>
 
             {/* Thumbnail Strip Overlay */}
-            <div className="absolute bottom-10 inset-x-4 z-10 flex items-center justify-center gap-2">
+            <div className="absolute bottom-6 inset-x-4 z-10 flex items-center justify-center gap-2">
               {productImages.map((img, idx) => (
                 <button
                   key={idx}
@@ -488,241 +540,309 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
               <div className="flex items-center justify-between">
                 <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
                   <Layers size={14} className="text-[#312E81] dark:text-indigo-400" />
-                  <span>Choose Portion / Size</span>
+                  Choose Portion Size
                 </h4>
-                <span className="text-[10px] text-slate-400 font-medium">Select 1 option</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Required</span>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {structuredData.sizes.map((size, idx) => {
-                  const isSelected = selectedSize?.name === size.name;
+                <div
+                  onClick={() => setSelectedSize(null)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                    selectedSize === null
+                      ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold shadow-xs"
+                      : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                  }`}
+                >
+                  <span className="text-xs">Regular (Standard)</span>
+                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    ₦{basePrice.toLocaleString()}
+                  </span>
+                </div>
+
+                {structuredData.sizes.map((s, idx) => {
+                  const isSelected = selectedSize?.name === s.name;
                   return (
-                    <button
+                    <div
                       key={idx}
-                      type="button"
-                      onClick={() => setSelectedSize(isSelected ? null : size)}
-                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                      onClick={() => setSelectedSize(s)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                         isSelected
-                          ? "bg-indigo-50 dark:bg-indigo-950/60 border-[#312E81] dark:border-indigo-500 shadow-xs"
-                          : "bg-slate-50/60 dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-700 hover:border-indigo-300"
+                          ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold shadow-xs"
+                          : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          isSelected ? "border-[#312E81] bg-[#312E81] text-white" : "border-slate-300 dark:border-zinc-600"
-                        }`}>
-                          {isSelected && <Check size={10} strokeWidth={3} />}
-                        </div>
-                        <span className="text-xs font-heading font-bold text-slate-900 dark:text-white">
-                          {size.name}
-                        </span>
-                      </div>
-                      <span className="text-xs font-body font-bold text-[#312E81] dark:text-indigo-300">
-                        {size.price > 0 ? `+₦${size.price.toLocaleString()}` : "Included"}
+                      <span className="text-xs">{s.name}</span>
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        +₦{s.price.toLocaleString()}
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* ADD-ONS & EXTRAS BUILDER */}
+          {/* CUSTOM ADD-ONS */}
           {structuredData.addons.length > 0 && (
             <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
               <div className="flex items-center justify-between">
                 <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Plus size={14} className="text-[#312E81] dark:text-indigo-400" />
-                  <span>Delicious Add-Ons & Drinks</span>
+                  <Sparkles size={14} className="text-amber-500" />
+                  Extras & Add-Ons
                 </h4>
-                <span className="text-[10px] text-slate-400 font-medium">Multiple allowed</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Optional</span>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {structuredData.addons.map((addon, idx) => {
-                  const isSelected = selectedAddOns.some((a) => a.name === addon.name);
+                {structuredData.addons.map((a, idx) => {
+                  const isChecked = selectedAddOns.some((item) => item.name === a.name);
                   return (
-                    <button
+                    <div
                       key={idx}
-                      type="button"
-                      onClick={() => toggleAddOn(addon)}
-                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-amber-50/70 dark:bg-amber-950/40 border-amber-500 shadow-xs"
-                          : "bg-slate-50/60 dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-700 hover:border-amber-300"
+                      onClick={() => toggleAddOn(a)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        isChecked
+                          ? "border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 font-bold shadow-xs"
+                          : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${
-                          isSelected ? "border-amber-500 bg-amber-500 text-slate-950" : "border-slate-300 dark:border-zinc-600"
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          isChecked ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300 dark:border-zinc-700"
                         }`}>
-                          {isSelected && <Check size={10} strokeWidth={3} />}
+                          {isChecked && <Check size={10} className="stroke-[3]" />}
                         </div>
-                        <span className="text-xs font-heading font-bold text-slate-900 dark:text-white">
-                          {addon.name}
-                        </span>
+                        <span className="text-xs">{a.name}</span>
                       </div>
-                      <span className="text-xs font-body font-bold text-amber-700 dark:text-amber-300">
-                        +₦{addon.price.toLocaleString()}
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        +₦{a.price.toLocaleString()}
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             </div>
           )}
+
+          {/* EXACT ORIGINAL ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
+          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2.5 relative z-10">
+            <button
+              onClick={handleAddToCart}
+              disabled={!product.isAvailable}
+              className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 group flex-1 cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
+                <CustomCartIcon size={17} strokeWidth={2.2} />
+              </div>
+              
+              <span className="font-heading font-extrabold tracking-wider text-sm md:text-base text-white">
+                Add to Cart • ₦{totalPrice.toLocaleString()}
+              </span>
+
+              {quantity > 1 && (
+                <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                  ×{quantity}
+                </span>
+              )}
+            </button>
+
+            {/* STANDALONE "+" BUTTON */}
+            <button
+              onClick={() => setQuantity(quantity + 1)}
+              className="w-14 h-14 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group cursor-pointer"
+              title="Increase Quantity"
+              aria-label="Increase Quantity"
+            >
+              <Plus size={20} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
+            </button>
+          </div>
         </motion.div>
 
         {/* CUSTOMER REVIEWS SECTION */}
-        <motion.section 
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/90 dark:border-zinc-800 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
-                <span>Customer Reviews</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 font-bold font-body">
-                  {reviewsList.length}
-                </span>
-              </h3>
-              <p className="text-[11px] text-[#71717A] dark:text-zinc-400 font-body">Verified feedback from students across campus</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsWriteReviewOpen(true)}
-              className="px-3.5 py-1.5 rounded-full bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs shadow-xs active:scale-95 transition-transform flex items-center gap-1.5 cursor-pointer"
-            >
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              <span>Write Review</span>
-            </button>
-          </div>
-
-          {reviewsList.length > 0 ? (
-            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-zinc-800">
-              {reviewsList.map((rev) => (
-                <div 
-                  key={rev.id}
-                  className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-zinc-800/40 border border-slate-100 dark:border-zinc-800/80 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="relative w-8 h-8 rounded-full overflow-hidden bg-indigo-100 dark:bg-zinc-700">
-                        <Image src={rev.avatar} alt={rev.author} fill className="object-cover" />
-                      </div>
-                      <div>
-                        <h5 className="font-heading font-bold text-xs text-[#18181B] dark:text-zinc-100">
-                          {rev.author}
-                        </h5>
-                        <p className="text-[10px] text-slate-400">{rev.hostel}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={11}
-                          className={i < rev.rating ? "fill-[#FBBF24] text-[#FBBF24]" : "text-slate-300 dark:text-zinc-600"}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-[#18181B] dark:text-zinc-200 font-body leading-relaxed">
-                    "{rev.comment}"
-                  </p>
-
-                  <div className="flex items-center justify-between pt-1 text-[10px] text-slate-400">
-                    <span>{rev.date}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleLikeReview(product.id, rev.id)}
-                      className={`flex items-center gap-1 hover:text-indigo-600 cursor-pointer ${
-                        rev.isLiked ? "text-indigo-600 font-bold" : ""
-                      }`}
-                    >
-                      <ThumbsUp size={11} className={rev.isLiked ? "fill-indigo-600" : ""} />
-                      <span>{rev.likes} Likes</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 text-slate-400 space-y-2">
-              <p className="text-xs">No reviews for this product yet. Be the first to leave one!</p>
-            </div>
-          )}
-        </motion.section>
-
-        {/* RELATED CAMPUS PRODUCTS */}
-        {relatedProducts.length > 0 && (
-          <motion.section 
+        {reviewsList.length > 0 ? (
+          <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="space-y-3 pt-2"
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden"
           >
-            <div className="flex items-center justify-between">
-              <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100">
-                More from {product.vendorName}
-              </h3>
-              <Link 
-                href={`/vendor/${product.vendorId}`}
-                className="text-xs font-bold text-[#312E81] dark:text-indigo-400 hover:underline"
+            {/* Header Bar */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
+                <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+                  Student Reviews ({reviewsList.length})
+                </h3>
+              </div>
+
+              {/* WRITE REVIEW BUTTON */}
+              <button
+                onClick={() => setIsWriteReviewOpen(true)}
+                className="px-3 py-1.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-sm hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-1.5 border border-indigo-700/50 group cursor-pointer"
               >
-                View Storefront ↗
-              </Link>
+                <div className="w-4.5 h-4.5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-2xs group-hover:scale-110 transition-transform">
+                  <Edit3 size={10} className="text-[#312E81]" />
+                </div>
+                <span>Write Review</span>
+              </button>
             </div>
 
-            <ProductGrid 
-              products={relatedProducts} 
-              onAddProduct={(id) => router.push(`/product/${id}`)}
-            />
-          </motion.section>
+            {/* Testimonial Display */}
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                {currentReview && (
+                  <motion.div
+                    key={currentReview.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="relative space-y-3 pt-1"
+                  >
+                    <Quote size={80} className="absolute -bottom-4 -right-4 text-[#312E81]/5 dark:text-white/5 pointer-events-none rotate-180" />
+
+                    <div className="flex items-center justify-between gap-3 relative z-10">
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md shrink-0">
+                          {(() => {
+                            const revAvatar = getSafeImageUrl(currentReview.avatar);
+                            return (
+                              <Image src={revAvatar} alt={currentReview.author} fill unoptimized={revAvatar.startsWith("data:")} className="object-cover" />
+                            );
+                          })()}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100 truncate">
+                            {currentReview.author}
+                          </h4>
+                          <span className="text-[11px] text-[#71717A] dark:text-zinc-400 font-body font-normal block">
+                            {currentReview.hostel} • {currentReview.date}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-full border border-amber-200/60 dark:border-amber-800/60 shrink-0">
+                        <Star size={13} className="fill-[#FBBF24] text-[#FBBF24]" />
+                        <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100">
+                          {currentReview.rating}.0
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs md:text-sm text-[#18181B] dark:text-zinc-300 font-body font-normal leading-relaxed relative z-10 italic">
+                      "{currentReview.comment}"
+                    </p>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800 text-[11px] text-[#71717A] dark:text-zinc-400 relative z-10">
+                      <button
+                        onClick={() => toggleLikeReview(product.id, currentReview.id)}
+                        className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
+                          currentReview.isLiked ? "text-indigo-600 font-bold" : "hover:text-[#312E81] dark:hover:text-indigo-400"
+                        }`}
+                      >
+                        <ThumbsUp size={13} className={currentReview.isLiked ? "fill-indigo-600" : ""} />
+                        <span>Helpful ({currentReview.likes})</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Carousel Navigation Buttons */}
+            {reviewsList.length > 1 && (
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800">
+                <span className="text-xs font-body text-[#71717A] dark:text-zinc-400">
+                  Review {activeReviewIndex + 1} of {reviewsList.length}
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setActiveReviewIndex((prev) => (prev - 1 + reviewsList.length) % reviewsList.length)}
+                    className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 cursor-pointer"
+                    aria-label="Previous review"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    onClick={() => setActiveReviewIndex((prev) => (prev + 1) % reviewsList.length)}
+                    className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 cursor-pointer"
+                    aria-label="Next review"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="bg-white dark:bg-zinc-900 rounded-2xl p-5 md:p-6 shadow-xs border border-slate-200/80 dark:border-zinc-800 text-center space-y-3.5"
+          >
+            <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center mx-auto border border-amber-200/60 dark:border-amber-800/60 shadow-2xs">
+              <Star size={22} className="fill-amber-400 text-amber-400" />
+            </div>
+
+            <div className="space-y-1 max-w-sm mx-auto">
+              <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100">
+                No reviews yet for this product
+              </h3>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body leading-relaxed">
+                Have you tried this item? Be the first campus student to rate and review it!
+              </p>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsWriteReviewOpen(true)}
+                className="px-5 py-2.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-xs rounded-full shadow-md hover:shadow-indigo-900/30 active:scale-95 transition-all inline-flex items-center gap-2 border border-indigo-700/50 group cursor-pointer"
+              >
+                <Star size={14} className="text-[#FBBF24] fill-[#FBBF24] group-hover:rotate-12 transition-transform" />
+                <span>Leave a Review</span>
+              </button>
+            </div>
+          </motion.div>
         )}
 
-      </div>
-
-      {/* FLOATING BOTTOM ACTION BAR */}
-      <div className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-zinc-800 p-4 z-40 shadow-2xl">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          
-          {/* Quantity Selector */}
-          <div className="flex items-center border border-slate-200 dark:border-zinc-700 rounded-full p-1 bg-slate-50 dark:bg-zinc-800 shrink-0">
-            <button
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              disabled={quantity <= 1}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#18181B] dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-40 transition cursor-pointer"
-            >
-              -
-            </button>
-            <span className="w-8 text-center text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-100">
-              {quantity}
-            </span>
-            <button
-              onClick={() => setQuantity((q) => q + 1)}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#18181B] dark:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition cursor-pointer"
-            >
-              +
-            </button>
-          </div>
-
-          {/* Add to Tray Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!product.isAvailable}
-            className="flex-1 h-12 rounded-full bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 disabled:bg-slate-300 dark:disabled:bg-zinc-800 text-white font-heading font-extrabold text-xs md:text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all cursor-pointer"
+        {/* RELATED PRODUCTS */}
+        {relatedProducts.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-4 pt-4"
           >
-            <CustomCartIcon size={18} />
-            <span>{product.isAvailable ? `Add to Tray • ₦${totalPrice.toLocaleString()}` : "Sold Out"}</span>
-          </button>
+            <h3 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100">
+              More from {product.vendorName}
+            </h3>
+            <ProductGrid
+              products={relatedProducts}
+              onAddProduct={(id) => {
+                const item = relatedProducts.find((p) => p.id === id);
+                if (item) {
+                  addToCart({
+                    id: item.id,
+                    slug: item.slug || item.id,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                    vendorId: item.vendorId,
+                    vendorName: item.vendorName,
+                  });
+                }
+              }}
+            />
+          </motion.div>
+        )}
 
-        </div>
       </div>
 
       {/* WRITE REVIEW MODAL */}
@@ -731,7 +851,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         onClose={() => setIsWriteReviewOpen(false)}
         title={`Review "${product.name}"`}
       >
-        <form onSubmit={handleReviewSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleReviewSubmit} className="space-y-4 pt-2 font-body">
           <div>
             <label className="block text-xs font-extrabold text-slate-500 uppercase mb-2 font-heading">
               Your Star Rating
@@ -805,13 +925,13 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
           <div className="flex gap-2">
             <button
               onClick={() => setPendingProduct(null)}
-              className="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-heading font-bold text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800"
+              className="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-heading font-bold text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleReplaceCart}
-              className="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-heading font-bold shadow-sm active:scale-95 transition-transform"
+              className="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-heading font-bold shadow-sm active:scale-95 transition-transform cursor-pointer"
             >
               Clear & Add
             </button>

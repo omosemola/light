@@ -11,35 +11,66 @@ import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { CustomOrdersIcon } from "@/components/icons/CustomOrdersIcon";
 import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
-import { useUserStore } from "@/lib/userStore";
-
 export function BottomNav() {
   const pathname = usePathname();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
-  const { hasSeenOnboarding } = useUserStore();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (isMounted && (!hasSeenOnboarding || pathname === "/welcome" || pathname === "/signup" || pathname === "/login" || pathname.startsWith("/vendor") || pathname.startsWith("/admin"))) {
+  // Only hide on vendor/admin portal management dashboards and full-screen splash onboarding
+  if (
+    isMounted &&
+    (pathname === "/welcome" ||
+      pathname === "/admin/dashboard" ||
+      pathname.startsWith("/admin/dashboard/") ||
+      pathname === "/vendor/dashboard" ||
+      pathname.startsWith("/vendor/dashboard/"))
+  ) {
     return null;
   }
 
   const navItems = [
-    { name: "Home", href: "/", icon: CustomHomeIcon },
-    { name: "Search", href: "/search", icon: CustomSearchIcon },
-    { name: "Cart", href: "/cart", icon: CustomCartIcon, badge: isMounted ? itemCount : 0 },
-    { name: "Orders", href: "/orders", icon: CustomOrdersIcon },
-    { name: "Profile", href: "/profile", icon: CustomProfileIcon },
+    { 
+      name: "Home", 
+      href: "/", 
+      icon: CustomHomeIcon,
+      active: pathname === "/" 
+    },
+    { 
+      name: "Search", 
+      href: "/search", 
+      icon: CustomSearchIcon,
+      active: pathname === "/search" || pathname.startsWith("/category")
+    },
+    { 
+      name: "Cart", 
+      href: "/cart", 
+      icon: CustomCartIcon, 
+      badge: isMounted ? itemCount : 0,
+      active: pathname === "/cart" || pathname.startsWith("/checkout")
+    },
+    { 
+      name: "Orders", 
+      href: "/orders", 
+      icon: CustomOrdersIcon,
+      active: pathname.startsWith("/orders")
+    },
+    { 
+      name: "Profile", 
+      href: "/profile", 
+      icon: CustomProfileIcon,
+      active: pathname.startsWith("/profile")
+    },
   ];
 
   return (
     <nav className="fixed bottom-0 w-full bg-white dark:bg-[#121215] border-t border-slate-200 dark:border-zinc-800/80 shadow-md pb-safe z-50 md:hidden font-body transition-colors duration-200">
       <div className="flex justify-around items-center h-16 px-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.active;
           const Icon = item.icon;
 
           return (

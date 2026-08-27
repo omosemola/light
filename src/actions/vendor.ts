@@ -279,6 +279,9 @@ export async function createVendorProduct(data: {
 
     revalidatePath("/vendor/dashboard");
     revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath(`/product/${product.slug || product.id}`);
+    revalidatePath("/sitemap.xml");
     return { success: true, product };
   } catch (error: any) {
     console.error("Error creating vendor product:", error);
@@ -349,6 +352,9 @@ export async function updateVendorProduct(data: {
         });
         revalidatePath("/vendor/dashboard");
         revalidatePath("/");
+        revalidatePath("/search");
+        revalidatePath(`/product/${created.slug || created.id}`);
+        revalidatePath("/sitemap.xml");
         return { success: true, product: created };
       }
       return { success: false, error: "Product record not found in database" };
@@ -376,6 +382,9 @@ export async function updateVendorProduct(data: {
 
     revalidatePath("/vendor/dashboard");
     revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath(`/product/${product.slug || product.id}`);
+    revalidatePath("/sitemap.xml");
     return { success: true, product };
   } catch (error: any) {
     console.error("Error updating vendor product:", error);
@@ -391,6 +400,8 @@ export async function deleteVendorProduct(productId: string) {
 
     revalidatePath("/vendor/dashboard");
     revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath("/sitemap.xml");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to delete product" };

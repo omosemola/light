@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { submitStudentReview } from "@/actions/reviews";
 import { getLiveOrderById } from "@/actions/orders";
 import { useUserStore } from "@/lib/userStore";
+import { getSafeImageUrl } from "@/lib/productOptions";
 
 interface OrderDetail {
   id: string;
@@ -144,7 +145,7 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
         id: dbOrder.id.length > 10 ? dbOrder.id.slice(-6).toUpperCase() : dbOrder.id,
         vendorId: dbOrder.storeId,
         vendorName: dbOrder.store?.name || "Campus Vendor",
-        vendorAvatar: dbOrder.store?.logo || fallbackOrder.vendorAvatar,
+        vendorAvatar: getSafeImageUrl(dbOrder.store?.logo || fallbackOrder.vendorAvatar),
         vendorPhone: dbOrder.store?.user?.phone || "+234 812 345 9900",
         total: dbOrder.totalAmount,
         subtotal: Math.max(0, dbOrder.totalAmount - 500),
@@ -164,7 +165,7 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
           name: it.product?.name || "Food Item",
           price: it.price,
           quantity: it.quantity,
-          image: it.product?.image || "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=800&q=80",
+          image: getSafeImageUrl(it.product?.image),
         })) || fallbackOrder.items,
         status: dbOrder.status || "PREPARING",
       }
@@ -211,6 +212,56 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
     }
     setIsSubmittingReview(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[75vh] px-5 bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="w-3 h-3 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-3 h-3 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-3 h-3 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce" />
+        </div>
+        <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
+          Loading Order Receipt...
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+          Fetching live vendor and delivery details
+        </p>
+      </div>
+    );
+  }
+
+  if (!dbOrder && !MOCK_ORDERS[id]) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[75vh] px-5 bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 text-center space-y-4">
+        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/80 text-rose-600 flex items-center justify-center mx-auto">
+          <AlertCircle size={32} />
+        </div>
+        <div>
+          <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100">
+            Order Not Found
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xs mx-auto mt-1">
+            We could not find the details for Order #{id}. It may have been cleared or belongs to a different session.
+          </p>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => router.push("/orders")}
+            className="px-5 py-2.5 rounded-xl bg-[#312E81] text-white font-heading font-bold text-xs hover:bg-[#1E1B4B] transition-all cursor-pointer shadow-xs"
+          >
+            View All Orders
+          </button>
+          <button
+            onClick={() => router.push("/")}
+            className="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-[#18181B] dark:text-zinc-200 font-heading font-bold text-xs hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const statusInfo = getStatusDisplay(order.status);
 
@@ -277,7 +328,18 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3.5 min-w-0 flex-1">
               <div className="relative w-12 h-12 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-xs p-0.5">
-                <Image src={order.vendorAvatar} alt={order.vendorName} fill className="object-cover" />
+                {(() => {
+                  const safeAvatar = getSafeImageUrl(order.vendorAvatar);
+                  return (
+                    <Image
+                      src={safeAvatar}
+                      alt={order.vendorName}
+                      fill
+                      unoptimized={safeAvatar.startsWith("data:")}
+                      className="object-cover"
+                    />
+                  );
+                })()}
               </div>
 
               <div className="min-w-0">
@@ -374,26 +436,35 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
-            {order.items.map((item) => (
-              <div key={item.id} className="py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 shrink-0">
-                    <Image src={item.image} alt={item.name} fill className="object-cover" />
+            {order.items.map((item) => {
+              const itemImg = getSafeImageUrl(item.image);
+              return (
+                <div key={item.id} className="py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 shrink-0 bg-slate-50 dark:bg-zinc-800">
+                      <Image
+                        src={itemImg}
+                        alt={item.name}
+                        fill
+                        unoptimized={itemImg.startsWith("data:")}
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="font-heading font-bold text-xs md:text-sm text-[#18181B] dark:text-zinc-100">
+                        {item.name}
+                      </h4>
+                      <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400">
+                        Qty: {item.quantity}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-xs md:text-sm text-[#18181B] dark:text-zinc-100">
-                      {item.name}
-                    </h4>
-                    <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400">
-                      Qty: {item.quantity}
-                    </span>
-                  </div>
+                  <span className="font-heading font-extrabold text-xs md:text-sm text-[#312E81] dark:text-indigo-400">
+                    ₦{(item.price * item.quantity).toLocaleString()}
+                  </span>
                 </div>
-                <span className="font-heading font-extrabold text-xs md:text-sm text-[#312E81] dark:text-indigo-400">
-                  ₦{(item.price * item.quantity).toLocaleString()}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2 text-xs font-body text-[#71717A] dark:text-zinc-400">

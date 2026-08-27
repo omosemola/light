@@ -48,6 +48,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { getSafeImageUrl } from "@/lib/productOptions";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
@@ -471,7 +472,18 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                       >
                         <Link href={`/product/${prod.id}`} className="flex items-center gap-3 min-w-0 flex-1 group">
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800">
-                            <Image src={prod.image} alt={prod.name} fill className="object-cover group-hover:scale-105 transition-transform" />
+                            {(() => {
+                              const safeProdImg = getSafeImageUrl(prod.image);
+                              return (
+                                <Image
+                                  src={safeProdImg}
+                                  alt={prod.name}
+                                  fill
+                                  unoptimized={safeProdImg.startsWith("data:")}
+                                  className="object-cover group-hover:scale-105 transition-transform"
+                                />
+                              );
+                            })()}
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="font-heading font-bold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
@@ -539,12 +551,18 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                       >
                         <Link href={`/vendor/${store.id}`} className="flex items-center gap-3.5 min-w-0 flex-1 group">
                           <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-indigo-100 dark:border-zinc-800 bg-white shadow-xs">
-                            <Image
-                              src={store.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80"}
-                              alt={store.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform"
-                            />
+                            {(() => {
+                              const safeLogo = getSafeImageUrl(store.logo);
+                              return (
+                                <Image
+                                  src={safeLogo}
+                                  alt={store.name}
+                                  fill
+                                  unoptimized={safeLogo.startsWith("data:")}
+                                  className="object-cover group-hover:scale-105 transition-transform"
+                                />
+                              );
+                            })()}
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
@@ -849,12 +867,18 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                       <div className="flex items-center justify-between gap-3">
                         <Link href={`/vendor/${rev.storeId}`} className="flex items-center gap-3 min-w-0 flex-1 group">
                           <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-zinc-800 bg-white shadow-xs">
-                            <Image
-                              src={rev.storeLogo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=200&q=80"}
-                              alt={rev.storeName}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform"
-                            />
+                            {(() => {
+                              const safeRevLogo = getSafeImageUrl(rev.storeLogo);
+                              return (
+                                <Image
+                                  src={safeRevLogo}
+                                  alt={rev.storeName}
+                                  fill
+                                  unoptimized={safeRevLogo.startsWith("data:")}
+                                  className="object-cover group-hover:scale-105 transition-transform"
+                                />
+                              );
+                            })()}
                           </div>
                           <div className="min-w-0 flex-1">
                             <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 block group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">

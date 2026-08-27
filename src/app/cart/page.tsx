@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function CartPage() {
   const { items, vendorName, updateQuantity, removeItem, getTotal } = useCartStore();
@@ -84,7 +85,18 @@ export default function CartPage() {
               className="flex gap-3.5 p-3.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 items-center"
             >
               <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 shrink-0 border border-slate-100 dark:border-zinc-700/60">
-                <Image src={item.image} alt={item.name} fill className="object-cover" />
+                {(() => {
+                  const safeImg = getSafeImageUrl(item.image);
+                  return (
+                    <Image
+                      src={safeImg}
+                      alt={item.name}
+                      fill
+                      unoptimized={safeImg.startsWith("data:")}
+                      className="object-cover"
+                    />
+                  );
+                })()}
               </div>
               
               <div className="flex flex-col flex-1 min-w-0 justify-between py-0.5">
