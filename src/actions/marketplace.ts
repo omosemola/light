@@ -68,6 +68,7 @@ export async function getLiveHomepageData() {
         vendorName: p.store.name,
         vendorIsOpen: computeIsStoreOpen(p.store),
         vendorPrepTime: p.store.estimatedDelivery || "15-25 mins",
+        vendorDeliveryFee: p.store.deliveryFee ?? 300,
         category: p.category?.name || "Pastries",
       };
     });
@@ -389,6 +390,7 @@ export async function searchLiveCatalog(query: string) {
         vendorName: p.store?.name || "Campus Vendor",
         vendorIsOpen: computeIsStoreOpen(p.store),
         vendorPrepTime: p.store?.estimatedDelivery || "15-25 mins",
+        vendorDeliveryFee: p.store?.deliveryFee ?? 300,
         category: p.category?.name || "Pastries",
       };
     });

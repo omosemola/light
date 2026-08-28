@@ -28,7 +28,7 @@ import { getSafeImageUrl } from "@/lib/productOptions";
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { items, getTotal, vendorName, vendorId, clearCart } = useCartStore();
+  const { items, getTotal, vendorName, vendorId, vendorDeliveryFee, vendorEstimatedDelivery, clearCart } = useCartStore();
   const { addNotification } = useNotificationStore();
   const { profile, updateProfile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
@@ -82,7 +82,7 @@ export default function CheckoutPage() {
   }, [isMounted, items.length, isProcessing, router]);
 
   const subtotal = getTotal();
-  const fee = 500; // Fixed Vendor Delivery Fee
+  const fee = vendorDeliveryFee !== undefined ? vendorDeliveryFee : 300;
   const total = subtotal + fee;
 
   if (!isMounted || items.length === 0) {
@@ -134,6 +134,7 @@ export default function CheckoutPage() {
       userName: profile.name,
       storeId: targetStoreId,
       totalAmount: total,
+      deliveryFee: fee,
       deliveryLocation: fullDeliveryLocation,
       deliveryInstructions: combinedInstructions,
       paymentMethod: paymentMethod === "paystack" ? "Paystack (Card/Transfer)" : "Pay on Arrival",
@@ -446,8 +447,17 @@ export default function CheckoutPage() {
               <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{subtotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-[#71717A] dark:text-zinc-400">
-              <span>Vendor Delivery Fee (Fixed)</span>
-              <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{fee.toLocaleString()}</span>
+              <span className="flex items-center gap-1.5">
+                <span>Store Delivery Fee</span>
+                {vendorEstimatedDelivery && (
+                  <span className="text-[10px] bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-slate-600 dark:text-zinc-300 font-bold">
+                    ⏱️ {vendorEstimatedDelivery}
+                  </span>
+                )}
+              </span>
+              <span className="font-semibold text-[#18181B] dark:text-zinc-200">
+                {fee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${fee.toLocaleString()}`}
+              </span>
             </div>
           </div>
         </motion.section>

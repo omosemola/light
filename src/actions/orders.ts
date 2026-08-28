@@ -18,6 +18,7 @@ export interface CreateOrderInput {
   userName?: string;
   storeId?: string;
   totalAmount: number;
+  deliveryFee?: number;
   deliveryLocation: string;
   deliveryInstructions?: string;
   paymentMethod: string;
@@ -115,11 +116,16 @@ export async function createLiveOrder(input: CreateOrderInput) {
     }
 
     // 3. Create Order & OrderItems in Database
+    const finalDeliveryFee = input.deliveryFee !== undefined 
+      ? input.deliveryFee 
+      : (resolvedStore?.deliveryFee ?? 300);
+
     const order = await prisma.order.create({
       data: {
         userId,
         storeId,
         totalAmount: input.totalAmount,
+        deliveryFee: finalDeliveryFee,
         status: OrderStatus.PENDING,
         deliveryLocation: input.deliveryLocation,
         deliveryInstructions: input.deliveryInstructions || null,

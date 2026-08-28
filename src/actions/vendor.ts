@@ -652,6 +652,7 @@ export async function updateStoreSchedule(data: {
   closingTime: string;
   phone?: string;
   estimatedDelivery?: string;
+  deliveryFee?: number;
   isOpen?: boolean;
 }) {
   try {
@@ -662,12 +663,15 @@ export async function updateStoreSchedule(data: {
         closingTime: data.closingTime,
         phone: data.phone,
         estimatedDelivery: data.estimatedDelivery,
+        ...(data.deliveryFee !== undefined ? { deliveryFee: Number(data.deliveryFee) } : {}),
         ...(typeof data.isOpen === "boolean" ? { isOpen: data.isOpen } : {}),
       },
     });
 
     revalidatePath("/vendor/dashboard");
     revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath(`/vendor/${data.storeId}`);
     return { success: true, store: updatedStore };
   } catch (error: any) {
     console.error("Error updating store schedule:", error);
@@ -684,6 +688,7 @@ export async function updateVendorProfile(data: {
   openingTime?: string;
   closingTime?: string;
   estimatedDelivery?: string;
+  deliveryFee?: number;
   logo?: string;
   coverImage?: string;
 }) {
@@ -698,6 +703,7 @@ export async function updateVendorProfile(data: {
         openingTime: data.openingTime || undefined,
         closingTime: data.closingTime || undefined,
         estimatedDelivery: data.estimatedDelivery || undefined,
+        deliveryFee: data.deliveryFee !== undefined ? Number(data.deliveryFee) : undefined,
         ...(data.logo !== undefined ? { logo: data.logo } : {}),
         ...(data.coverImage !== undefined ? { coverImage: data.coverImage } : {}),
       },

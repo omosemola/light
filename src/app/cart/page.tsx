@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function CartPage() {
-  const { items, vendorName, updateQuantity, removeItem, getTotal } = useCartStore();
+  const { items, vendorName, vendorDeliveryFee, vendorEstimatedDelivery, updateQuantity, removeItem, getTotal } = useCartStore();
   const router = useRouter();
 
   if (items.length === 0) {
@@ -36,7 +36,7 @@ export default function CartPage() {
   }
 
   const subtotal = getTotal();
-  const fee = 500; // Fixed Vendor Delivery Fee
+  const fee = vendorDeliveryFee !== undefined ? vendorDeliveryFee : 300;
   const total = subtotal + fee;
 
   return (
@@ -179,8 +179,17 @@ export default function CartPage() {
             <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-[#71717A] dark:text-zinc-400 font-normal">
-            <span>Vendor Delivery Fee (Fixed)</span>
-            <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{fee.toLocaleString()}</span>
+            <span className="flex items-center gap-1.5">
+              <span>Store Delivery Fee</span>
+              {vendorEstimatedDelivery && (
+                <span className="text-[10px] bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-slate-600 dark:text-zinc-300 font-bold">
+                  ⏱️ {vendorEstimatedDelivery}
+                </span>
+              )}
+            </span>
+            <span className="font-semibold text-[#18181B] dark:text-zinc-200">
+              {fee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${fee.toLocaleString()}`}
+            </span>
           </div>
         </div>
       </div>

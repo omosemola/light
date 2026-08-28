@@ -11,6 +11,8 @@ export interface CartItem {
   image: string;
   vendorId: string;
   vendorName: string;
+  vendorDeliveryFee?: number;
+  vendorEstimatedDelivery?: string;
   selectedSize?: { name: string; price: number };
   selectedAddOns?: Array<{ name: string; price: number }>;
   customNotes?: string;
@@ -20,6 +22,8 @@ interface CartState {
   items: CartItem[];
   vendorId: string | null;
   vendorName: string | null;
+  vendorDeliveryFee: number;
+  vendorEstimatedDelivery: string;
   
   // Actions
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => { success: boolean; requiresConfirmation: boolean };
@@ -27,9 +31,12 @@ interface CartState {
   removeItem: (idOrCartItemId: string) => void;
   updateQuantity: (idOrCartItemId: string, quantity: number) => void;
   clearCart: () => void;
+  setVendorDeliveryDetails: (deliveryFee: number, estimatedDelivery?: string) => void;
   
   // Computed
   getTotal: () => number;
+  getDeliveryFee: () => number;
+  getGrandTotal: () => number;
   getItemCount: () => number;
 }
 
@@ -47,6 +54,8 @@ export const useCartStore = create<CartState>()(
       items: [],
       vendorId: null,
       vendorName: null,
+      vendorDeliveryFee: 300,
+      vendorEstimatedDelivery: "20-35 mins",
 
       addItem: (newItem, quantity = 1) => {
         const { items, vendorId } = get();
@@ -62,6 +71,9 @@ export const useCartStore = create<CartState>()(
           cartItemId: instanceKey,
           quantity: quantity > 0 ? quantity : 1,
         };
+
+        const nextDeliveryFee = newItem.vendorDeliveryFee !== undefined ? newItem.vendorDeliveryFee : get().vendorDeliveryFee ?? 300;
+        const nextEstimatedDelivery = newItem.vendorEstimatedDelivery || get().vendorEstimatedDelivery || "20-35 mins";
 
         set((state) => {
           const existingIndex = state.items.findIndex(
@@ -79,6 +91,8 @@ export const useCartStore = create<CartState>()(
               items: updatedItems,
               vendorId: newItem.vendorId,
               vendorName: newItem.vendorName,
+              vendorDeliveryFee: nextDeliveryFee,
+              vendorEstimatedDelivery: nextEstimatedDelivery,
             };
           }
 
@@ -87,6 +101,8 @@ export const useCartStore = create<CartState>()(
             items: [...state.items, itemWithKey],
             vendorId: newItem.vendorId,
             vendorName: newItem.vendorName,
+            vendorDeliveryFee: nextDeliveryFee,
+            vendorEstimatedDelivery: nextEstimatedDelivery,
           };
         });
 
@@ -95,10 +111,22 @@ export const useCartStore = create<CartState>()(
 
       confirmAndReplaceCart: (newItem, quantity = 1) => {
         const instanceKey = newItem.cartItemId || generateCartKey(newItem);
+        const nextDeliveryFee = newItem.vendorDeliveryFee !== undefined ? newItem.vendorDeliveryFee : 300;
+        const nextEstimatedDelivery = newItem.vendorEstimatedDelivery || "20-35 mins";
+
         set({
           items: [{ ...newItem, cartItemId: instanceKey, quantity: quantity > 0 ? quantity : 1 }],
           vendorId: newItem.vendorId,
           vendorName: newItem.vendorName,
+          vendorDeliveryFee: nextDeliveryFee,
+          vendorEstimatedDelivery: nextEstimatedDelivery,
+        });
+      },
+
+      setVendorDeliveryDetails: (deliveryFee: number, estimatedDelivery?: string) => {
+        set({
+          vendorDeliveryFee: typeof deliveryFee === "number" ? deliveryFee : 300,
+          ...(estimatedDelivery ? { vendorEstimatedDelivery: estimatedDelivery } : {}),
         });
       },
 
@@ -130,11 +158,21 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], vendorId: null, vendorName: null });
+        set({ items: [], vendorId: null, vendorName: null, vendorDeliveryFee: 300, vendorEstimatedDelivery: "20-35 mins" });
       },
 
       getTotal: () => {
         return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+      },
+
+      getDeliveryFee: () => {
+        return get().vendorDeliveryFee ?? 300;
+      },
+
+      getGrandTotal: () => {
+        const subtotal = get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+        const fee = get().vendorDeliveryFee ?? 300;
+        return subtotal + fee;
       },
 
       getItemCount: () => {

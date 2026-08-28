@@ -148,6 +148,7 @@ export default function VendorDashboardPage() {
   const [openingTime, setOpeningTime] = useState("08:00");
   const [closingTime, setClosingTime] = useState("22:00");
   const [deliveryEstimate, setDeliveryEstimate] = useState("20-35 mins");
+  const [deliveryFee, setDeliveryFee] = useState<number | string>(300);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -177,6 +178,7 @@ export default function VendorDashboardPage() {
       setStoreLogo(storeData.logo || "");
       setStoreCoverImage(storeData.coverImage || "");
       setDeliveryEstimate(storeData.estimatedDelivery || "20-35 mins");
+      setDeliveryFee(storeData.deliveryFee ?? 300);
       setOpeningTime(storeData.openingTime || "08:00");
       setClosingTime(storeData.closingTime || "22:00");
     }
@@ -337,6 +339,7 @@ export default function VendorDashboardPage() {
         if (res.store.logo) setStoreLogo(res.store.logo);
         if (res.store.coverImage) setStoreCoverImage(res.store.coverImage);
         if (res.store.estimatedDelivery) setDeliveryEstimate(res.store.estimatedDelivery);
+        if (res.store.deliveryFee !== undefined) setDeliveryFee(res.store.deliveryFee);
         if (res.store.openingTime) setOpeningTime(res.store.openingTime);
         if (res.store.closingTime) setClosingTime(res.store.closingTime);
       }
@@ -559,6 +562,7 @@ export default function VendorDashboardPage() {
         openingTime,
         closingTime,
         estimatedDelivery: deliveryEstimate.trim(),
+        deliveryFee: Number(deliveryFee) >= 0 ? Number(deliveryFee) : 300,
         logo: storeLogo,
         coverImage: storeCoverImage,
       });
@@ -572,6 +576,7 @@ export default function VendorDashboardPage() {
           openingTime: res.store.openingTime,
           closingTime: res.store.closingTime,
           estimatedDelivery: res.store.estimatedDelivery,
+          deliveryFee: res.store.deliveryFee,
           logo: res.store.logo,
           coverImage: res.store.coverImage,
           user: {
@@ -737,7 +742,12 @@ export default function VendorDashboardPage() {
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-medium">
                   <span className="flex items-center gap-1">
                     <Bike size={13} className="text-amber-300" />
-                    Delivery: <strong className="text-white">{deliveryEstimate}</strong>
+                    Timeline: <strong className="text-white">{deliveryEstimate}</strong>
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <DollarSign size={13} className="text-emerald-400" />
+                    Delivery: <strong className="text-white">{Number(deliveryFee) === 0 ? "Free Delivery" : `₦${Number(deliveryFee).toLocaleString()}`}</strong>
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
@@ -1662,13 +1672,99 @@ export default function VendorDashboardPage() {
                 </div>
               </div>
 
-              {/* 4. OPERATIONS & DELIVERY SCHEDULE */}
+              {/* 4. OPERATIONS, DELIVERY TIMELINE & PRICING */}
               <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
-                  4. Operations & Daily Store Hours
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Bike size={15} className="text-amber-500" />
+                    <span>4. Delivery Timeline, Pricing & Daily Store Hours</span>
+                  </h4>
+                  <span className="text-[11px] text-slate-400 font-medium">Configured specifically for your store</span>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Estimated Delivery Timeline */}
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-2.5">
+                    <label className="block text-xs font-extrabold uppercase text-slate-600 dark:text-zinc-300 font-heading">
+                      Estimated Delivery Timeline
+                    </label>
+                    <input
+                      type="text"
+                      value={deliveryEstimate}
+                      onChange={(e) => setDeliveryEstimate(e.target.value)}
+                      placeholder="e.g. 15-25 mins, 1-2 hours, 2-3 days"
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                      }`}
+                    />
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[10px] text-slate-400 font-bold">Quick Select:</span>
+                      {["15-30 mins", "30-45 mins", "1-2 hours", "Same Day", "1-2 days", "2-3 days", "3-5 days"].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setDeliveryEstimate(preset)}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-heading font-extrabold transition cursor-pointer active:scale-95 ${
+                            deliveryEstimate === preset
+                              ? "bg-[#312E81] text-white shadow-xs"
+                              : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-200/80 text-slate-700 hover:bg-slate-300"
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Delivery Price / Fee (₦) */}
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-2.5">
+                    <label className="block text-xs font-extrabold uppercase text-slate-600 dark:text-zinc-300 font-heading">
+                      Store Delivery Price (₦)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-extrabold text-sm text-slate-400">
+                        ₦
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        value={deliveryFee}
+                        onChange={(e) => setDeliveryFee(e.target.value)}
+                        placeholder="e.g. 300 (or 0 for Free Delivery)"
+                        className={`w-full h-12 pl-8 pr-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                        }`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[10px] text-slate-400 font-bold">Presets:</span>
+                      {[
+                        { label: "Free (₦0)", val: 0 },
+                        { label: "₦200", val: 200 },
+                        { label: "₦300", val: 300 },
+                        { label: "₦400", val: 400 },
+                        { label: "₦500", val: 500 },
+                        { label: "₦1,000", val: 1000 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setDeliveryFee(preset.val)}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-heading font-extrabold transition cursor-pointer active:scale-95 ${
+                            Number(deliveryFee) === preset.val
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-200/80 text-slate-700 hover:bg-slate-300"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div>
                     <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
                       Opening Time
@@ -1692,21 +1788,6 @@ export default function VendorDashboardPage() {
                       value={closingTime}
                       onChange={(e) => setClosingTime(e.target.value)}
                       className={`w-full h-12 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                      Est. Delivery Time
-                    </label>
-                    <input
-                      type="text"
-                      value={deliveryEstimate}
-                      onChange={(e) => setDeliveryEstimate(e.target.value)}
-                      placeholder="e.g. 15-25 mins"
-                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
                     />
@@ -1901,49 +1982,126 @@ export default function VendorDashboardPage() {
                   </div>
                 </div>
 
-                {/* 4. OPERATIONS & DELIVERY SCHEDULE */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                      Opening Time
-                    </label>
-                    <input
-                      type="time"
-                      value={openingTime}
-                      onChange={(e) => setOpeningTime(e.target.value)}
-                      className={`w-full h-11 px-3 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                      }`}
-                    />
+                {/* 4. OPERATIONS, DELIVERY TIMELINE & PRICING */}
+                <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Bike size={14} className="text-amber-500" />
+                      <span>Delivery Timeline & Pricing</span>
+                    </h4>
+                    <span className="text-[10px] text-slate-400 font-medium">Custom for your store</span>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                      Closing Time
-                    </label>
-                    <input
-                      type="time"
-                      value={closingTime}
-                      onChange={(e) => setClosingTime(e.target.value)}
-                      className={`w-full h-11 px-3 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                      }`}
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Estimated Delivery Timeline */}
+                    <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-2">
+                      <label className="block text-xs font-extrabold uppercase text-slate-600 dark:text-zinc-300 font-heading">
+                        Delivery Timeline
+                      </label>
+                      <input
+                        type="text"
+                        value={deliveryEstimate}
+                        onChange={(e) => setDeliveryEstimate(e.target.value)}
+                        placeholder="e.g. 15-25 mins, 1-2 hours, 2-3 days"
+                        className={`w-full h-11 px-3.5 rounded-xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                        }`}
+                      />
+                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                        <span className="text-[10px] text-slate-400 font-bold">Presets:</span>
+                        {["15-30 mins", "30-45 mins", "1-2 hours", "Same Day", "1-2 days", "2-3 days", "3-5 days"].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setDeliveryEstimate(preset)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-heading font-extrabold transition cursor-pointer active:scale-95 ${
+                              deliveryEstimate === preset
+                                ? "bg-[#312E81] text-white shadow-xs"
+                                : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-200/80 text-slate-700 hover:bg-slate-300"
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Delivery Price / Fee (₦) */}
+                    <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 space-y-2">
+                      <label className="block text-xs font-extrabold uppercase text-slate-600 dark:text-zinc-300 font-heading">
+                        Delivery Price (₦)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-extrabold text-sm text-slate-400">
+                          ₦
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="50"
+                          value={deliveryFee}
+                          onChange={(e) => setDeliveryFee(e.target.value)}
+                          placeholder="e.g. 300 (0 for Free Delivery)"
+                          className={`w-full h-11 pl-8 pr-3.5 rounded-xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                        <span className="text-[10px] text-slate-400 font-bold">Presets:</span>
+                        {[
+                          { label: "Free (₦0)", val: 0 },
+                          { label: "₦200", val: 200 },
+                          { label: "₦300", val: 300 },
+                          { label: "₦400", val: 400 },
+                          { label: "₦500", val: 500 },
+                          { label: "₦1,000", val: 1000 },
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => setDeliveryFee(preset.val)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-heading font-extrabold transition cursor-pointer active:scale-95 ${
+                              Number(deliveryFee) === preset.val
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-200/80 text-slate-700 hover:bg-slate-300"
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
-                      Est. Delivery
-                    </label>
-                    <input
-                      type="text"
-                      value={deliveryEstimate}
-                      onChange={(e) => setDeliveryEstimate(e.target.value)}
-                      placeholder="e.g. 15-25 mins"
-                      className={`w-full h-11 px-3 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
-                      }`}
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                        Opening Time
+                      </label>
+                      <input
+                        type="time"
+                        value={openingTime}
+                        onChange={(e) => setOpeningTime(e.target.value)}
+                        className={`w-full h-11 px-3 rounded-xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                        Closing Time
+                      </label>
+                      <input
+                        type="time"
+                        value={closingTime}
+                        onChange={(e) => setClosingTime(e.target.value)}
+                        className={`w-full h-11 px-3 rounded-xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                        }`}
+                      />
+                    </div>
                   </div>
                 </div>
 

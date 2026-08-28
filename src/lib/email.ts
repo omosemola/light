@@ -19,6 +19,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
     const resendApiKey = process.env.RESEND_API_KEY;
 
     if (resendApiKey) {
+      const senderFrom = process.env.EMAIL_FROM || "Lightson Marketplace <notifications@lightsonmarketplace.com>";
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -26,7 +27,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
           Authorization: `Bearer ${resendApiKey}`,
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM || "Lightson Marketplace <notifications@lightsonmarketplace.com>",
+          from: senderFrom,
           to: [to],
           subject,
           html,
@@ -36,6 +37,32 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
       if (!response.ok) {
         const err = await response.text();
         console.error("Resend Email error:", err);
+
+        // If domain is not verified yet on Resend, retry via onboarding@resend.dev sandbox sender
+        if (err.includes("domain is not verified") || response.status === 403) {
+          console.warn("[RESEND] Domain not verified on Resend yet. Retrying via sandbox sender (onboarding@resend.dev)...");
+          const fallbackRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${resendApiKey}`,
+            },
+            body: JSON.stringify({
+              from: "Lightson Marketplace <onboarding@resend.dev>",
+              to: [to],
+              subject,
+              html,
+            }),
+          });
+
+          if (fallbackRes.ok) {
+            console.log(`[EMAIL SENT via sandbox] Successfully sent email to ${to}: "${subject}"`);
+            return { success: true };
+          } else {
+            const fallbackErr = await fallbackRes.text();
+            console.error("Resend Sandbox Fallback error:", fallbackErr);
+          }
+        }
       } else {
         console.log(`[EMAIL SENT] Successfully sent email to ${to}: "${subject}"`);
       }
@@ -553,7 +580,7 @@ export function generateAdminPlatformOrderAlertEmail({
               </table>
             ` : ""}
 
-            <a href="https://admin.lightsonmarketplace.com/dashboard" class="btn">View in Admin Command Center ➔</a>
+            <a href="https://campuslightson.com/admin/dashboard" class="btn">View in Admin Command Center ➔</a>
           </div>
 
           <div class="footer">

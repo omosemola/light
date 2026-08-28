@@ -65,6 +65,7 @@ model Store {
   isOpen              Boolean   @default(true)
   isVerified          Boolean   @default(false)
   estimatedDelivery   String?   @default("30-45 mins")
+  deliveryFee         Float     @default(300.0)
   rating              Float     @default(5.0)
   phone               String?   @default("+2348012345678")
   openingTime         String?   @default("08:00")
@@ -114,6 +115,7 @@ model Product {
 model Order {
   id              String      @id @default(cuid())
   totalAmount     Float
+  deliveryFee     Float?      @default(300.0)
   status          OrderStatus @default(PENDING)
   deliveryLocation String
   deliveryInstructions String?

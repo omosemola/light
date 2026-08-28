@@ -20,6 +20,7 @@ import {
   Sparkles,
   Layers,
   Check,
+  Bike,
   Image as ImageIcon
 } from "lucide-react";
 import Image from "next/image";
@@ -70,6 +71,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         description: initialProduct.description || "",
         details: ["Freshly prepared on campus", "Fast hostel delivery"],
         prepTime: initialProduct.store?.estimatedDelivery || "15-20 mins",
+        deliveryFee: initialProduct.store?.deliveryFee !== undefined ? initialProduct.store.deliveryFee : 300,
         isOpen: initialProduct.store?.isOpen !== false,
         openingTime: initialProduct.store?.openingTime || "08:00",
         closingTime: initialProduct.store?.closingTime || "22:00",
@@ -91,6 +93,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       description: "Freshly prepared campus delicacy.",
       details: ["Freshly prepared on campus", "Fast hostel delivery"],
       prepTime: "15-20 mins",
+      deliveryFee: 300,
       isAvailable: true,
       category: "food",
       rating: 5.0,
@@ -137,6 +140,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             vendorRating: p.store?.rating || 4.9,
             details: ["Freshly prepared on campus", "Fast delivery to all student hostels"],
             prepTime: p.store?.estimatedDelivery || "15-20 mins",
+            deliveryFee: p.store?.deliveryFee !== undefined ? p.store.deliveryFee : 300,
             isOpen: p.store?.isOpen !== false,
             openingTime: p.store?.openingTime || "08:00",
             closingTime: p.store?.closingTime || "22:00",
@@ -245,6 +249,8 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       image: getSafeImageUrl(productImages[0] || product.image),
       vendorId: product.vendorId || "vendor",
       vendorName: product.vendorName || "Campus Merchant",
+      vendorDeliveryFee: product.deliveryFee !== undefined ? product.deliveryFee : 300,
+      vendorEstimatedDelivery: product.prepTime || "15-20 mins",
       selectedSize: selectedSize || undefined,
       selectedAddOns: selectedAddOns.length > 0 ? selectedAddOns : undefined,
     };
@@ -512,11 +518,16 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             </div>
           </div>
 
-          {/* Prep Time Info */}
-          <div className="flex items-center gap-4 pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal">
+          {/* Prep Time & Delivery Info */}
+          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal">
             <div className="flex items-center gap-1.5">
-              <Clock size={15} className="text-[#312E81] dark:text-indigo-400" />
-              <span>Prep Time: {product.prepTime}</span>
+              <Clock size={14} className="text-[#312E81] dark:text-indigo-400" />
+              <span>Est. Delivery: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{product.prepTime}</strong></span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1.5">
+              <Bike size={14} className="text-amber-500" />
+              <span>Delivery Fee: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{Number(product.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(product.deliveryFee || 300).toLocaleString()}`}</strong></span>
             </div>
           </div>
         </motion.div>

@@ -148,9 +148,9 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
         vendorAvatar: getSafeImageUrl(dbOrder.store?.logo || fallbackOrder.vendorAvatar),
         vendorPhone: dbOrder.store?.user?.phone || "+234 812 345 9900",
         total: dbOrder.totalAmount,
-        subtotal: Math.max(0, dbOrder.totalAmount - 500),
-        deliveryFee: 400,
-        serviceFee: 100,
+        subtotal: Math.max(0, dbOrder.totalAmount - (dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 300)),
+        deliveryFee: dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 300,
+        serviceFee: 0,
         paymentMethod: dbOrder.paymentReference ? "Paystack (Card/Transfer)" : "Pay on Delivery",
         paymentStatus: dbOrder.status === "CANCELLED" ? "CANCELLED" : "PAID",
         hostelAddress: dbOrder.deliveryLocation,
@@ -476,10 +476,12 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
               <span>Hostel Delivery Fee</span>
               <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{order.deliveryFee.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Service Fee</span>
-              <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{order.serviceFee.toLocaleString()}</span>
-            </div>
+            {order.serviceFee > 0 && (
+              <div className="flex justify-between">
+                <span>Service Fee</span>
+                <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{order.serviceFee.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-sm font-heading font-extrabold text-[#18181B] dark:text-zinc-100">
               <span>Total Amount</span>
               <span className="text-[#312E81] dark:text-indigo-400">₦{order.total.toLocaleString()}</span>

@@ -13,7 +13,8 @@ import {
   Search, 
   CheckCircle2, 
   Award,
-  Share2
+  Share2,
+  Bike
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -54,6 +55,7 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
       reviewsCount: dbStore._count?.reviews || dbStore.reviews?.length || 0,
       location: "University Campus",
       prepTime: dbStore.estimatedDelivery || "15-25 mins",
+      deliveryFee: dbStore.deliveryFee !== undefined ? dbStore.deliveryFee : 300,
       isOpen: dbStore.isOpen !== false,
       openingTime: dbStore.openingTime || "08:00",
       closingTime: dbStore.closingTime || "22:00",
@@ -77,6 +79,10 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
               description: p.description || "",
               isAvailable: p.isAvailable !== false,
               rating: 4.9,
+              vendorId: dbStore.id,
+              vendorName: dbStore.name,
+              vendorDeliveryFee: dbStore.deliveryFee !== undefined ? dbStore.deliveryFee : 300,
+              vendorEstimatedDelivery: dbStore.estimatedDelivery || "15-25 mins",
               category: p.category?.name || "Items",
             };
           })
@@ -329,11 +335,18 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
             const sched = getStoreScheduleStatus(vendor);
             return (
               <>
-                <div className="grid grid-cols-3 gap-3 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                   <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
-                    <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Prep Time</span>
+                    <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Delivery Timeline</span>
                     <span className="font-heading font-extrabold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 flex items-center justify-center gap-1 mt-0.5">
                       <Clock size={14} className="text-[#312E81] dark:text-indigo-400" /> {vendor.prepTime}
+                    </span>
+                  </div>
+
+                  <div className="bg-[#FAFAF7] dark:bg-zinc-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-zinc-800 text-center">
+                    <span className="text-[10px] text-[#71717A] dark:text-zinc-400 uppercase font-bold block">Store Delivery Fee</span>
+                    <span className="font-heading font-extrabold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 flex items-center justify-center gap-1 mt-0.5">
+                      <Bike size={14} className="text-amber-500" /> {Number(vendor.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(vendor.deliveryFee).toLocaleString()}`}
                     </span>
                   </div>
 

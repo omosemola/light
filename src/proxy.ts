@@ -6,6 +6,18 @@ function handleSubdomains(req: NextRequest) {
   const hostname = req.headers.get("host")?.toLowerCase() || "";
   const pathname = url.pathname;
 
+  // Immediately bypass static assets, service workers, manifests, API routes, and internal Next.js assets
+  if (
+    pathname.includes(".") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/manifest") ||
+    pathname.startsWith("/sw.js") ||
+    pathname.startsWith("/workbox")
+  ) {
+    return NextResponse.next();
+  }
+
   // 1. Vendor Subdomain Handling (e.g. vendor.lightsonmarketplace.netlify.app, vendor.lightsonmarketplace.com, vendor.localhost:3000)
   if (hostname.startsWith("vendor.") || hostname.startsWith("merchant.")) {
     if (pathname === "/") {
@@ -68,8 +80,9 @@ export const config = {
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt
+     * - favicon.ico, sitemap.xml, robots.txt, manifest.json, sw.js
+     * - any static file with an extension
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|manifest.webmanifest|sw.js|.*\\..*).*)",
   ],
 };
