@@ -13,6 +13,7 @@ export interface EmailOrderItem {
 const BRAND_NAVY = "#1E1B4B";
 const BRAND_AMBER = "#F59E0B";
 const BRAND_INDIGO = "#312E81";
+const BRAND_LOGO_URL = "https://lightsonmarketplace.com/logo.png";
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
   try {
@@ -138,6 +139,9 @@ export function generateStudentOrderReceiptEmail({
       <body>
         <div class="container">
           <div class="header">
+            <div style="text-align: center; margin-bottom: 12px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="56" height="56" style="border-radius: 14px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+            </div>
             <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: #cbd5e1;">University Campus Multi-Vendor Marketplace</p>
           </div>
@@ -230,6 +234,9 @@ export function generateStudentStatusUpdateEmail({
       <body>
         <div class="container">
           <div class="header">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            </div>
             <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
           </div>
           <div class="body-content">
@@ -279,6 +286,9 @@ export function generateStudentWelcomeEmail({
       <body>
         <div class="container">
           <div class="header">
+            <div style="text-align: center; margin-bottom: 12px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="56" height="56" style="border-radius: 14px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+            </div>
             <h1 style="font-size: 26px; font-weight: 900; margin: 0;">Welcome to Lights<span style="color: ${BRAND_AMBER};">on</span> 🎉</h1>
           </div>
           <div class="body-content">
@@ -351,6 +361,9 @@ export function generateVendorNewOrderAlertEmail({
       <body>
         <div class="container">
           <div class="header">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="52" height="52" style="border-radius: 12px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            </div>
             <h1 style="margin: 0; font-size: 24px; font-weight: 900;">🚨 NEW ORDER RECEIVED!</h1>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: #fde68a;">Lightson Merchant Store POS</p>
           </div>
@@ -421,6 +434,9 @@ export function generateVendorWelcomeEmail({
       <body>
         <div class="container">
           <div class="header">
+            <div style="text-align: center; margin-bottom: 12px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="56" height="56" style="border-radius: 14px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+            </div>
             <h1 style="font-size: 24px; font-weight: 900; margin: 0;">Welcome, ${storeName}! 🏪</h1>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: #cbd5e1;">Lightson Vendor Partner Network</p>
           </div>
@@ -473,6 +489,9 @@ export function generateAdminNewVendorEmail({
       </head>
       <body>
         <div class="container">
+          <div style="text-align: center; margin-bottom: 12px;">
+            <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle;" />
+          </div>
           <h2 class="heading">🛡️ New Campus Vendor Registered</h2>
           <p style="font-size: 13px; color: #52525b;">A new store has registered on Lightson Marketplace:</p>
           <div style="background: #f8fafc; padding: 16px; border-radius: 12px; font-size: 13px; margin: 16px 0; border: 1px solid #e2e8f0;">
@@ -548,6 +567,9 @@ export function generateAdminPlatformOrderAlertEmail({
       <body>
         <div class="container">
           <div class="header">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            </div>
             <span class="badge">⚡ Platform Admin Order Monitor</span>
             <h1 style="margin: 0; font-size: 20px; font-weight: 900; color: #ffffff;">New Marketplace Order #${orderId}</h1>
             <p style="margin: 6px 0 0; color: #FBBF24; font-size: 13px; font-weight: 700;">Lightson Campus Marketplace</p>
