@@ -18,6 +18,7 @@ import {
   CheckCircle2, 
   Loader2,
   Banknote,
+  Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createLiveOrder } from "@/actions/orders";
@@ -36,6 +37,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"paystack" | "cash">("paystack");
 
   const effectiveEmail = session?.user?.email || profile.email || "";
+  const [contactEmail, setContactEmail] = useState(() => profile.email || session?.user?.email || "");
 
   // 2-field Location Schema & DB Saved Locations
   const [houseName, setHouseName] = useState(() => profile.hostel || "");
@@ -73,7 +75,10 @@ export default function CheckoutPage() {
     if (profile.phone && !phone) {
       setPhone(profile.phone);
     }
-  }, [profile.hostel, profile.addressDetail, profile.phone]);
+    if ((profile.email || session?.user?.email) && !contactEmail) {
+      setContactEmail(profile.email || session?.user?.email || "");
+    }
+  }, [profile.hostel, profile.addressDetail, profile.phone, profile.email, session?.user?.email]);
 
   useEffect(() => {
     if (isMounted && items.length === 0 && !isProcessing) {
@@ -100,12 +105,14 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     const fullDeliveryLocation = `${houseName.trim()}, ${streetLocation.trim()}`;
+    const finalEmail = contactEmail.trim() || profile.email || effectiveEmail;
 
     // Update profile cache
     updateProfile({
       hostel: houseName.trim(),
       addressDetail: streetLocation.trim(),
       phone: phone.trim() || profile.phone,
+      email: finalEmail || profile.email,
     });
 
     // Format item customization notes for store POS
@@ -132,8 +139,9 @@ export default function CheckoutPage() {
     const targetStoreId = vendorId || items[0]?.vendorId;
 
     const res = await createLiveOrder({
-      userEmail: profile.email || effectiveEmail,
+      userEmail: finalEmail,
       userName: profile.name,
+      userPhone: phone.trim() || profile.phone,
       storeId: targetStoreId,
       totalAmount: total,
       deliveryFee: deliveryFee,
@@ -287,14 +295,29 @@ export default function CheckoutPage() {
             
             {/* Phone Number */}
             <div>
-              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5">
-                Phone Number (For Delivery Contact)
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5 flex items-center gap-1.5">
+                <Phone size={13} /> Phone Number (For Delivery Contact)
               </label>
               <input 
                 type="tel" 
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100"
+              />
+            </div>
+
+            {/* Email Address for Order Confirmation */}
+            <div>
+              <label className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5 flex items-center gap-1.5">
+                <Mail size={13} /> Email Address (For Order Receipt & Live Tracking)
+              </label>
+              <input 
+                type="email" 
+                required
+                placeholder="your.email@gmail.com"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
                 className="w-full h-12 px-4 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100"
               />
             </div>

@@ -16,6 +16,7 @@ export interface CreateOrderInput {
   userId?: string;
   userEmail?: string;
   userName?: string;
+  userPhone?: string;
   storeId?: string;
   totalAmount: number;
   deliveryFee?: number;
@@ -36,17 +37,25 @@ export async function createLiveOrder(input: CreateOrderInput) {
     // 1. Resolve User
     let userId = input.userId;
     if (!userId && input.userEmail) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email: input.userEmail },
+      const cleanEmail = input.userEmail.trim().toLowerCase();
+      const existingUser = await prisma.user.findFirst({
+        where: { email: { equals: cleanEmail, mode: "insensitive" } },
       });
 
       if (existingUser) {
         userId = existingUser.id;
+        if (input.userPhone && !existingUser.phone) {
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { phone: input.userPhone },
+          }).catch(() => {});
+        }
       } else {
         const newUser = await prisma.user.create({
           data: {
-            email: input.userEmail,
+            email: cleanEmail,
             name: input.userName || "Campus Student",
+            phone: input.userPhone,
           },
         });
         userId = newUser.id;
