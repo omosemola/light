@@ -13,6 +13,8 @@ export interface CartItem {
   vendorName: string;
   vendorDeliveryFee?: number;
   vendorEstimatedDelivery?: string;
+  itemDeliveryFee?: number | null;
+  itemEstimatedDelivery?: string | null;
   selectedSize?: { name: string; price: number };
   selectedAddOns?: Array<{ name: string; price: number }>;
   customNotes?: string;
@@ -36,6 +38,8 @@ interface CartState {
   // Computed
   getTotal: () => number;
   getDeliveryFee: () => number;
+  getEstimatedDelivery: () => string;
+  getPlatformFee: () => number;
   getGrandTotal: () => number;
   getItemCount: () => number;
 }
@@ -54,7 +58,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       vendorId: null,
       vendorName: null,
-      vendorDeliveryFee: 300,
+      vendorDeliveryFee: 500,
       vendorEstimatedDelivery: "20-35 mins",
 
       addItem: (newItem, quantity = 1) => {
@@ -72,7 +76,7 @@ export const useCartStore = create<CartState>()(
           quantity: quantity > 0 ? quantity : 1,
         };
 
-        const nextDeliveryFee = newItem.vendorDeliveryFee !== undefined ? newItem.vendorDeliveryFee : get().vendorDeliveryFee ?? 300;
+        const nextDeliveryFee = newItem.vendorDeliveryFee !== undefined ? newItem.vendorDeliveryFee : get().vendorDeliveryFee ?? 500;
         const nextEstimatedDelivery = newItem.vendorEstimatedDelivery || get().vendorEstimatedDelivery || "20-35 mins";
 
         set((state) => {
@@ -111,7 +115,7 @@ export const useCartStore = create<CartState>()(
 
       confirmAndReplaceCart: (newItem, quantity = 1) => {
         const instanceKey = newItem.cartItemId || generateCartKey(newItem);
-        const nextDeliveryFee = newItem.vendorDeliveryFee !== undefined ? newItem.vendorDeliveryFee : 300;
+        const nextDeliveryFee = newItem.vendorDeliveryFee !== undefined ? newItem.vendorDeliveryFee : 500;
         const nextEstimatedDelivery = newItem.vendorEstimatedDelivery || "20-35 mins";
 
         set({
@@ -125,7 +129,7 @@ export const useCartStore = create<CartState>()(
 
       setVendorDeliveryDetails: (deliveryFee: number, estimatedDelivery?: string) => {
         set({
-          vendorDeliveryFee: typeof deliveryFee === "number" ? deliveryFee : 300,
+          vendorDeliveryFee: typeof deliveryFee === "number" ? deliveryFee : 500,
           ...(estimatedDelivery ? { vendorEstimatedDelivery: estimatedDelivery } : {}),
         });
       },
@@ -158,7 +162,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], vendorId: null, vendorName: null, vendorDeliveryFee: 300, vendorEstimatedDelivery: "20-35 mins" });
+        set({ items: [], vendorId: null, vendorName: null, vendorDeliveryFee: 500, vendorEstimatedDelivery: "20-35 mins" });
       },
 
       getTotal: () => {
@@ -166,13 +170,41 @@ export const useCartStore = create<CartState>()(
       },
 
       getDeliveryFee: () => {
-        return get().vendorDeliveryFee ?? 300;
+        const items = get().items;
+        if (items.length === 0) return get().vendorDeliveryFee ?? 500;
+        const itemFees = items.map((i) => {
+          if (i.itemDeliveryFee !== undefined && i.itemDeliveryFee !== null) {
+            return Number(i.itemDeliveryFee);
+          }
+          if (i.vendorDeliveryFee !== undefined && i.vendorDeliveryFee !== null) {
+            return Number(i.vendorDeliveryFee);
+          }
+          return get().vendorDeliveryFee ?? 500;
+        });
+        return Math.max(...itemFees);
+      },
+
+      getEstimatedDelivery: () => {
+        const items = get().items;
+        if (items.length === 0) return get().vendorEstimatedDelivery || "20-35 mins";
+        const dayItem = items.find((i) => {
+          const t = (i.itemEstimatedDelivery || i.vendorEstimatedDelivery || "").toLowerCase();
+          return t.includes("day");
+        });
+        if (dayItem) {
+          return dayItem.itemEstimatedDelivery || dayItem.vendorEstimatedDelivery || "1-2 days";
+        }
+        return items[0]?.itemEstimatedDelivery || items[0]?.vendorEstimatedDelivery || get().vendorEstimatedDelivery || "20-35 mins";
+      },
+
+      getPlatformFee: () => {
+        return 50;
       },
 
       getGrandTotal: () => {
-        const subtotal = get().items.reduce((total, item) => total + item.price * item.quantity, 0);
-        const fee = get().vendorDeliveryFee ?? 300;
-        return subtotal + fee;
+        const subtotal = get().getTotal();
+        const fee = get().getDeliveryFee();
+        return subtotal + fee + 50;
       },
 
       getItemCount: () => {

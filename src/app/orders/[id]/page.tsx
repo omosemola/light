@@ -148,9 +148,14 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
         vendorAvatar: getSafeImageUrl(dbOrder.store?.logo || fallbackOrder.vendorAvatar),
         vendorPhone: dbOrder.store?.user?.phone || "+234 812 345 9900",
         total: dbOrder.totalAmount,
-        subtotal: Math.max(0, dbOrder.totalAmount - (dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 300)),
-        deliveryFee: dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 300,
-        serviceFee: 0,
+        subtotal: Math.max(
+          0,
+          dbOrder.totalAmount -
+            (dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 500) -
+            (dbOrder.serviceFee !== undefined && dbOrder.serviceFee !== null ? dbOrder.serviceFee : 50)
+        ),
+        deliveryFee: dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 500,
+        serviceFee: dbOrder.serviceFee !== undefined && dbOrder.serviceFee !== null ? dbOrder.serviceFee : 50,
         paymentMethod: dbOrder.paymentReference ? "Paystack (Card/Transfer)" : "Pay on Delivery",
         paymentStatus: dbOrder.status === "CANCELLED" ? "CANCELLED" : "PAID",
         hostelAddress: dbOrder.deliveryLocation,
@@ -478,7 +483,7 @@ export default function OrderTrackingDetailPage({ params }: { params: Promise<{ 
             </div>
             {order.serviceFee > 0 && (
               <div className="flex justify-between">
-                <span>Service Fee</span>
+                <span>Platform Service Charge</span>
                 <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{order.serviceFee.toLocaleString()}</span>
               </div>
             )}

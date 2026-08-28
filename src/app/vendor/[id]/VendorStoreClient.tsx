@@ -55,7 +55,7 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
       reviewsCount: dbStore._count?.reviews || dbStore.reviews?.length || 0,
       location: "University Campus",
       prepTime: dbStore.estimatedDelivery || "15-25 mins",
-      deliveryFee: dbStore.deliveryFee !== undefined ? dbStore.deliveryFee : 300,
+      deliveryFee: dbStore.deliveryFee !== undefined ? dbStore.deliveryFee : 500,
       isOpen: dbStore.isOpen !== false,
       openingTime: dbStore.openingTime || "08:00",
       closingTime: dbStore.closingTime || "22:00",
@@ -81,8 +81,10 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
               rating: 4.9,
               vendorId: dbStore.id,
               vendorName: dbStore.name,
-              vendorDeliveryFee: dbStore.deliveryFee !== undefined ? dbStore.deliveryFee : 300,
-              vendorEstimatedDelivery: dbStore.estimatedDelivery || "15-25 mins",
+              vendorDeliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : (dbStore.deliveryFee !== undefined ? dbStore.deliveryFee : 500),
+              vendorEstimatedDelivery: p.estimatedDelivery || dbStore.estimatedDelivery || "15-25 mins",
+              itemDeliveryFee: p.deliveryFee,
+              itemEstimatedDelivery: p.estimatedDelivery,
               category: p.category?.name || "Items",
             };
           })

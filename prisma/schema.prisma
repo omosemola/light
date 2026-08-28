@@ -65,7 +65,7 @@ model Store {
   isOpen              Boolean   @default(true)
   isVerified          Boolean   @default(false)
   estimatedDelivery   String?   @default("30-45 mins")
-  deliveryFee         Float     @default(300.0)
+  deliveryFee         Float     @default(500.0)
   rating              Float     @default(5.0)
   phone               String?   @default("+2348012345678")
   openingTime         String?   @default("08:00")
@@ -94,28 +94,31 @@ model Category {
 }
 
 model Product {
-  id          String    @id @default(cuid())
-  slug        String?   @unique
-  name        String
-  description String?
-  price       Float
-  image       String
-  isAvailable Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  name              String
+  slug              String?   @unique
+  description       String?
+  price             Float
+  image             String
+  isAvailable       Boolean   @default(true)
+  estimatedDelivery String?   // Optional per-product override (e.g. "1-2 days", "15-20 mins")
+  deliveryFee       Float?    // Optional per-product override (e.g. 0 for Free Delivery, 800)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  storeId     String
-  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
+  storeId           String
+  store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId        String?
+  category          Category? @relation(fields: [categoryId], references: [id])
   
-  orderItems  OrderItem[]
+  orderItems        OrderItem[]
 }
 
 model Order {
   id              String      @id @default(cuid())
   totalAmount     Float
-  deliveryFee     Float?      @default(300.0)
+  deliveryFee     Float?      @default(500.0)
+  serviceFee      Float?      @default(50.0)
   status          OrderStatus @default(PENDING)
   deliveryLocation String
   deliveryInstructions String?

@@ -94,11 +94,11 @@ export async function getVendorDashboardData(vendorUserId?: string) {
 
     // Calculate metrics
     const totalRevenue = (store.orders || []).reduce((acc: number, order: any) => {
-      return order.status !== OrderStatus.CANCELLED ? acc + order.totalAmount : acc;
+      return order.status !== OrderStatus.CANCELLED ? acc + (Number(order.totalAmount) || 0) : acc;
     }, 0);
 
     const pendingOrdersCount = (store.orders || []).filter(
-      (o: any) => o.status === OrderStatus.PENDING || o.status === OrderStatus.ACCEPTED || o.status === OrderStatus.PREPARING
+      (o: any) => o.status === OrderStatus.PENDING || o.status === OrderStatus.ACCEPTED || o.status === OrderStatus.OUT_FOR_DELIVERY
     ).length;
 
     const completedOrdersCount = (store.orders || []).filter((o: any) => o.status === OrderStatus.DELIVERED).length;
@@ -108,6 +108,7 @@ export async function getVendorDashboardData(vendorUserId?: string) {
       store,
       metrics: {
         totalRevenue,
+        totalGMV: totalRevenue,
         pendingOrdersCount,
         completedOrdersCount,
         rating: store.rating || 5.0,
@@ -134,24 +135,28 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     revalidatePath("/vendor/dashboard");
     revalidatePath(`/orders/${orderId}`);
 
-    // Send transactional status update email
-    if (updatedOrder.user?.email) {
+    // Send transactional status update email to student
+    const recipientEmail = updatedOrder.user?.email;
+    if (recipientEmail) {
       let statusTitle = `Order Update: ${newStatus}`;
       let statusDesc = `Your order status has been updated to ${newStatus}.`;
 
       if (newStatus === OrderStatus.ACCEPTED || newStatus === OrderStatus.PREPARING) {
-        statusTitle = "Store Preparing Order 📦";
-        statusDesc = `${updatedOrder.store.name} has accepted your order and is packaging your items.`;
-      } else if (newStatus === OrderStatus.OUT_FOR_DELIVERY) {
+        statusTitle = "Order Accepted 📦";
+        statusDesc = `${updatedOrder.store.name} has accepted your order and is processing your items for delivery.`;
+      } else if (newStatus === OrderStatus.OUT_FOR_DELIVERY || newStatus === OrderStatus.READY_FOR_DELIVERY) {
         statusTitle = "Out for Delivery 🛵";
         statusDesc = `${updatedOrder.store.name}'s delivery team is en route to your hostel location (${updatedOrder.deliveryLocation}).`;
       } else if (newStatus === OrderStatus.DELIVERED) {
         statusTitle = "Order Delivered 🎉";
         statusDesc = `Your order from ${updatedOrder.store.name} has been delivered to ${updatedOrder.deliveryLocation}. Thank you for shopping on Lightson!`;
+      } else if (newStatus === OrderStatus.CANCELLED) {
+        statusTitle = "Order Cancelled ✕";
+        statusDesc = `Your order #${updatedOrder.id.slice(-6).toUpperCase()} has been cancelled.`;
       }
 
       const emailHtml = generateStudentStatusUpdateEmail({
-        customerName: updatedOrder.user.name || "Campus Student",
+        customerName: updatedOrder.user?.name || "Campus Student",
         orderId: updatedOrder.id.slice(-6).toUpperCase(),
         statusTitle,
         statusDesc,
@@ -160,11 +165,15 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
         totalAmount: updatedOrder.totalAmount,
       });
 
-      sendEmail({
-        to: updatedOrder.user.email,
+      console.log(`[STATUS EMAIL] Sending status update to student: ${recipientEmail} for order #${updatedOrder.id.slice(-6)} (${newStatus})`);
+      const emailRes = await sendEmail({
+        to: recipientEmail,
         subject: `Order Update: ${statusTitle} (#${updatedOrder.id.slice(-6).toUpperCase()}) - ${updatedOrder.store.name}`,
         html: emailHtml,
-      }).catch((e) => console.error("Failed to send status update email:", e));
+      });
+      console.log(`[STATUS EMAIL RESULT] Email sending result for student ${recipientEmail}:`, emailRes);
+    } else {
+      console.warn(`[STATUS EMAIL] No student email found on order #${orderId} to send status update.`);
     }
 
     // Send SMS / WhatsApp Alert to Student Phone
@@ -222,11 +231,17 @@ export async function createVendorProduct(data: {
   price: number;
   image: string;
   categoryId?: string;
+  estimatedDelivery?: string | null;
+  deliveryFee?: number | null;
 }) {
   try {
     const numericPrice = typeof data.price === "number" && !isNaN(data.price) 
       ? data.price 
       : parseFloat(String(data.price)) || 0;
+
+    const parsedDeliveryFee = data.deliveryFee !== undefined && data.deliveryFee !== null && !isNaN(Number(data.deliveryFee))
+      ? Number(data.deliveryFee)
+      : null;
 
     let validCategoryId: string | null = null;
     if (data.categoryId && data.categoryId.trim().length > 0) {
@@ -255,6 +270,8 @@ export async function createVendorProduct(data: {
         image: data.image,
         storeId: data.storeId,
         categoryId: validCategoryId,
+        estimatedDelivery: data.estimatedDelivery ? data.estimatedDelivery.trim() : null,
+        deliveryFee: parsedDeliveryFee,
         isAvailable: true,
       },
       include: {
@@ -283,6 +300,8 @@ export async function updateVendorProduct(data: {
   categoryId?: string;
   isAvailable?: boolean;
   storeId?: string;
+  estimatedDelivery?: string | null;
+  deliveryFee?: number | null;
 }) {
   try {
     if (!data.productId) {
@@ -292,6 +311,10 @@ export async function updateVendorProduct(data: {
     const numericPrice = typeof data.price === "number" && !isNaN(data.price) 
       ? data.price 
       : parseFloat(String(data.price)) || 0;
+
+    const parsedDeliveryFee = data.deliveryFee !== undefined && data.deliveryFee !== null && !isNaN(Number(data.deliveryFee))
+      ? Number(data.deliveryFee)
+      : null;
 
     let categoryIdToSet: string | null | undefined = undefined;
     if (data.categoryId && data.categoryId.trim().length > 0) {
@@ -329,6 +352,8 @@ export async function updateVendorProduct(data: {
             image: data.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
             storeId: storeId,
             categoryId: categoryIdToSet || null,
+            estimatedDelivery: data.estimatedDelivery !== undefined ? (data.estimatedDelivery ? data.estimatedDelivery.trim() : null) : null,
+            deliveryFee: parsedDeliveryFee,
             isAvailable: data.isAvailable !== undefined ? data.isAvailable : true,
           },
           include: {
@@ -359,6 +384,8 @@ export async function updateVendorProduct(data: {
         ...(data.image ? { image: data.image } : {}),
         ...(categoryIdToSet !== undefined ? { categoryId: categoryIdToSet } : {}),
         ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
+        estimatedDelivery: data.estimatedDelivery !== undefined ? (data.estimatedDelivery ? data.estimatedDelivery.trim() : null) : undefined,
+        deliveryFee: data.deliveryFee !== undefined ? parsedDeliveryFee : undefined,
       },
       include: {
         category: true,

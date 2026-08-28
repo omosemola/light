@@ -19,6 +19,7 @@ export interface CreateOrderInput {
   storeId?: string;
   totalAmount: number;
   deliveryFee?: number;
+  serviceFee?: number;
   deliveryLocation: string;
   deliveryInstructions?: string;
   paymentMethod: string;
@@ -111,14 +112,18 @@ export async function createLiveOrder(input: CreateOrderInput) {
       }
     }
 
-    if (!resolvedStore || !storeId) {
+    if (!storeId) {
       return { success: false, error: "No store found to assign order" };
     }
 
     // 3. Create Order & OrderItems in Database
     const finalDeliveryFee = input.deliveryFee !== undefined 
       ? input.deliveryFee 
-      : (resolvedStore?.deliveryFee ?? 300);
+      : (resolvedStore?.deliveryFee ?? 500);
+
+    const finalServiceFee = input.serviceFee !== undefined
+      ? input.serviceFee
+      : 50.0;
 
     const order = await prisma.order.create({
       data: {
@@ -126,6 +131,7 @@ export async function createLiveOrder(input: CreateOrderInput) {
         storeId,
         totalAmount: input.totalAmount,
         deliveryFee: finalDeliveryFee,
+        serviceFee: finalServiceFee,
         status: OrderStatus.PENDING,
         deliveryLocation: input.deliveryLocation,
         deliveryInstructions: input.deliveryInstructions || null,
@@ -166,25 +172,24 @@ export async function createLiveOrder(input: CreateOrderInput) {
     const displayOrderId = order.id.slice(-6).toUpperCase();
 
     // 4. Send Order Confirmation Receipt to Student
-    if (input.userEmail || order.user?.email) {
-      const studentEmail = input.userEmail || order.user?.email;
-      if (studentEmail) {
-        const studentHtml = generateStudentOrderReceiptEmail({
-          customerName: input.userName || order.user?.name || "Campus Student",
-          orderId: displayOrderId,
-          storeName: order.store.name,
-          deliveryLocation: order.deliveryLocation,
-          deliveryInstructions: order.deliveryInstructions,
-          items: orderItemsForEmail,
-          totalAmount: order.totalAmount,
-        });
+    const studentEmail = input.userEmail || order.user?.email;
+    if (studentEmail) {
+      const studentHtml = generateStudentOrderReceiptEmail({
+        customerName: input.userName || order.user?.name || "Campus Student",
+        orderId: displayOrderId,
+        storeName: order.store.name,
+        deliveryLocation: order.deliveryLocation,
+        deliveryInstructions: order.deliveryInstructions,
+        items: orderItemsForEmail,
+        totalAmount: order.totalAmount,
+      });
 
-        sendEmail({
-          to: studentEmail,
-          subject: `Order Confirmed (#${displayOrderId}) - ${order.store.name}`,
-          html: studentHtml,
-        }).catch((e) => console.error("Failed to send student receipt email:", e));
-      }
+      console.log(`[ORDER CREATED] Sending receipt email to student ${studentEmail} for order #${displayOrderId}...`);
+      await sendEmail({
+        to: studentEmail,
+        subject: `Order Confirmed (#${displayOrderId}) - ${order.store.name}`,
+        html: studentHtml,
+      }).catch((e) => console.error("Failed to send student receipt email:", e));
     }
 
     // 5. Send Urgent New Order Alert to Vendor (Store Owner)
@@ -201,7 +206,8 @@ export async function createLiveOrder(input: CreateOrderInput) {
         totalAmount: order.totalAmount,
       });
 
-      sendEmail({
+      console.log(`[ORDER CREATED] Sending merchant alert email to vendor ${vendorEmail} for order #${displayOrderId}...`);
+      await sendEmail({
         to: vendorEmail,
         subject: `🚨 NEW ORDER #${displayOrderId} - ${order.store.name} Store Alert!`,
         html: vendorHtml,

@@ -70,8 +70,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         image: initialProduct.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
         description: initialProduct.description || "",
         details: ["Freshly prepared on campus", "Fast hostel delivery"],
-        prepTime: initialProduct.store?.estimatedDelivery || "15-20 mins",
-        deliveryFee: initialProduct.store?.deliveryFee !== undefined ? initialProduct.store.deliveryFee : 300,
+        prepTime: initialProduct.estimatedDelivery || initialProduct.store?.estimatedDelivery || "15-20 mins",
+        deliveryFee: initialProduct.deliveryFee !== null && initialProduct.deliveryFee !== undefined
+          ? initialProduct.deliveryFee
+          : (initialProduct.store?.deliveryFee !== undefined ? initialProduct.store.deliveryFee : 500),
         isOpen: initialProduct.store?.isOpen !== false,
         openingTime: initialProduct.store?.openingTime || "08:00",
         closingTime: initialProduct.store?.closingTime || "22:00",
@@ -93,7 +95,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       description: "Freshly prepared campus delicacy.",
       details: ["Freshly prepared on campus", "Fast hostel delivery"],
       prepTime: "15-20 mins",
-      deliveryFee: 300,
+      deliveryFee: 500,
+      isOpen: true,
+      openingTime: "08:00",
+      closingTime: "22:00",
       isAvailable: true,
       category: "food",
       rating: 5.0,
@@ -139,8 +144,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             vendorName: p.store?.name || "Campus Vendor",
             vendorRating: p.store?.rating || 4.9,
             details: ["Freshly prepared on campus", "Fast delivery to all student hostels"],
-            prepTime: p.store?.estimatedDelivery || "15-20 mins",
-            deliveryFee: p.store?.deliveryFee !== undefined ? p.store.deliveryFee : 300,
+            prepTime: p.estimatedDelivery || p.store?.estimatedDelivery || "15-20 mins",
+            deliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined
+              ? p.deliveryFee
+              : (p.store?.deliveryFee !== undefined ? p.store.deliveryFee : 500),
             isOpen: p.store?.isOpen !== false,
             openingTime: p.store?.openingTime || "08:00",
             closingTime: p.store?.closingTime || "22:00",
@@ -249,8 +256,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       image: getSafeImageUrl(productImages[0] || product.image),
       vendorId: product.vendorId || "vendor",
       vendorName: product.vendorName || "Campus Merchant",
-      vendorDeliveryFee: product.deliveryFee !== undefined ? product.deliveryFee : 300,
+      vendorDeliveryFee: product.deliveryFee !== undefined ? product.deliveryFee : 500,
       vendorEstimatedDelivery: product.prepTime || "15-20 mins",
+      itemDeliveryFee: product.deliveryFee !== undefined ? product.deliveryFee : null,
+      itemEstimatedDelivery: product.prepTime || null,
       selectedSize: selectedSize || undefined,
       selectedAddOns: selectedAddOns.length > 0 ? selectedAddOns : undefined,
     };
@@ -527,7 +536,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             <span>•</span>
             <div className="flex items-center gap-1.5">
               <Bike size={14} className="text-amber-500" />
-              <span>Delivery Fee: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{Number(product.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(product.deliveryFee || 300).toLocaleString()}`}</strong></span>
+              <span>Delivery Fee: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{Number(product.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(product.deliveryFee || 500).toLocaleString()}`}</strong></span>
             </div>
           </div>
         </motion.div>

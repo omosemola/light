@@ -67,8 +67,10 @@ export async function getLiveHomepageData() {
         vendorId: p.storeId,
         vendorName: p.store.name,
         vendorIsOpen: computeIsStoreOpen(p.store),
-        vendorPrepTime: p.store.estimatedDelivery || "15-25 mins",
-        vendorDeliveryFee: p.store.deliveryFee ?? 300,
+        vendorPrepTime: p.estimatedDelivery || p.store.estimatedDelivery || "15-25 mins",
+        vendorDeliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : (p.store.deliveryFee ?? 500),
+        estimatedDelivery: p.estimatedDelivery || null,
+        deliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : null,
         category: p.category?.name || "Pastries",
       };
     });
@@ -389,8 +391,10 @@ export async function searchLiveCatalog(query: string) {
         vendorId: p.storeId,
         vendorName: p.store?.name || "Campus Vendor",
         vendorIsOpen: computeIsStoreOpen(p.store),
-        vendorPrepTime: p.store?.estimatedDelivery || "15-25 mins",
-        vendorDeliveryFee: p.store?.deliveryFee ?? 300,
+        vendorPrepTime: p.estimatedDelivery || p.store?.estimatedDelivery || "15-25 mins",
+        vendorDeliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : (p.store?.deliveryFee ?? 500),
+        estimatedDelivery: p.estimatedDelivery || null,
+        deliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : null,
         category: p.category?.name || "Pastries",
       };
     });

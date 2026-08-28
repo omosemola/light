@@ -133,6 +133,9 @@ export default function VendorDashboardPage() {
   const [productCategory, setProductCategory] = useState("");
   const [variations, setVariations] = useState<VariationOption[]>([]);
   const [addOns, setAddOns] = useState<AddOnOption[]>([]);
+  const [productEstimatedDelivery, setProductEstimatedDelivery] = useState("");
+  const [productDeliveryFee, setProductDeliveryFee] = useState<string | number>("");
+  const [useCustomDelivery, setUseCustomDelivery] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const productFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -148,7 +151,7 @@ export default function VendorDashboardPage() {
   const [openingTime, setOpeningTime] = useState("08:00");
   const [closingTime, setClosingTime] = useState("22:00");
   const [deliveryEstimate, setDeliveryEstimate] = useState("20-35 mins");
-  const [deliveryFee, setDeliveryFee] = useState<number | string>(300);
+  const [deliveryFee, setDeliveryFee] = useState<number | string>(500);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -178,7 +181,7 @@ export default function VendorDashboardPage() {
       setStoreLogo(storeData.logo || "");
       setStoreCoverImage(storeData.coverImage || "");
       setDeliveryEstimate(storeData.estimatedDelivery || "20-35 mins");
-      setDeliveryFee(storeData.deliveryFee ?? 300);
+      setDeliveryFee(storeData.deliveryFee ?? 500);
       setOpeningTime(storeData.openingTime || "08:00");
       setClosingTime(storeData.closingTime || "22:00");
     }
@@ -377,11 +380,13 @@ export default function VendorDashboardPage() {
     if (res.success) {
       setStoreData((prev: any) => ({
         ...prev,
-        orders: prev.orders.map((o: any) =>
+        orders: (prev?.orders || []).map((o: any) =>
           o.id === orderId ? { ...o, status } : o
         ),
       }));
-      showToast(`Order #${orderId.slice(-6)} updated to ${status.replace(/_/g, " ")}`);
+      // Re-fetch dashboard metrics in background so Gross Income updates immediately
+      fetchDashboard(true);
+      showToast(`✓ Order #${orderId.slice(-6)} updated to ${status.replace(/_/g, " ")}`);
     } else {
       showToast(res.error || "Failed to update order");
     }
@@ -409,6 +414,9 @@ export default function VendorDashboardPage() {
     setProductCategory("");
     setVariations([]);
     setAddOns([]);
+    setUseCustomDelivery(false);
+    setProductEstimatedDelivery("");
+    setProductDeliveryFee("");
     setShowProductModal(true);
   };
 
@@ -426,6 +434,14 @@ export default function VendorDashboardPage() {
     setProductIngredients(structured.ingredients ? structured.ingredients.join(", ") : "");
     setVariations(structured.sizes || []);
     setAddOns(structured.addons || []);
+
+    const hasCustomDelivery = Boolean(
+      (prod.estimatedDelivery && prod.estimatedDelivery !== storeData?.estimatedDelivery) ||
+      (prod.deliveryFee !== undefined && prod.deliveryFee !== null)
+    );
+    setUseCustomDelivery(hasCustomDelivery);
+    setProductEstimatedDelivery(prod.estimatedDelivery || "");
+    setProductDeliveryFee(prod.deliveryFee !== undefined && prod.deliveryFee !== null ? prod.deliveryFee : "");
 
     setShowProductModal(true);
   };
@@ -481,6 +497,8 @@ export default function VendorDashboardPage() {
           image: finalImage,
           categoryId: productCategory || undefined,
           storeId: storeData?.id,
+          estimatedDelivery: useCustomDelivery && productEstimatedDelivery ? productEstimatedDelivery.trim() : null,
+          deliveryFee: useCustomDelivery && productDeliveryFee !== "" ? Number(productDeliveryFee) : null,
         });
 
         if (res.success && res.product) {
@@ -511,6 +529,8 @@ export default function VendorDashboardPage() {
           description: finalDesc,
           image: finalImage,
           categoryId: productCategory || undefined,
+          estimatedDelivery: useCustomDelivery && productEstimatedDelivery ? productEstimatedDelivery.trim() : null,
+          deliveryFee: useCustomDelivery && productDeliveryFee !== "" ? Number(productDeliveryFee) : null,
         });
 
         if (res.success && res.product) {
@@ -562,7 +582,7 @@ export default function VendorDashboardPage() {
         openingTime,
         closingTime,
         estimatedDelivery: deliveryEstimate.trim(),
-        deliveryFee: Number(deliveryFee) >= 0 ? Number(deliveryFee) : 300,
+        deliveryFee: Number(deliveryFee) >= 0 ? Number(deliveryFee) : 500,
         logo: storeLogo,
         coverImage: storeCoverImage,
       });
@@ -962,9 +982,15 @@ export default function VendorDashboardPage() {
             }`}
           >
             <DollarSign className="w-5 h-5 text-emerald-500 mb-1.5" />
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Gross Volume</span>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Gross Income</span>
             <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>
-              ₦{Number(metrics?.totalGMV || 0).toLocaleString()}
+              ₦{(
+                metrics?.totalRevenue !== undefined
+                  ? Number(metrics.totalRevenue)
+                  : metrics?.totalGMV !== undefined
+                  ? Number(metrics.totalGMV)
+                  : (storeData?.orders || []).reduce((acc: number, o: any) => o.status !== "CANCELLED" ? acc + (Number(o.totalAmount) || 0) : acc, 0)
+              ).toLocaleString()}
             </h3>
           </motion.div>
 
@@ -1092,7 +1118,7 @@ export default function VendorDashboardPage() {
           <div className="space-y-4">
             {/* ORDER STATUS FILTERS */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-              {["ALL", "PENDING", "ACCEPTED", "PREPARING", "READY_FOR_DELIVERY", "DELIVERED", "CANCELLED"].map((st) => (
+              {["ALL", "PENDING", "ACCEPTED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].map((st) => (
                 <button
                   key={st}
                   type="button"
@@ -1236,29 +1262,18 @@ export default function VendorDashboardPage() {
                         </button>
                       )}
 
-                      {order.status === "ACCEPTED" && (
+                      {(order.status === "ACCEPTED" || order.status === "PREPARING") && (
                         <button
                           type="button"
                           disabled={updatingId === order.id}
-                          onClick={() => handleStatusChange(order.id, OrderStatus.PREPARING)}
+                          onClick={() => handleStatusChange(order.id, OrderStatus.OUT_FOR_DELIVERY)}
                           className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-black text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                         >
-                          {updatingId === order.id ? "Updating..." : "📦 Start Preparing Order"}
+                          {updatingId === order.id ? "Updating..." : "🛵 Dispatch / Out for Delivery"}
                         </button>
                       )}
 
-                      {order.status === "PREPARING" && (
-                        <button
-                          type="button"
-                          disabled={updatingId === order.id}
-                          onClick={() => handleStatusChange(order.id, OrderStatus.READY_FOR_DELIVERY)}
-                          className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                        >
-                          {updatingId === order.id ? "Updating..." : "🛵 Ready for Dispatch"}
-                        </button>
-                      )}
-
-                      {order.status === "READY_FOR_DELIVERY" && (
+                      {(order.status === "OUT_FOR_DELIVERY" || order.status === "READY_FOR_DELIVERY") && (
                         <button
                           type="button"
                           disabled={updatingId === order.id}
@@ -1397,6 +1412,20 @@ export default function VendorDashboardPage() {
                                 +{parseProductDescription(prod.description).ingredients.length - 3} more
                               </span>
                             )}
+                          </div>
+                        )}
+
+                        {(prod.estimatedDelivery || (prod.deliveryFee !== undefined && prod.deliveryFee !== null)) && (
+                          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-500/20 flex items-center gap-1">
+                              <Bike size={11} />
+                              <span>
+                                {prod.deliveryFee !== undefined && prod.deliveryFee !== null
+                                  ? (Number(prod.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(prod.deliveryFee).toLocaleString()}`)
+                                  : "Default Fee"}
+                                {prod.estimatedDelivery ? ` • ${prod.estimatedDelivery}` : ""}
+                              </span>
+                            </span>
                           </div>
                         )}
                       </div>
@@ -2411,6 +2440,114 @@ export default function VendorDashboardPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+
+                {/* PRODUCT-SPECIFIC DELIVERY OVERRIDE (OPTIONAL) */}
+                <div className={`p-4 rounded-2xl border transition-all ${isDark ? "bg-zinc-950/60 border-zinc-800" : "bg-slate-50 border-slate-200"}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 font-heading">
+                        <Bike size={14} className="text-indigo-500" />
+                        <span>Custom Delivery Settings for this Item (Optional)</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                        Default: {storeData?.estimatedDelivery || "20-35 mins"} • {storeData?.deliveryFee === 0 ? "Free Delivery" : `₦${storeData?.deliveryFee ?? 500}`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setUseCustomDelivery(!useCustomDelivery)}
+                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        useCustomDelivery ? "bg-indigo-600" : isDark ? "bg-zinc-800" : "bg-slate-300"
+                      }`}
+                    >
+                      <span
+                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                          useCustomDelivery ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {useCustomDelivery && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="pt-4 space-y-3.5 border-t border-slate-200 dark:border-zinc-800 mt-3"
+                    >
+                      {/* Timeline Input & Presets */}
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 block mb-1">
+                          Item Prep / Delivery Schedule
+                        </label>
+                        <input
+                          type="text"
+                          value={productEstimatedDelivery}
+                          onChange={(e) => setProductEstimatedDelivery(e.target.value)}
+                          placeholder="e.g. 1-2 days, 2-3 days, 15-20 mins"
+                          className={`w-full h-10 px-3 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            isDark ? "bg-zinc-900 border-zinc-700 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+                          {["15-30 mins", "30-45 mins", "1-2 hours", "Same Day", "1-2 days", "2-3 days", "3-5 days"].map((chip) => (
+                            <button
+                              key={chip}
+                              type="button"
+                              onClick={() => setProductEstimatedDelivery(chip)}
+                              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer active:scale-95 ${
+                                productEstimatedDelivery === chip
+                                  ? "bg-indigo-600 text-white shadow-xs"
+                                  : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                              }`}
+                            >
+                              {chip}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Fee Input & Presets */}
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 block mb-1">
+                          Item Delivery Fee (₦)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="50"
+                          value={productDeliveryFee}
+                          onChange={(e) => setProductDeliveryFee(e.target.value)}
+                          placeholder="e.g. 0 for Free Delivery, 500, 1000"
+                          className={`w-full h-10 px-3 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            isDark ? "bg-zinc-900 border-zinc-700 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+                          {[
+                            { label: "Free Delivery (₦0)", val: 0 },
+                            { label: "₦200", val: 200 },
+                            { label: "₦300", val: 300 },
+                            { label: "₦500", val: 500 },
+                            { label: "₦1,000", val: 1000 },
+                          ].map((chip) => (
+                            <button
+                              key={chip.label}
+                              type="button"
+                              onClick={() => setProductDeliveryFee(chip.val)}
+                              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer active:scale-95 ${
+                                Number(productDeliveryFee) === chip.val
+                                  ? "bg-emerald-600 text-white shadow-xs"
+                                  : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                              }`}
+                            >
+                              {chip.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="pt-2 flex gap-3">

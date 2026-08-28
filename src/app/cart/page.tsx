@@ -36,8 +36,10 @@ export default function CartPage() {
   }
 
   const subtotal = getTotal();
-  const fee = vendorDeliveryFee !== undefined ? vendorDeliveryFee : 300;
-  const total = subtotal + fee;
+  const deliveryFee = useCartStore((s) => s.getDeliveryFee());
+  const effectiveDeliveryTime = useCartStore((s) => s.getEstimatedDelivery());
+  const platformFee = 50;
+  const total = subtotal + deliveryFee + platformFee;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-36 md:pb-32 transition-colors duration-200">
@@ -181,15 +183,22 @@ export default function CartPage() {
           <div className="flex justify-between text-[#71717A] dark:text-zinc-400 font-normal">
             <span className="flex items-center gap-1.5">
               <span>Store Delivery Fee</span>
-              {vendorEstimatedDelivery && (
+              {effectiveDeliveryTime && (
                 <span className="text-[10px] bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-slate-600 dark:text-zinc-300 font-bold">
-                  ⏱️ {vendorEstimatedDelivery}
+                  ⏱️ {effectiveDeliveryTime}
                 </span>
               )}
             </span>
             <span className="font-semibold text-[#18181B] dark:text-zinc-200">
-              {fee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${fee.toLocaleString()}`}
+              {deliveryFee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${deliveryFee.toLocaleString()}`}
             </span>
+          </div>
+          <div className="flex justify-between text-[#71717A] dark:text-zinc-400 font-normal">
+            <span className="flex items-center gap-1.5">
+              <span>Platform Service Charge</span>
+              <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded font-bold">Fixed</span>
+            </span>
+            <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{platformFee.toLocaleString()}</span>
           </div>
         </div>
       </div>

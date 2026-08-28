@@ -82,8 +82,10 @@ export default function CheckoutPage() {
   }, [isMounted, items.length, isProcessing, router]);
 
   const subtotal = getTotal();
-  const fee = vendorDeliveryFee !== undefined ? vendorDeliveryFee : 300;
-  const total = subtotal + fee;
+  const deliveryFee = useCartStore((s) => s.getDeliveryFee());
+  const effectiveDeliveryTime = useCartStore((s) => s.getEstimatedDelivery());
+  const platformFee = 50;
+  const total = subtotal + deliveryFee + platformFee;
 
   if (!isMounted || items.length === 0) {
     return null;
@@ -134,7 +136,8 @@ export default function CheckoutPage() {
       userName: profile.name,
       storeId: targetStoreId,
       totalAmount: total,
-      deliveryFee: fee,
+      deliveryFee: deliveryFee,
+      serviceFee: platformFee,
       deliveryLocation: fullDeliveryLocation,
       deliveryInstructions: combinedInstructions,
       paymentMethod: paymentMethod === "paystack" ? "Paystack (Card/Transfer)" : "Pay on Arrival",
@@ -449,15 +452,22 @@ export default function CheckoutPage() {
             <div className="flex justify-between text-[#71717A] dark:text-zinc-400">
               <span className="flex items-center gap-1.5">
                 <span>Store Delivery Fee</span>
-                {vendorEstimatedDelivery && (
+                {effectiveDeliveryTime && (
                   <span className="text-[10px] bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-slate-600 dark:text-zinc-300 font-bold">
-                    ⏱️ {vendorEstimatedDelivery}
+                    ⏱️ {effectiveDeliveryTime}
                   </span>
                 )}
               </span>
               <span className="font-semibold text-[#18181B] dark:text-zinc-200">
-                {fee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${fee.toLocaleString()}`}
+                {deliveryFee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${deliveryFee.toLocaleString()}`}
               </span>
+            </div>
+            <div className="flex justify-between text-[#71717A] dark:text-zinc-400">
+              <span className="flex items-center gap-1.5">
+                <span>Platform Service Charge</span>
+                <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded font-bold">Fixed</span>
+              </span>
+              <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{platformFee.toLocaleString()}</span>
             </div>
           </div>
         </motion.section>
