@@ -68,7 +68,8 @@ export async function submitStudentReview(input: {
     }
 
     const ratingVal = Math.min(5, Math.max(1, Math.round(input.rating)));
-    const commentVal = input.comment?.trim() || null;
+    const rawComment = (input.comment || "").trim();
+    const commentVal = rawComment && rawComment !== "null" && rawComment !== "undefined" ? rawComment : null;
 
     // 3. Upsert or create review in database
     let review;

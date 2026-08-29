@@ -208,7 +208,7 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
       storeId: order.vendorId,
       orderId: id,
       rating,
-      comment: reviewComment,
+      comment: reviewComment.trim() ? reviewComment.trim() : undefined,
     });
 
     if (res.success) {

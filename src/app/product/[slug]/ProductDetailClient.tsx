@@ -7,6 +7,7 @@ import {
   Clock, 
   Heart, 
   Plus, 
+  Minus,
   Store, 
   CheckCircle2, 
   MessageSquare, 
@@ -21,6 +22,7 @@ import {
   Layers,
   Check,
   Bike,
+  ShieldCheck,
   Image as ImageIcon
 } from "lucide-react";
 import Image from "next/image";
@@ -67,6 +69,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         vendorId: initialProduct.storeId || initialProduct.vendorId || initialProduct.store?.id || "",
         vendorName: initialProduct.store?.name || initialProduct.vendorName || "Campus Merchant",
         vendorRating: initialProduct.store?.rating || 4.9,
+        vendorAvatar: initialProduct.store?.logo || "",
         image: initialProduct.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
         description: initialProduct.description || "",
         details: ["Freshly prepared on campus", "Fast hostel delivery"],
@@ -91,6 +94,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       vendorId: "",
       vendorName: "Campus Merchant",
       vendorRating: 5.0,
+      vendorAvatar: "",
       image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
       description: "Freshly prepared campus delicacy.",
       details: ["Freshly prepared on campus", "Fast hostel delivery"],
@@ -113,17 +117,19 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
   // SYNCHRONIZED REVIEWS WITH ACCURATE TIMESTAMPS
   const [dbReviews, setDbReviews] = useState<any[]>(() => {
     if (initialProduct?.store?.reviews && initialProduct.store.reviews.length > 0) {
-      return initialProduct.store.reviews.map((r: any) => ({
-        id: r.id,
-        author: r.user?.name || "Campus Student",
-        avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-        hostel: "Student Hostel",
-        rating: r.rating || 5,
-        date: formatReviewDate(r.createdAt),
-        comment: r.comment || "",
-        likes: 0,
-        isLiked: false,
-      }));
+      return initialProduct.store.reviews
+        .filter((r: any) => r.comment && r.comment.trim() && r.comment !== "null" && r.comment !== "undefined")
+        .map((r: any) => ({
+          id: r.id,
+          author: r.user?.name || "Campus Student",
+          avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+          hostel: "Student Hostel",
+          rating: r.rating || 5,
+          date: formatReviewDate(r.createdAt),
+          comment: r.comment || "",
+          likes: 0,
+          isLiked: false,
+        }));
     }
     return [];
   });
@@ -133,12 +139,15 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
   const reviewsList = useMemo(() => {
     const clientIds = new Set(clientReviews.map((r) => r.id));
     const filteredDb = dbReviews.filter((r) => !clientIds.has(r.id));
-    return [...clientReviews, ...filteredDb];
+    const combined = [...clientReviews, ...filteredDb];
+    return combined.filter(
+      (r) => r.comment && r.comment.trim().length > 0 && r.comment !== "null" && r.comment !== "undefined"
+    );
   }, [clientReviews, dbReviews]);
 
   const averageRating = reviewsList.length > 0
     ? (reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length).toFixed(1)
-    : "0.0";
+    : String(product.rating || "5.0");
 
   const [relatedProducts, setRelatedProducts] = useState<any[]>(() => {
     if (initialProduct?.store?.products) {
@@ -183,6 +192,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             vendorId: p.storeId,
             vendorName: p.store?.name || "Campus Vendor",
             vendorRating: p.store?.rating || 4.9,
+            vendorAvatar: p.store?.logo || "",
             details: ["Freshly prepared on campus", "Fast delivery to all student hostels"],
             prepTime: p.estimatedDelivery || p.store?.estimatedDelivery || "15-20 mins",
             deliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined
@@ -198,17 +208,19 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
           });
 
           if (p.store?.reviews && p.store.reviews.length > 0) {
-            const formatted = p.store.reviews.map((r: any) => ({
-              id: r.id,
-              author: r.user?.name || "Campus Student",
-              avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-              hostel: "Student Hostel",
-              rating: r.rating || 5,
-              date: formatReviewDate(r.createdAt),
-              comment: r.comment || "",
-              likes: 0,
-              isLiked: false,
-            }));
+            const formatted = p.store.reviews
+              .filter((r: any) => r.comment && r.comment.trim().length > 0 && r.comment !== "null" && r.comment !== "undefined")
+              .map((r: any) => ({
+                id: r.id,
+                author: r.user?.name || "Campus Student",
+                avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+                hostel: "Student Hostel",
+                rating: r.rating || 5,
+                date: formatReviewDate(r.createdAt),
+                comment: r.comment || "",
+                likes: 0,
+                isLiked: false,
+              }));
             setDbReviews(formatted);
           }
 
@@ -363,6 +375,11 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
   };
 
   const currentReview = reviewsList[activeReviewIndex] || null;
+  const storeSchedule = getStoreScheduleStatus({
+    isOpen: (product as any).isOpen,
+    openingTime: (product as any).openingTime,
+    closingTime: (product as any).closingTime,
+  });
 
   return (
     <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
@@ -379,12 +396,12 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         </motion.div>
       )}
 
-      {/* HERO PRODUCT IMAGE GALLERY WITH FULL HEIGHT & CONTROLS */}
+      {/* HERO PRODUCT GALLERY */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-900 overflow-hidden group"
+        transition={{ duration: 0.4 }}
+        className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-950 overflow-hidden group"
       >
         <Image
           src={productImages[activeImageIdx] || productImages[0]}
@@ -392,10 +409,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
           fill
           priority
           unoptimized={(productImages[activeImageIdx] || productImages[0] || "").startsWith("data:")}
-          className="object-cover transition-all duration-300"
+          className="object-cover transition-all duration-500 scale-[1.01]"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-black/40" />
 
         {/* Multi-Photo Carousel Arrows */}
         {productImages.length > 1 && (
@@ -403,7 +420,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             <button
               type="button"
               onClick={() => setActiveImageIdx((prev) => (prev - 1 + productImages.length) % productImages.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition active:scale-95 z-10 cursor-pointer"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition active:scale-95 z-10 cursor-pointer shadow-md"
               aria-label="Previous photo"
             >
               <ChevronLeft size={20} />
@@ -411,7 +428,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             <button
               type="button"
               onClick={() => setActiveImageIdx((prev) => (prev + 1) % productImages.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition active:scale-95 z-10 cursor-pointer"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition active:scale-95 z-10 cursor-pointer shadow-md"
               aria-label="Next photo"
             >
               <ChevronRight size={20} />
@@ -424,7 +441,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
                   key={idx}
                   type="button"
                   onClick={() => setActiveImageIdx(idx)}
-                  className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-lg ${
+                  className={`w-11 h-11 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-lg ${
                     activeImageIdx === idx ? "border-[#FBBF24] scale-110 ring-2 ring-amber-400/50" : "border-white/50 opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -435,14 +452,14 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
           </>
         )}
 
-        {/* Floating Top Controls */}
-        <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
+        {/* Floating Glassmorphic Top Controls */}
+        <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-4xl mx-auto z-10">
           <button
             onClick={() => router.back()}
-            className="w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 hover:bg-white text-[#18181B] dark:text-zinc-100 flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-md cursor-pointer border border-white/40 dark:border-zinc-700"
             aria-label="Go back"
           >
-            <ArrowLeft size={22} />
+            <ArrowLeft size={20} />
           </button>
 
           <button
@@ -461,149 +478,126 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
                 profile?.email
               );
             }}
-            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-sm cursor-pointer ${
-              isLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
+            className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all backdrop-blur-md cursor-pointer border border-white/40 dark:border-zinc-700 ${
+              isLiked ? "bg-rose-500 text-white border-rose-400" : "bg-white/90 dark:bg-zinc-900/90 hover:bg-white text-[#18181B] dark:text-zinc-100"
             }`}
             aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
             title={isLiked ? "Remove from favorites" : "Add to favorites"}
           >
-            <Heart size={20} className={isLiked ? "fill-white" : ""} />
+            <Heart size={18} className={isLiked ? "fill-white" : ""} />
           </button>
         </div>
 
         {/* Stock status overlay */}
         {!product.isAvailable && (
-          <div className="absolute inset-0 bg-[#18181B]/70 backdrop-blur-sm flex items-center justify-center">
-            <span className="bg-red-500 text-white font-heading font-extrabold text-sm px-4 py-2 rounded-full shadow-lg border border-red-400 uppercase tracking-wider">
+          <div className="absolute inset-0 bg-[#18181B]/75 backdrop-blur-xs flex items-center justify-center">
+            <span className="bg-rose-600 text-white font-heading font-extrabold text-sm px-5 py-2.5 rounded-full shadow-xl border border-rose-400 uppercase tracking-wider">
               Currently Sold Out
             </span>
           </div>
         )}
       </motion.div>
 
-      {/* MAIN CONTAINER */}
-      <div className="px-4 md:px-8 max-w-4xl mx-auto w-full -mt-6 relative z-20 space-y-4">
-        
-        {/* MAIN PRODUCT HEADER CARD */}
+      {/* SINGLE UNIFIED MASTER PRODUCT CARD */}
+      <div className="px-4 md:px-6 max-w-3xl mx-auto w-full -mt-6 relative z-20">
         <motion.div 
           initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.4 }}
-          className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-4 md:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none border border-white dark:border-zinc-800 space-y-3"
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="bg-white dark:bg-[#121215] rounded-3xl p-6 md:p-8 shadow-xl shadow-indigo-950/5 dark:shadow-black/40 border border-slate-200/90 dark:border-zinc-800 space-y-6"
         >
-          {/* VENDOR LINK & SCHEDULE BADGE */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link 
-                href={`/vendor/${product.vendorId}`}
-                className="group/vendor inline-flex items-center gap-1.5 text-xs font-body font-semibold text-[#312E81] dark:text-indigo-300 hover:text-[#1E1B4B] dark:hover:text-white transition-colors"
-                title={`Visit ${product.vendorName} Store`}
-              >
-                <Store size={13} className="text-[#312E81] dark:text-indigo-400 group-hover/vendor:scale-110 transition-transform shrink-0" />
-                <span className="underline underline-offset-2 decoration-indigo-300 dark:decoration-indigo-600 group-hover/vendor:decoration-[#312E81]">
+          {/* STORE INFO & OPEN STATUS BADGE (WITHOUT TIME) */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-slate-100 dark:border-zinc-800/80">
+            <Link 
+              href={`/vendor/${product.vendorId}`}
+              className="group/vendor inline-flex items-center gap-2 text-xs font-body font-semibold text-[#18181B] dark:text-zinc-200 hover:text-[#312E81] dark:hover:text-indigo-300 transition-colors"
+              title={`Visit ${product.vendorName}`}
+            >
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-zinc-800 border border-indigo-100 dark:border-zinc-700 overflow-hidden flex items-center justify-center shrink-0">
+                {product.vendorAvatar ? (
+                  <img src={product.vendorAvatar} alt={product.vendorName} className="w-full h-full object-cover" />
+                ) : (
+                  <Store size={15} className="text-[#312E81] dark:text-indigo-400" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <span className="font-heading font-extrabold text-xs md:text-sm block truncate group-hover/vendor:underline decoration-[#312E81]">
                   {product.vendorName}
                 </span>
-                <span className="text-[10px] text-[#71717A] dark:text-zinc-400 font-normal group-hover/vendor:translate-x-0.5 transition-transform">
-                  (Store ↗)
+                <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium block">
+                  Campus Verified Kitchen
                 </span>
-              </Link>
+              </div>
+            </Link>
 
-              {(() => {
-                const sched = getStoreScheduleStatus({
-                  isOpen: (product as any).isOpen,
-                  openingTime: (product as any).openingTime,
-                  closingTime: (product as any).closingTime,
-                });
-                return (
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                    sched.isOpenNow
-                      ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                      : "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-                  }`}>
-                    {sched.isOpenNow ? `Open • ${sched.scheduleText}` : `Closed • Opens ${sched.openTimeFormatted}`}
-                  </span>
-                );
-              })()}
-            </div>
+            <div className="flex items-center gap-2">
+              {/* STORE STATUS (NO TIME - CLEAN OPEN/CLOSED BADGE) */}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-extrabold border ${
+                storeSchedule.isOpenNow
+                  ? "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                  : "bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${storeSchedule.isOpenNow ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                <span>{storeSchedule.isOpenNow ? "Open Now" : "Closed"}</span>
+              </span>
 
-            {reviewsList.length > 0 ? (
-              <div className="flex items-center gap-1.5 bg-amber-50/80 dark:bg-amber-950/40 px-2.5 py-1 rounded-full border border-amber-200/60 dark:border-amber-800/40 text-[11px] font-body text-[#18181B] dark:text-zinc-100">
+              {/* RATING BADGE */}
+              <div className="flex items-center gap-1 bg-amber-50/80 dark:bg-amber-950/40 px-2.5 py-1 rounded-full border border-amber-200/60 dark:border-amber-800/40 text-[11px] font-body text-[#18181B] dark:text-zinc-100">
                 <Star size={12} className="fill-[#FBBF24] text-[#FBBF24]" />
                 <span className="font-extrabold font-heading">{averageRating}</span>
-                <span className="text-[#71717A] dark:text-zinc-400 font-medium">({reviewsList.length})</span>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsWriteReviewOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-heading font-extrabold text-[11px] hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all active:scale-95 shadow-2xs group cursor-pointer"
-                title="Leave a review for this product"
-              >
-                <Star size={12} className="text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform" />
-                <span>Leave a Review</span>
-              </button>
-            )}
+            </div>
           </div>
 
-          {/* Title & Price */}
-          <div>
-            <h1 className="text-xl md:text-2xl font-heading font-extrabold text-[#18181B] dark:text-zinc-100 tracking-tight leading-tight">
+          {/* PRODUCT TITLE & PRICING */}
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-3xl font-heading font-black text-[#18181B] dark:text-zinc-100 tracking-tight leading-snug">
               {product.name}
             </h1>
             
-            <div className="flex items-baseline gap-3 mt-1.5">
-              <span className="text-2xl md:text-3xl font-body font-extrabold text-[#312E81] dark:text-indigo-400">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="text-3xl md:text-4xl font-heading font-black text-[#312E81] dark:text-indigo-400 tracking-tight">
                 ₦{unitPrice.toLocaleString()}
               </span>
               {(sizeExtra > 0 || addOnsExtra > 0) && (
-                <span className="text-xs text-slate-400 line-through">
+                <span className="text-xs font-semibold text-slate-400 line-through">
                   Base ₦{basePrice.toLocaleString()}
                 </span>
               )}
-              <span className="text-[11px] font-bold text-[#16A34A] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                In Stock & Ready
+              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                In Stock & Fresh
               </span>
             </div>
+
+            {/* PREPARATION & DELIVERY STATS */}
+            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-[#71717A] dark:text-zinc-400 font-medium">
+              <div className="flex items-center gap-1.5">
+                <Clock size={14} className="text-[#312E81] dark:text-indigo-400" />
+                <span>Est. Delivery: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{product.prepTime}</strong></span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1.5">
+                <Bike size={14} className="text-amber-500" />
+                <span>Delivery: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{Number(product.deliveryFee) === 0 ? "Free" : `₦${Number(product.deliveryFee || 500).toLocaleString()}`}</strong></span>
+              </div>
+            </div>
           </div>
 
-          {/* Prep Time & Delivery Info */}
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-zinc-800 text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal">
-            <div className="flex items-center gap-1.5">
-              <Clock size={14} className="text-[#312E81] dark:text-indigo-400" />
-              <span>Est. Delivery: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{product.prepTime}</strong></span>
-            </div>
-            <span>•</span>
-            <div className="flex items-center gap-1.5">
-              <Bike size={14} className="text-amber-500" />
-              <span>Delivery Fee: <strong className="text-slate-900 dark:text-zinc-100 font-bold">{Number(product.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(product.deliveryFee || 500).toLocaleString()}`}</strong></span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ABOUT THIS ITEM & CUSTOMIZATIONS CARD */}
-        <motion.div 
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/90 dark:border-zinc-800 relative overflow-hidden space-y-4"
-        >
-          {/* Section Title */}
-          <div>
-            <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
-              About this Item
+          {/* DESCRIPTION */}
+          <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
+            <h3 className="font-heading font-extrabold text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              Description
             </h3>
-            <p className="text-[#18181B] dark:text-zinc-200 text-xs md:text-sm leading-relaxed font-body font-normal mt-1">
+            <p className="text-[#18181B] dark:text-zinc-200 text-xs md:text-sm leading-relaxed font-body">
               {structuredData.description || product.description || "Freshly prepared campus delicacy."}
             </p>
           </div>
 
           {/* KEY INGREDIENTS LIST */}
           {structuredData.ingredients.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
-              <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
-                Key Ingredients & Highlights
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
+              <h4 className="font-heading font-extrabold text-xs text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                Key Highlights
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {structuredData.ingredients.map((ing, idx) => (
@@ -620,47 +614,48 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
 
           {/* PORTION SIZES BUILDER */}
           {structuredData.sizes.length > 0 && (
-            <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers size={14} className="text-[#312E81] dark:text-indigo-400" />
-                  Choose Portion Size
-                </h4>
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Required</span>
+            <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-heading font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                  Portion Size
+                </span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase">Required</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
                   onClick={() => setSelectedSize(null)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                  className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
                     selectedSize === null
-                      ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold shadow-xs"
-                      : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                      ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-300 font-bold"
+                      : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 text-slate-700 dark:text-zinc-300"
                   }`}
                 >
-                  <span className="text-xs">Regular (Standard)</span>
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs">Regular</span>
+                  <span className="text-xs font-mono font-bold">
                     ₦{basePrice.toLocaleString()}
                   </span>
-                </div>
+                </button>
 
                 {structuredData.sizes.map((s, idx) => {
                   const isSelected = selectedSize?.name === s.name;
                   return (
-                    <div
+                    <button
                       key={idx}
+                      type="button"
                       onClick={() => setSelectedSize(s)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
                         isSelected
-                          ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold shadow-xs"
-                          : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                          ? "border-[#312E81] dark:border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 text-[#312E81] dark:text-indigo-300 font-bold"
+                          : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 text-slate-700 dark:text-zinc-300"
                       }`}
                     >
                       <span className="text-xs">{s.name}</span>
                       <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         +₦{s.price.toLocaleString()}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -669,76 +664,84 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
 
           {/* CUSTOM ADD-ONS */}
           {structuredData.addons.length > 0 && (
-            <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-amber-500" />
+            <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-heading font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                   Extras & Add-Ons
-                </h4>
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Optional</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase">Optional</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {structuredData.addons.map((a, idx) => {
                   const isChecked = selectedAddOns.some((item) => item.name === a.name);
                   return (
-                    <div
+                    <button
                       key={idx}
+                      type="button"
                       onClick={() => toggleAddOn(a)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
                         isChecked
-                          ? "border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 font-bold shadow-xs"
-                          : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800/50"
+                          ? "border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 text-amber-950 dark:text-amber-200 font-bold"
+                          : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 text-slate-700 dark:text-zinc-300"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
                           isChecked ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300 dark:border-zinc-700"
                         }`}>
                           {isChecked && <Check size={10} className="stroke-[3]" />}
-                        </div>
+                        </span>
                         <span className="text-xs">{a.name}</span>
                       </div>
                       <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         +₦{a.price.toLocaleString()}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* EXACT ORIGINAL ADD TO CART BUTTON WITH STANDALONE CIRCULAR "+" BUTTON BESIDE IT */}
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2.5 relative z-10">
+          {/* CLEAN, MINIMALIST ADD TO CART ACTION BAR */}
+          <div className="pt-5 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-3">
+            {/* Inline Quantity Stepper */}
+            <div className="flex items-center h-12 border border-slate-200 dark:border-zinc-700 rounded-xl px-1 bg-slate-50 dark:bg-zinc-800/80 shrink-0">
+              <button
+                type="button"
+                onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                disabled={quantity <= 1}
+                className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-zinc-300 hover:text-black dark:hover:text-white disabled:opacity-30 transition active:scale-90 cursor-pointer"
+                aria-label="Decrease quantity"
+              >
+                <Minus size={15} strokeWidth={2.2} />
+              </button>
+
+              <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 w-7 text-center select-none">
+                {quantity}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setQuantity((prev) => prev + 1)}
+                className="w-9 h-9 flex items-center justify-center text-slate-600 dark:text-zinc-300 hover:text-black dark:hover:text-white transition active:scale-90 cursor-pointer"
+                aria-label="Increase quantity"
+              >
+                <Plus size={15} strokeWidth={2.2} />
+              </button>
+            </div>
+
+            {/* Solid, Pristine Add to Cart CTA (NO inner container, NO gradient) */}
             <button
               onClick={handleAddToCart}
               disabled={!product.isAvailable}
-              className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 group flex-1 cursor-pointer"
+              className="flex-1 h-12 bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-sm rounded-xl transition-all active:scale-[0.99] flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer shadow-sm"
             >
-              <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner group-hover:scale-110 group-hover:bg-white/25 transition-all">
-                <CustomCartIcon size={17} strokeWidth={2.2} />
-              </div>
-              
-              <span className="font-heading font-extrabold tracking-wider text-sm md:text-base text-white">
-                Add to Cart • ₦{totalPrice.toLocaleString()}
-              </span>
-
-              {quantity > 1 && (
-                <span className="bg-[#FBBF24] text-[#1E1B4B] font-heading font-extrabold text-xs px-2 py-0.5 rounded-full shadow-sm group-hover:scale-105 transition-transform">
-                  ×{quantity}
-                </span>
-              )}
-            </button>
-
-            {/* STANDALONE "+" BUTTON */}
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              className="w-14 h-14 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white border border-indigo-100/90 dark:border-zinc-700 flex items-center justify-center shadow-xs active:scale-90 transition-all shrink-0 group cursor-pointer"
-              title="Increase Quantity"
-              aria-label="Increase Quantity"
-            >
-              <Plus size={20} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
+              <CustomCartIcon size={18} strokeWidth={2.2} />
+              <span>Add to Cart</span>
+              <span className="opacity-60">•</span>
+              <span>₦{totalPrice.toLocaleString()}</span>
             </button>
           </div>
         </motion.div>
@@ -750,10 +753,10 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false }}
             transition={{ duration: 0.4, delay: 0.15 }}
-            className="bg-white dark:bg-zinc-900 rounded-2xl p-4 md:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800 space-y-3.5 relative overflow-hidden"
+            className="bg-white dark:bg-[#121215] rounded-3xl p-6 md:p-7 shadow-lg shadow-indigo-950/5 dark:shadow-black/40 border border-slate-200/90 dark:border-zinc-800 space-y-4 relative overflow-hidden mt-8 md:mt-10"
           >
             {/* Header Bar */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800/80">
               <div className="flex items-center gap-2">
                 <MessageSquare size={18} className="text-[#312E81] dark:text-indigo-400" />
                 <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
@@ -764,9 +767,9 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
               {/* WRITE REVIEW BUTTON */}
               <button
                 onClick={() => setIsWriteReviewOpen(true)}
-                className="px-3 py-1.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-[11px] md:text-xs whitespace-nowrap rounded-full shadow-sm hover:shadow-indigo-900/30 active:scale-95 transition-all flex items-center gap-1.5 border border-indigo-700/50 group cursor-pointer"
+                className="px-3.5 py-1.5 bg-[#312E81] dark:bg-indigo-600 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs rounded-full shadow-xs active:scale-95 transition-all flex items-center gap-1.5 border border-indigo-700/50 group cursor-pointer"
               >
-                <div className="w-4.5 h-4.5 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-2xs group-hover:scale-110 transition-transform">
+                <div className="w-4 h-4 rounded-full bg-[#FBBF24] text-[#312E81] flex items-center justify-center font-bold shadow-2xs group-hover:scale-110 transition-transform">
                   <Edit3 size={10} className="text-[#312E81]" />
                 </div>
                 <span>Write Review</span>
@@ -789,7 +792,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
 
                     <div className="flex items-center justify-between gap-3 relative z-10">
                       <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                        <div className="w-12 h-12 rounded-full relative overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md shrink-0">
+                        <div className="w-11 h-11 rounded-full relative overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md shrink-0">
                           {(() => {
                             const revAvatar = getSafeImageUrl(currentReview.avatar);
                             return (
@@ -802,7 +805,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
                             {currentReview.author}
                           </h4>
                           <span className="text-[11px] text-[#71717A] dark:text-zinc-400 font-body font-normal block">
-                            {currentReview.hostel} • {currentReview.date}
+                            {currentReview.date}
                           </span>
                         </div>
                       </div>
@@ -845,17 +848,17 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setActiveReviewIndex((prev) => (prev - 1 + reviewsList.length) % reviewsList.length)}
-                    className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-xs active:scale-90 cursor-pointer"
                     aria-label="Previous review"
                   >
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={16} />
                   </button>
                   <button
                     onClick={() => setActiveReviewIndex((prev) => (prev + 1) % reviewsList.length)}
-                    className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 hover:bg-[#312E81] dark:hover:bg-indigo-600 text-[#312E81] dark:text-indigo-400 hover:text-white flex items-center justify-center transition-all shadow-xs active:scale-90 cursor-pointer"
                     aria-label="Next review"
                   >
-                    <ChevronRight size={18} />
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
@@ -867,7 +870,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false }}
             transition={{ duration: 0.4, delay: 0.15 }}
-            className="bg-white dark:bg-zinc-900 rounded-2xl p-5 md:p-6 shadow-xs border border-slate-200/80 dark:border-zinc-800 text-center space-y-3.5"
+            className="bg-white dark:bg-[#121215] rounded-3xl p-6 md:p-7 shadow-lg shadow-indigo-950/5 dark:shadow-black/40 border border-slate-200/90 dark:border-zinc-800 text-center space-y-3.5 mt-8 md:mt-10"
           >
             <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center mx-auto border border-amber-200/60 dark:border-amber-800/60 shadow-2xs">
               <Star size={22} className="fill-amber-400 text-amber-400" />
@@ -895,18 +898,26 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
           </motion.div>
         )}
 
-        {/* RELATED PRODUCTS */}
+        {/* RELATED PRODUCTS FROM SAME VENDOR */}
         {relatedProducts.length > 0 && (
           <motion.div 
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-4 pt-4"
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="space-y-4 pt-8"
           >
-            <h3 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100">
-              More from {product.vendorName}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading font-extrabold text-lg md:text-xl text-[#18181B] dark:text-zinc-100">
+                More from {product.vendorName}
+              </h3>
+              <Link
+                href={`/vendor/${product.vendorId}`}
+                className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline"
+              >
+                View Storefront →
+              </Link>
+            </div>
             <ProductGrid
               products={relatedProducts}
               onAddProduct={(id) => {
@@ -921,6 +932,8 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
                     vendorId: item.vendorId,
                     vendorName: item.vendorName,
                   });
+                  setToastMessage(`✓ Added "${item.name}" to cart!`);
+                  setTimeout(() => setToastMessage(""), 2200);
                 }
               }}
             />

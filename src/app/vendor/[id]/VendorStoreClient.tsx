@@ -447,8 +447,18 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
           </div>
 
           <div className="space-y-3">
-            {vendor.reviews && vendor.reviews.length > 0 ? (
-              vendor.reviews.map((rev: any) => {
+            {(() => {
+              const writtenReviews = (vendor.reviews || []).filter(
+                (r: any) => r.comment && r.comment.trim() && r.comment !== "null" && r.comment !== "undefined"
+              );
+              if (writtenReviews.length === 0) {
+                return (
+                  <div className="text-center py-6 text-xs text-[#71717A] dark:text-zinc-400">
+                    No written feedback yet for this vendor. Star ratings are calculated from verified orders!
+                  </div>
+                );
+              }
+              return writtenReviews.map((rev: any) => {
                 const authorInitial = (rev.author || "S").charAt(0).toUpperCase();
                 const authorName = rev.author || "Verified Student";
                 const reviewDate = rev.date || "Recently";
@@ -462,7 +472,7 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
                         </div>
                         <div>
                           <span className="font-bold text-xs text-[#18181B] dark:text-zinc-100 block">{authorName}</span>
-                          <span className="text-[10px] text-[#71717A] dark:text-zinc-400">{rev.hostel || "Student Hostel"}</span>
+                          <span className="text-[10px] text-[#71717A] dark:text-zinc-400 font-medium">{reviewDate}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-amber-400">
@@ -471,18 +481,11 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
                         ))}
                       </div>
                     </div>
-                    {rev.comment && (
-                      <p className="text-xs text-[#71717A] dark:text-zinc-300 font-medium pl-9">&ldquo;{rev.comment}&rdquo;</p>
-                    )}
-                    <span className="text-[10px] text-[#A1A1AA] dark:text-zinc-500 block pl-9 font-medium">{reviewDate}</span>
+                    <p className="text-xs text-[#71717A] dark:text-zinc-300 font-medium pl-9">&ldquo;{rev.comment}&rdquo;</p>
                   </div>
                 );
-              })
-            ) : (
-              <div className="text-center py-6 text-xs text-[#71717A] dark:text-zinc-400">
-                No reviews yet for this vendor. Be the first to leave a review!
-              </div>
-            )}
+              });
+            })()}
           </div>
         </div>
 

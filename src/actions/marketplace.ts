@@ -122,6 +122,14 @@ export async function getLiveStoreById(storeId: string) {
           orderBy: { createdAt: "desc" },
         },
         reviews: {
+          where: {
+            AND: [
+              { comment: { not: null } },
+              { comment: { not: "" } },
+              { comment: { not: "null" } },
+              { comment: { not: "undefined" } },
+            ],
+          },
           include: {
             user: { select: { name: true, image: true } },
           },
@@ -174,6 +182,14 @@ export async function getLiveProductBySlugOrId(slugOrId: string) {
         include: {
           user: { select: { name: true, phone: true } },
           reviews: {
+            where: {
+              AND: [
+                { comment: { not: null } },
+                { comment: { not: "" } },
+                { comment: { not: "null" } },
+                { comment: { not: "undefined" } },
+              ],
+            },
             include: {
               user: { select: { name: true, image: true } },
             },
