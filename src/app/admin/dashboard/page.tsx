@@ -416,7 +416,13 @@ export default function AdminDashboardPage() {
 
   const studentUsersList = useMemo(() => {
     const list = adminData?.users || [];
-    return list.filter((u: any) => u.role !== "VENDOR" && !u.store);
+    return list.filter((u: any) => 
+      u.role !== "ADMIN" && 
+      u.role !== "VENDOR" && 
+      !u.store &&
+      u.email?.toLowerCase() !== "admin@campuslightson.com" &&
+      u.name !== "Platform Super Admin"
+    );
   }, [adminData?.users]);
 
   const filteredUsers = useMemo(() => {
@@ -1185,9 +1191,8 @@ export default function AdminDashboardPage() {
                     <th className="p-4">Student Name</th>
                     <th className="p-4">Email Address</th>
                     <th className="p-4">Hostel / Location</th>
-                    <th className="p-4">Role</th>
                     <th className="p-4">Orders Placed</th>
-                    <th className="p-4 text-right">Manage</th>
+                    <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
@@ -1217,44 +1222,25 @@ export default function AdminDashboardPage() {
                             <span className={isDark ? "text-zinc-500" : "text-zinc-400"}>Campus Resident</span>
                           )}
                         </td>
-                        <td className="p-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
-                            {u.role || "STUDENT"}
-                          </span>
-                        </td>
                         <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>
                           {u._count?.orders || 0}
                         </td>
                         <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <select
-                              value={u.role}
-                              disabled={roleUpdating === u.id}
-                              onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
-                              className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border font-medium ${
-                                isDark ? "bg-zinc-950 border-zinc-700 text-zinc-200" : "bg-white border-slate-300 text-zinc-800"
-                              }`}
-                            >
-                              <option value="STUDENT">STUDENT</option>
-                              <option value="VENDOR">VENDOR</option>
-                              <option value="ADMIN">ADMIN</option>
-                            </select>
-
-                            <button
-                              type="button"
-                              onClick={() => setUserToDelete(u)}
-                              className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 transition-all active:scale-95 cursor-pointer"
-                              title={`Delete user account ${u.email}`}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setUserToDelete(u)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 font-heading font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                            title={`Delete student account ${u.email}`}
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-zinc-400">
+                      <td colSpan={5} className="p-8 text-center text-zinc-400">
                         No student users registered in database yet.
                       </td>
                     </tr>
