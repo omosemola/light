@@ -44,11 +44,19 @@ function SessionSync({ children }: { children: React.ReactNode }) {
         });
       }
     } else if (status === "unauthenticated") {
-      // If unauthenticated on web app but store still has stale admin identity, reset to visitor
-      if (profile.name === "Platform Super Admin" || profile.email === "admin@campuslightson.com") {
+      // If unauthenticated on web app but store still has stale admin/vendor identity, reset to visitor
+      if (
+        profile.name === "Platform Super Admin" ||
+        profile.email === "admin@campuslightson.com" ||
+        profile.role === "ADMIN" ||
+        profile.role === "VENDOR"
+      ) {
         updateProfile({
-          name: "Campus Visitor",
+          name: "Visitor",
           email: "",
+          hostel: "",
+          phone: "",
+          avatar: "https://api.dicebear.com/7.x/adventurer/png?seed=Midnight&backgroundColor=ffd5dc",
           role: "STUDENT",
           isVisitor: true,
         });

@@ -111,7 +111,6 @@ function compressImage(file: File, maxWidth = 720, quality = 0.72): Promise<stri
 
 export default function VendorDashboardPage() {
   const router = useRouter();
-  const { profile, logoutUser } = useUserStore();
   const { isDark, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState<any>(null);
@@ -893,7 +892,6 @@ export default function VendorDashboardPage() {
                 type="button"
                 onClick={async () => {
                   await logoutVendor();
-                  logoutUser();
                   window.location.href = "/vendor/login";
                 }}
                 className="px-3 py-2.5 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 font-heading font-bold text-xs flex items-center gap-1 backdrop-blur-md transition-all active:scale-95 cursor-pointer"

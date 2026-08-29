@@ -6,11 +6,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Store, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, ChefHat, ArrowRight, AlertCircle } from "lucide-react";
 import { authenticateVendor } from "@/actions/vendor";
-import { useUserStore } from "@/lib/userStore";
 
 export default function VendorLoginPage() {
   const router = useRouter();
-  const { updateProfile } = useUserStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,12 +29,6 @@ export default function VendorLoginPage() {
     try {
       const res = await authenticateVendor(email.trim(), password.trim());
       if (res.success) {
-        updateProfile({
-          email: res.userEmail || email.trim(),
-          name: res.storeName || "Campus Merchant",
-          isVisitor: false,
-        });
-
         setToastMessage(`Welcome back! Opening ${res.storeName || "Store"} Terminal...`);
         setTimeout(() => {
           window.location.href = "/vendor/dashboard";

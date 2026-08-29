@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, AlertCircle } from "lucide-react";
-import { useUserStore } from "@/lib/userStore";
 import { authenticateAdmin, checkAdminSession } from "@/actions/admin";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { updateProfile } = useUserStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,12 +39,6 @@ export default function AdminLoginPage() {
     try {
       const res = await authenticateAdmin(email.trim(), password.trim());
       if (res.success && res.user) {
-        updateProfile({
-          email: res.user.email || "admin@campuslightson.com",
-          name: res.user.name || "Platform Super Admin",
-          role: "ADMIN",
-          isVisitor: false,
-        });
         if (typeof window !== "undefined") {
           sessionStorage.setItem("lightson_admin_auth", "true");
         }

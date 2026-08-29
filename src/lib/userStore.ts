@@ -39,6 +39,7 @@ export const useUserStore = create<UserState>()(
         savedStoresCount: 0,
         savedLocations: [],
         isVisitor: true,
+        role: "STUDENT",
       },
       hasSeenOnboarding: false,
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
@@ -59,12 +60,13 @@ export const useUserStore = create<UserState>()(
             savedStoresCount: 0,
             savedLocations: [],
             isVisitor: true,
+            role: "STUDENT",
           },
           hasSeenOnboarding: false,
         }),
     }),
     {
-      name: "lightson-user-app-storage-v9",
+      name: "lightson-user-app-storage-v10",
     }
   )
 );

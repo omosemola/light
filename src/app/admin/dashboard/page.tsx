@@ -36,7 +36,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { useUserStore } from "@/lib/userStore";
 import { 
   getAdminDashboardData, 
   updateSupportTicketStatus, 
@@ -56,7 +55,6 @@ import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { profile, updateProfile, logoutUser } = useUserStore();
   const { isDark, setTheme } = useTheme();
   const INITIAL_ADMIN_DATA = {
     success: true,
@@ -151,9 +149,8 @@ export default function AdminDashboardPage() {
     async function verifyAndLoadAdmin() {
       try {
         const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
-        const isClientAdmin = profile.role === "ADMIN" || profile.email?.toLowerCase() === "admin@campuslightson.com";
 
-        if (hasAdminFlag || isClientAdmin) {
+        if (hasAdminFlag) {
           await fetchAdminData();
           return;
         }
@@ -161,12 +158,6 @@ export default function AdminDashboardPage() {
         // Check server session cookie
         const session = await checkAdminSession();
         if (session && session.isAuthenticated && session.user) {
-          updateProfile({
-            email: session.user.email,
-            name: session.user.name,
-            role: "ADMIN",
-            isVisitor: false,
-          });
           if (typeof window !== "undefined") {
             sessionStorage.setItem("lightson_admin_auth", "true");
           }
@@ -190,7 +181,6 @@ export default function AdminDashboardPage() {
       sessionStorage.removeItem("lightson_admin_auth");
     }
     await logoutAdmin();
-    logoutUser();
     window.location.href = "/admin/login";
   };
 
