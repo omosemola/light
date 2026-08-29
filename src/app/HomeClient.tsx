@@ -43,6 +43,7 @@ import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { getUserProfileDb } from "@/actions/account";
 import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import WelcomePage from "@/app/welcome/page";
@@ -187,7 +188,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { isDark, toggleTheme } = useTheme();
   const { data: session, status } = useSession();
-  const { profile, hasSeenOnboarding } = useUserStore();
+  const { profile, hasSeenOnboarding, updateProfile } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [products, setProducts] = useState<any[]>(initialProducts);
@@ -294,15 +295,30 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   // Seamless Identity Resolution: check active session or store email first to prevent any visitor flash
   const isAuthenticated = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
 
-  const rawName = session?.user?.name || (profile.name && profile.name !== "Visitor" && profile.name !== "Platform Super Admin" 
-    ? profile.name 
-    : (isAuthenticated ? (session?.user?.email?.split("@")[0] || profile.email?.split("@")[0] || "Student") : "Explorer"));
+  useEffect(() => {
+    if (profile.email && !profile.isVisitor && profile.email !== "visitor@light.app") {
+      getUserProfileDb(profile.email).then((res) => {
+        if (res.success && res.user) {
+          if (res.user.image && res.user.image !== profile.avatar) {
+            updateProfile({ avatar: res.user.image });
+          }
+          if (res.user.name && res.user.name !== profile.name) {
+            updateProfile({ name: res.user.name });
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [profile.email, profile.isVisitor, profile.avatar, profile.name, updateProfile]);
+
+  const rawName = (profile.name && profile.name !== "Visitor" && profile.name !== "Platform Super Admin")
+    ? profile.name
+    : (session?.user?.name || (isAuthenticated ? (session?.user?.email?.split("@")[0] || profile.email?.split("@")[0] || "Student") : "Explorer"));
 
   const firstName = rawName.split(" ")[0];
 
-  const userAvatar = session?.user?.image || (profile.avatar && profile.avatar !== "/visitor-avatar.png" 
-    ? profile.avatar 
-    : (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
+  const userAvatar = (profile.avatar && profile.avatar !== "/visitor-avatar.png")
+    ? profile.avatar
+    : (session?.user?.image || (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
 
   if (!isMounted) {
     return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
@@ -370,7 +386,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                 {isDark ? <Sun size={18} className="text-amber-400 fill-amber-400/20" /> : <Moon size={18} className="text-amber-300 fill-amber-300/20" />}
               </button>
 
-              <Link href="/profile" className="w-12 h-12 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shadow-md relative group hover:scale-105 transition-all bg-white shrink-0">
+              <Link href="/profile" prefetch={true} className="w-12 h-12 rounded-full border-2 border-[#FBBF24] p-0.5 overflow-hidden shadow-md relative group hover:scale-105 transition-all bg-white shrink-0">
                 <Image
                   src={userAvatar}
                   alt={profile.name || "Profile"}
@@ -384,7 +400,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
           </div>
 
           {/* Search Bar */}
-          <Link href="/search" className="block relative w-full group">
+          <Link href="/search" prefetch={true} className="block relative w-full group">
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#71717A] dark:text-zinc-400">
               <CustomSearchIcon size={22} />
             </div>
@@ -450,7 +466,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                     <div className="flex items-center gap-3">
                       <Link
                         href={slide.link}
-                        className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-400 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-amber-500/20 active:scale-95 transition-all group/btn"
+                        prefetch={true}
+                        className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-400 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-amber-500/20 active:scale-95 transition-all group/btn cursor-pointer"
                       >
                         <span>{slide.buttonText}</span>
                         <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -500,7 +517,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             </div>
             <Link
               href="/search"
-              className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline flex items-center gap-1"
+              prefetch={true}
+              className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
             >
               All Categories <ArrowRight size={13} />
             </Link>
@@ -513,7 +531,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                 <Link
                   key={i}
                   href={`/category/${cat.slug}`}
-                  className="flex flex-col items-center justify-center min-w-[88px] py-3.5 px-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 hover:shadow-md transition-all group"
+                  prefetch={true}
+                  className="flex flex-col items-center justify-center min-w-[88px] py-3.5 px-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 hover:shadow-md transition-all group cursor-pointer"
                 >
                   <div className="w-10 h-10 flex items-center justify-center mb-1 transition-transform duration-200 group-hover:scale-115">
                     <IconComponent size={28} className={`${cat.iconColor} transition-colors drop-shadow-xs`} />

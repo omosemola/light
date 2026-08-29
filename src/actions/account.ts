@@ -122,6 +122,7 @@ export async function updateUserProfileDb(
     revalidatePath("/profile");
     revalidatePath("/profile/settings");
     revalidatePath("/profile/locations");
+    revalidatePath("/");
 
     return { success: true, user };
   } catch (error: any) {

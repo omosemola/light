@@ -13,6 +13,7 @@ import {
 } from "@/lib/email";
 import { sendOrderDeliverySMS } from "@/lib/sms";
 import { generateUniqueProductSlug } from "@/lib/slugify";
+import { clearMarketplaceCache } from "@/actions/marketplace";
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
@@ -755,6 +756,7 @@ export async function updateVendorProfile(data: {
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath(`/vendor/${data.storeId}`);
+    await clearMarketplaceCache();
 
     return { 
       success: true, 

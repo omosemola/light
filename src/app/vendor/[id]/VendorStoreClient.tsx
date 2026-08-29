@@ -107,6 +107,13 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
   const [loading, setLoading] = useState(!initialStore);
 
   useEffect(() => {
+    if (initialStore) {
+      setVendor(formatStoreData(initialStore));
+      setLoading(false);
+    }
+  }, [initialStore]);
+
+  useEffect(() => {
     let active = true;
     async function refreshStore() {
       try {

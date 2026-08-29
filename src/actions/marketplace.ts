@@ -1,16 +1,23 @@
 "use server";
 
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { computeIsStoreOpen } from "@/lib/storeSchedule";
 import { parseProductImages } from "@/lib/productOptions";
 import { slugify } from "@/lib/slugify";
 
-// Fast server in-memory cache (15-second TTL) for instant 1-click page transitions
+// Fast server in-memory caches (15-30 second TTL) for instant 1-click page transitions
 let cachedHomepageData: { timestamp: number; data: any } | null = null;
-const CACHE_TTL_MS = 15000;
+const cachedProductsMap = new Map<string, { timestamp: number; data: any }>();
+const cachedStoresMap = new Map<string, { timestamp: number; data: any }>();
+const cachedCategoriesMap = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL_MS = 20000;
 
 export async function clearMarketplaceCache() {
   cachedHomepageData = null;
+  cachedProductsMap.clear();
+  cachedStoresMap.clear();
+  cachedCategoriesMap.clear();
 }
 
 export async function getLiveHomepageData() {
@@ -101,6 +108,12 @@ export async function getLiveHomepageData() {
 
 export async function getLiveStoreById(storeId: string) {
   try {
+    const now = Date.now();
+    const cached = cachedStoresMap.get(storeId);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       include: {
@@ -127,7 +140,9 @@ export async function getLiveStoreById(storeId: string) {
       return { success: false, error: "Store not found" };
     }
 
-    return { success: true, store };
+    const result = { success: true, store };
+    cachedStoresMap.set(storeId, { timestamp: now, data: result });
+    return result;
   } catch (error: any) {
     console.error("Error fetching store by ID:", error);
     return { success: false, error: error.message };
@@ -148,6 +163,11 @@ export async function getLiveProductBySlugOrId(slugOrId: string) {
     }
 
     const cleanSlug = slugify(raw);
+    const now = Date.now();
+    const cached = cachedProductsMap.get(raw) || cachedProductsMap.get(cleanSlug);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
 
     const productInclude = {
       store: {
@@ -241,7 +261,16 @@ export async function getLiveProductBySlugOrId(slugOrId: string) {
       product.store.isOpen = computeIsStoreOpen(product.store);
     }
 
-    return { success: true, product };
+    const result = { success: true, product };
+    cachedProductsMap.set(raw, { timestamp: now, data: result });
+    if (product.slug) {
+      cachedProductsMap.set(product.slug, { timestamp: now, data: result });
+    }
+    if (product.id) {
+      cachedProductsMap.set(product.id, { timestamp: now, data: result });
+    }
+
+    return result;
   } catch (error: any) {
     console.error("Error fetching product by slug or ID:", error);
     return { success: false, error: error.message };
@@ -255,6 +284,11 @@ export async function getLiveProductById(productId: string) {
 export async function getLiveCategoryProducts(categorySlug: string) {
   try {
     const normalized = categorySlug.toLowerCase().trim();
+    const now = Date.now();
+    const cached = cachedCategoriesMap.get(normalized);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
     
     const category = await prisma.category.findFirst({
       where: {
@@ -285,10 +319,14 @@ export async function getLiveCategoryProducts(categorySlug: string) {
         include: { store: true },
       });
 
-      return { success: true, products };
+      const fallbackResult = { success: true, products };
+      cachedCategoriesMap.set(normalized, { timestamp: now, data: fallbackResult });
+      return fallbackResult;
     }
 
-    return { success: true, products: category.products };
+    const result = { success: true, products: category.products };
+    cachedCategoriesMap.set(normalized, { timestamp: now, data: result });
+    return result;
   } catch (error: any) {
     console.error("Error fetching category products:", error);
     return { success: false, products: [] };

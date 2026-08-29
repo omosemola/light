@@ -15,7 +15,7 @@ import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 export function TopNav() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { hasSeenOnboarding } = useUserStore();
+  const { hasSeenOnboarding, profile } = useUserStore();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
   const { isDark, toggleTheme } = useTheme();
@@ -111,7 +111,15 @@ export function TopNav() {
           prefetch={true}
           className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#F4F3FF] dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-200 transition-all font-body font-semibold text-sm border border-indigo-100 dark:border-indigo-800/50"
         >
-          <CustomProfileIcon size={18} />
+          {isMounted && profile.avatar && profile.avatar !== "/visitor-avatar.png" ? (
+            <img 
+              src={profile.avatar} 
+              alt="Account Profile" 
+              className="w-5 h-5 rounded-full object-cover border border-[#FBBF24]" 
+            />
+          ) : (
+            <CustomProfileIcon size={18} />
+          )}
           <span>Account</span>
         </Link>
       </nav>

@@ -42,7 +42,7 @@ export function ProductCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: false, margin: "-30px" }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="group relative flex flex-col justify-between bg-white dark:bg-[#121215] rounded-[16px] p-1.5 md:p-2 shadow-xs hover:shadow-xl hover:shadow-indigo-950/10 dark:hover:shadow-indigo-900/20 border border-slate-200/80 dark:border-zinc-800/80 hover:border-indigo-200 dark:hover:border-indigo-800/80 transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full overflow-hidden"
+      className="group relative flex flex-col justify-between bg-white dark:bg-[#121215] rounded-[16px] p-1.5 md:p-2 shadow-xs hover:shadow-xl hover:shadow-indigo-950/10 dark:hover:shadow-indigo-900/20 border border-slate-200/80 dark:border-zinc-800/80 hover:border-indigo-200 dark:hover:border-indigo-800/80 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer h-full overflow-hidden"
     >
       <div>
         {/* ULTRA-COMPACT ASPECT RATIO (4/3) & REDUCED MARGIN */}
@@ -122,5 +122,5 @@ export function ProductCard({
     return <div onClick={() => onClick(id)}>{cardContent}</div>;
   }
 
-  return <Link href={`/product/${slug || id}`} className="block h-full">{cardContent}</Link>;
+  return <Link href={`/product/${slug || id}`} prefetch={true} className="block h-full">{cardContent}</Link>;
 }

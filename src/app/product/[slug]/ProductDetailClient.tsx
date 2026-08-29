@@ -111,7 +111,23 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
   const [pendingProduct, setPendingProduct] = useState<any>(null);
 
   // SYNCHRONIZED REVIEWS WITH ACCURATE TIMESTAMPS
-  const [dbReviews, setDbReviews] = useState<any[]>([]);
+  const [dbReviews, setDbReviews] = useState<any[]>(() => {
+    if (initialProduct?.store?.reviews && initialProduct.store.reviews.length > 0) {
+      return initialProduct.store.reviews.map((r: any) => ({
+        id: r.id,
+        author: r.user?.name || "Campus Student",
+        avatar: r.user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+        hostel: "Student Hostel",
+        rating: r.rating || 5,
+        date: formatReviewDate(r.createdAt),
+        comment: r.comment || "",
+        likes: 0,
+        isLiked: false,
+      }));
+    }
+    return [];
+  });
+
   const clientReviews = reviewsByProduct[product.id] || reviewsByProduct[slug] || [];
   
   const reviewsList = useMemo(() => {
@@ -124,9 +140,33 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
     ? (reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewsList.length).toFixed(1)
     : "0.0";
 
-  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>(() => {
+    if (initialProduct?.store?.products) {
+      return initialProduct.store.products
+        .filter((prod: any) => prod.id !== initialProduct.id)
+        .map((prod: any) => ({
+          id: prod.id,
+          slug: prod.slug || prod.id,
+          name: prod.name,
+          price: prod.price,
+          image: prod.image,
+          description: prod.description || "",
+          vendorId: initialProduct.storeId,
+          vendorName: initialProduct.store?.name || "Campus Vendor",
+          rating: 4.9,
+          isAvailable: prod.isAvailable,
+          category: initialProduct.category?.name || "Items",
+        }));
+    }
+    return [];
+  });
 
   useEffect(() => {
+    // If we already have initialProduct with store data, skip client fetch for ultra-fast performance
+    if (initialProduct && initialProduct.store) {
+      return;
+    }
+
     let active = true;
     async function loadLiveProduct() {
       try {
@@ -200,7 +240,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [slug, initialProduct]);
 
   // STRUCTURED OPTIONS & MULTI-IMAGE PARSING
   const productImages = useMemo(() => {

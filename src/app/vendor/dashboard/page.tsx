@@ -215,13 +215,14 @@ export default function VendorDashboardPage() {
   const handleLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        showToast(`⚠️ Logo file is too large (max 10MB). Please select a smaller image.`);
+      if (file.size > 15 * 1024 * 1024) {
+        showToast(`⚠️ Logo file is too large (max 15MB). Please select a smaller image.`);
         return;
       }
       try {
-        const compressed = await compressImage(file, 400, 0.85);
+        const compressed = await compressImage(file, 400, 0.82);
         setStoreLogo(compressed);
+        showToast("✓ Store logo selected! Click 'Save' to apply changes.");
       } catch (err) {
         console.error("Error compressing logo:", err);
         showToast("⚠️ Could not process logo image. Please choose a JPG or PNG file.");
@@ -233,13 +234,14 @@ export default function VendorDashboardPage() {
   const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 12 * 1024 * 1024) {
-        showToast(`⚠️ Cover banner is too large (max 12MB). Please select a smaller image.`);
+      if (file.size > 15 * 1024 * 1024) {
+        showToast(`⚠️ Cover banner is too large (max 15MB). Please select a smaller image.`);
         return;
       }
       try {
-        const compressed = await compressImage(file, 1400, 0.82);
+        const compressed = await compressImage(file, 1200, 0.78);
         setStoreCoverImage(compressed);
+        showToast("✓ Cover banner selected! Click 'Save' to apply changes.");
       } catch (err) {
         console.error("Error compressing cover:", err);
         showToast("⚠️ Could not process banner image. Please choose a JPG or PNG file.");
@@ -680,6 +682,22 @@ export default function VendorDashboardPage() {
     <div className={`min-h-screen transition-colors duration-200 pb-28 font-body ${
       isDark ? "bg-[#09090B] text-zinc-100" : "bg-[#FAFAF7] text-slate-900"
     }`}>
+
+      {/* PERMANENT HIDDEN FILE INPUTS FOR LOGO & BANNER (ACCESSIBLE GLOBALLY FROM ANY TAB OR MODAL) */}
+      <input
+        type="file"
+        ref={logoFileInputRef}
+        onChange={handleLogoFileSelect}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={coverFileInputRef}
+        onChange={handleCoverFileSelect}
+        accept="image/*"
+        className="hidden"
+      />
 
       {/* TOAST NOTIFICATION */}
       <AnimatePresence>
@@ -1532,22 +1550,6 @@ export default function VendorDashboardPage() {
                 <h4 className="font-heading font-extrabold text-xs text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
                   1. Store Branding & Media
                 </h4>
-
-                {/* Hidden File Inputs */}
-                <input
-                  type="file"
-                  ref={logoFileInputRef}
-                  onChange={handleLogoFileSelect}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <input
-                  type="file"
-                  ref={coverFileInputRef}
-                  onChange={handleCoverFileSelect}
-                  accept="image/*"
-                  className="hidden"
-                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Store Logo */}

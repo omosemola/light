@@ -154,19 +154,71 @@ export default function ProfilePage() {
     window.location.href = "/welcome";
   };
 
+function compressAvatarImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = document.createElement("img");
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const maxDim = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        } else {
+          resolve(event.target?.result as string);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const result = reader.result as string;
-        setEditAvatar(result);
-        updateProfile({ avatar: result });
-        if (profile.email) {
-          await updateUserProfileDb(profile.email, { image: result });
+      try {
+        setToastMessage("Processing & uploading profile photo... ⏳");
+        const compressed = await compressAvatarImage(file);
+        setEditAvatar(compressed);
+        updateProfile({ avatar: compressed });
+
+        const targetEmail = profile.email || "visitor@light.app";
+        if (targetEmail) {
+          const res = await updateUserProfileDb(targetEmail, { image: compressed });
+          if (res.success) {
+            setToastMessage("Profile picture updated & saved to database! ✨");
+          } else {
+            setToastMessage("Profile picture updated locally! ✨");
+          }
+        } else {
+          setToastMessage("Profile picture updated! ✨");
         }
-      };
-      reader.readAsDataURL(file);
+        setTimeout(() => setToastMessage(""), 3000);
+      } catch (err) {
+        console.error("Error processing avatar image:", err);
+        setToastMessage("Failed to process image. Please try another photo.");
+        setTimeout(() => setToastMessage(""), 3000);
+      }
     }
   };
 
@@ -189,8 +241,9 @@ export default function ProfilePage() {
       avatar: editAvatar,
     });
 
-    if (editEmail || profile.email) {
-      await updateUserProfileDb(editEmail || profile.email, {
+    const targetEmail = editEmail || profile.email;
+    if (targetEmail) {
+      await updateUserProfileDb(targetEmail, {
         name: editName,
         phone: editPhone,
         image: editAvatar,
@@ -198,7 +251,8 @@ export default function ProfilePage() {
       });
     }
 
-    setToastMessage("Profile details successfully updated and saved! ✨");
+    setToastMessage("Profile details successfully updated & saved to database! ✨");
+    setTimeout(() => setToastMessage(""), 3000);
     setIsEditModalOpen(false);
   };
 
