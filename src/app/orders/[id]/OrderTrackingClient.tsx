@@ -12,7 +12,11 @@ import {
   MessageSquare, 
   AlertCircle, 
   Star,
-  Receipt
+  Receipt,
+  Store,
+  Clock,
+  HelpCircle,
+  ExternalLink
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { submitStudentReview } from "@/actions/reviews";
@@ -78,33 +82,39 @@ const getStatusDisplay = (status: string) => {
       return {
         label: "Order Placed & Awaiting Confirmation",
         color: "bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+        dotColor: "bg-blue-500",
       };
     case "ACCEPTED":
     case "PREPARING":
       return {
         label: "Store Preparing Your Order",
         color: "bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+        dotColor: "bg-amber-500",
       };
     case "READY_FOR_DELIVERY":
     case "OUT_FOR_DELIVERY":
       return {
         label: "Out for Delivery to Your Hostel",
         color: "bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+        dotColor: "bg-indigo-500",
       };
     case "DELIVERED":
       return {
         label: "Delivered Successfully",
         color: "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+        dotColor: "bg-emerald-500",
       };
     case "CANCELLED":
       return {
         label: "Order Cancelled",
         color: "bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+        dotColor: "bg-rose-500",
       };
     default:
       return {
         label: "Order Received",
         color: "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700",
+        dotColor: "bg-slate-500",
       };
   }
 };
@@ -258,182 +268,186 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
   }
 
   const statusInfo = getStatusDisplay(order.status);
+  const whatsappNumber = (order.vendorPhone || "2348012345678").replace(/[^0-9]/g, "");
+  const formattedWhatsapp = whatsappNumber.startsWith("0") ? `234${whatsappNumber.slice(1)}` : whatsappNumber;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
       
-      {/* TOP STICKY NAV HEADER */}
-      <div className="px-5 pt-6 pb-4 bg-white dark:bg-[#121215] border-b border-slate-200/80 dark:border-zinc-800 sticky top-0 md:top-20 z-40 shadow-xs">
-        <div className="flex items-center justify-between max-w-3xl mx-auto">
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 flex items-center justify-center hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white transition-colors cursor-pointer"
-            aria-label="Go back"
-          >
-            <ArrowLeft size={20} />
-          </button>
+      {/* TOP COMPACT HEADER */}
+      <div className="px-5 pt-6 pb-3 max-w-xl mx-auto w-full flex items-center justify-between">
+        <button
+          onClick={() => router.back()}
+          className="w-9 h-9 rounded-full bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700/80 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-zinc-700 transition-all cursor-pointer shadow-xs active:scale-95"
+          aria-label="Go back"
+        >
+          <ArrowLeft size={18} />
+        </button>
 
-          <div className="text-center">
-            <span className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#71717A] dark:text-zinc-400 block">
-              Order Receipt & Details
-            </span>
-            <h1 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-              #{order.id}
-            </h1>
-          </div>
-
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
-            order.paymentStatus === "PAID"
-              ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-              : "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-          }`}>
-            {order.paymentStatus}
-          </span>
+        <div className="flex items-center gap-1.5 text-xs font-heading font-extrabold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">
+          <Receipt size={14} className="text-[#312E81] dark:text-indigo-400" />
+          <span>Official Digital Receipt</span>
         </div>
+
+        <Link
+          href="/support"
+          className="text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline flex items-center gap-1"
+        >
+          <HelpCircle size={14} />
+          <span>Help</span>
+        </Link>
       </div>
 
-      <div className="px-5 md:px-8 max-w-3xl mx-auto w-full mt-6 space-y-6">
-
-        {/* ORDER SUMMARY HERO BANNER */}
+      {/* SINGLE UNIFIED DIGITAL RECEIPT CARD */}
+      <div className="px-4 md:px-0 max-w-xl mx-auto w-full mt-2">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4"
+          transition={{ duration: 0.35 }}
+          className="bg-white dark:bg-[#121215] rounded-[32px] border border-slate-200/90 dark:border-zinc-800 shadow-lg shadow-indigo-950/5 dark:shadow-black/40 overflow-hidden"
         >
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <span className="text-[11px] text-[#71717A] dark:text-zinc-400 block">
-                Placed on {order.date}
+          {/* RECEIPT HEADER */}
+          <div className="p-6 md:p-8 bg-linear-to-b from-indigo-50/60 via-transparent to-transparent dark:from-indigo-950/20 border-b border-slate-100 dark:border-zinc-800/80 text-center space-y-3">
+            <div className="flex items-center justify-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-heading font-extrabold border ${statusInfo.color}`}>
+                <span className={`w-2 h-2 rounded-full ${statusInfo.dotColor} animate-pulse`} />
+                <span>{statusInfo.label}</span>
               </span>
-              <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100 mt-0.5">
-                Total: ₦{order.total.toLocaleString()}
-              </h2>
             </div>
 
-            <div className={`px-3.5 py-1.5 rounded-full border text-xs font-heading font-bold flex items-center gap-1.5 ${statusInfo.color}`}>
-              <span className="w-2 h-2 rounded-full bg-current inline-block" />
-              <span>{statusInfo.label}</span>
+            <div>
+              <span className="text-xs font-body text-[#71717A] dark:text-zinc-400 block font-medium">
+                Total Paid • {order.date}
+              </span>
+              <h1 className="text-3xl md:text-4xl font-heading font-black text-[#18181B] dark:text-zinc-100 tracking-tight mt-0.5">
+                ₦{order.total.toLocaleString()}
+              </h1>
+              <span className="inline-block mt-1 font-mono font-bold text-xs px-2.5 py-0.5 bg-slate-100 dark:bg-zinc-800 rounded-md text-slate-600 dark:text-zinc-300">
+                Order #{order.id}
+              </span>
             </div>
           </div>
-        </motion.div>
 
-        {/* VENDOR STORE & CONTACT CARD */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3.5 min-w-0 flex-1">
-              <div className="relative w-12 h-12 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-xs p-0.5">
-                {(() => {
-                  const safeAvatar = getSafeImageUrl(order.vendorAvatar);
-                  return (
-                    <Image
-                      src={safeAvatar}
-                      alt={order.vendorName}
-                      fill
-                      unoptimized={safeAvatar.startsWith("data:")}
-                      className="object-cover"
-                    />
-                  );
-                })()}
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 truncate">
-                    {order.vendorName}
-                  </h4>
-                  <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                    Campus Store
-                  </span>
+          {/* STORE & DELIVERY DESTINATION SECTION */}
+          <div className="p-5 md:p-6 bg-slate-50/70 dark:bg-zinc-900/60 border-b border-slate-100 dark:border-zinc-800/80 space-y-4">
+            {/* Store details row */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-11 h-11 rounded-2xl border border-indigo-100 dark:border-zinc-700 overflow-hidden shrink-0 bg-white shadow-2xs">
+                  <Image
+                    src={getSafeImageUrl(order.vendorAvatar)}
+                    alt={order.vendorName}
+                    fill
+                    unoptimized={getSafeImageUrl(order.vendorAvatar).startsWith("data:")}
+                    className="object-cover"
+                  />
                 </div>
-                <p className="text-xs font-medium text-[#71717A] dark:text-zinc-400 truncate">
-                  Direct Store Fulfillment • {order.paymentMethod}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <a
-                href={`tel:${order.vendorPhone}`}
-                className="w-10 h-10 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                title={`Call ${order.vendorName}`}
-              >
-                <Phone size={17} />
-              </a>
-
-              <a
-                href={`https://wa.me/${((order.vendorPhone || "2348012345678").replace(/[^0-9]/g, "").startsWith("0") ? `234${(order.vendorPhone || "2348012345678").replace(/[^0-9]/g, "").slice(1)}` : (order.vendorPhone || "2348012345678").replace(/[^0-9]/g, ""))}?text=${encodeURIComponent(`Hello ${order.vendorName}! 👋 I placed Order #${order.id} on Lightson for delivery to ${order.hostelAddress || "my campus hostel room"}.\n\nItems: ${order.items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}\nTotal: ₦${order.total.toLocaleString()}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3.5 h-10 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs active:scale-95 cursor-pointer text-xs font-heading font-bold"
-              >
-                <MessageSquare size={15} />
-                <span>WhatsApp</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* DELIVERY LOCATION CARD */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200/80 dark:border-zinc-800 shadow-xs flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <MapPin size={20} />
-          </div>
-          <div>
-            <h4 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100">
-              Delivery Destination
-            </h4>
-            <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-0.5">
-              {order.hostelAddress}
-            </p>
-          </div>
-        </div>
-
-        {/* ORDERED ITEMS & RECEIPT SUMMARY */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2">
-              <Receipt size={18} className="text-[#312E81] dark:text-indigo-400" />
-              <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-                Order Items & Receipt
-              </h3>
-            </div>
-          </div>
-
-          <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
-            {order.items.map((item) => {
-              const itemImg = getSafeImageUrl(item.image);
-              return (
-                <div key={item.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 shrink-0 bg-slate-50 dark:bg-zinc-800">
-                      <Image
-                        src={itemImg}
-                        alt={item.name}
-                        fill
-                        unoptimized={itemImg.startsWith("data:")}
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <h4 className="font-heading font-bold text-xs md:text-sm text-[#18181B] dark:text-zinc-100">
-                        {item.name}
-                      </h4>
-                      <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400">
-                        Qty: {item.quantity}
-                      </span>
-                    </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 truncate">
+                      {order.vendorName}
+                    </h3>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full border border-emerald-200 dark:border-emerald-800">
+                      Store
+                    </span>
                   </div>
-                  <span className="font-heading font-extrabold text-xs md:text-sm text-[#312E81] dark:text-indigo-400">
-                    ₦{(item.price * item.quantity).toLocaleString()}
-                  </span>
+                  <p className="text-[11px] text-[#71717A] dark:text-zinc-400 truncate">
+                    Fulfilled directly by campus kitchen
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+
+              {/* 1-Tap Action buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={`tel:${order.vendorPhone}`}
+                  className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center transition-colors shadow-2xs"
+                  title="Call Store"
+                >
+                  <Phone size={15} />
+                </a>
+
+                <a
+                  href={`https://wa.me/${formattedWhatsapp}?text=${encodeURIComponent(`Hello ${order.vendorName}! 👋 I placed Order #${order.id} on Lightson for delivery to ${order.hostelAddress || "my campus hostel"}.\n\nItems: ${order.items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}\nTotal: ₦${order.total.toLocaleString()}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 h-9 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 text-xs font-heading font-bold"
+                >
+                  <MessageSquare size={13} />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Delivery address snippet */}
+            <div className="flex items-start gap-2.5 pt-3 border-t border-slate-200/60 dark:border-zinc-800 text-xs">
+              <MapPin size={15} className="text-[#312E81] dark:text-indigo-400 shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-[#71717A] dark:text-zinc-400 block">
+                  Delivering To:
+                </span>
+                <span className="font-semibold text-[#18181B] dark:text-zinc-200">
+                  {order.hostelAddress}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 space-y-2 text-xs font-body text-[#71717A] dark:text-zinc-400">
+          {/* ITEMIZED MEAL BREAKDOWN */}
+          <div className="p-5 md:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-[#71717A] dark:text-zinc-400">
+                Itemized Summary
+              </span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                {order.items.length} {order.items.length === 1 ? "Item" : "Items"}
+              </span>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+              {order.items.map((item) => {
+                const itemImg = getSafeImageUrl(item.image);
+                return (
+                  <div key={item.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 shrink-0 bg-slate-50 dark:bg-zinc-800">
+                        <Image
+                          src={itemImg}
+                          alt={item.name}
+                          fill
+                          unoptimized={itemImg.startsWith("data:")}
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-heading font-bold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 truncate">
+                          {item.name}
+                        </h4>
+                        <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400">
+                          Qty: {item.quantity} × ₦{item.price.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-heading font-black text-xs md:text-sm text-[#18181B] dark:text-zinc-100 shrink-0">
+                      ₦{(item.price * item.quantity).toLocaleString()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* PERFORATED RECEIPT DIVIDER */}
+          <div className="relative flex items-center my-1">
+            <div className="w-4 h-8 bg-[#FAFAF7] dark:bg-[#09090B] rounded-r-full -ml-2 border-r border-t border-b border-slate-200/90 dark:border-zinc-800" />
+            <div className="flex-1 border-b-2 border-dashed border-slate-200 dark:border-zinc-800 mx-2" />
+            <div className="w-4 h-8 bg-[#FAFAF7] dark:bg-[#09090B] rounded-l-full -mr-2 border-l border-t border-b border-slate-200/90 dark:border-zinc-800" />
+          </div>
+
+          {/* PRICE TOTAL & PAYMENT SUMMARY */}
+          <div className="p-5 md:p-6 space-y-2.5 text-xs font-body text-[#71717A] dark:text-zinc-400">
             <div className="flex justify-between">
-              <span>Subtotal</span>
+              <span>Items Subtotal</span>
               <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{order.subtotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
@@ -446,99 +460,104 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
                 <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{order.serviceFee.toLocaleString()}</span>
               </div>
             )}
-            <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-sm font-heading font-extrabold text-[#18181B] dark:text-zinc-100">
-              <span>Total Amount</span>
-              <span className="text-[#312E81] dark:text-indigo-400">₦{order.total.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* STUDENT MEAL REVIEW & RATING CARD */}
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
-            <Star size={18} className="text-amber-500 fill-amber-500" />
-            <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-              Rate Your Meal & Store Experience
-            </h3>
-          </div>
-
-          {isReviewSubmitted ? (
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-center space-y-1">
-              <CheckCircle2 size={28} className="text-emerald-600 dark:text-emerald-400 mx-auto" />
-              <h4 className="font-heading font-extrabold text-sm text-emerald-900 dark:text-emerald-200">
-                Thank you for your feedback! ⭐
-              </h4>
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                Your <strong>{rating}-Star rating</strong> for <strong>{order.vendorName}</strong> has been saved and published.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleReviewSubmit} className="space-y-4">
-              <div className="flex flex-col items-center justify-center p-3 bg-[#FAFAF7] dark:bg-zinc-800/80 rounded-2xl border border-slate-200/80 dark:border-zinc-700/80">
-                <span className="text-xs font-heading font-bold text-[#71717A] dark:text-zinc-400 mb-2">
-                  How was your order from {order.vendorName}?
-                </span>
-
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="p-1 transition-transform active:scale-125 focus:outline-none cursor-pointer"
-                    >
-                      <Star
-                        size={28}
-                        className={`transition-colors ${
-                          (hoverRating || rating) >= star
-                            ? "text-amber-400 fill-amber-400"
-                            : "text-slate-300 dark:text-zinc-600"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
+            
+            <div className="flex items-center justify-between pt-3 mt-1 border-t border-slate-100 dark:border-zinc-800">
               <div>
-                <textarea
-                  rows={2}
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Share a short review about the food taste, packaging, or store service (optional)..."
-                  className="w-full p-3 bg-[#FAFAF7] dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs text-[#18181B] dark:text-zinc-100 resize-none"
-                />
+                <span className="text-[10px] font-heading font-extrabold uppercase text-[#71717A] dark:text-zinc-400 block">
+                  Grand Total
+                </span>
+                <span className="text-lg font-heading font-black text-[#312E81] dark:text-indigo-400">
+                  ₦{order.total.toLocaleString()}
+                </span>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmittingReview}
-                className="w-full h-12 bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-sm rounded-xl shadow-xs transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-              >
-                <span>{isSubmittingReview ? "Submitting Review..." : "Submit Store Rating ⭐"}</span>
-              </button>
-            </form>
-          )}
-        </div>
-
-        {/* SUPPORT / HELP BANNER */}
-        <div className="bg-indigo-50/70 dark:bg-indigo-950/40 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={18} className="text-[#312E81] dark:text-indigo-400 shrink-0" />
-            <span className="font-medium text-[#18181B] dark:text-zinc-200">
-              Having issues with this order? Contact our campus support team.
-            </span>
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 dark:text-zinc-500 block font-medium">Payment Mode</span>
+                <span className="inline-block font-heading font-bold text-xs text-emerald-600 dark:text-emerald-400">
+                  ✓ {order.paymentMethod}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* INTEGRATED MEAL & STORE RATING */}
+          <div className="p-5 md:p-6 bg-slate-50/50 dark:bg-zinc-900/40 border-t border-slate-100 dark:border-zinc-800/80">
+            {isReviewSubmitted ? (
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-center space-y-1">
+                <CheckCircle2 size={24} className="text-emerald-600 dark:text-emerald-400 mx-auto" />
+                <h4 className="font-heading font-extrabold text-sm text-emerald-900 dark:text-emerald-200">
+                  Rating Submitted! ⭐
+                </h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                  Your <strong>{rating}-Star review</strong> for <strong>{order.vendorName}</strong> was published.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-heading font-bold text-[#18181B] dark:text-zinc-100">
+                    Rate Meal from {order.vendorName}:
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="p-0.5 transition-transform active:scale-125 focus:outline-none cursor-pointer"
+                      >
+                        <Star
+                          size={22}
+                          className={`transition-colors ${
+                            (hoverRating || rating) >= star
+                              ? "text-amber-400 fill-amber-400"
+                              : "text-slate-300 dark:text-zinc-600"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Short feedback (optional)..."
+                    className="flex-1 h-10 px-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-500 font-medium text-xs text-[#18181B] dark:text-zinc-100"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReview}
+                    className="px-4 h-10 bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  >
+                    {isSubmittingReview ? "Submitting..." : "Submit ⭐"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </motion.div>
+
+        {/* BOTTOM RETURN / BROWSE BUTTONS */}
+        <div className="flex items-center justify-center gap-4 mt-6 text-xs font-heading font-bold">
           <Link
-            href="/support"
-            className="px-3 py-1.5 bg-[#312E81] text-white font-heading font-bold text-xs rounded-full shadow-xs whitespace-nowrap shrink-0"
+            href="/orders"
+            className="px-4 py-2 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#18181B] dark:text-zinc-200 hover:bg-slate-50 transition-all shadow-xs"
           >
-            Get Help
+            All Orders
+          </Link>
+          <Link
+            href="/"
+            className="px-4 py-2 rounded-full bg-[#312E81] text-white hover:bg-[#1E1B4B] transition-all shadow-xs"
+          >
+            Browse Marketplace
           </Link>
         </div>
-
       </div>
 
     </div>

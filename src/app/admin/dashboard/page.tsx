@@ -414,16 +414,20 @@ export default function AdminDashboardPage() {
     );
   }, [adminData?.recentOrders, searchQuery]);
 
-  const filteredUsers = useMemo(() => {
+  const studentUsersList = useMemo(() => {
     const list = adminData?.users || [];
-    if (!searchQuery.trim()) return list;
+    return list.filter((u: any) => u.role !== "VENDOR" && !u.store);
+  }, [adminData?.users]);
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return studentUsersList;
     const q = searchQuery.toLowerCase();
-    return list.filter((u: any) => 
+    return studentUsersList.filter((u: any) => 
       u.name?.toLowerCase().includes(q) || 
       u.email?.toLowerCase().includes(q) ||
-      u.role?.toLowerCase().includes(q)
+      u.hostel?.toLowerCase().includes(q)
     );
-  }, [adminData?.users, searchQuery]);
+  }, [studentUsersList, searchQuery]);
 
   const filteredStores = useMemo(() => {
     const list = adminData?.stores || [];
@@ -660,8 +664,8 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Users className="w-5 h-5 text-purple-500 mb-1.5" />
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Campus Users</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.users?.length || metrics?.totalUsers || 5} Users</h3>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Campus Students</span>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{studentUsersList.length} Students</h3>
           </motion.div>
 
           <motion.div 
@@ -732,7 +736,7 @@ export default function AdminDashboardPage() {
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              👥 Users ({adminData?.users?.length || 0})
+              👥 Students ({studentUsersList.length})
             </button>
           </div>
 
@@ -864,21 +868,33 @@ export default function AdminDashboardPage() {
                         <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{ord.store?.name || "Campus Store"}</td>
                         <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>₦{ord.totalAmount?.toLocaleString()}</td>
                         <td className="p-4">
-                          <select
-                            value={ord.status}
-                            disabled={orderUpdating === ord.id}
-                            onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
-                            className={`text-xs px-3 py-1.5 rounded-xl focus:outline-none cursor-pointer border font-bold ${
-                              isDark ? "bg-zinc-950 border-zinc-700 text-amber-400" : "bg-white border-slate-300 text-indigo-900"
-                            }`}
-                          >
-                            <option value="PENDING">PENDING</option>
-                            <option value="ACCEPTED">ACCEPTED</option>
-                            <option value="PREPARING">PREPARING</option>
-                            <option value="READY_FOR_DELIVERY">READY FOR DELIVERY</option>
-                            <option value="DELIVERED">DELIVERED</option>
-                            <option value="CANCELLED">CANCELLED</option>
-                          </select>
+                          {(() => {
+                            const getBadge = (status: string) => {
+                              switch (status) {
+                                case "PENDING":
+                                  return { label: "Order Placed", color: "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" };
+                                case "ACCEPTED":
+                                case "PREPARING":
+                                  return { label: "Store Preparing", color: "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" };
+                                case "READY_FOR_DELIVERY":
+                                case "OUT_FOR_DELIVERY":
+                                  return { label: "Out for Delivery", color: "bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800" };
+                                case "DELIVERED":
+                                  return { label: "Delivered", color: "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" };
+                                case "CANCELLED":
+                                  return { label: "Cancelled", color: "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800" };
+                                default:
+                                  return { label: status || "Received", color: "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700" };
+                              }
+                            };
+                            const badge = getBadge(ord.status);
+                            return (
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-extrabold border ${badge.color}`}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-current inline-block" />
+                                <span>{badge.label}</span>
+                              </span>
+                            );
+                          })()}
                         </td>
                       </tr>
                     ))
@@ -1155,7 +1171,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* USERS TAB */}
+        {/* USERS TAB - CAMPUS STUDENTS ONLY */}
         {activeTab === "users" && (
           <div className={`border rounded-2xl overflow-hidden shadow-sm ${
             isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
@@ -1166,75 +1182,83 @@ export default function AdminDashboardPage() {
                   isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
                 }`}>
                   <tr>
-                    <th className="p-4">User Name</th>
+                    <th className="p-4">Student Name</th>
                     <th className="p-4">Email Address</th>
+                    <th className="p-4">Hostel / Location</th>
                     <th className="p-4">Role</th>
-                    <th className="p-4">Store Access</th>
-                    <th className="p-4">Manage</th>
+                    <th className="p-4">Orders Placed</th>
+                    <th className="p-4 text-right">Manage</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                  {filteredUsers?.map((u: any) => (
-                    <tr key={u.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"}`}>
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-extrabold flex items-center justify-center border border-indigo-500/30">
-                          {u.name ? u.name[0]?.toUpperCase() : "U"}
-                        </div>
-                        {u.name || "Campus Student"}
-                      </td>
-                      <td className={`p-4 font-mono ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{u.email}</td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                          u.role === "ADMIN" 
-                            ? "bg-purple-950 text-purple-300 border border-purple-800" 
-                            : u.role === "VENDOR" 
-                            ? "bg-emerald-950 text-emerald-300 border border-emerald-800" 
-                            : "bg-zinc-800 text-zinc-300"
-                        }`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
-                        {u.store ? (
-                          <a 
-                            href={getStorePreviewUrl(u.store.id)} 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-500 hover:underline inline-flex items-center gap-1"
-                          >
-                            {u.store.name} <ExternalLink size={12} />
-                          </a>
-                        ) : (
-                          <span className={isDark ? "text-zinc-500" : "text-zinc-400"}>None (Student)</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={u.role}
-                            disabled={roleUpdating === u.id}
-                            onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
-                            className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border font-medium ${
-                              isDark ? "bg-zinc-950 border-zinc-700 text-zinc-200" : "bg-white border-slate-300 text-zinc-800"
-                            }`}
-                          >
-                            <option value="STUDENT">STUDENT</option>
-                            <option value="VENDOR">VENDOR</option>
-                            <option value="ADMIN">ADMIN</option>
-                          </select>
+                  {filteredUsers?.length > 0 ? (
+                    filteredUsers.map((u: any) => (
+                      <tr key={u.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                        <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"}`}>
+                          <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-extrabold flex items-center justify-center border border-indigo-500/30 overflow-hidden relative shrink-0">
+                            {u.image ? (
+                              <img src={u.image} alt={u.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span>{u.name ? u.name[0]?.toUpperCase() : "S"}</span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-heading font-extrabold">{u.name || "Campus Student"}</div>
+                            <div className="text-[10px] text-zinc-400 font-mono">ID: {u.id?.slice(-6).toUpperCase()}</div>
+                          </div>
+                        </td>
+                        <td className={`p-4 font-mono ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{u.email}</td>
+                        <td className={`p-4 font-medium ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>
+                          {u.hostel && u.hostel.trim() ? (
+                            <span className="inline-block bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
+                              📍 {u.hostel}
+                            </span>
+                          ) : (
+                            <span className={isDark ? "text-zinc-500" : "text-zinc-400"}>Campus Resident</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                            {u.role || "STUDENT"}
+                          </span>
+                        </td>
+                        <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>
+                          {u._count?.orders || 0}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <select
+                              value={u.role}
+                              disabled={roleUpdating === u.id}
+                              onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
+                              className={`text-xs px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer border font-medium ${
+                                isDark ? "bg-zinc-950 border-zinc-700 text-zinc-200" : "bg-white border-slate-300 text-zinc-800"
+                              }`}
+                            >
+                              <option value="STUDENT">STUDENT</option>
+                              <option value="VENDOR">VENDOR</option>
+                              <option value="ADMIN">ADMIN</option>
+                            </select>
 
-                          <button
-                            type="button"
-                            onClick={() => setUserToDelete(u)}
-                            className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 transition-all active:scale-95 cursor-pointer"
-                            title={`Delete user account ${u.email}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                            <button
+                              type="button"
+                              onClick={() => setUserToDelete(u)}
+                              className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 transition-all active:scale-95 cursor-pointer"
+                              title={`Delete user account ${u.email}`}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-zinc-400">
+                        No student users registered in database yet.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
