@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export interface SavedLocationItem {
   id: string;
@@ -88,6 +89,14 @@ export async function updateUserProfileDb(
       },
     });
 
+    let finalImageUrl = data.image;
+    if (data.image && data.image.startsWith("data:image/")) {
+      const uploadRes = await uploadToCloudinary(data.image, "lightson_marketplace/avatars");
+      if (uploadRes.success && uploadRes.url) {
+        finalImageUrl = uploadRes.url;
+      }
+    }
+
     const stringifiedLocations = data.savedLocations
       ? data.savedLocations.map((loc) => JSON.stringify(loc))
       : undefined;
@@ -98,7 +107,7 @@ export async function updateUserProfileDb(
           email: cleanEmail,
           name: data.name || cleanEmail.split("@")[0],
           phone: data.phone || null,
-          image: data.image || null,
+          image: finalImageUrl || null,
           hostel: data.hostel || null,
           addressDetail: data.addressDetail || null,
           savedLocations: stringifiedLocations || [],
@@ -111,7 +120,7 @@ export async function updateUserProfileDb(
         data: {
           name: data.name !== undefined ? data.name : user.name,
           phone: data.phone !== undefined ? data.phone : user.phone,
-          image: data.image !== undefined ? data.image : user.image,
+          image: finalImageUrl !== undefined ? finalImageUrl : user.image,
           hostel: data.hostel !== undefined ? data.hostel : user.hostel,
           addressDetail: data.addressDetail !== undefined ? data.addressDetail : user.addressDetail,
           ...(stringifiedLocations !== undefined ? { savedLocations: stringifiedLocations } : {}),

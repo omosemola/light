@@ -30,6 +30,7 @@ import {
   Scale
 } from "lucide-react";
 import { registerVendorStore } from "@/actions/vendor";
+import { uploadImageToCloud } from "@/lib/uploadClient";
 import { useUserStore } from "@/lib/userStore";
 
 const CAMPUS_CATEGORIES = [
@@ -154,6 +155,24 @@ export default function VendorRegistrationPage() {
 
     setIsSubmitting(true);
     try {
+      let finalLogo = logoUrl;
+      if (logoUrl && logoUrl.startsWith("data:image/")) {
+        try {
+          finalLogo = await uploadImageToCloud(logoUrl, "lightson_marketplace/stores");
+        } catch (e) {
+          console.warn("Logo cloud upload fallback:", e);
+        }
+      }
+
+      let finalCover = coverImageUrl;
+      if (coverImageUrl && coverImageUrl.startsWith("data:image/")) {
+        try {
+          finalCover = await uploadImageToCloud(coverImageUrl, "lightson_marketplace/stores");
+        } catch (e) {
+          console.warn("Cover cloud upload fallback:", e);
+        }
+      }
+
       const res = await registerVendorStore({
         storeName,
         ownerName,
@@ -163,8 +182,8 @@ export default function VendorRegistrationPage() {
         category,
         location,
         description: description || `Official ${storeName} store on campus. Quick student orders and fast hostel delivery.`,
-        logoUrl: logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-        coverImage: coverImageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        logoUrl: finalLogo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
+        coverImage: finalCover || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
       });
 
       if (res.success) {

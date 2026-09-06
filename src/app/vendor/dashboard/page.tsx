@@ -66,6 +66,7 @@ import {
   updateVendorProfile,
   logoutVendor
 } from "@/actions/vendor";
+import { uploadImageToCloud } from "@/lib/uploadClient";
 import { OrderStatus } from "@prisma/client";
 import { 
   parseProductDescription, 
@@ -198,6 +199,15 @@ export default function VendorDashboardPage() {
         try {
           const compressed = await compressImage(file, 1200, 0.82);
           setProductImages((prev) => [...prev, compressed]);
+
+          // Upload to Cloudinary in the background
+          uploadImageToCloud(compressed, "lightson_marketplace/products")
+            .then((cloudUrl) => {
+              setProductImages((prev) => prev.map((img) => (img === compressed ? cloudUrl : img)));
+            })
+            .catch((err) => {
+              console.warn("Background cloud upload notice (will finalize on save):", err);
+            });
         } catch (err) {
           console.error("Error compressing product image:", err);
           showToast(`⚠️ Could not process "${file.name}". Please choose a standard JPG or PNG image.`);
@@ -221,7 +231,17 @@ export default function VendorDashboardPage() {
       try {
         const compressed = await compressImage(file, 400, 0.82);
         setStoreLogo(compressed);
-        showToast("✓ Store logo selected! Click 'Save' to apply changes.");
+        showToast("✓ Store logo selected! Uploading to cloud... ☁️");
+        
+        uploadImageToCloud(compressed, "lightson_marketplace/stores")
+          .then((cloudUrl) => {
+            setStoreLogo(cloudUrl);
+            showToast("✓ Store logo ready! Click 'Save' to apply changes.");
+          })
+          .catch((err) => {
+            console.warn("Logo cloud upload fallback:", err);
+            showToast("✓ Store logo selected! Click 'Save' to apply changes.");
+          });
       } catch (err) {
         console.error("Error compressing logo:", err);
         showToast("⚠️ Could not process logo image. Please choose a JPG or PNG file.");
@@ -240,7 +260,17 @@ export default function VendorDashboardPage() {
       try {
         const compressed = await compressImage(file, 1200, 0.78);
         setStoreCoverImage(compressed);
-        showToast("✓ Cover banner selected! Click 'Save' to apply changes.");
+        showToast("✓ Cover banner selected! Uploading to cloud... ☁️");
+        
+        uploadImageToCloud(compressed, "lightson_marketplace/stores")
+          .then((cloudUrl) => {
+            setStoreCoverImage(cloudUrl);
+            showToast("✓ Cover banner ready! Click 'Save' to apply changes.");
+          })
+          .catch((err) => {
+            console.warn("Cover cloud upload fallback:", err);
+            showToast("✓ Cover banner selected! Click 'Save' to apply changes.");
+          });
       } catch (err) {
         console.error("Error compressing cover:", err);
         showToast("⚠️ Could not process banner image. Please choose a JPG or PNG file.");
@@ -486,8 +516,20 @@ export default function VendorDashboardPage() {
         addons: addOns.filter((a) => a.name.trim()),
       });
 
-      // 3. Encode images
-      const finalImage = encodeProductImages(productImages);
+      // 3. Resolve & Encode images
+      const resolvedImages = await Promise.all(
+        productImages.map(async (img) => {
+          if (img && img.startsWith("data:image/")) {
+            try {
+              return await uploadImageToCloud(img, "lightson_marketplace/products");
+            } catch {
+              return img;
+            }
+          }
+          return img;
+        })
+      );
+      const finalImage = encodeProductImages(resolvedImages);
 
       if (editingProductId) {
         const res = await updateVendorProduct({
@@ -574,6 +616,24 @@ export default function VendorDashboardPage() {
     setIsSavingProfile(true);
 
     try {
+      let finalLogo = storeLogo;
+      if (storeLogo && storeLogo.startsWith("data:image/")) {
+        try {
+          finalLogo = await uploadImageToCloud(storeLogo, "lightson_marketplace/stores");
+        } catch (e) {
+          console.warn("Logo upload fallback:", e);
+        }
+      }
+
+      let finalCover = storeCoverImage;
+      if (storeCoverImage && storeCoverImage.startsWith("data:image/")) {
+        try {
+          finalCover = await uploadImageToCloud(storeCoverImage, "lightson_marketplace/stores");
+        } catch (e) {
+          console.warn("Cover upload fallback:", e);
+        }
+      }
+
       const res = await updateVendorProfile({
         storeId: storeData.id,
         storeName: storeName.trim(),
@@ -584,8 +644,8 @@ export default function VendorDashboardPage() {
         closingTime,
         estimatedDelivery: deliveryEstimate.trim(),
         deliveryFee: Number(deliveryFee) >= 0 ? Number(deliveryFee) : 500,
-        logo: storeLogo,
-        coverImage: storeCoverImage,
+        logo: finalLogo,
+        coverImage: finalCover,
       });
 
       if (res.success && res.store) {

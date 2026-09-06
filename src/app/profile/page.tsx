@@ -39,6 +39,7 @@ import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews } from "@/actions/reviews";
 import { updateUserProfileDb, getUserProfileDb } from "@/actions/account";
+import { uploadImageToCloud } from "@/lib/uploadClient";
 
 const ABSTRACT_AVATARS = [
   {
@@ -202,11 +203,20 @@ function compressAvatarImage(file: File): Promise<string> {
         setEditAvatar(compressed);
         updateProfile({ avatar: compressed });
 
+        let finalAvatarUrl = compressed;
+        try {
+          finalAvatarUrl = await uploadImageToCloud(compressed, "lightson_marketplace/avatars");
+          setEditAvatar(finalAvatarUrl);
+          updateProfile({ avatar: finalAvatarUrl });
+        } catch (uploadErr) {
+          console.warn("Avatar cloud upload fallback:", uploadErr);
+        }
+
         const targetEmail = profile.email || "visitor@light.app";
         if (targetEmail) {
-          const res = await updateUserProfileDb(targetEmail, { image: compressed });
+          const res = await updateUserProfileDb(targetEmail, { image: finalAvatarUrl });
           if (res.success) {
-            setToastMessage("Profile picture updated & saved to database! ✨");
+            setToastMessage("Profile picture updated & saved to cloud! ✨");
           } else {
             setToastMessage("Profile picture updated locally! ✨");
           }

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/lib/userStore";
 import { getConversationMessages, saveChatMessage } from "@/actions/chat";
+import { uploadImageToCloud } from "@/lib/uploadClient";
 
 export interface MerchantChatVendor {
   id: string;
@@ -177,13 +178,22 @@ export function MerchantChatModal({
     setIsSending(true);
 
     try {
+      let finalChatImg = imgToSend;
+      if (imgToSend && imgToSend.startsWith("data:image/")) {
+        try {
+          finalChatImg = await uploadImageToCloud(imgToSend, "lightson_marketplace/chat");
+        } catch (e) {
+          console.warn("Chat image cloud upload fallback:", e);
+        }
+      }
+
       const res = await saveChatMessage({
         storeId: vendor.id,
         senderType: "STUDENT",
         senderName: profile.name || "Campus Student",
         senderEmail: profile.email || undefined,
         text: text,
-        image: imgToSend || undefined,
+        image: finalChatImg || undefined,
         orderId: orderId,
       });
 

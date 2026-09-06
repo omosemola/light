@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendEmail, generateChatMessageEmailForVendor, generateChatMessageEmailForStudent } from "@/lib/email";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export interface ChatMessageRecord {
   id: string;
@@ -57,6 +58,14 @@ export async function saveChatMessage(input: {
       }
     }
 
+    let finalChatImage = input.image || null;
+    if (input.image && input.image.startsWith("data:image/")) {
+      const uploadRes = await uploadToCloudinary(input.image, "lightson_marketplace/chat");
+      if (uploadRes.success && uploadRes.url) {
+        finalChatImage = uploadRes.url;
+      }
+    }
+
     // Save message to PostgreSQL Database
     const message = await prisma.chatMessage.create({
       data: {
@@ -65,7 +74,7 @@ export async function saveChatMessage(input: {
         senderName: input.senderName,
         senderEmail: cleanEmail,
         text: input.text.trim(),
-        image: input.image || null,
+        image: finalChatImage,
         userId: userId,
         orderId: input.orderId || null,
         isRead: false,

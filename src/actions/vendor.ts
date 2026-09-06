@@ -14,6 +14,45 @@ import {
 import { sendOrderDeliverySMS } from "@/lib/sms";
 import { generateUniqueProductSlug } from "@/lib/slugify";
 import { clearMarketplaceCache } from "@/actions/marketplace";
+import { uploadToCloudinary } from "@/lib/cloudinary";
+
+async function ensureCloudinaryImageUrl(
+  imageStr: string | undefined,
+  folder: string = "lightson_marketplace/products"
+): Promise<string | undefined> {
+  if (!imageStr) return imageStr;
+
+  // 1. Check if it's a JSON array of images
+  if (imageStr.startsWith("[") && imageStr.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(imageStr);
+      if (Array.isArray(parsed)) {
+        const uploaded = await Promise.all(
+          parsed.map(async (img) => {
+            if (typeof img === "string" && img.startsWith("data:image/")) {
+              const res = await uploadToCloudinary(img, folder);
+              return res.success && res.url ? res.url : img;
+            }
+            return img;
+          })
+        );
+        return JSON.stringify(uploaded);
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
+  // 2. Single base64 image
+  if (imageStr.startsWith("data:image/")) {
+    const res = await uploadToCloudinary(imageStr, folder);
+    if (res.success && res.url) {
+      return res.url;
+    }
+  }
+
+  return imageStr;
+}
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
@@ -261,6 +300,7 @@ export async function createVendorProduct(data: {
     }
 
     const productSlug = await generateUniqueProductSlug(prisma, data.name.trim());
+    const finalProductImage = (await ensureCloudinaryImageUrl(data.image, "lightson_marketplace/products")) || data.image;
 
     const product = await prisma.product.create({
       data: {
@@ -268,7 +308,7 @@ export async function createVendorProduct(data: {
         slug: productSlug,
         description: data.description,
         price: numericPrice,
-        image: data.image,
+        image: finalProductImage,
         storeId: data.storeId,
         categoryId: validCategoryId,
         estimatedDelivery: data.estimatedDelivery ? data.estimatedDelivery.trim() : null,
@@ -338,6 +378,8 @@ export async function updateVendorProduct(data: {
       where: { id: data.productId },
     });
 
+    const finalProductImage = data.image !== undefined ? await ensureCloudinaryImageUrl(data.image, "lightson_marketplace/products") : undefined;
+
     if (!existing) {
       // If product record wasn't in DB yet, find current vendor store and insert it
       const cookieStore = await cookies();
@@ -350,7 +392,7 @@ export async function updateVendorProduct(data: {
             slug: productSlug,
             description: data.description,
             price: numericPrice,
-            image: data.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+            image: finalProductImage || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
             storeId: storeId,
             categoryId: categoryIdToSet || null,
             estimatedDelivery: data.estimatedDelivery !== undefined ? (data.estimatedDelivery ? data.estimatedDelivery.trim() : null) : null,
@@ -382,7 +424,7 @@ export async function updateVendorProduct(data: {
         slug: updatedSlug,
         description: data.description,
         price: numericPrice,
-        ...(data.image ? { image: data.image } : {}),
+        ...(finalProductImage ? { image: finalProductImage } : {}),
         ...(categoryIdToSet !== undefined ? { categoryId: categoryIdToSet } : {}),
         ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
         estimatedDelivery: data.estimatedDelivery !== undefined ? (data.estimatedDelivery ? data.estimatedDelivery.trim() : null) : undefined,
@@ -461,12 +503,15 @@ export async function registerVendorStore(data: {
     }
 
     // 2. Create vendor store (Pending Admin Approval)
+    const finalLogo = (await ensureCloudinaryImageUrl(data.logoUrl, "lightson_marketplace/stores")) || data.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80";
+    const finalCover = (await ensureCloudinaryImageUrl(data.coverImage, "lightson_marketplace/stores")) || data.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
+
     const store = await prisma.store.create({
       data: {
         name: data.storeName,
         description: data.description || `Welcome to ${data.storeName}! Finest campus vendor.`,
-        logo: data.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
-        coverImage: data.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        logo: finalLogo,
+        coverImage: finalCover,
         userId: user.id,
         isOpen: false,
         isVerified: false,
@@ -721,6 +766,9 @@ export async function updateVendorProfile(data: {
   coverImage?: string;
 }) {
   try {
+    const finalLogo = data.logo !== undefined ? await ensureCloudinaryImageUrl(data.logo, "lightson_marketplace/stores") : undefined;
+    const finalCover = data.coverImage !== undefined ? await ensureCloudinaryImageUrl(data.coverImage, "lightson_marketplace/stores") : undefined;
+
     // 1. Update the Store record
     const updatedStore = await prisma.store.update({
       where: { id: data.storeId },
@@ -732,8 +780,8 @@ export async function updateVendorProfile(data: {
         closingTime: data.closingTime || undefined,
         estimatedDelivery: data.estimatedDelivery || undefined,
         deliveryFee: data.deliveryFee !== undefined ? Number(data.deliveryFee) : undefined,
-        ...(data.logo !== undefined ? { logo: data.logo } : {}),
-        ...(data.coverImage !== undefined ? { coverImage: data.coverImage } : {}),
+        ...(finalLogo !== undefined ? { logo: finalLogo } : {}),
+        ...(finalCover !== undefined ? { coverImage: finalCover } : {}),
       },
       include: {
         user: true,
@@ -747,7 +795,7 @@ export async function updateVendorProfile(data: {
         data: {
           ...(data.ownerName ? { name: data.ownerName.trim() } : {}),
           ...(data.phone ? { phone: data.phone.trim() } : {}),
-          ...(data.logo ? { image: data.logo } : {}),
+          ...(finalLogo ? { image: finalLogo } : {}),
         },
       });
     }
