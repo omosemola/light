@@ -5,6 +5,8 @@ import { TicketStatus, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { sendEmail } from "@/lib/email";
+import { clearMarketplaceCache } from "@/actions/marketplace";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function getAdminDashboardData() {
   const DEFAULT_FALLBACK_PRODUCTS: any[] = [];
@@ -132,6 +134,9 @@ export async function getAdminDashboardData() {
 
 export async function updateOrderStatusAdmin(orderId: string, status: any) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status },
@@ -140,6 +145,7 @@ export async function updateOrderStatusAdmin(orderId: string, status: any) {
       },
     });
 
+    await clearMarketplaceCache();
     revalidatePath("/admin/dashboard");
     revalidatePath(`/orders/${orderId}`);
     revalidatePath("/orders");
@@ -153,14 +159,17 @@ export async function updateOrderStatusAdmin(orderId: string, status: any) {
 
 export async function toggleProductAvailabilityAdmin(productId: string, isAvailable: boolean) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     const updated = await prisma.product.update({
       where: { id: productId },
       data: { isAvailable },
     });
 
+    await clearMarketplaceCache({ productId });
     revalidatePath("/admin/dashboard");
     revalidatePath("/");
-    revalidatePath("/category/food");
     revalidatePath(`/product/${productId}`);
     return { success: true, product: updated };
   } catch (error: any) {
@@ -171,6 +180,9 @@ export async function toggleProductAvailabilityAdmin(productId: string, isAvaila
 
 export async function updateSupportTicketStatus(ticketId: string, status: TicketStatus) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     const updatedTicket = await prisma.supportTicket.update({
       where: { id: ticketId },
       data: { status },
@@ -186,6 +198,9 @@ export async function updateSupportTicketStatus(ticketId: string, status: Ticket
 
 export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
       data: {
@@ -221,6 +236,7 @@ export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
       }).catch((e) => console.error("Failed to send vendor verification approval email:", e));
     }
 
+    await clearMarketplaceCache({ storeId });
     revalidatePath("/admin/dashboard");
     revalidatePath("/");
     revalidatePath(`/vendor/${storeId}`);
@@ -233,11 +249,15 @@ export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
 
 export async function toggleStoreStatusAdmin(storeId: string, isOpen: boolean) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
       data: { isOpen },
     });
 
+    await clearMarketplaceCache({ storeId });
     revalidatePath("/admin/dashboard");
     revalidatePath("/");
     revalidatePath(`/vendor/${storeId}`);
@@ -250,6 +270,9 @@ export async function toggleStoreStatusAdmin(storeId: string, isOpen: boolean) {
 
 export async function deleteStoreAdmin(storeId: string) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     await prisma.$transaction(async (tx) => {
       await tx.chatMessage.deleteMany({
         where: { storeId },
@@ -271,6 +294,7 @@ export async function deleteStoreAdmin(storeId: string) {
       });
     });
 
+    await clearMarketplaceCache({ storeId });
     revalidatePath("/admin/dashboard");
     revalidatePath("/");
     return { success: true };
@@ -282,6 +306,9 @@ export async function deleteStoreAdmin(storeId: string) {
 
 export async function updateUserRole(userId: string, role: Role) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { role },
@@ -296,6 +323,9 @@ export async function updateUserRole(userId: string, role: Role) {
 
 export async function deleteUserAccount(userId: string) {
   try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
         where: { id: userId },
@@ -351,7 +381,9 @@ export async function deleteUserAccount(userId: string) {
       });
     });
 
+    await clearMarketplaceCache();
     revalidatePath("/admin/dashboard");
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting user:", error);
@@ -361,6 +393,10 @@ export async function deleteUserAccount(userId: string) {
 
 export async function authenticateAdmin(email: string, pass: string) {
   try {
+    const rateLimitKey = `admin_login_${email.trim().toLowerCase()}`;
+    const rateLimit = await checkRateLimit(rateLimitKey);
+    if (!rateLimit.success) return { success: false, error: rateLimit.error };
+
     const validEmail = (process.env.ADMIN_EMAIL || "admin@campuslightson.com").trim().toLowerCase();
     const validPassword = process.env.ADMIN_PASSWORD || "AdminMaster2026!";
 
@@ -394,7 +430,7 @@ export async function authenticateAdmin(email: string, pass: string) {
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: "/",
-        sameSite: "lax",
+        sameSite: "strict",
       });
 
       return {

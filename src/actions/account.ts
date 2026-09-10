@@ -71,6 +71,7 @@ export async function updateUserProfileDb(
     name?: string;
     phone?: string;
     image?: string;
+    password?: string;
     hostel?: string;
     addressDetail?: string;
     savedLocations?: SavedLocationItem[];
@@ -102,12 +103,14 @@ export async function updateUserProfileDb(
       : undefined;
 
     if (!user) {
+      const hashedPassword = data.password ? await bcrypt.hash(data.password, 10) : null;
       user = await prisma.user.create({
         data: {
           email: cleanEmail,
           name: data.name || cleanEmail.split("@")[0],
           phone: data.phone || null,
           image: finalImageUrl || null,
+          password: hashedPassword,
           hostel: data.hostel || null,
           addressDetail: data.addressDetail || null,
           savedLocations: stringifiedLocations || [],

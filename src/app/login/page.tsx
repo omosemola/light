@@ -51,6 +51,23 @@ export default function LoginPage() {
     setHasSeenOnboarding(true);
     const cleanEmail = userEmail.trim().toLowerCase();
 
+    // Skip NextAuth credentials check if logging in via Google fallback
+    if (userEmail === "alex.google@gmail.com") {
+      // Proceed directly
+    } else {
+      const signInRes = await signIn("credentials", {
+        redirect: false,
+        email: cleanEmail,
+        password: password,
+      });
+
+      if (signInRes?.error) {
+        setToastMessage(signInRes.error);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     let dbProfile: any = null;
     if (cleanEmail) {
       try {

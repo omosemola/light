@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { getLiveCategoryProducts } from "@/actions/marketplace";
 import CategoryClient from "./CategoryClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }

@@ -83,7 +83,21 @@ export default function SignupPage() {
           hostel: hostel || "",
           addressDetail: addressDetail || "",
           image: DEFAULT_HUMAN_AVATAR,
+          password: password,
         });
+
+        // Sign in via next-auth to establish server session
+        const signInRes = await signIn("credentials", {
+          redirect: false,
+          email: cleanEmail,
+          password: password,
+        });
+
+        if (signInRes?.error) {
+          setToastMessage(signInRes.error);
+          setIsSubmitting(false);
+          return;
+        }
 
         if (hostel.trim()) {
           await saveUserLocationDb(cleanEmail, {

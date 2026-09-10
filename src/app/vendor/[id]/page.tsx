@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { getLiveStoreById } from "@/actions/marketplace";
 import VendorStoreClient from "./VendorStoreClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface VendorPageProps {
   params: Promise<{ id: string }>;
 }

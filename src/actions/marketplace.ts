@@ -13,11 +13,31 @@ const cachedStoresMap = new Map<string, { timestamp: number; data: any }>();
 const cachedCategoriesMap = new Map<string, { timestamp: number; data: any }>();
 const CACHE_TTL_MS = 20000;
 
-export async function clearMarketplaceCache() {
+export async function clearMarketplaceCache(options?: {
+  productId?: string;
+  storeId?: string;
+  categorySlug?: string;
+}) {
+  if (!options) {
+    cachedHomepageData = null;
+    cachedProductsMap.clear();
+    cachedStoresMap.clear();
+    cachedCategoriesMap.clear();
+    return { success: true, cleared: "all" };
+  }
+
+  if (options.productId) {
+    cachedProductsMap.delete(options.productId);
+  }
+  if (options.storeId) {
+    cachedStoresMap.delete(options.storeId);
+  }
+  if (options.categorySlug) {
+    cachedCategoriesMap.delete(options.categorySlug.toLowerCase().trim());
+  }
+
   cachedHomepageData = null;
-  cachedProductsMap.clear();
-  cachedStoresMap.clear();
-  cachedCategoriesMap.clear();
+  return { success: true, cleared: options };
 }
 
 export async function getLiveHomepageData() {

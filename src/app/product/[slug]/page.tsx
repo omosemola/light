@@ -4,6 +4,9 @@ import { getLiveProductBySlugOrId } from "@/actions/marketplace";
 import { parseProductDescription, parseProductImages } from "@/lib/productOptions";
 import ProductDetailClient from "./ProductDetailClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface Props {
   params: Promise<{ slug: string }>;
 }

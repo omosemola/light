@@ -54,6 +54,7 @@ import { getSafeImageUrl } from "@/lib/productOptions";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
+import { clearMarketplaceCache } from "@/actions/marketplace";
 import { 
   updateUserProfileDb, 
   changeUserPasswordDb, 
@@ -299,7 +300,13 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
   const handleDeleteReview = async (id: string) => {
     // Optimistic UI update
-    setMyReviews((prev) => prev.filter((r) => r.id !== id));
+    setMyReviews((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      try {
+        sessionStorage.setItem("cached_user_reviews", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     try {
       await deleteUserReview(id, profile.email);
     } catch (e) {
@@ -409,13 +416,26 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
     }
   };
 
-  const handleClearAppCache = () => {
+  const handleClearAppCache = async () => {
     try {
-      sessionStorage.clear();
-      setProfileSuccessMsg("App cache & history cleared!");
-      setTimeout(() => setProfileSuccessMsg(""), 3000);
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+        if ("caches" in window) {
+          const cacheKeys = await caches.keys();
+          await Promise.all(cacheKeys.map((k) => caches.delete(k)));
+        }
+      }
+      await clearMarketplaceCache();
+      setMyReviews([]);
+      if (profile.email) {
+        fetchUserReviews();
+      }
+      setProfileSuccessMsg("App cache & storage successfully refreshed!");
+      setTimeout(() => setProfileSuccessMsg(""), 3500);
     } catch (e) {
       console.error("Failed to clear cache:", e);
+      setProfileSuccessMsg("Local cache refreshed!");
+      setTimeout(() => setProfileSuccessMsg(""), 3000);
     }
   };
 

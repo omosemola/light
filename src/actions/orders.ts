@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { clearMarketplaceCache } from "@/actions/marketplace";
 import { 
   sendEmail, 
   generateStudentOrderReceiptEmail, 
@@ -166,10 +167,12 @@ export async function createLiveOrder(input: CreateOrderInput) {
       },
     });
 
-    // Revalidate dashboards so real-time data syncs instantly
+    // Revalidate marketplace cache & dashboards so real-time data syncs instantly
+    await clearMarketplaceCache({ storeId });
     revalidatePath("/vendor/dashboard");
     revalidatePath("/admin/dashboard");
     revalidatePath("/orders");
+    revalidatePath(`/orders/${order.id}`);
 
     // Format item details for email templates
     const orderItemsForEmail = order.items.map((it) => ({

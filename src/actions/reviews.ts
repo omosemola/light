@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { clearMarketplaceCache } from "@/actions/marketplace";
 
 export interface UserReviewItem {
   id: string;
@@ -117,6 +118,9 @@ export async function submitStudentReview(input: {
         data: { rating: newAverageRating },
       });
     }
+
+    // Invalidate marketplace caches so store rating and review counters update live
+    await clearMarketplaceCache({ storeId: targetStoreId });
 
     // Revalidate affected routes
     revalidatePath(`/vendor/${targetStoreId}`);
@@ -238,6 +242,7 @@ export async function deleteUserReview(reviewId: string, userEmail?: string) {
       data: { rating: newAverageRating },
     });
 
+    await clearMarketplaceCache({ storeId });
     revalidatePath(`/vendor/${storeId}`);
     revalidatePath("/vendor/dashboard");
     revalidatePath("/admin/dashboard");

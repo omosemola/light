@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./prisma";
 import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
+import { checkRateLimit } from "./rateLimit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -24,9 +25,17 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials");
+        }
+
+        // Apply rate limiting based on email
+        const rateLimitKey = `login_${credentials.email.toLowerCase()}`;
+        const rateLimit = await checkRateLimit(rateLimitKey);
+        
+        if (!rateLimit.success) {
+          throw new Error(rateLimit.error);
         }
 
         const user = await prisma.user.findUnique({
@@ -114,6 +123,17 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
   },
   secret: process.env.NEXTAUTH_SECRET || "campus-hub-secret-key-12345",
   pages: {
