@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-
+import { checkRateLimit } from "@/lib/rateLimit";
 export interface SavedLocationItem {
   id: string;
   title: string;
@@ -79,6 +79,11 @@ export async function updateUserProfileDb(
 ) {
   try {
     if (!email || !email.trim()) return { success: false, error: "User email is required" };
+    
+    // Add bot protection / rate limiting for profile updates and signups
+    const rateLimitKey = `profile_update_${email.trim().toLowerCase()}`;
+    const rateLimit = await checkRateLimit(rateLimitKey, 10, 15 * 60 * 1000);
+    if (!rateLimit.success) return { success: false, error: rateLimit.error };
 
     const cleanEmail = email.trim().toLowerCase();
     let user = await prisma.user.findFirst({

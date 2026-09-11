@@ -16,6 +16,7 @@ import { generateUniqueProductSlug } from "@/lib/slugify";
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { productCreationSchema, productUpdateSchema, vendorStoreRegistrationSchema, storeScheduleSchema } from "@/lib/validations";
 
 async function ensureCloudinaryImageUrl(
   imageStr: string | undefined,
@@ -165,7 +166,13 @@ export async function getVendorDashboardData(vendorUserId?: string) {
 export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
   try {
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
+
+    const orderToUpdate = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!orderToUpdate || orderToUpdate.storeId !== sessionStoreId) {
+      return { success: false, error: "Unauthorized to update this order" };
+    }
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
@@ -242,7 +249,8 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 export async function toggleStoreOpenStatus(storeId: string, isOpen: boolean) {
   try {
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId || sessionStoreId !== storeId) return { success: false, error: "Unauthorized" };
 
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
@@ -262,7 +270,13 @@ export async function toggleStoreOpenStatus(storeId: string, isOpen: boolean) {
 export async function toggleProductAvailability(productId: string, isAvailable: boolean) {
   try {
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product || product.storeId !== sessionStoreId) {
+      return { success: false, error: "Unauthorized to modify this product" };
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { id: productId },
@@ -290,8 +304,10 @@ export async function createVendorProduct(data: {
   deliveryFee?: number | null;
 }) {
   try {
+    productCreationSchema.parse(data);
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId || sessionStoreId !== data.storeId) return { success: false, error: "Unauthorized" };
 
     const numericPrice = typeof data.price === "number" && !isNaN(data.price) 
       ? data.price 
@@ -365,8 +381,10 @@ export async function updateVendorProduct(data: {
   deliveryFee?: number | null;
 }) {
   try {
+    productUpdateSchema.parse(data);
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
 
     if (!data.productId) {
       return { success: false, error: "Missing product ID" };
@@ -396,10 +414,13 @@ export async function updateVendorProduct(data: {
       }
     }
 
-    // Check if product exists in database
+    // Check if product exists in database and belongs to the vendor
     const existing = await prisma.product.findUnique({
       where: { id: data.productId },
     });
+    if (existing && existing.storeId !== sessionStoreId) {
+      return { success: false, error: "Unauthorized to update this product" };
+    }
 
     const finalProductImage = data.image !== undefined ? await ensureCloudinaryImageUrl(data.image, "lightson_marketplace/products") : undefined;
 
@@ -477,12 +498,16 @@ export async function updateVendorProduct(data: {
 export async function deleteVendorProduct(productId: string) {
   try {
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
 
     const existing = await prisma.product.findUnique({
       where: { id: productId },
       select: { storeId: true },
     });
+    if (!existing || existing.storeId !== sessionStoreId) {
+      return { success: false, error: "Unauthorized to delete this product" };
+    }
 
     await prisma.product.delete({
       where: { id: productId },
@@ -515,6 +540,10 @@ export async function registerVendorStore(data: {
   logoUrl?: string;
 }) {
   try {
+    const parsedData = vendorStoreRegistrationSchema.parse(data);
+    const rateLimit = await checkRateLimit(`vendor_reg_${parsedData.email.trim().toLowerCase()}`, 3, 15 * 60 * 1000);
+    if (!rateLimit.success) return { success: false, error: rateLimit.error };
+
     // 1. Find or create user
     let user = await prisma.user.findUnique({
       where: { email: data.email },
@@ -776,8 +805,10 @@ export async function updateStoreSchedule(data: {
   isOpen?: boolean;
 }) {
   try {
+    storeScheduleSchema.parse(data);
     const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId || sessionStoreId !== data.storeId) return { success: false, error: "Unauthorized" };
 
     const updatedStore = await prisma.store.update({
       where: { id: data.storeId },
