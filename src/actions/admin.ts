@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { TicketStatus, Role } from "@prisma/client";
+import { TicketStatus, Role, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { sendEmail } from "@/lib/email";
@@ -59,7 +59,13 @@ export async function getAdminDashboardData() {
         orderBy: { createdAt: "desc" },
       });
 
-      const totalGMV = recentOrders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
+      const totalOrdersCount = await prisma.order.count();
+
+      const gmvAggregate = await prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { status: { not: OrderStatus.CANCELLED } },
+      });
+      const totalGMV = gmvAggregate._sum.totalAmount || 0;
 
       const finalStores = stores.length > 0 ? stores : DEFAULT_FALLBACK_STORES;
       const finalProducts = products.length > 0 ? products : DEFAULT_FALLBACK_PRODUCTS;
@@ -68,7 +74,7 @@ export async function getAdminDashboardData() {
         metrics: {
           totalUsers: users.length || 5,
           totalStores: finalStores.length,
-          totalOrders: recentOrders.length,
+          totalOrders: totalOrdersCount,
           totalProducts: finalProducts.length,
           totalGMV,
           openTicketsCount: tickets.filter((t) => t.status === TicketStatus.OPEN).length,
@@ -147,6 +153,7 @@ export async function updateOrderStatusAdmin(orderId: string, status: any) {
 
     await clearMarketplaceCache();
     revalidatePath("/admin/dashboard");
+    revalidatePath("/vendor/dashboard");
     revalidatePath(`/orders/${orderId}`);
     revalidatePath("/orders");
     revalidatePath("/profile");

@@ -174,11 +174,27 @@ export default function AdminDashboardPage() {
     }
 
     verifyAndLoadAdmin();
+
+    // Periodic synchronization to keep GMV, live orders, stores, and tickets synced with vendor portal in real-time
+    const syncInterval = setInterval(() => {
+      fetchAdminData(false);
+    }, 15000);
+
+    const handleFocus = () => {
+      fetchAdminData(false);
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleSignOutAdmin = async () => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("lightson_admin_auth");
+      sessionStorage.removeItem("cached_admin_data");
     }
     await logoutAdmin();
     window.location.href = "/admin/login";
@@ -992,6 +1008,12 @@ export default function AdminDashboardPage() {
                                 <a href={`tel:${st.user.phone}`} className="hover:underline">
                                   {st.user.phone}
                                 </a>
+                              </div>
+                            )}
+                            {st.paystackSubaccountCode && (
+                              <div className="text-[10px] text-emerald-500 mt-1.5 font-mono font-bold flex items-center gap-1" title="Paystack Subaccount Configured">
+                                <DollarSign size={12} />
+                                {st.paystackSubaccountCode}
                               </div>
                             )}
                           </td>

@@ -184,6 +184,8 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     });
 
     revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/orders");
     revalidatePath(`/orders/${orderId}`);
 
     // Send transactional status update email to student
@@ -846,6 +848,7 @@ export async function updateVendorProfile(data: {
   deliveryFee?: number;
   logo?: string;
   coverImage?: string;
+  paystackSubaccountCode?: string;
 }) {
   try {
     const cookieStore = await cookies();
@@ -865,6 +868,9 @@ export async function updateVendorProfile(data: {
         closingTime: data.closingTime || undefined,
         estimatedDelivery: data.estimatedDelivery || undefined,
         deliveryFee: data.deliveryFee !== undefined ? Number(data.deliveryFee) : undefined,
+        ...(data.paystackSubaccountCode !== undefined
+          ? { paystackSubaccountCode: data.paystackSubaccountCode ? data.paystackSubaccountCode.trim() : null }
+          : {}),
         ...(finalLogo !== undefined ? { logo: finalLogo } : {}),
         ...(finalCover !== undefined ? { coverImage: finalCover } : {}),
       },

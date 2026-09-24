@@ -152,6 +152,7 @@ export default function VendorDashboardPage() {
   const [closingTime, setClosingTime] = useState("22:00");
   const [deliveryEstimate, setDeliveryEstimate] = useState("20-35 mins");
   const [deliveryFee, setDeliveryFee] = useState<number | string>(500);
+  const [paystackSubaccountCode, setPaystackSubaccountCode] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -184,6 +185,7 @@ export default function VendorDashboardPage() {
       setDeliveryFee(storeData.deliveryFee ?? 500);
       setOpeningTime(storeData.openingTime || "08:00");
       setClosingTime(storeData.closingTime || "22:00");
+      setPaystackSubaccountCode(storeData.paystackSubaccountCode || "");
     }
     setShowProfileModal(true);
   };
@@ -376,6 +378,7 @@ export default function VendorDashboardPage() {
         if (res.store.deliveryFee !== undefined) setDeliveryFee(res.store.deliveryFee);
         if (res.store.openingTime) setOpeningTime(res.store.openingTime);
         if (res.store.closingTime) setClosingTime(res.store.closingTime);
+        if (res.store.paystackSubaccountCode) setPaystackSubaccountCode(res.store.paystackSubaccountCode);
       }
 
       const currentPending = res.metrics?.pendingOrdersCount || 0;
@@ -646,6 +649,7 @@ export default function VendorDashboardPage() {
         deliveryFee: Number(deliveryFee) >= 0 ? Number(deliveryFee) : 500,
         logo: finalLogo,
         coverImage: finalCover,
+        paystackSubaccountCode: paystackSubaccountCode.trim(),
       });
 
       if (res.success && res.store) {
@@ -658,6 +662,7 @@ export default function VendorDashboardPage() {
           closingTime: res.store.closingTime,
           estimatedDelivery: res.store.estimatedDelivery,
           deliveryFee: res.store.deliveryFee,
+          paystackSubaccountCode: res.store.paystackSubaccountCode,
           logo: res.store.logo,
           coverImage: res.store.coverImage,
           user: {
@@ -1882,6 +1887,31 @@ export default function VendorDashboardPage() {
                     />
                   </div>
                 </div>
+
+                {/* 5. PAYSTACK SUBACCOUNT & SPLIT SETTLEMENTS */}
+                <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-extrabold uppercase text-emerald-800 dark:text-emerald-300 font-heading flex items-center gap-2">
+                      <DollarSign size={16} className="text-emerald-600 dark:text-emerald-400" />
+                      <span>5. Paystack Subaccount (Split Payout Settlements)</span>
+                    </label>
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-200/60 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full border border-emerald-400/40">
+                      Automated Bank Transfers
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={paystackSubaccountCode}
+                    onChange={(e) => setPaystackSubaccountCode(e.target.value)}
+                    placeholder="e.g. SUB_xxxxxxxxxx"
+                    className={`w-full h-12 px-4 rounded-xl text-xs font-mono font-bold border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      isDark ? "bg-zinc-950 border-emerald-900/70 text-emerald-300 placeholder-zinc-600" : "bg-white border-emerald-300 text-emerald-950 placeholder-slate-400"
+                    }`}
+                  />
+                  <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+                    Enter your Paystack subaccount code to receive automated split payouts directly to your registered Nigerian NUBAN bank account for student orders. You can obtain or create your code under <strong className="text-slate-800 dark:text-zinc-200">Paystack Dashboard → Settings → Subaccounts</strong>.
+                  </p>
+                </div>
               </div>
 
               {/* SAVE BUTTON */}
@@ -2191,6 +2221,31 @@ export default function VendorDashboardPage() {
                         }`}
                       />
                     </div>
+                  </div>
+
+                  {/* PAYSTACK SUBACCOUNT CODE */}
+                  <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-extrabold uppercase text-emerald-800 dark:text-emerald-300 font-heading flex items-center gap-1.5">
+                        <DollarSign size={15} className="text-emerald-600 dark:text-emerald-400" />
+                        <span>Paystack Subaccount (Split Payouts)</span>
+                      </label>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-200/60 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-400/40">
+                        Automated Payouts
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={paystackSubaccountCode}
+                      onChange={(e) => setPaystackSubaccountCode(e.target.value)}
+                      placeholder="e.g. SUB_xxxxxxxxxx"
+                      className={`w-full h-11 px-3.5 rounded-xl text-xs font-mono font-bold border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                        isDark ? "bg-zinc-950 border-emerald-900/70 text-emerald-300 placeholder-zinc-600" : "bg-white border-emerald-300 text-emerald-950 placeholder-slate-400"
+                      }`}
+                    />
+                    <p className="text-[10px] text-slate-600 dark:text-zinc-400 leading-normal">
+                      Provide your Paystack Subaccount Code to automatically split order revenues directly into your bank account.
+                    </p>
                   </div>
                 </div>
 
