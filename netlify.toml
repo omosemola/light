@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build && rm -rf .next/cache"
+  command = "rm -rf .netlify/.next/cache .next/cache && npm run build && rm -rf .netlify/.next/cache .next/cache"
   publish = ".next"
 
 [build.environment]
