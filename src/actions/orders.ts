@@ -332,20 +332,6 @@ export async function getUserOrders(userEmail?: string) {
       }
     }
 
-    // Fallback: If no orders found for specific email or visitor session, load the latest orders
-    if (orderList.length === 0) {
-      orderList = await prisma.order.findMany({
-        take: 10,
-        orderBy: { createdAt: "desc" },
-        include: {
-          store: true,
-          items: {
-            include: { product: true },
-          },
-        },
-      });
-    }
-
     if (orderList.length === 0) {
       return { success: true, orders: [] };
     }
