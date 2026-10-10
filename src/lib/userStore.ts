@@ -15,6 +15,8 @@ export interface UserProfile {
   savedLocations?: Array<{ id: string; title: string; address: string; isDefault: boolean }>;
   isVisitor?: boolean;
   role?: string;
+  ordersCount?: number;
+  reviewsCount?: number;
 }
 
 interface UserState {
@@ -38,6 +40,8 @@ export const useUserStore = create<UserState>()(
         points: 0,
         savedStoresCount: 0,
         savedLocations: [],
+        ordersCount: 0,
+        reviewsCount: 0,
         isVisitor: true,
         role: "STUDENT",
       },
@@ -59,6 +63,8 @@ export const useUserStore = create<UserState>()(
             points: 0,
             savedStoresCount: 0,
             savedLocations: [],
+            ordersCount: 0,
+            reviewsCount: 0,
             isVisitor: true,
             role: "STUDENT",
           },

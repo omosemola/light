@@ -37,18 +37,39 @@ function OrdersContent() {
   const isSuccess = searchParams.get("success") === "true";
   const { profile } = useUserStore();
   
-  const [orders, setOrders] = useState<OrderSummaryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<OrderSummaryItem[]>(() => {
+    if (typeof window !== "undefined" && profile?.email) {
+      try {
+        const cached = sessionStorage.getItem(`cached_orders_${profile.email}`);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined" && profile?.email) {
+      try {
+        const cached = sessionStorage.getItem(`cached_orders_${profile.email}`);
+        if (cached) return false;
+      } catch {}
+    }
+    return true;
+  });
   const [activeFilter, setActiveFilter] = useState<"ALL" | "ACTIVE" | "COMPLETED">("ALL");
 
   useEffect(() => {
     let mounted = true;
     async function loadOrders() {
-      setLoading(true);
+      if (!orders.length) setLoading(true);
       try {
         const res = await getUserOrders(profile?.email);
         if (mounted && res.success && res.orders) {
           setOrders(res.orders as OrderSummaryItem[]);
+          try {
+            if (profile?.email) {
+              sessionStorage.setItem(`cached_orders_${profile.email}`, JSON.stringify(res.orders));
+            }
+          } catch {}
         }
       } catch (err) {
         console.error("Failed to load user orders:", err);

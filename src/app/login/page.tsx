@@ -102,7 +102,9 @@ export default function LoginPage() {
       hostel: dbProfile?.hostel || "",
       addressDetail: dbProfile?.addressDetail || "",
       savedLocations: dbProfile?.savedLocations || [],
-      points: precalculatedPoints,
+      ordersCount: dbProfile?.ordersCount ?? 0,
+      reviewsCount: dbProfile?.reviewsCount ?? 0,
+      points: dbProfile?.points ?? precalculatedPoints,
       isVisitor: false,
     });
 

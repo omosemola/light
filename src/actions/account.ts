@@ -26,6 +26,12 @@ export async function getUserProfileDb(email: string) {
       },
       include: {
         store: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            orders: true,
+            reviews: true,
+          },
+        },
       },
     });
 
@@ -40,6 +46,10 @@ export async function getUserProfileDb(email: string) {
         return { id: String(Date.now()), title: "Hostel", address: locStr, isDefault: false };
       }
     });
+
+    const ordersCount = user._count?.orders ?? 0;
+    const reviewsCount = user._count?.reviews ?? 0;
+    const points = ordersCount * 50;
 
     return {
       success: true,
@@ -57,6 +67,9 @@ export async function getUserProfileDb(email: string) {
         storeName: user.store?.name,
         favoriteProductIds: user.favoriteProductIds || [],
         favoriteStoreIds: user.favoriteStoreIds || [],
+        ordersCount,
+        reviewsCount,
+        points,
       },
     };
   } catch (error: any) {

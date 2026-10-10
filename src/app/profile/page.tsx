@@ -93,7 +93,13 @@ export default function ProfilePage() {
   const [editPhone, setEditPhone] = useState(profile.phone);
   const [editAvatar, setEditAvatar] = useState(profile.avatar);
 
-  const [userOrdersCount, setUserOrdersCount] = useState<number>(0);
+  const [userOrdersCount, setUserOrdersCount] = useState<number>(() => profile.ordersCount || 0);
+
+  useEffect(() => {
+    if (profile.ordersCount !== undefined) {
+      setUserOrdersCount(profile.ordersCount);
+    }
+  }, [profile.ordersCount]);
 
   useEffect(() => {
     let active = true;
@@ -106,7 +112,9 @@ export default function ProfilePage() {
           ]);
           if (active) {
             if (orderRes.success && orderRes.orders) {
-              setUserOrdersCount(orderRes.orders.length);
+              const count = orderRes.orders.length;
+              setUserOrdersCount(count);
+              updateProfile({ ordersCount: count, points: count * 50 });
             }
             if (userRes.success && userRes.user) {
               updateProfile({
@@ -117,7 +125,16 @@ export default function ProfilePage() {
                 hostel: userRes.user.hostel || profile.hostel,
                 addressDetail: userRes.user.addressDetail || profile.addressDetail,
                 savedLocations: userRes.user.savedLocations || profile.savedLocations,
+                ordersCount: userRes.user.ordersCount ?? profile.ordersCount,
+                reviewsCount: userRes.user.reviewsCount ?? profile.reviewsCount,
+                points: userRes.user.points ?? profile.points,
               });
+              if (userRes.user.ordersCount !== undefined) {
+                setUserOrdersCount(userRes.user.ordersCount);
+              }
+              if (userRes.user.reviewsCount !== undefined) {
+                setUserReviewsCount(userRes.user.reviewsCount);
+              }
             }
           }
         } catch (e) {
@@ -304,7 +321,13 @@ function compressAvatarImage(file: File): Promise<string> {
 
   const { notifications, ensureWelcomeNotification } = useNotificationStore();
   const { favoriteProducts, favoriteStores, syncWithUserAccount } = useFavoritesStore();
-  const [userReviewsCount, setUserReviewsCount] = useState<number>(0);
+  const [userReviewsCount, setUserReviewsCount] = useState<number>(() => profile.reviewsCount || 0);
+
+  useEffect(() => {
+    if (profile.reviewsCount !== undefined) {
+      setUserReviewsCount(profile.reviewsCount);
+    }
+  }, [profile.reviewsCount]);
 
   useEffect(() => {
     if (profile.email) {
@@ -314,7 +337,9 @@ function compressAvatarImage(file: File): Promise<string> {
       // Fetch user reviews count from database and cache for instant page open
       getUserReviews(profile.email).then((res) => {
         if (res.success && res.reviews) {
-          setUserReviewsCount(res.reviews.length);
+          const revCount = res.reviews.length;
+          setUserReviewsCount(revCount);
+          updateProfile({ reviewsCount: revCount });
           try {
             sessionStorage.setItem("cached_user_reviews", JSON.stringify(res.reviews));
           } catch {}
