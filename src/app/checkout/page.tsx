@@ -745,10 +745,10 @@ export default function CheckoutPage() {
 
         {/* STICKY CHECKOUT BOTTOM BAR (SITS ABOVE MOBILE BOTTOM NAV MENU) */}
         <div className="fixed bottom-[64px] md:bottom-0 left-0 w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-zinc-800 p-4 md:p-5 z-40 shadow-2xl rounded-t-3xl md:rounded-none">
-          <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-            <div>
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
+            <div className="shrink-0">
               <span className="text-[10px] font-body font-bold text-[#71717A] dark:text-zinc-400 uppercase tracking-widest block">Total Amount</span>
-              <span className="font-heading font-extrabold text-2xl md:text-3xl text-[#312E81] dark:text-indigo-400 leading-none">
+              <span className="font-heading font-extrabold text-xl sm:text-2xl md:text-3xl text-[#312E81] dark:text-indigo-400 leading-none">
                 ₦{total.toLocaleString()}
               </span>
             </div>
@@ -756,20 +756,20 @@ export default function CheckoutPage() {
             <button 
               type="submit"
               disabled={isProcessing}
-              className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 shrink-0 min-w-[200px]"
+              className="h-12 sm:h-14 px-3 sm:px-8 flex-1 sm:flex-none bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-[11px] sm:text-sm md:text-base rounded-xl sm:rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-70 min-w-0 sm:min-w-[200px]"
             >
               {isProcessing ? (
                 <>
-                  <Loader2 size={19} className="animate-spin text-white" />
-                  <span>Processing Order...</span>
+                  <Loader2 size={16} className="animate-spin text-white shrink-0" />
+                  <span className="truncate">Processing...</span>
                 </>
               ) : (
-                <span>
+                <span className="truncate whitespace-normal text-center leading-tight">
                   {paymentMethod === "transfer" 
-                    ? `I Have Transferred ₦${total.toLocaleString()} • Place Order` 
+                    ? "Transferred • Place Order" 
                     : paymentMethod === "paystack" 
                       ? "Pay with Paystack" 
-                      : "Confirm Order (Pay on Arrival)"}
+                      : "Confirm (Pay on Arrival)"}
                 </span>
               )}
             </button>

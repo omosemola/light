@@ -86,6 +86,9 @@ export default function LoginPage() {
       phone: dbProfile?.phone || "",
       avatar: dbProfile?.image || DEFAULT_HUMAN_AVATAR,
       role: dbProfile?.role || "STUDENT",
+      hostel: dbProfile?.hostel || "",
+      addressDetail: dbProfile?.addressDetail || "",
+      savedLocations: dbProfile?.savedLocations || [],
       isVisitor: false,
     });
 
