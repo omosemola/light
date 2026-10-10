@@ -17,6 +17,8 @@ export interface UserProfile {
   role?: string;
   ordersCount?: number;
   reviewsCount?: number;
+  storeId?: string;
+  storeName?: string;
 }
 
 interface UserState {

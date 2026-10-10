@@ -40,6 +40,7 @@ import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews } from "@/actions/reviews";
 import { updateUserProfileDb, getUserProfileDb } from "@/actions/account";
 import { uploadImageToCloud } from "@/lib/uploadClient";
+import { preloadBrowserImage } from "@/lib/prefetchUserData";
 
 const ABSTRACT_AVATARS = [
   {
@@ -117,6 +118,9 @@ export default function ProfilePage() {
               updateProfile({ ordersCount: count, points: count * 50 });
             }
             if (userRes.success && userRes.user) {
+              if (userRes.user.image) {
+                preloadBrowserImage(userRes.user.image);
+              }
               updateProfile({
                 name: userRes.user.name || profile.name,
                 phone: userRes.user.phone || profile.phone,

@@ -32,10 +32,7 @@ function GoogleIcon() {
   );
 }
 
-import { getUserProfileDb } from "@/actions/account";
-import { getUserOrders } from "@/actions/orders";
-import { useFavoritesStore } from "@/lib/favoritesStore";
-import { useNotificationStore } from "@/lib/notificationStore";
+import { prefetchUserData } from "@/lib/prefetchUserData";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -71,42 +68,9 @@ export default function LoginPage() {
       }
     }
 
-    let dbProfile: any = null;
-    let precalculatedPoints = 0;
-
     if (cleanEmail) {
-      try {
-        const [res, ordersRes] = await Promise.all([
-          getUserProfileDb(cleanEmail),
-          getUserOrders(cleanEmail),
-          useFavoritesStore.getState().syncWithUserAccount(cleanEmail),
-          useNotificationStore.getState().syncWithDb(cleanEmail)
-        ]);
-        if (res.success && res.user) {
-          dbProfile = res.user;
-        }
-        if (ordersRes.success && ordersRes.orders) {
-          precalculatedPoints = ordersRes.orders.length * 50; // Award 50 campus points per order
-        }
-      } catch (err) {
-        console.error("Error prefetching user data on login:", err);
-      }
+      await prefetchUserData(cleanEmail);
     }
-
-    updateProfile({
-      name: dbProfile?.name || (cleanEmail.includes("@") ? cleanEmail.split("@")[0].replace(".", " ") : "Student"),
-      email: cleanEmail || "student@lightsonmarketplace.com",
-      phone: dbProfile?.phone || "",
-      avatar: dbProfile?.image || DEFAULT_HUMAN_AVATAR,
-      role: dbProfile?.role || "STUDENT",
-      hostel: dbProfile?.hostel || "",
-      addressDetail: dbProfile?.addressDetail || "",
-      savedLocations: dbProfile?.savedLocations || [],
-      ordersCount: dbProfile?.ordersCount ?? 0,
-      reviewsCount: dbProfile?.reviewsCount ?? 0,
-      points: dbProfile?.points ?? precalculatedPoints,
-      isVisitor: false,
-    });
 
     setToastMessage("Welcome back to Lightson Marketplace! 🚀");
     setTimeout(() => {
