@@ -877,8 +877,24 @@ export default function AdminDashboardPage() {
                           <div className="text-[11px] text-zinc-400">{ord.user?.email || "No email"}</div>
                           {ord.user?.phone && <div className="text-[11px] text-zinc-500">{ord.user.phone}</div>}
                         </td>
-                        <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{ord.store?.name || "Campus Store"}</td>
-                        <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>₦{ord.totalAmount?.toLocaleString()}</td>
+                        <td className="p-4">
+                          <span className={`font-extrabold font-heading text-sm block ${isDark ? "text-white" : "text-zinc-900"}`}>
+                            ₦{ord.totalAmount?.toLocaleString()}
+                          </span>
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5 ${
+                            ord.paymentReference?.startsWith("TRANSFER-")
+                              ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-black"
+                              : ord.paymentReference?.startsWith("POD-") || ord.paymentReference?.startsWith("CASH-")
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                : "bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-400"
+                          }`}>
+                            {ord.paymentReference?.startsWith("TRANSFER-")
+                              ? "Bank Transfer"
+                              : ord.paymentReference?.startsWith("POD-") || ord.paymentReference?.startsWith("CASH-")
+                                ? "Pay on Delivery"
+                                : "Paystack"}
+                          </span>
+                        </td>
                         <td className="p-4">
                           {(() => {
                             const getBadge = (status: string) => {

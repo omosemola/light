@@ -226,6 +226,14 @@ export async function createLiveOrder(input: CreateOrderInput) {
       }).catch((e) => console.error("Failed to send vendor alert email:", e));
     }
 
+    const resolvedPaymentMethod = input.paymentMethod || (
+      order.paymentReference?.startsWith("TRANSFER-")
+        ? "Direct Bank Transfer"
+        : order.paymentReference?.startsWith("POD-") || order.paymentReference?.startsWith("CASH-")
+          ? "Pay on Delivery"
+          : "Paid Online (Card/Transfer)"
+    );
+
     // 5b. Send WhatsApp Message Notification to Vendor
     const vendorPhone = order.store.phone || order.store.user?.phone;
     if (vendorPhone) {
@@ -240,7 +248,7 @@ export async function createLiveOrder(input: CreateOrderInput) {
         deliveryInstructions: order.deliveryInstructions,
         items: orderItemsForEmail,
         totalAmount: order.totalAmount,
-        paymentMethod: order.paymentReference ? "Paid Online (Card/Transfer)" : "Pay on Delivery",
+        paymentMethod: resolvedPaymentMethod,
       }).catch((e) => console.error("Failed to dispatch vendor WhatsApp alert:", e));
     }
 
@@ -256,7 +264,7 @@ export async function createLiveOrder(input: CreateOrderInput) {
       deliveryLocation: order.deliveryLocation,
       deliveryInstructions: order.deliveryInstructions,
       items: orderItemsForEmail,
-      paymentMethod: order.paymentReference ? "Paystack Online" : "Pay on Delivery",
+      paymentMethod: resolvedPaymentMethod,
     });
 
     sendEmail({

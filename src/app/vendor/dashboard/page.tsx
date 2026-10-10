@@ -1272,8 +1272,16 @@ export default function VendorDashboardPage() {
                         <span className="text-base font-heading font-black text-emerald-600 dark:text-emerald-400">
                           ₦{Number(order.totalAmount || 0).toLocaleString()}
                         </span>
-                        <span className="block text-[10px] text-slate-400 uppercase font-bold">
-                          {order.paymentMethod || "Paystack"}
+                        <span className={`block text-[10px] uppercase font-bold ${
+                          order.paymentReference?.startsWith("TRANSFER-")
+                            ? "text-indigo-600 dark:text-indigo-400 font-black"
+                            : "text-slate-400"
+                        }`}>
+                          {order.paymentReference?.startsWith("TRANSFER-")
+                            ? "Bank Transfer"
+                            : order.paymentReference?.startsWith("POD-") || order.paymentReference?.startsWith("CASH-")
+                              ? "Pay on Delivery"
+                              : order.paymentMethod || "Paystack"}
                         </span>
                       </div>
                     </div>

@@ -136,7 +136,13 @@ function formatDbOrder(dbOrder: any, fallback: OrderDetail): OrderDetail {
     ),
     deliveryFee: dbOrder.deliveryFee !== undefined && dbOrder.deliveryFee !== null ? dbOrder.deliveryFee : 500,
     serviceFee: dbOrder.serviceFee !== undefined && dbOrder.serviceFee !== null ? dbOrder.serviceFee : 50,
-    paymentMethod: dbOrder.paymentReference ? "Paystack (Card/Transfer)" : "Pay on Delivery",
+    paymentMethod: dbOrder.paymentReference?.startsWith("TRANSFER-")
+      ? "Direct Bank Transfer"
+      : dbOrder.paymentReference?.startsWith("POD-") || dbOrder.paymentReference?.startsWith("CASH-")
+        ? "Pay on Delivery"
+        : dbOrder.paymentReference
+          ? "Paystack (Card/Transfer)"
+          : "Pay on Delivery",
     paymentStatus: dbOrder.status === "CANCELLED" ? "CANCELLED" : "PAID",
     hostelAddress: dbOrder.deliveryLocation || "Campus Hostel Address",
     date: new Date(dbOrder.createdAt || Date.now()).toLocaleDateString("en-US", {
@@ -476,6 +482,11 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
                 <span className="inline-block font-heading font-bold text-xs text-emerald-600 dark:text-emerald-400">
                   ✓ {order.paymentMethod}
                 </span>
+                {order.paymentMethod === "Direct Bank Transfer" && (
+                  <span className="block text-[9px] text-indigo-600 dark:text-indigo-400 font-bold mt-0.5">
+                    Manual Bank Verification
+                  </span>
+                )}
               </div>
             </div>
           </div>
