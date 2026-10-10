@@ -33,6 +33,9 @@ function GoogleIcon() {
 }
 
 import { getUserProfileDb } from "@/actions/account";
+import { getUserOrders } from "@/actions/orders";
+import { useFavoritesStore } from "@/lib/favoritesStore";
+import { useNotificationStore } from "@/lib/notificationStore";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,14 +72,24 @@ export default function LoginPage() {
     }
 
     let dbProfile: any = null;
+    let precalculatedPoints = 0;
+
     if (cleanEmail) {
       try {
-        const res = await getUserProfileDb(cleanEmail);
+        const [res, ordersRes] = await Promise.all([
+          getUserProfileDb(cleanEmail),
+          getUserOrders(cleanEmail),
+          useFavoritesStore.getState().syncWithUserAccount(cleanEmail),
+          useNotificationStore.getState().syncWithDb(cleanEmail)
+        ]);
         if (res.success && res.user) {
           dbProfile = res.user;
         }
+        if (ordersRes.success && ordersRes.orders) {
+          precalculatedPoints = ordersRes.orders.length * 50; // Award 50 campus points per order
+        }
       } catch (err) {
-        console.error("Error loading user profile on login:", err);
+        console.error("Error prefetching user data on login:", err);
       }
     }
 
@@ -89,6 +102,7 @@ export default function LoginPage() {
       hostel: dbProfile?.hostel || "",
       addressDetail: dbProfile?.addressDetail || "",
       savedLocations: dbProfile?.savedLocations || [],
+      points: precalculatedPoints,
       isVisitor: false,
     });
 
