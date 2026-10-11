@@ -28,6 +28,7 @@ import {
 import { motion } from "framer-motion";
 import { createLiveOrder } from "@/actions/orders";
 import { getUserLocationsDb, SavedLocationItem } from "@/actions/account";
+import { getStoreBankDetails } from "@/actions/vendor";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { getSafeImageUrl } from "@/lib/productOptions";
 
@@ -46,13 +47,37 @@ export default function CheckoutPage() {
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
 
-  const BANK_NAME = process.env.NEXT_PUBLIC_BANK_NAME || "Moniepoint Microfinance Bank";
-  const ACCOUNT_NUMBER = process.env.NEXT_PUBLIC_ACCOUNT_NUMBER || "8123456789";
-  const ACCOUNT_NAME = process.env.NEXT_PUBLIC_ACCOUNT_NAME || "Lightson Campus Marketplace";
+  // Dynamic Vendor Bank Account Resolution
+  const [vendorBankDetails, setVendorBankDetails] = useState<{
+    storeId: string;
+    storeName: string;
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  } | null>(null);
+
+  const effectiveVendorId = vendorId || items[0]?.vendorId;
+
+  useEffect(() => {
+    if (effectiveVendorId) {
+      getStoreBankDetails(effectiveVendorId).then((res) => {
+        if (res.success && res.bankDetails) {
+          setVendorBankDetails(res.bankDetails);
+        } else {
+          setVendorBankDetails(null);
+        }
+      });
+    }
+  }, [effectiveVendorId]);
+
+  const activeBankName = vendorBankDetails?.bankName || process.env.NEXT_PUBLIC_BANK_NAME || "Moniepoint Microfinance Bank";
+  const activeAccountNumber = vendorBankDetails?.accountNumber || process.env.NEXT_PUBLIC_ACCOUNT_NUMBER || "8123456789";
+  const activeAccountName = vendorBankDetails?.accountName || process.env.NEXT_PUBLIC_ACCOUNT_NAME || "Lightson Campus Marketplace";
+  const isVendorDirectAccount = Boolean(vendorBankDetails?.accountNumber);
 
   const handleCopyAccount = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(ACCOUNT_NUMBER);
+      navigator.clipboard.writeText(activeAccountNumber);
       setCopiedAccount(true);
       setTimeout(() => setCopiedAccount(false), 2200);
     }
@@ -177,7 +202,7 @@ export default function CheckoutPage() {
     }
 
     const transferDetailsNote = paymentMethod === "transfer"
-      ? `[Payment: Direct Bank Transfer | Sender: ${senderAccountName.trim()}${transferSenderBank.trim() ? ` (${transferSenderBank.trim()})` : ""}${transferNote.trim() ? ` | Ref: ${transferNote.trim()}` : ""}]`
+      ? `[Payment: Direct Bank Transfer | Sender: ${senderAccountName.trim()}${transferSenderBank.trim() ? ` (${transferSenderBank.trim()})` : ""}${isVendorDirectAccount ? ` | Sent to Vendor: ${activeAccountNumber} (${activeBankName})` : " | Sent to Platform Escrow"}]`
       : "";
 
     const combinedInstructions = [
@@ -517,11 +542,13 @@ export default function CheckoutPage() {
                     <Sparkles size={13} />
                   </div>
                   <h3 className="font-heading font-extrabold text-sm text-[#1E1B4B] dark:text-indigo-200">
-                    Marketplace Bank Account Details
+                    {isVendorDirectAccount 
+                      ? `${vendorBankDetails?.storeName || vendorName}'s Bank Account` 
+                      : "Marketplace Bank Account Details"}
                   </h3>
                 </div>
-                <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
-                  Transfer exact total below
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40">
+                  {isVendorDirectAccount ? "Verified Vendor Account" : "Platform Verified"}
                 </span>
               </div>
 
@@ -534,10 +561,10 @@ export default function CheckoutPage() {
                       Account Number
                     </span>
                     <span className="font-mono font-black text-xl md:text-2xl text-[#1E1B4B] dark:text-white tracking-widest block select-all">
-                      {ACCOUNT_NUMBER}
+                      {activeAccountNumber}
                     </span>
                     <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
-                      Bank: <strong className="text-slate-800 dark:text-zinc-200">{BANK_NAME}</strong>
+                      Bank: <strong className="text-slate-800 dark:text-zinc-200">{activeBankName}</strong>
                     </span>
                   </div>
 
@@ -568,7 +595,7 @@ export default function CheckoutPage() {
                       Account Name & Amount
                     </span>
                     <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 block truncate">
-                      {ACCOUNT_NAME}
+                      {activeAccountName}
                     </span>
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                       Exact Amount: <strong className="text-sm font-black">₦{total.toLocaleString()}</strong>

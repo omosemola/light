@@ -849,6 +849,9 @@ export async function updateVendorProfile(data: {
   logo?: string;
   coverImage?: string;
   paystackSubaccountCode?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
 }) {
   try {
     const cookieStore = await cookies();
@@ -871,6 +874,9 @@ export async function updateVendorProfile(data: {
         ...(data.paystackSubaccountCode !== undefined
           ? { paystackSubaccountCode: data.paystackSubaccountCode ? data.paystackSubaccountCode.trim() : null }
           : {}),
+        ...(data.bankName !== undefined ? { bankName: data.bankName ? data.bankName.trim() : null } : {}),
+        ...(data.accountNumber !== undefined ? { accountNumber: data.accountNumber ? data.accountNumber.trim() : null } : {}),
+        ...(data.accountName !== undefined ? { accountName: data.accountName ? data.accountName.trim() : null } : {}),
         ...(finalLogo !== undefined ? { logo: finalLogo } : {}),
         ...(finalCover !== undefined ? { coverImage: finalCover } : {}),
       },
@@ -895,15 +901,93 @@ export async function updateVendorProfile(data: {
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath(`/vendor/${data.storeId}`);
+    revalidatePath("/checkout");
     await clearMarketplaceCache();
 
     return { 
       success: true, 
-      store: updatedStore,
+      store: updatedStore, 
       message: "Store profile updated successfully!" 
     };
   } catch (error: any) {
     console.error("Error updating vendor profile:", error);
     return { success: false, error: error.message || "Failed to update vendor profile" };
+  }
+}
+
+export async function updateVendorBankDetails(data: {
+  storeId: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+}) {
+  try {
+    const cookieStore = await cookies();
+    if (!cookieStore.get("lightson_vendor_session")?.value) {
+      return { success: false, error: "Unauthorized vendor action" };
+    }
+
+    if (!data.storeId) {
+      return { success: false, error: "Missing store identifier" };
+    }
+
+    const updatedStore = await prisma.store.update({
+      where: { id: data.storeId },
+      data: {
+        bankName: data.bankName ? data.bankName.trim() : null,
+        accountNumber: data.accountNumber ? data.accountNumber.trim() : null,
+        accountName: data.accountName ? data.accountName.trim() : null,
+      },
+    });
+
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/checkout");
+    await clearMarketplaceCache();
+
+    return { 
+      success: true, 
+      store: updatedStore, 
+      message: "Payout bank account details saved successfully! Students will now see your account at checkout." 
+    };
+  } catch (error: any) {
+    console.error("Error updating vendor bank details:", error);
+    return { success: false, error: error.message || "Failed to save bank details" };
+  }
+}
+
+export async function getStoreBankDetails(storeId: string) {
+  try {
+    if (!storeId || !storeId.trim()) {
+      return { success: false, bankDetails: null };
+    }
+
+    const store = await prisma.store.findUnique({
+      where: { id: storeId.trim() },
+      select: {
+        id: true,
+        name: true,
+        bankName: true,
+        accountNumber: true,
+        accountName: true,
+      },
+    });
+
+    if (!store || !store.accountNumber || !store.accountNumber.trim()) {
+      return { success: false, bankDetails: null };
+    }
+
+    return {
+      success: true,
+      bankDetails: {
+        storeId: store.id,
+        storeName: store.name,
+        bankName: store.bankName || "Commercial Bank",
+        accountNumber: store.accountNumber.trim(),
+        accountName: store.accountName?.trim() || store.name,
+      },
+    };
+  } catch (err: any) {
+    console.error("Error fetching store bank details:", err);
+    return { success: false, bankDetails: null };
   }
 }

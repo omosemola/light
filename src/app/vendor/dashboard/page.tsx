@@ -153,6 +153,9 @@ export default function VendorDashboardPage() {
   const [deliveryEstimate, setDeliveryEstimate] = useState("20-35 mins");
   const [deliveryFee, setDeliveryFee] = useState<number | string>(500);
   const [paystackSubaccountCode, setPaystackSubaccountCode] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -186,6 +189,9 @@ export default function VendorDashboardPage() {
       setOpeningTime(storeData.openingTime || "08:00");
       setClosingTime(storeData.closingTime || "22:00");
       setPaystackSubaccountCode(storeData.paystackSubaccountCode || "");
+      setBankName(storeData.bankName || "");
+      setAccountNumber(storeData.accountNumber || "");
+      setAccountName(storeData.accountName || "");
     }
     setShowProfileModal(true);
   };
@@ -379,6 +385,9 @@ export default function VendorDashboardPage() {
         if (res.store.openingTime) setOpeningTime(res.store.openingTime);
         if (res.store.closingTime) setClosingTime(res.store.closingTime);
         if (res.store.paystackSubaccountCode) setPaystackSubaccountCode(res.store.paystackSubaccountCode);
+        if (res.store.bankName) setBankName(res.store.bankName);
+        if (res.store.accountNumber) setAccountNumber(res.store.accountNumber);
+        if (res.store.accountName) setAccountName(res.store.accountName);
       }
 
       const currentPending = res.metrics?.pendingOrdersCount || 0;
@@ -650,6 +659,9 @@ export default function VendorDashboardPage() {
         logo: finalLogo,
         coverImage: finalCover,
         paystackSubaccountCode: paystackSubaccountCode.trim(),
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        accountName: accountName.trim(),
       });
 
       if (res.success && res.store) {
@@ -663,6 +675,9 @@ export default function VendorDashboardPage() {
           estimatedDelivery: res.store.estimatedDelivery,
           deliveryFee: res.store.deliveryFee,
           paystackSubaccountCode: res.store.paystackSubaccountCode,
+          bankName: res.store.bankName,
+          accountNumber: res.store.accountNumber,
+          accountName: res.store.accountName,
           logo: res.store.logo,
           coverImage: res.store.coverImage,
           user: {
@@ -2254,6 +2269,102 @@ export default function VendorDashboardPage() {
                     <p className="text-[10px] text-slate-600 dark:text-zinc-400 leading-normal">
                       Provide your Paystack Subaccount Code to automatically split order revenues directly into your bank account.
                     </p>
+                  </div>
+
+                  {/* DIRECT BANK TRANSFER PAYOUT ACCOUNT (DISPLAYED TO STUDENTS AT CHECKOUT) */}
+                  <div className="p-4 rounded-2xl border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/30 dark:to-zinc-900 space-y-3.5 shadow-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-indigo-100 dark:border-zinc-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#312E81] text-white flex items-center justify-center shadow-xs">
+                          <Store size={14} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-extrabold uppercase text-[#1E1B4B] dark:text-indigo-200 font-heading">
+                            Direct Bank Transfer Account
+                          </label>
+                          <span className="text-[10px] text-slate-500 dark:text-zinc-400 block -mt-0.5">
+                            Displayed to students during checkout
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40">
+                        Live at Checkout
+                      </span>
+                    </div>
+
+                    {/* Bank Name */}
+                    <div>
+                      <label className="block text-[11px] font-extrabold uppercase text-slate-600 dark:text-zinc-300 mb-1 font-heading">
+                        Bank Name
+                      </label>
+                      <input
+                        type="text"
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                        placeholder="e.g. OPay, Moniepoint, Kuda, GTBank, Palmpay"
+                        className={`w-full h-11 px-3.5 rounded-xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          isDark ? "bg-zinc-950 border-zinc-700 text-white placeholder-zinc-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"
+                        }`}
+                      />
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+                        {["OPay", "Palmpay", "Kuda", "Moniepoint", "GTBank", "Access Bank", "Zenith Bank", "First Bank"].map((b) => (
+                          <button
+                            key={b}
+                            type="button"
+                            onClick={() => setBankName(b)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-heading font-extrabold transition cursor-pointer active:scale-95 ${
+                              bankName === b
+                                ? "bg-[#312E81] text-white shadow-xs"
+                                : isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Account Number */}
+                      <div>
+                        <label className="block text-[11px] font-extrabold uppercase text-slate-600 dark:text-zinc-300 mb-1 font-heading">
+                          Account Number (10 Digits)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={10}
+                          value={accountNumber}
+                          onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                          placeholder="e.g. 8101234567"
+                          className={`w-full h-11 px-3.5 rounded-xl text-sm font-mono font-bold tracking-wider border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            isDark ? "bg-zinc-950 border-zinc-700 text-white placeholder-zinc-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"
+                          }`}
+                        />
+                      </div>
+
+                      {/* Account Name */}
+                      <div>
+                        <label className="block text-[11px] font-extrabold uppercase text-slate-600 dark:text-zinc-300 mb-1 font-heading">
+                          Account Name
+                        </label>
+                        <input
+                          type="text"
+                          value={accountName}
+                          onChange={(e) => setAccountName(e.target.value)}
+                          placeholder="e.g. Adebayo Bakery / John Doe"
+                          className={`w-full h-11 px-3.5 rounded-xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            isDark ? "bg-zinc-950 border-zinc-700 text-white placeholder-zinc-600" : "bg-white border-slate-200 text-slate-900 placeholder-slate-400"
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-[10.5px] font-body text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                      <Sparkles size={14} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                      <span>
+                        Students ordering from your store will see this exact account to transfer order funds directly to you. If left blank, the platform default account is used.
+                      </span>
+                    </div>
                   </div>
                 </div>
 

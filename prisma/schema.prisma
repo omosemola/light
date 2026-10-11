@@ -71,6 +71,9 @@ model Store {
   openingTime         String?   @default("08:00")
   closingTime         String?   @default("22:00")
   paystackSubaccountCode String? // For split payments
+  bankName            String?
+  accountNumber       String?
+  accountName         String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
