@@ -1,18 +1,49 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/store";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, Store, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { getSafeImageUrl } from "@/lib/productOptions";
 
 export default function CartPage() {
-  const { items, vendorName, vendorDeliveryFee, vendorEstimatedDelivery, updateQuantity, removeItem, getTotal } = useCartStore();
+  const { 
+    items, 
+    vendorName, 
+    vendorDeliveryFee, 
+    vendorEstimatedDelivery, 
+    updateQuantity, 
+    removeItem, 
+    getTotal,
+    getDeliveryFee,
+    getEstimatedDelivery 
+  } = useCartStore();
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
-  if (items.length === 0) {
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const subtotal = typeof getTotal === "function" ? getTotal() : 0;
+  const deliveryFee = typeof getDeliveryFee === "function" ? getDeliveryFee() : (vendorDeliveryFee ?? 500);
+  const effectiveDeliveryTime = typeof getEstimatedDelivery === "function" ? getEstimatedDelivery() : (vendorEstimatedDelivery || "20-35 mins");
+  const platformFee = 50;
+  const total = subtotal + deliveryFee + platformFee;
+
+  if (!isMounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[75vh] px-5 bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-zinc-100 font-body">
+        <div className="w-10 h-10 border-4 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin mb-3" />
+        <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Loading cart items...</p>
+      </div>
+    );
+  }
+
+  if (!items || items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[75vh] px-5 bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-zinc-100 font-body transition-colors">
         <div className="w-24 h-24 bg-[#F4F3FF] dark:bg-indigo-950/60 rounded-full flex items-center justify-center mb-6 shadow-sm border border-indigo-100 dark:border-indigo-900/50">
@@ -35,11 +66,7 @@ export default function CartPage() {
     );
   }
 
-  const subtotal = getTotal();
-  const deliveryFee = useCartStore((s) => s.getDeliveryFee());
-  const effectiveDeliveryTime = useCartStore((s) => s.getEstimatedDelivery());
-  const platformFee = 50;
-  const total = subtotal + deliveryFee + platformFee;
+  const safeItemCount = items.reduce((sum, item) => sum + (Number(item?.quantity) || 1), 0);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-36 md:pb-32 transition-colors duration-200">
@@ -63,116 +90,134 @@ export default function CartPage() {
               </h1>
               <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-0.5 font-medium flex items-center gap-1.5">
                 <Store size={13} className="text-[#312E81] dark:text-indigo-400 shrink-0" />
-                <span>Ordering from <strong className="text-[#312E81] dark:text-indigo-300 font-extrabold">{vendorName}</strong></span>
+                <span>Ordering from <strong className="text-[#312E81] dark:text-indigo-300 font-extrabold">{vendorName || "Store"}</strong></span>
               </p>
             </div>
           </div>
 
           <span className="text-xs font-heading font-extrabold bg-[#F4F3FF] dark:bg-indigo-950/80 text-[#312E81] dark:text-indigo-300 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-800">
-            {items.reduce((sum, item) => sum + item.quantity, 0)} Items
+            {safeItemCount} Items
           </span>
         </div>
       </div>
 
       {/* MAIN CART ITEMS LIST */}
       <div className="px-5 py-6 max-w-4xl mx-auto w-full space-y-3.5">
-        {items.map((item) => {
-          const itemKey = item.cartItemId || item.id;
-          return (
-            <motion.div
-              key={itemKey}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex gap-3.5 p-3.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 items-center"
-            >
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 shrink-0 border border-slate-100 dark:border-zinc-700/60">
-                {(() => {
-                  const safeImg = getSafeImageUrl(item.image);
-                  return (
-                    <Image
-                      src={safeImg}
-                      alt={item.name}
-                      fill
-                      unoptimized={safeImg.startsWith("data:")}
-                      className="object-cover"
-                    />
-                  );
-                })()}
-              </div>
-              
-              <div className="flex flex-col flex-1 min-w-0 justify-between py-0.5">
-                <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <h3 className="font-heading font-bold text-[#18181B] dark:text-zinc-100 text-xs md:text-sm line-clamp-2 leading-snug">
-                      {item.name}
-                    </h3>
-                    
-                    {/* CUSTOMIZATION PILLS */}
-                    {(item.selectedSize || (item.selectedAddOns && item.selectedAddOns.length > 0) || item.customNotes) && (
-                      <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-zinc-400 space-y-0.5 mt-1">
-                        {item.selectedSize && (
-                          <span className="inline-block mr-2 font-semibold text-indigo-600 dark:text-indigo-400">
-                            Portion: {item.selectedSize.name}
-                          </span>
-                        )}
-                        {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                          <span className="inline-block mr-2 font-semibold text-amber-600 dark:text-amber-400">
-                            Extras: {item.selectedAddOns.map(a => a.name).join(", ")}
-                          </span>
-                        )}
-                        {item.customNotes && (
-                          <p className="italic text-slate-400 dark:text-zinc-500 line-clamp-1">
-                            Note: &ldquo;{item.customNotes}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+        <AnimatePresence initial={false}>
+          {items.map((item, idx) => {
+            if (!item) return null;
+            const itemKey = String(item.cartItemId || item.id || `cart-${idx}`);
+            const safeImg = getSafeImageUrl(item.image);
+            const itemPrice = Number(item.price) || 0;
+            const itemQty = Number(item.quantity) || 1;
 
-                  {/* REMOVE BUTTON */}
-                  <button 
-                    onClick={() => removeItem(itemKey)}
-                    className="p-1.5 text-rose-500 hover:text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-lg transition-colors shrink-0 active:scale-90 cursor-pointer"
-                    title="Remove item"
-                    aria-label="Remove item"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+            return (
+              <motion.div
+                key={itemKey}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, height: 0, marginBottom: 0, overflow: "hidden" }}
+                transition={{ duration: 0.2 }}
+                className="flex gap-3.5 p-3.5 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 items-center"
+              >
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-[#FAFAF7] dark:bg-zinc-800 shrink-0 border border-slate-100 dark:border-zinc-700/60">
+                  <Image
+                    src={safeImg}
+                    alt={item.name || "Product"}
+                    fill
+                    unoptimized={safeImg.startsWith("data:")}
+                    className="object-cover"
+                  />
                 </div>
                 
-                <div className="flex items-center justify-between mt-3">
-                  <span className="font-body font-extrabold text-sm text-[#312E81] dark:text-indigo-400">
-                    ₦{(item.price * item.quantity).toLocaleString()}
-                  </span>
-                  
-                  {/* VISIBLE & STYLED QUANTITY CONTROLS */}
-                  <div className="flex items-center gap-2 bg-[#F4F3FF] dark:bg-zinc-800 rounded-xl p-1 border border-indigo-100/80 dark:border-zinc-700/80">
+                <div className="flex flex-col flex-1 min-w-0 justify-between py-0.5">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <h3 className="font-heading font-bold text-[#18181B] dark:text-zinc-100 text-xs md:text-sm line-clamp-2 leading-snug">
+                        {item.name}
+                      </h3>
+                      
+                      {/* CUSTOMIZATION PILLS */}
+                      {(item.selectedSize || (item.selectedAddOns && item.selectedAddOns.length > 0) || item.customNotes) && (
+                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-zinc-400 space-y-0.5 mt-1">
+                          {item.selectedSize && (
+                            <span className="inline-block mr-2 font-semibold text-indigo-600 dark:text-indigo-400">
+                              Portion: {item.selectedSize.name}
+                            </span>
+                          )}
+                          {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                            <span className="inline-block mr-2 font-semibold text-amber-600 dark:text-amber-400">
+                              Extras: {item.selectedAddOns.map((a) => a.name).join(", ")}
+                            </span>
+                          )}
+                          {item.customNotes && (
+                            <p className="italic text-slate-400 dark:text-zinc-500 line-clamp-1">
+                              Note: &ldquo;{item.customNotes}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* REMOVE BUTTON */}
                     <button 
-                      onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                      className="w-7 h-7 flex items-center justify-center bg-white dark:bg-zinc-700 rounded-lg shadow-2xs text-[#312E81] dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-600 transition-colors active:scale-90 cursor-pointer"
-                      aria-label="Decrease quantity"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeItem(itemKey);
+                      }}
+                      className="p-1.5 text-rose-500 hover:text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-lg transition-colors shrink-0 active:scale-90 cursor-pointer"
+                      title="Remove item"
+                      aria-label="Remove item"
                     >
-                      <Minus size={13} />
-                    </button>
-                    
-                    <span className="w-5 text-center text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-100">
-                      {item.quantity}
-                    </span>
-                    
-                    <button 
-                      onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                      className="w-7 h-7 flex items-center justify-center bg-white dark:bg-zinc-700 rounded-lg shadow-2xs text-[#312E81] dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-600 transition-colors active:scale-90 cursor-pointer"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus size={13} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
+                  
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="font-body font-extrabold text-sm text-[#312E81] dark:text-indigo-400">
+                      ₦{(itemPrice * itemQty).toLocaleString()}
+                    </span>
+                    
+                    {/* VISIBLE & STYLED QUANTITY CONTROLS */}
+                    <div className="flex items-center gap-2 bg-[#F4F3FF] dark:bg-zinc-800 rounded-xl p-1 border border-indigo-100/80 dark:border-zinc-700/80">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateQuantity(itemKey, itemQty - 1);
+                        }}
+                        className="w-7 h-7 flex items-center justify-center bg-white dark:bg-zinc-700 rounded-lg shadow-2xs text-[#312E81] dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-600 transition-colors active:scale-90 cursor-pointer"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus size={13} />
+                      </button>
+                      
+                      <span className="w-5 text-center text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-100">
+                        {itemQty}
+                      </span>
+                      
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateQuantity(itemKey, itemQty + 1);
+                        }}
+                        className="w-7 h-7 flex items-center justify-center bg-white dark:bg-zinc-700 rounded-lg shadow-2xs text-[#312E81] dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-600 transition-colors active:scale-90 cursor-pointer"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus size={13} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
 
         {/* ORDER COST SUMMARY DIV */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-slate-200/80 dark:border-zinc-800 space-y-2.5 mt-4 text-xs font-body">
@@ -214,8 +259,9 @@ export default function CartPage() {
           </div>
 
           <button 
+            type="button"
             onClick={() => router.push("/checkout")}
-            className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shrink-0"
+            className="h-14 px-8 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-base rounded-2xl shadow-xl shadow-indigo-950/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shrink-0 cursor-pointer"
           >
             <span>Proceed to Checkout</span>
             <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />

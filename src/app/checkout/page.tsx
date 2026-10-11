@@ -34,7 +34,7 @@ import { getSafeImageUrl } from "@/lib/productOptions";
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { items, getTotal, vendorName, vendorId, vendorDeliveryFee, vendorEstimatedDelivery, clearCart } = useCartStore();
+  const { items, getTotal, getDeliveryFee, getEstimatedDelivery, vendorName, vendorId, vendorDeliveryFee, vendorEstimatedDelivery, clearCart } = useCartStore();
   const { addNotification } = useNotificationStore();
   const { profile, updateProfile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
@@ -140,9 +140,9 @@ export default function CheckoutPage() {
     }
   }, [isMounted, items.length, isProcessing, router]);
 
-  const subtotal = getTotal();
-  const deliveryFee = useCartStore((s) => s.getDeliveryFee());
-  const effectiveDeliveryTime = useCartStore((s) => s.getEstimatedDelivery());
+  const subtotal = typeof getTotal === "function" ? getTotal() : 0;
+  const deliveryFee = typeof getDeliveryFee === "function" ? getDeliveryFee() : (vendorDeliveryFee ?? 500);
+  const effectiveDeliveryTime = typeof getEstimatedDelivery === "function" ? getEstimatedDelivery() : (vendorEstimatedDelivery || "20-35 mins");
   const platformFee = 50;
   const total = subtotal + deliveryFee + platformFee;
 

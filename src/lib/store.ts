@@ -136,14 +136,30 @@ export const useCartStore = create<CartState>()(
 
       removeItem: (idOrCartItemId) => {
         set((state) => {
-          const newItems = state.items.filter(
-            (i) => i.cartItemId !== idOrCartItemId && i.id !== idOrCartItemId
-          );
+          if (!state.items || !Array.isArray(state.items)) {
+            return {
+              ...state,
+              items: [],
+              vendorId: null,
+              vendorName: null,
+              vendorDeliveryFee: 500,
+              vendorEstimatedDelivery: "20-35 mins",
+            };
+          }
+          const targetKey = String(idOrCartItemId || "");
+          const newItems = state.items.filter((i) => {
+            if (!i) return false;
+            const itemKey = String(i.cartItemId || i.id || "");
+            const itemId = String(i.id || "");
+            return itemKey !== targetKey && itemId !== targetKey;
+          });
           return {
             ...state,
             items: newItems,
             vendorId: newItems.length === 0 ? null : state.vendorId,
             vendorName: newItems.length === 0 ? null : state.vendorName,
+            vendorDeliveryFee: newItems.length === 0 ? 500 : state.vendorDeliveryFee,
+            vendorEstimatedDelivery: newItems.length === 0 ? "20-35 mins" : state.vendorEstimatedDelivery,
           };
         });
       },
@@ -153,12 +169,20 @@ export const useCartStore = create<CartState>()(
           get().removeItem(idOrCartItemId);
           return;
         }
-        set((state) => ({
-          ...state,
-          items: state.items.map((i) =>
-            (i.cartItemId || i.id) === idOrCartItemId ? { ...i, quantity } : i
-          ),
-        }));
+        set((state) => {
+          if (!state.items || !Array.isArray(state.items)) return state;
+          const targetKey = String(idOrCartItemId || "");
+          return {
+            ...state,
+            items: state.items.map((i) => {
+              if (!i) return i;
+              const itemKey = String(i.cartItemId || i.id || "");
+              return itemKey === targetKey || String(i.id) === targetKey
+                ? { ...i, quantity: Number(quantity) || 1 }
+                : i;
+            }),
+          };
+        });
       },
 
       clearCart: () => {
@@ -166,13 +190,23 @@ export const useCartStore = create<CartState>()(
       },
 
       getTotal: () => {
-        return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+        const items = get().items;
+        if (!items || !Array.isArray(items)) return 0;
+        return items.reduce((total, item) => {
+          if (!item) return total;
+          const price = Number(item.price) || 0;
+          const qty = Number(item.quantity) || 1;
+          return total + price * qty;
+        }, 0);
       },
 
       getDeliveryFee: () => {
         const items = get().items;
-        if (items.length === 0) return get().vendorDeliveryFee ?? 500;
+        if (!items || !Array.isArray(items) || items.length === 0) {
+          return get().vendorDeliveryFee ?? 500;
+        }
         const itemFees = items.map((i) => {
+          if (!i) return get().vendorDeliveryFee ?? 500;
           if (i.itemDeliveryFee !== undefined && i.itemDeliveryFee !== null) {
             return Number(i.itemDeliveryFee);
           }
@@ -181,20 +215,25 @@ export const useCartStore = create<CartState>()(
           }
           return get().vendorDeliveryFee ?? 500;
         });
-        return Math.max(...itemFees);
+        const validFees = itemFees.filter((f) => !isNaN(f) && typeof f === "number");
+        return validFees.length > 0 ? Math.max(...validFees) : (get().vendorDeliveryFee ?? 500);
       },
 
       getEstimatedDelivery: () => {
         const items = get().items;
-        if (items.length === 0) return get().vendorEstimatedDelivery || "20-35 mins";
+        if (!items || !Array.isArray(items) || items.length === 0) {
+          return get().vendorEstimatedDelivery || "20-35 mins";
+        }
         const dayItem = items.find((i) => {
-          const t = (i.itemEstimatedDelivery || i.vendorEstimatedDelivery || "").toLowerCase();
+          if (!i) return false;
+          const t = String(i.itemEstimatedDelivery || i.vendorEstimatedDelivery || "").toLowerCase();
           return t.includes("day");
         });
         if (dayItem) {
           return dayItem.itemEstimatedDelivery || dayItem.vendorEstimatedDelivery || "1-2 days";
         }
-        return items[0]?.itemEstimatedDelivery || items[0]?.vendorEstimatedDelivery || get().vendorEstimatedDelivery || "20-35 mins";
+        const first = items.find((i) => Boolean(i));
+        return first?.itemEstimatedDelivery || first?.vendorEstimatedDelivery || get().vendorEstimatedDelivery || "20-35 mins";
       },
 
       getPlatformFee: () => {
@@ -208,7 +247,12 @@ export const useCartStore = create<CartState>()(
       },
 
       getItemCount: () => {
-        return get().items.reduce((count, item) => count + item.quantity, 0);
+        const items = get().items;
+        if (!items || !Array.isArray(items)) return 0;
+        return items.reduce((count, item) => {
+          if (!item) return count;
+          return count + (Number(item.quantity) || 1);
+        }, 0);
       },
     }),
     {
