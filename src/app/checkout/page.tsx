@@ -17,7 +17,6 @@ import {
   Store, 
   CheckCircle2, 
   Loader2,
-  Banknote,
   Mail,
   Building2,
   Copy,
@@ -40,7 +39,7 @@ export default function CheckoutPage() {
   const { profile, updateProfile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"transfer" | "paystack" | "cash">("transfer");
+  const [paymentMethod, setPaymentMethod] = useState<"transfer" | "paystack">("transfer");
   const [senderAccountName, setSenderAccountName] = useState("");
   const [transferSenderBank, setTransferSenderBank] = useState("");
   const [transferNote, setTransferNote] = useState("");
@@ -70,9 +69,9 @@ export default function CheckoutPage() {
     }
   }, [effectiveVendorId]);
 
-  const activeBankName = vendorBankDetails?.bankName || process.env.NEXT_PUBLIC_BANK_NAME || "Moniepoint Microfinance Bank";
-  const activeAccountNumber = vendorBankDetails?.accountNumber || process.env.NEXT_PUBLIC_ACCOUNT_NUMBER || "8123456789";
-  const activeAccountName = vendorBankDetails?.accountName || process.env.NEXT_PUBLIC_ACCOUNT_NAME || "Lightson Campus Marketplace";
+  const activeBankName = vendorBankDetails?.bankName || process.env.NEXT_PUBLIC_BANK_NAME || "Opay";
+  const activeAccountNumber = vendorBankDetails?.accountNumber || process.env.NEXT_PUBLIC_ACCOUNT_NUMBER || "6146800590";
+  const activeAccountName = vendorBankDetails?.accountName || process.env.NEXT_PUBLIC_ACCOUNT_NAME || "Johnson Tomison Adeniken";
   const isVendorDirectAccount = Boolean(vendorBankDetails?.accountNumber);
 
   const handleCopyAccount = () => {
@@ -196,9 +195,6 @@ export default function CheckoutPage() {
     if (paymentMethod === "paystack") {
       paymentRef = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       methodDisplay = "Paystack (Card/Transfer)";
-    } else if (paymentMethod === "cash") {
-      paymentRef = `POD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      methodDisplay = "Pay on Arrival";
     }
 
     const transferDetailsNote = paymentMethod === "transfer"
@@ -444,7 +440,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* PAYMENT OPTIONS TILES */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* OPTION 1: DIRECT BANK TRANSFER */}
             <div 
               onClick={() => setPaymentMethod("transfer")}
@@ -494,56 +490,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* OPTION 2: PAY ON ARRIVAL */}
-            <div 
-              onClick={() => setPaymentMethod("cash")}
-              role="button"
-              tabIndex={0}
-              className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3.5 relative select-none ${
-                paymentMethod === "cash" 
-                  ? "border-[#312E81] dark:border-indigo-500 bg-gradient-to-b from-[#F6F5FF] to-white dark:from-indigo-950/40 dark:to-zinc-900 shadow-md ring-2 ring-indigo-500/10" 
-                  : "border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-slate-50/50 dark:bg-zinc-900/60"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  paymentMethod === "cash"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "bg-emerald-50 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400"
-                }`}>
-                  <Banknote size={20} />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
-                    Doorstep
-                  </span>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                    paymentMethod === "cash"
-                      ? "border-[#312E81] dark:border-indigo-400 bg-[#312E81] dark:bg-indigo-500 text-white"
-                      : "border-slate-300 dark:border-zinc-700 bg-transparent"
-                  }`}>
-                    {paymentMethod === "cash" && <Check size={12} strokeWidth={3} />}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <span className="font-heading font-black text-sm text-[#18181B] dark:text-zinc-100 block">
-                  Pay on Arrival
-                </span>
-                <span className="text-[11px] font-body text-slate-500 dark:text-zinc-400 block mt-1 leading-snug">
-                  Pay cash or transfer to the delivery rider at your hostel block
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] font-bold">
-                <span className="text-slate-600 dark:text-zinc-300">Hostel room delivery</span>
-                <span className="text-emerald-600 dark:text-emerald-400">Zero upfront</span>
-              </div>
-            </div>
-
-            {/* OPTION 3: PAYSTACK ONLINE */}
+            {/* OPTION 2: PAYSTACK ONLINE */}
             <div 
               onClick={() => setPaymentMethod("paystack")}
               role="button"
@@ -752,39 +699,6 @@ export default function CheckoutPage() {
             </motion.div>
           )}
 
-          {/* ACTIVE METHOD DETAILS FOR PAY ON ARRIVAL */}
-          {paymentMethod === "cash" && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, y: -6 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              transition={{ duration: 0.25 }}
-              className="rounded-2xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50 dark:from-emerald-950/20 dark:via-zinc-900 dark:to-zinc-950 border-2 border-emerald-200/90 dark:border-emerald-900/50 p-4 md:p-5 space-y-3 shadow-xs"
-            >
-              <div className="flex items-center justify-between pb-2.5 border-b border-emerald-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                    <Banknote size={16} />
-                  </div>
-                  <h3 className="font-heading font-black text-sm text-emerald-950 dark:text-emerald-200">
-                    Hostel Doorstep Delivery
-                  </h3>
-                </div>
-                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40">
-                  Inspect Before Paying
-                </span>
-              </div>
-
-              <p className="text-xs font-body text-slate-600 dark:text-zinc-300 leading-relaxed">
-                Your order is prepped immediately. When the rider arrives at your hostel block or room, you can inspect your meal or items and pay <strong>₦{total.toLocaleString()}</strong> via physical cash or an instant transfer directly to the rider.
-              </p>
-
-              <div className="p-3 rounded-xl bg-white dark:bg-zinc-800/80 border border-emerald-100 dark:border-zinc-700/80 flex items-center gap-2 text-xs font-medium text-emerald-900 dark:text-emerald-200">
-                <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>Please ensure you have exact cash or your mobile banking app ready when the rider calls.</span>
-              </div>
-            </motion.div>
-          )}
-
           {/* ACTIVE METHOD DETAILS FOR PAYSTACK ONLINE */}
           {paymentMethod === "paystack" && (
             <motion.div
@@ -936,9 +850,7 @@ export default function CheckoutPage() {
                 <span className="truncate whitespace-normal text-center leading-tight">
                   {paymentMethod === "transfer" 
                     ? "Transferred • Place Order" 
-                    : paymentMethod === "paystack" 
-                      ? "Pay with Paystack" 
-                      : "Confirm (Pay on Arrival)"}
+                    : "Pay with Paystack"}
                 </span>
               )}
             </button>
