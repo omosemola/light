@@ -32,7 +32,6 @@ import {
   PlusCircle,
   MinusCircle,
   Calendar,
-  Sparkles,
   Search,
   Check,
   X,
@@ -788,7 +787,7 @@ export default function VendorDashboardPage() {
             className="fixed top-5 right-5 z-[100] px-4 py-3 bg-[#1E1B4B] text-white rounded-2xl shadow-2xl border border-indigo-500/30 flex items-center gap-3 font-heading font-extrabold text-xs backdrop-blur-md max-w-sm"
           >
             <div className="flex items-center gap-2 truncate">
-              <Sparkles size={16} className="text-amber-400 shrink-0" />
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
               <span className="truncate">{toastMessage}</span>
             </div>
             <button
@@ -2360,7 +2359,7 @@ export default function VendorDashboardPage() {
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-[10.5px] font-body text-amber-800 dark:text-amber-300 flex items-start gap-2">
-                      <Sparkles size={14} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                      <ShieldCheck size={14} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                       <span>
                         Students ordering from your store will see this exact account to transfer order funds directly to you. If left blank, the platform default account is used.
                       </span>

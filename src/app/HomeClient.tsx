@@ -26,7 +26,6 @@ import {
   Moon,
   Store, 
   Star, 
-  Sparkles, 
   Filter, 
   CheckCircle2,
   ChevronLeft,

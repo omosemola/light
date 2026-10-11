@@ -16,7 +16,7 @@ import {
   ShoppingBag,
   ExternalLink,
   X,
-  Sparkles,
+  ShieldCheck,
   Search,
   MessageCircle
 } from "lucide-react";
@@ -226,7 +226,7 @@ export default function SupportPage() {
       {/* TOAST NOTIFICATION */}
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#1E1B4B] text-white px-5 py-3 rounded-full text-xs font-bold shadow-2xl border border-indigo-500/30 flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
-          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -319,7 +319,7 @@ export default function SupportPage() {
           <div className="relative z-10 p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-5 w-full">
             <div className="max-w-md">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-amber-300 font-bold text-[11px] mb-2.5 border border-white/20 shadow-xs">
-                <Sparkles size={13} className="text-amber-400" />
+                <ShieldCheck size={13} className="text-amber-400" />
                 24/7 Campus Student Care
               </span>
               <h2 className="font-heading font-black text-xl sm:text-2xl text-white drop-shadow-sm leading-tight">

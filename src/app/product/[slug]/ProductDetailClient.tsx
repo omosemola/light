@@ -18,7 +18,6 @@ import {
   Quote, 
   Info, 
   Edit3,
-  Sparkles,
   Layers,
   Check,
   Bike,

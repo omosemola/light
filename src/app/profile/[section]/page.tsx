@@ -19,7 +19,6 @@ import {
   Monitor,
   Lock,
   Package,
-  Sparkles,
   Tag,
   X,
   CheckCheck,
@@ -941,7 +940,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                         {n.type === "order" ? (
                           <Package size={18} />
                         ) : n.type === "promo" ? (
-                          <Sparkles size={18} />
+                          <Tag size={18} />
                         ) : (
                           <ShieldCheck size={18} />
                         )}

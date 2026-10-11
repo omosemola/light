@@ -22,7 +22,7 @@ import {
   Building2,
   Copy,
   Check,
-  Sparkles,
+  Wallet,
   AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -414,164 +414,237 @@ export default function CheckoutPage() {
           </div>
         </motion.section>
 
-        {/* 2. PAYMENT METHOD SELECTION CARD */}
+        {/* 2. PAYMENT METHOD SELECTION CARD (REDESIGNED) */}
         <motion.section 
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-4"
+          className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200/90 dark:border-zinc-800 p-5 md:p-6 shadow-xs space-y-5"
         >
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2">
-              <Building2 size={18} className="text-[#312E81] dark:text-indigo-400" />
-              <h2 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100">
-                Payment Method
-              </h2>
+          {/* HEADER */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#312E81] to-indigo-700 text-white flex items-center justify-center shadow-xs shrink-0">
+                <Wallet size={19} />
+              </div>
+              <div>
+                <h2 className="font-heading font-black text-base md:text-lg text-[#18181B] dark:text-zinc-100 leading-tight">
+                  Payment Method
+                </h2>
+                <p className="text-xs font-body text-slate-500 dark:text-zinc-400 mt-0.5">
+                  Select how you want to pay for this order
+                </p>
+              </div>
             </div>
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-              <ShieldCheck size={13} /> 100% Safe & Verified
-            </span>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/40 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300">
+              <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Buyer Protected</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Direct Bank Transfer Option */}
+          {/* PAYMENT OPTIONS TILES */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {/* OPTION 1: DIRECT BANK TRANSFER */}
             <div 
               onClick={() => setPaymentMethod("transfer")}
-              className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 relative overflow-hidden ${
+              role="button"
+              tabIndex={0}
+              className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3.5 relative select-none ${
                 paymentMethod === "transfer" 
-                  ? "border-[#312E81] dark:border-indigo-500 bg-[#F4F3FF] dark:bg-indigo-950/60 shadow-xs" 
-                  : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
+                  ? "border-[#312E81] dark:border-indigo-500 bg-gradient-to-b from-[#F6F5FF] to-white dark:from-indigo-950/40 dark:to-zinc-900 shadow-md ring-2 ring-indigo-500/10" 
+                  : "border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-slate-50/50 dark:bg-zinc-900/60"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#312E81] to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Building2 size={18} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  paymentMethod === "transfer"
+                    ? "bg-[#312E81] text-white shadow-xs"
+                    : "bg-indigo-50 dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400"
+                }`}>
+                  <Building2 size={20} />
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40">
-                    Fast Verify
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/90 dark:text-amber-300 border border-amber-300/40">
+                    Fastest
                   </span>
-                  {paymentMethod === "transfer" && <CheckCircle2 size={16} className="text-[#312E81] dark:text-indigo-400 shrink-0" />}
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    paymentMethod === "transfer"
+                      ? "border-[#312E81] dark:border-indigo-400 bg-[#312E81] dark:bg-indigo-500 text-white"
+                      : "border-slate-300 dark:border-zinc-700 bg-transparent"
+                  }`}>
+                    {paymentMethod === "transfer" && <Check size={12} strokeWidth={3} />}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 block">
+                <span className="font-heading font-black text-sm text-[#18181B] dark:text-zinc-100 block">
                   Direct Bank Transfer
                 </span>
-                <span className="text-[10px] font-body text-[#71717A] dark:text-zinc-400 block mt-0.5 leading-tight">
-                  Transfer via OPay, Kuda, GTB, Moniepoint etc.
+                <span className="text-[11px] font-body text-slate-500 dark:text-zinc-400 block mt-1 leading-snug">
+                  Transfer via OPay, Palmpay, Kuda, GTB or any banking app
                 </span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] font-bold">
+                <span className="text-[#312E81] dark:text-indigo-300 font-extrabold">Instant Vendor Payout</span>
+                <span className="text-emerald-600 dark:text-emerald-400">0% fees</span>
               </div>
             </div>
 
-            {/* Pay on Delivery Option */}
+            {/* OPTION 2: PAY ON ARRIVAL */}
             <div 
               onClick={() => setPaymentMethod("cash")}
-              className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 relative overflow-hidden ${
+              role="button"
+              tabIndex={0}
+              className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3.5 relative select-none ${
                 paymentMethod === "cash" 
-                  ? "border-[#312E81] dark:border-indigo-500 bg-[#F4F3FF] dark:bg-indigo-950/60 shadow-xs" 
-                  : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
+                  ? "border-[#312E81] dark:border-indigo-500 bg-gradient-to-b from-[#F6F5FF] to-white dark:from-indigo-950/40 dark:to-zinc-900 shadow-md ring-2 ring-indigo-500/10" 
+                  : "border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-slate-50/50 dark:bg-zinc-900/60"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Banknote size={18} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  paymentMethod === "cash"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-emerald-50 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400"
+                }`}>
+                  <Banknote size={20} />
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
-                    Hostel Arrival
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
+                    Doorstep
                   </span>
-                  {paymentMethod === "cash" && <CheckCircle2 size={16} className="text-[#312E81] dark:text-indigo-400 shrink-0" />}
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    paymentMethod === "cash"
+                      ? "border-[#312E81] dark:border-indigo-400 bg-[#312E81] dark:bg-indigo-500 text-white"
+                      : "border-slate-300 dark:border-zinc-700 bg-transparent"
+                  }`}>
+                    {paymentMethod === "cash" && <Check size={12} strokeWidth={3} />}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 block">
+                <span className="font-heading font-black text-sm text-[#18181B] dark:text-zinc-100 block">
                   Pay on Arrival
                 </span>
-                <span className="text-[10px] font-body text-[#71717A] dark:text-zinc-400 block mt-0.5 leading-tight">
-                  Pay cash or transfer to the delivery rider at your room
+                <span className="text-[11px] font-body text-slate-500 dark:text-zinc-400 block mt-1 leading-snug">
+                  Pay cash or transfer to the delivery rider at your hostel block
                 </span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] font-bold">
+                <span className="text-slate-600 dark:text-zinc-300">Hostel room delivery</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Zero upfront</span>
               </div>
             </div>
 
-            {/* Paystack Online Option */}
+            {/* OPTION 3: PAYSTACK ONLINE */}
             <div 
               onClick={() => setPaymentMethod("paystack")}
-              className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 relative overflow-hidden ${
+              role="button"
+              tabIndex={0}
+              className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3.5 relative select-none ${
                 paymentMethod === "paystack" 
-                  ? "border-[#312E81] dark:border-indigo-500 bg-[#F4F3FF] dark:bg-indigo-950/60 shadow-xs" 
-                  : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
+                  ? "border-[#312E81] dark:border-indigo-500 bg-gradient-to-b from-[#F6F5FF] to-white dark:from-indigo-950/40 dark:to-zinc-900 shadow-md ring-2 ring-indigo-500/10" 
+                  : "border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-slate-50/50 dark:bg-zinc-900/60"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-700 to-purple-800 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <CreditCard size={18} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  paymentMethod === "paystack"
+                    ? "bg-gradient-to-br from-indigo-700 to-purple-800 text-white shadow-xs"
+                    : "bg-purple-50 dark:bg-zinc-800 text-purple-600 dark:text-purple-400"
+                }`}>
+                  <CreditCard size={20} />
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                    Cards & USSD
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900">
+                    Card / USSD
                   </span>
-                  {paymentMethod === "paystack" && <CheckCircle2 size={16} className="text-[#312E81] dark:text-indigo-400 shrink-0" />}
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    paymentMethod === "paystack"
+                      ? "border-[#312E81] dark:border-indigo-400 bg-[#312E81] dark:bg-indigo-500 text-white"
+                      : "border-slate-300 dark:border-zinc-700 bg-transparent"
+                  }`}>
+                    {paymentMethod === "paystack" && <Check size={12} strokeWidth={3} />}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <span className="font-heading font-extrabold text-xs text-[#18181B] dark:text-zinc-100 block">
+                <span className="font-heading font-black text-sm text-[#18181B] dark:text-zinc-100 block">
                   Paystack Online
                 </span>
-                <span className="text-[10px] font-body text-[#71717A] dark:text-zinc-400 block mt-0.5 leading-tight">
-                  Automated card / bank payment gateway
+                <span className="text-[11px] font-body text-slate-500 dark:text-zinc-400 block mt-1 leading-snug">
+                  Automated card, bank transfer, Apple Pay, or USSD gateway
                 </span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] font-bold">
+                <span className="text-slate-600 dark:text-zinc-300">Auto verified</span>
+                <span className="text-indigo-600 dark:text-indigo-400">Cards & USSD</span>
               </div>
             </div>
           </div>
 
-          {/* DEDICATED DIRECT BANK TRANSFER DETAILS CARD */}
+          {/* ACTIVE METHOD DETAILS FOR DIRECT BANK TRANSFER */}
           {paymentMethod === "transfer" && (
             <motion.div
-              initial={{ opacity: 0, height: 0, scale: 0.98 }}
-              animate={{ opacity: 1, height: "auto", scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className="mt-4 rounded-2xl bg-gradient-to-b from-[#F8F9FD] to-white dark:from-zinc-900/90 dark:to-zinc-950 border-2 border-indigo-200 dark:border-indigo-900/60 p-4 md:p-5 space-y-4 shadow-sm"
+              initial={{ opacity: 0, height: 0, y: -6 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-2xl bg-gradient-to-b from-[#F8F9FE] to-white dark:from-zinc-900/90 dark:to-zinc-950 border-2 border-indigo-200/90 dark:border-indigo-900/60 p-4 md:p-5 space-y-4 shadow-xs"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-indigo-100 dark:border-zinc-800">
+              {/* SUB-HEADER */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-indigo-100/90 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-amber-400/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                    <Sparkles size={13} />
+                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-300 flex items-center justify-center shrink-0">
+                    <Building2 size={15} />
                   </div>
-                  <h3 className="font-heading font-extrabold text-sm text-[#1E1B4B] dark:text-indigo-200">
-                    {isVendorDirectAccount 
-                      ? `${vendorBankDetails?.storeName || vendorName}'s Bank Account` 
-                      : "Marketplace Bank Account Details"}
-                  </h3>
+                  <div>
+                    <h3 className="font-heading font-black text-sm text-[#1E1B4B] dark:text-indigo-200">
+                      {isVendorDirectAccount 
+                        ? `${vendorBankDetails?.storeName || vendorName}'s Direct Bank Account` 
+                        : "Marketplace Verified Escrow Account"}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                      Transfer exact total to the verified credentials below
+                    </p>
+                  </div>
                 </div>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40">
-                  {isVendorDirectAccount ? "Verified Vendor Account" : "Platform Verified"}
+
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40">
+                  <ShieldCheck size={12} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>{isVendorDirectAccount ? "Verified Vendor Account" : "Platform Verified"}</span>
                 </span>
               </div>
 
-              {/* ACCOUNT DETAILS BOX */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* ACCOUNT NUMBER & COPY */}
-                <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex items-center justify-between gap-3">
+              {/* ACCOUNT DETAILS TILES */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {/* 1. ACCOUNT NUMBER & COPY */}
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-400 block tracking-wider">
+                    <span className="text-[10px] uppercase font-extrabold text-slate-400 dark:text-zinc-400 block tracking-wider">
                       Account Number
                     </span>
-                    <span className="font-mono font-black text-xl md:text-2xl text-[#1E1B4B] dark:text-white tracking-widest block select-all">
+                    <span className="font-mono font-black text-2xl md:text-3xl text-[#1E1B4B] dark:text-white tracking-widest block select-all my-0.5">
                       {activeAccountNumber}
                     </span>
-                    <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
-                      Bank: <strong className="text-slate-800 dark:text-zinc-200">{activeBankName}</strong>
+                    <span className="text-xs font-medium text-slate-600 dark:text-zinc-400 block">
+                      Bank: <strong className="text-slate-900 dark:text-zinc-100 font-extrabold">{activeBankName}</strong>
                     </span>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleCopyAccount}
-                    className="h-10 px-3.5 rounded-xl bg-[#312E81] hover:bg-[#1E1B4B] active:scale-95 text-white font-heading font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
+                    className="h-11 px-4 rounded-xl bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 active:scale-95 text-white font-heading font-black text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
                     title="Copy Account Number"
                   >
                     {copiedAccount ? (
@@ -588,25 +661,25 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {/* ACCOUNT NAME & AMOUNT */}
-                <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex items-center justify-between gap-3">
+                {/* 2. ACCOUNT NAME & AMOUNT */}
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-zinc-400 block tracking-wider">
-                      Account Name & Amount
+                    <span className="text-[10px] uppercase font-extrabold text-slate-400 dark:text-zinc-400 block tracking-wider">
+                      Account Name & Order Total
                     </span>
-                    <span className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 block truncate">
+                    <span className="font-heading font-black text-sm md:text-base text-[#18181B] dark:text-zinc-100 block truncate my-0.5">
                       {activeAccountName}
                     </span>
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      Exact Amount: <strong className="text-sm font-black">₦{total.toLocaleString()}</strong>
+                      Exact Amount: <strong className="text-sm font-black text-emerald-700 dark:text-emerald-300">₦{total.toLocaleString()}</strong>
                     </span>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleCopyAmount}
-                    className="h-10 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-[#18181B] dark:text-zinc-100 active:scale-95 font-heading font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-                    title="Copy Amount"
+                    className="h-11 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-[#18181B] dark:text-zinc-100 active:scale-95 font-heading font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                    title="Copy Exact Amount"
                   >
                     {copiedAmount ? (
                       <>
@@ -624,26 +697,26 @@ export default function CheckoutPage() {
               </div>
 
               {/* 3 STEPS CHECKLIST */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1 text-[11px] font-body text-slate-600 dark:text-zinc-400">
-                <div className="p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
-                  <span className="font-bold text-[#312E81] dark:text-indigo-300 block">1. Copy Details</span>
-                  <span>Copy account number & amount above.</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 py-1 text-xs font-body text-slate-600 dark:text-zinc-400">
+                <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                  <span className="font-black text-[#312E81] dark:text-indigo-300 block mb-0.5">1. Copy Account</span>
+                  <span className="text-[11px] leading-tight block">Copy 10-digit number & exact order amount.</span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
-                  <span className="font-bold text-[#312E81] dark:text-indigo-300 block">2. Transfer via Bank App</span>
-                  <span>Open OPay, Kuda, GTB or Palmpay & send.</span>
+                <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                  <span className="font-black text-[#312E81] dark:text-indigo-300 block mb-0.5">2. Send from App</span>
+                  <span className="text-[11px] leading-tight block">Send from OPay, Palmpay, Kuda or bank.</span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
-                  <span className="font-bold text-[#312E81] dark:text-indigo-300 block">3. Fill Sender Name</span>
-                  <span>Enter sender name below to confirm order.</span>
+                <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                  <span className="font-black text-[#312E81] dark:text-indigo-300 block mb-0.5">3. Enter Sender Name</span>
+                  <span className="text-[11px] leading-tight block">Enter account name used below to verify.</span>
                 </div>
               </div>
 
               {/* SENDER VERIFICATION INPUTS */}
               <div className="pt-2 border-t border-indigo-100 dark:border-zinc-800 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-100 block mb-1">
+                    <label className="text-xs font-heading font-black text-[#18181B] dark:text-zinc-100 block mb-1">
                       Sender Account Name <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -654,8 +727,8 @@ export default function CheckoutPage() {
                       placeholder="e.g. John Doe / Adebayo Johnson"
                       className="w-full h-11 px-3.5 bg-white dark:bg-zinc-800 border-2 border-indigo-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-400 font-semibold text-xs md:text-sm text-[#18181B] dark:text-zinc-100 placeholder:text-slate-400"
                     />
-                    <span className="text-[10px] text-slate-500 dark:text-zinc-400 block mt-1">
-                      The exact name appearing on the bank account you sent money from.
+                    <span className="text-[10.5px] text-slate-500 dark:text-zinc-400 block mt-1">
+                      The exact name appearing on the account from which payment was made.
                     </span>
                   </div>
 
@@ -670,11 +743,80 @@ export default function CheckoutPage() {
                       placeholder="e.g. OPay, Palmpay, GTBank, Kuda"
                       className="w-full h-11 px-3.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-[#312E81] dark:focus:border-indigo-400 font-medium text-xs md:text-sm text-[#18181B] dark:text-zinc-100 placeholder:text-slate-400"
                     />
-                    <span className="text-[10px] text-slate-500 dark:text-zinc-400 block mt-1">
-                      Helps customer operations match your credit alert faster.
+                    <span className="text-[10.5px] text-slate-500 dark:text-zinc-400 block mt-1">
+                      Speeds up instant confirmation from store management.
                     </span>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ACTIVE METHOD DETAILS FOR PAY ON ARRIVAL */}
+          {paymentMethod === "cash" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -6 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-2xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50 dark:from-emerald-950/20 dark:via-zinc-900 dark:to-zinc-950 border-2 border-emerald-200/90 dark:border-emerald-900/50 p-4 md:p-5 space-y-3 shadow-xs"
+            >
+              <div className="flex items-center justify-between pb-2.5 border-b border-emerald-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <Banknote size={16} />
+                  </div>
+                  <h3 className="font-heading font-black text-sm text-emerald-950 dark:text-emerald-200">
+                    Hostel Doorstep Delivery
+                  </h3>
+                </div>
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40">
+                  Inspect Before Paying
+                </span>
+              </div>
+
+              <p className="text-xs font-body text-slate-600 dark:text-zinc-300 leading-relaxed">
+                Your order is prepped immediately. When the rider arrives at your hostel block or room, you can inspect your meal or items and pay <strong>₦{total.toLocaleString()}</strong> via physical cash or an instant transfer directly to the rider.
+              </p>
+
+              <div className="p-3 rounded-xl bg-white dark:bg-zinc-800/80 border border-emerald-100 dark:border-zinc-700/80 flex items-center gap-2 text-xs font-medium text-emerald-900 dark:text-emerald-200">
+                <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Please ensure you have exact cash or your mobile banking app ready when the rider calls.</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ACTIVE METHOD DETAILS FOR PAYSTACK ONLINE */}
+          {paymentMethod === "paystack" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -6 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/50 dark:from-indigo-950/20 dark:via-zinc-900 dark:to-zinc-950 border-2 border-indigo-200/90 dark:border-indigo-900/50 p-4 md:p-5 space-y-3 shadow-xs"
+            >
+              <div className="flex items-center justify-between pb-2.5 border-b border-indigo-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-[#312E81] dark:text-indigo-300 flex items-center justify-center shrink-0">
+                    <CreditCard size={16} />
+                  </div>
+                  <h3 className="font-heading font-black text-sm text-[#1E1B4B] dark:text-indigo-200">
+                    Automated Card & USSD Payment
+                  </h3>
+                </div>
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-300/40">
+                  PCI-DSS Level 1 Secure
+                </span>
+              </div>
+
+              <p className="text-xs font-body text-slate-600 dark:text-zinc-300 leading-relaxed">
+                You will be connected to Paystack to complete your <strong>₦{total.toLocaleString()}</strong> transaction using Mastercard, Visa, Verve, USSD banking, or QR. Orders are automatically confirmed the second payment succeeds.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {["Mastercard", "Visa", "Verve", "USSD (*737#)", "Bank Transfer"].map((badge) => (
+                  <span key={badge} className="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 text-[10px] font-bold text-slate-700 dark:text-zinc-300 border border-indigo-100 dark:border-zinc-700">
+                    {badge}
+                  </span>
+                ))}
               </div>
             </motion.div>
           )}

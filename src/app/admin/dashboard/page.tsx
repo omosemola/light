@@ -24,7 +24,6 @@ import {
   Utensils,
   Package,
   Clock,
-  Sparkles,
   TrendingUp,
   Tag,
   Phone,

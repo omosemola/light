@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Compass } from "lucide-react";
 import { useUserStore } from "@/lib/userStore";
 
 // CORPORATE MEMPHIS FLAT VECTOR ART 1: FOOD & DRINKS (FLOATING WITHOUT BOX CONTAINER)
@@ -320,7 +320,7 @@ export default function WelcomePage() {
             onClick={handleContinueAsGuest}
             className="font-heading font-bold text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Sparkles size={15} className="text-amber-500" />
+            <Compass size={15} className="text-amber-500" />
             <span>Explore as Guest</span>
           </button>
 

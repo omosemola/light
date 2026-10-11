@@ -16,7 +16,7 @@ import {
   Store, 
   Bike, 
   Clock, 
-  Sparkles, 
+  Zap, 
   AlertCircle, 
   DollarSign, 
   BadgePercent,
@@ -177,7 +177,7 @@ function TermsContent() {
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/60">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold mb-2">
-                    <Sparkles size={16} />
+                    <Zap size={16} />
                   </div>
                   <h4 className="font-bold text-xs text-slate-900 dark:text-white">15-20 Min Prep Time</h4>
                   <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">Hot meals and orders must be boxed, sealed, and marked &quot;Ready for Delivery&quot; swiftly.</p>

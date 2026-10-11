@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, Check, Layers, Sparkles, MessageSquare, ShoppingBag, Store } from "lucide-react";
+import { X, Plus, Minus, Check, Layers, PlusCircle, MessageSquare, ShoppingBag, Store } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 
 import { 
@@ -264,7 +264,7 @@ export function ProductCustomizerModal({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Sparkles size={16} className="text-amber-500" />
+                    <PlusCircle size={16} className="text-amber-500" />
                     Extras & Add-ons (Protein, Sides, Drinks)
                   </h4>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Optional</span>
