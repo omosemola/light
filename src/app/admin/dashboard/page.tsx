@@ -425,6 +425,7 @@ export default function AdminDashboardPage() {
       u.role !== "ADMIN" && 
       u.role !== "VENDOR" && 
       !u.store &&
+      u.email?.toLowerCase() !== "lightmarketplace01@gmail.com" &&
       u.email?.toLowerCase() !== "admin@campuslightson.com" &&
       u.name !== "Platform Super Admin"
     );

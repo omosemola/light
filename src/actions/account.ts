@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { notifyAdminNewStudent } from "@/lib/email";
 export interface SavedLocationItem {
   id: string;
   title: string;
@@ -135,6 +136,16 @@ export async function updateUserProfileDb(
           role: "STUDENT",
         },
       });
+
+      // Notify Admin via email of new student registration
+      notifyAdminNewStudent({
+        name: user.name || "Student",
+        email: user.email,
+        phone: user.phone || data.phone || null,
+        hostel: user.hostel || data.hostel || null,
+        addressDetail: user.addressDetail || data.addressDetail || null,
+        source: "Registration Form",
+      }).catch((e) => console.error("Admin student registration notification error:", e));
     } else {
       user = await prisma.user.update({
         where: { id: user.id },

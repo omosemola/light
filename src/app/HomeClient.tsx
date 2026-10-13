@@ -32,7 +32,8 @@ import {
   ChevronRight,
   Zap,
   Gift,
-  ShieldCheck
+  ShieldCheck,
+  Briefcase
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -107,18 +108,11 @@ const CATEGORIES = [
     badge: "Fresh Bakery"
   },
   { 
-    name: "Medical", 
-    slug: "medical", 
-    icon: Stethoscope,
+    name: "Services", 
+    slug: "services", 
+    icon: Briefcase,
     iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Health & Meds"
-  },
-  { 
-    name: "Laundry", 
-    slug: "laundry", 
-    icon: Waves,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Wash & Fold"
+    badge: "Meds & Laundry"
   },
   { 
     name: "Stationery", 
@@ -229,7 +223,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     }
 
     loadLiveProducts();
-    if (profile.email && profile.email !== "admin@campuslightson.com") {
+    if (profile.email && profile.email !== "lightmarketplace01@gmail.com" && profile.email !== "admin@campuslightson.com") {
       useFavoritesStore.getState().syncWithUserAccount(profile.email);
     }
 

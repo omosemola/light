@@ -8,7 +8,8 @@ import {
   sendEmail, 
   generateStudentOrderReceiptEmail, 
   generateVendorNewOrderAlertEmail, 
-  generateAdminPlatformOrderAlertEmail 
+  generateAdminPlatformOrderAlertEmail,
+  notifyAdminNewStudent,
 } from "@/lib/email";
 import { sendVendorWhatsAppOrderNotification } from "@/lib/whatsapp";
 import { getSafeImageUrl } from "@/lib/productOptions";
@@ -60,6 +61,14 @@ export async function createLiveOrder(input: CreateOrderInput) {
           },
         });
         userId = newUser.id;
+
+        notifyAdminNewStudent({
+          name: newUser.name || input.userName || "Campus Student",
+          email: newUser.email,
+          phone: newUser.phone || input.userPhone || null,
+          hostel: input.deliveryLocation || null,
+          source: "First-Time Checkout Order",
+        }).catch((e) => console.error("Admin student alert failed:", e));
       }
     }
 
@@ -253,7 +262,7 @@ export async function createLiveOrder(input: CreateOrderInput) {
     }
 
     // 6. Send Transaction Notification to Admin
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com";
     const adminHtml = generateAdminPlatformOrderAlertEmail({
       orderId: displayOrderId,
       storeName: order.store.name,

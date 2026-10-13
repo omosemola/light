@@ -34,6 +34,7 @@ import { uploadImageToCloud } from "@/lib/uploadClient";
 import { useUserStore } from "@/lib/userStore";
 
 const CAMPUS_CATEGORIES = [
+  "Campus Services (Laundry, Medicals, Cleaning & Errands)",
   "Campus Food & Meals",
   "Cafeteria & Snacks Combos",
   "Provisions & Hostel Groceries",

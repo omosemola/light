@@ -551,7 +551,7 @@ function compressAvatarImage(file: File): Promise<string> {
       )}
 
       {/* ADMIN COMMAND CENTER QUICK ACCESS BANNER (IF ADMIN) */}
-      {(profile.role === "ADMIN" || profile.email === "admin@campuslightson.com") && (
+      {(profile.role === "ADMIN" || profile.email === "lightmarketplace01@gmail.com" || profile.email === "admin@campuslightson.com") && (
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}

@@ -575,71 +575,88 @@ export default function CheckoutPage() {
               {/* ACCOUNT DETAILS TILES */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {/* 1. ACCOUNT NUMBER & COPY */}
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase font-extrabold text-slate-400 dark:text-zinc-400 block tracking-wider">
-                      Account Number
-                    </span>
-                    <span className="font-mono font-black text-2xl md:text-3xl text-[#1E1B4B] dark:text-white tracking-widest block select-all my-0.5">
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex flex-col justify-between gap-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase font-extrabold text-slate-400 dark:text-zinc-400 tracking-wider">
+                        Account Number
+                      </span>
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900">
+                        NUBAN
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyAccount}
+                      className="h-8 px-3 rounded-lg bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 active:scale-95 text-white font-heading font-extrabold text-[11px] flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
+                      title="Copy Account Number"
+                    >
+                      {copiedAccount ? (
+                        <>
+                          <Check size={13} className="text-emerald-300" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          <span>Copy Number</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="py-1">
+                    <span className="font-mono font-black text-2xl sm:text-3xl text-[#1E1B4B] dark:text-white tracking-wider sm:tracking-widest block select-all break-all sm:break-normal">
                       {activeAccountNumber}
-                    </span>
-                    <span className="text-xs font-medium text-slate-600 dark:text-zinc-400 block">
-                      Bank: <strong className="text-slate-900 dark:text-zinc-100 font-extrabold">{activeBankName}</strong>
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleCopyAccount}
-                    className="h-11 px-4 rounded-xl bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 active:scale-95 text-white font-heading font-black text-xs flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
-                    title="Copy Account Number"
-                  >
-                    {copiedAccount ? (
-                      <>
-                        <Check size={14} className="text-emerald-300" />
-                        <span>Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-700/60 flex items-center justify-between text-xs font-medium text-slate-600 dark:text-zinc-400">
+                    <span>Destination Bank:</span>
+                    <strong className="text-slate-900 dark:text-zinc-100 font-extrabold">{activeBankName}</strong>
+                  </div>
                 </div>
 
                 {/* 2. ACCOUNT NAME & AMOUNT */}
-                <div className="p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase font-extrabold text-slate-400 dark:text-zinc-400 block tracking-wider">
-                      Account Name & Order Total
+                <div className="p-4 rounded-xl bg-white dark:bg-zinc-800/90 border border-indigo-100 dark:border-zinc-700 shadow-xs flex flex-col justify-between gap-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] uppercase font-extrabold text-slate-400 dark:text-zinc-400 tracking-wider">
+                      Account Name (Beneficiary)
                     </span>
-                    <span className="font-heading font-black text-sm md:text-base text-[#18181B] dark:text-zinc-100 block truncate my-0.5">
+
+                    <button
+                      type="button"
+                      onClick={handleCopyAmount}
+                      className="h-8 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 active:scale-95 font-heading font-extrabold text-[11px] flex items-center gap-1.5 transition-all shrink-0 cursor-pointer border border-emerald-200 dark:border-emerald-800"
+                      title="Copy Exact Amount"
+                    >
+                      {copiedAmount ? (
+                        <>
+                          <Check size={13} className="text-emerald-500" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          <span>Copy ₦ Amount</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="py-1">
+                    <span className="font-heading font-black text-base sm:text-lg text-[#18181B] dark:text-zinc-100 block break-words leading-snug">
                       {activeAccountName}
-                    </span>
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      Exact Amount: <strong className="text-sm font-black text-emerald-700 dark:text-emerald-300">₦{total.toLocaleString()}</strong>
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleCopyAmount}
-                    className="h-11 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-[#18181B] dark:text-zinc-100 active:scale-95 font-heading font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-                    title="Copy Exact Amount"
-                  >
-                    {copiedAmount ? (
-                      <>
-                        <Check size={13} className="text-emerald-500" />
-                        <span>Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={13} />
-                        <span>Copy ₦</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-700/60 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span>Transfer Exact Total:</span>
+                    <span className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-300 font-mono">
+                      ₦{total.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
 

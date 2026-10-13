@@ -9,7 +9,9 @@ import {
   sendEmail, 
   generateStudentStatusUpdateEmail, 
   generateVendorWelcomeEmail, 
-  generateAdminNewVendorEmail 
+  generateAdminNewVendorEmail,
+  notifyAdminNewVendor,
+  notifyAdminNewProduct,
 } from "@/lib/email";
 import { sendOrderDeliverySMS } from "@/lib/sms";
 import { generateUniqueProductSlug } from "@/lib/slugify";
@@ -353,8 +355,29 @@ export async function createVendorProduct(data: {
       },
       include: {
         category: true,
+        store: {
+          include: {
+            user: { select: { name: true, email: true, phone: true } },
+          },
+        },
       },
     });
+
+    // Notify Administrator via email of new product
+    notifyAdminNewProduct({
+      productName: product.name,
+      price: product.price,
+      categoryName: product.category?.name || "General",
+      storeName: product.store?.name || "Merchant Store",
+      ownerName: product.store?.user?.name || null,
+      vendorEmail: product.store?.user?.email || null,
+      vendorPhone: product.store?.user?.phone || null,
+      description: product.description || null,
+      imageUrl: product.image,
+      estimatedDelivery: product.estimatedDelivery,
+      deliveryFee: product.deliveryFee,
+      productSlug: product.slug,
+    }).catch((e) => console.error("Admin new product notification error:", e));
 
     await clearMarketplaceCache({ storeId: data.storeId });
     revalidatePath("/vendor/dashboard");
@@ -447,8 +470,29 @@ export async function updateVendorProduct(data: {
           },
           include: {
             category: true,
+            store: {
+              include: {
+                user: { select: { name: true, email: true, phone: true } },
+              },
+            },
           },
         });
+
+        notifyAdminNewProduct({
+          productName: created.name,
+          price: created.price,
+          categoryName: created.category?.name || "General",
+          storeName: created.store?.name || "Merchant Store",
+          ownerName: created.store?.user?.name || null,
+          vendorEmail: created.store?.user?.email || null,
+          vendorPhone: created.store?.user?.phone || null,
+          description: created.description || null,
+          imageUrl: created.image,
+          estimatedDelivery: created.estimatedDelivery,
+          deliveryFee: created.deliveryFee,
+          productSlug: created.slug,
+        }).catch((e) => console.error("Admin new product notification error:", e));
+
         await clearMarketplaceCache({ productId: created.id, storeId });
         revalidatePath("/vendor/dashboard");
         revalidatePath("/");
@@ -604,20 +648,15 @@ export async function registerVendorStore(data: {
     }
 
     // 4. Send New Vendor Application Alert to Admin for Verification
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
-    const adminNoticeHtml = generateAdminNewVendorEmail({
+    notifyAdminNewVendor({
       storeName: data.storeName,
       ownerName: data.ownerName,
       email: data.email,
       phone: data.phone,
       category: data.category,
       location: data.location,
-    });
-
-    sendEmail({
-      to: adminEmail,
-      subject: `[LIGHTSON ADMIN - ACTION REQUIRED] New Vendor Application: ${data.storeName} (${data.category})`,
-      html: adminNoticeHtml,
+      description: data.description,
+      logoUrl: finalLogo,
     }).catch((e) => console.error("Failed to send admin vendor alert email:", e));
 
     // 5. Establish secure merchant session cookies
@@ -744,6 +783,16 @@ export async function authenticateVendor(email: string, password?: string) {
           coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
         },
       });
+
+      notifyAdminNewVendor({
+        storeName: targetStore.name,
+        ownerName: user.name || "Campus Vendor",
+        email: user.email,
+        phone: user.phone || "Not specified",
+        category: "Campus Retail & Essentials",
+        location: "University Campus",
+        description: targetStore.description,
+      }).catch((e) => console.error("Admin vendor alert error:", e));
     }
 
     // Ensure user role is VENDOR

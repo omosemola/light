@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { X, Send, Image as ImageIcon, Phone, ShieldCheck, CheckCheck, Store } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,10 +32,30 @@ interface ChatMessage {
   timestamp: string;
 }
 
-const QUICK_PRESETS = [
+const DEFAULT_PRESETS = [
   "Is this item in stock right now?",
   "How long will delivery to my hostel take?",
-  "Can I request extra cutlery/sauce?",
+  "Can you confirm details for my order?",
+];
+
+const LAUNDRY_PRESETS = [
+  "When can you pick up from my hostel hall?",
+  "Do you wash duvets and heavy bedsheets?",
+  "How long does wash, dry and iron take?",
+  "What is the charge for 10 shirts?",
+];
+
+const MEDICAL_PRESETS = [
+  "Is this medicine available in stock right now?",
+  "Can this be delivered urgently to my room?",
+  "What dosage or usage do you recommend?",
+  "Do you have alternative cold relief tablets?",
+];
+
+const SERVICE_PRESETS = [
+  "When is the earliest you can fulfill this?",
+  "Can you deliver directly to my hostel lodge?",
+  "Do you handle urgent student requests?",
 ];
 
 const playNotificationChime = () => {
@@ -78,6 +98,27 @@ export function MerchantChatModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevVendorMsgCountRef = useRef<number>(0);
+
+  const isServiceVendor = useMemo(() => {
+    const cat = (vendor?.category || "").toLowerCase();
+    const ctx = (initialProductContext || "").toLowerCase();
+    return cat.includes("service") || cat.includes("laundr") || cat.includes("medic") || cat.includes("pharm") || ctx.includes("laundr") || ctx.includes("wash") || ctx.includes("medic");
+  }, [vendor?.category, initialProductContext]);
+
+  const activePresets = useMemo(() => {
+    const cat = (vendor?.category || "").toLowerCase();
+    const ctx = (initialProductContext || "").toLowerCase();
+    if (cat.includes("laundr") || ctx.includes("laundr") || ctx.includes("wash") || ctx.includes("iron")) {
+      return LAUNDRY_PRESETS;
+    }
+    if (cat.includes("medic") || cat.includes("pharm") || cat.includes("health") || ctx.includes("medic") || ctx.includes("pharm")) {
+      return MEDICAL_PRESETS;
+    }
+    if (cat.includes("service") || ctx.includes("service") || ctx.includes("errand")) {
+      return SERVICE_PRESETS;
+    }
+    return DEFAULT_PRESETS;
+  }, [vendor?.category, initialProductContext]);
 
   const fetchLiveMessages = useCallback(async () => {
     if (!vendor?.id) return;
@@ -266,7 +307,7 @@ export function MerchantChatModal({
                 </div>
                 <p className="text-[11px] text-[#71717A] dark:text-zinc-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                  <span>Live Merchant Chat</span>
+                  <span>{isServiceVendor ? "Verified Service Personnel" : "Live Merchant Chat"}</span>
                 </p>
               </div>
             </div>
@@ -341,7 +382,7 @@ export function MerchantChatModal({
 
           {/* QUICK PROMPT PRESETS */}
           <div className="px-3 py-2 bg-white dark:bg-[#121214] border-t border-slate-100 dark:border-zinc-800/80 overflow-x-auto flex gap-2 no-scrollbar shrink-0">
-            {QUICK_PRESETS.map((preset, idx) => (
+            {activePresets.map((preset, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(preset)}

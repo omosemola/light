@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getLiveCategoryProducts } from "@/actions/marketplace";
 import CategoryClient from "./CategoryClient";
 
@@ -29,6 +30,14 @@ const CATEGORY_TITLES: Record<string, { title: string; desc: string }> = {
   pastries: {
     title: "Pastries & Bakery — Lightson Marketplace",
     desc: "Freshly baked meat pies, cakes, donuts, and bread on Lightson Marketplace.",
+  },
+  services: {
+    title: "Services (Medicals & Laundry) — Lightson Marketplace",
+    desc: "Campus hostel laundry, dry cleaning, medicals, pharmacy, and student services on Lightson.",
+  },
+  medicals: {
+    title: "Medicals & Health Care — Lightson Marketplace",
+    desc: "Campus first aid kits, vitamins, and healthcare essentials on Lightson Marketplace.",
   },
   medical: {
     title: "Medical & Health Care — Lightson Marketplace",
@@ -93,11 +102,19 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
+  const normalized = slug.toLowerCase().trim();
+
+  // Medical and Laundry are consolidated under Services
+  if (normalized === "medical" || normalized === "medicals" || normalized === "laundry") {
+    redirect("/category/services");
+  }
+
   const res = await getLiveCategoryProducts(slug);
 
   return (
     <CategoryClient
       initialProducts={res.success ? res.products : []}
+      initialServiceStores={res.success ? (res as any).serviceStores || [] : []}
       slug={slug}
     />
   );

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { notifyAdminNewStudent } from "@/lib/email";
 
 export async function syncSupabaseOAuthUser(data: {
   email: string;
@@ -26,6 +27,12 @@ export async function syncSupabaseOAuthUser(data: {
         role: Role.STUDENT,
       },
     });
+
+    notifyAdminNewStudent({
+      name: newUser.name || "Student",
+      email: newUser.email,
+      source: "Supabase OAuth Login",
+    }).catch((e) => console.error("Admin student alert failed:", e));
 
     return { success: true, user: newUser };
   } catch (error: any) {

@@ -467,46 +467,429 @@ export function generateAdminNewVendorEmail({
   phone,
   category,
   location,
+  description,
+  logoUrl,
 }: {
   storeName: string;
-  ownerName: string;
-  email: string;
-  phone: string;
-  category: string;
-  location: string;
+  ownerName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  category?: string | null;
+  location?: string | null;
+  description?: string | null;
+  logoUrl?: string | null;
 }) {
   return `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <style>
-          body { font-family: 'Segoe UI', sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 20px; }
-          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e4e4e7; padding: 24px; }
-          .heading { font-size: 18px; font-weight: 900; color: ${BRAND_NAVY}; margin-top: 0; }
-          .btn { display: inline-block; background-color: ${BRAND_NAVY}; color: #ffffff !important; font-weight: 800; font-size: 13px; text-decoration: none; padding: 10px 20px; border-radius: 8px; }
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.05); }
+          .header { background-color: ${BRAND_NAVY}; color: #ffffff; padding: 32px 24px; text-align: center; }
+          .brand-title { font-size: 24px; font-weight: 900; margin: 0; }
+          .brand-accent { color: ${BRAND_AMBER}; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #FEF3C7; color: #92400E; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 16px; border: 1px solid #FCD34D; }
+          .heading { font-size: 20px; font-weight: 900; color: ${BRAND_NAVY}; margin-top: 0; margin-bottom: 8px; }
+          .desc { font-size: 14px; color: #52525b; line-height: 1.6; margin-bottom: 20px; }
+          .card { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 24px; font-size: 13px; line-height: 1.6; }
+          .card-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #EEF2F6; }
+          .card-row:last-child { border-bottom: none; }
+          .card-label { font-weight: 600; color: #64748B; }
+          .card-value { font-weight: 800; color: #0F172A; text-align: right; }
+          .btn { display: block; width: 100%; box-sizing: border-box; background-color: ${BRAND_NAVY}; color: #ffffff !important; text-align: center; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; margin-top: 20px; box-shadow: 0 4px 14px rgba(30, 27, 75, 0.25); }
+          .footer { text-align: center; padding: 20px; font-size: 11px; color: #94A3B8; border-top: 1px solid #F1F5F9; background: #FAFAFA; }
         </style>
       </head>
       <body>
         <div class="container">
-          <div style="text-align: center; margin-bottom: 12px;">
-            <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle;" />
+          <div class="header">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <img src="${logoUrl || BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            </div>
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
+            <p style="margin: 6px 0 0; font-size: 12px; color: #CBD5E1;">Supervisor Operations & Vendor Management</p>
           </div>
-          <h2 class="heading">🛡️ New Campus Vendor Registered</h2>
-          <p style="font-size: 13px; color: #52525b;">A new store has registered on Lightson Marketplace:</p>
-          <div style="background: #f8fafc; padding: 16px; border-radius: 12px; font-size: 13px; margin: 16px 0; border: 1px solid #e2e8f0;">
-            <div><strong>Store:</strong> ${storeName}</div>
-            <div><strong>Owner:</strong> ${ownerName}</div>
-            <div><strong>Email:</strong> ${email}</div>
-            <div><strong>Phone:</strong> ${phone}</div>
-            <div><strong>Category:</strong> ${category}</div>
-            <div><strong>Campus Hub:</strong> ${location}</div>
+          <div class="content">
+            <span class="badge">🏪 New Vendor Registration</span>
+            <h2 class="heading">A new campus store just registered!</h2>
+            <p class="desc">A new merchant has signed up to sell on the Lightson multi-vendor network. Review store details below:</p>
+
+            <div class="card">
+              <div class="card-row">
+                <span class="card-label">Store / Brand</span>
+                <span class="card-value" style="color: ${BRAND_NAVY}; font-size: 14px;">${storeName}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Owner Name</span>
+                <span class="card-value">${ownerName}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Email Address</span>
+                <span class="card-value"><a href="mailto:${email}" style="color: #2563EB; text-decoration: none;">${email}</a></span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Phone / WhatsApp</span>
+                <span class="card-value"><a href="tel:${phone}" style="color: #2563EB; text-decoration: none;">${phone}</a></span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Category</span>
+                <span class="card-value">${category}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Campus Hub</span>
+                <span class="card-value">${location}</span>
+              </div>
+              ${description ? `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #CBD5E1; font-size: 12px; color: #475569;">
+                  <strong>Description:</strong> "${description}"
+                </div>
+              ` : ""}
+            </div>
+
+            <a href="https://campuslightson.com/admin/dashboard" class="btn">
+              Open Admin Dashboard to Verify Store ➔
+            </a>
           </div>
-          <a href="https://campuslightson.com/admin/dashboard" class="btn">Open Admin Dashboard ➔</a>
+          <div class="footer">
+            Lightson Campus Marketplace • Live Merchant Registration Monitor
+          </div>
         </div>
       </body>
     </html>
   `;
+}
+
+export function generateAdminNewStudentEmail({
+  name,
+  email,
+  phone,
+  hostel,
+  addressDetail,
+  source,
+}: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  hostel?: string | null;
+  addressDetail?: string | null;
+  source?: string;
+}) {
+  const timeString = new Date().toLocaleString("en-US", {
+    timeZone: "Africa/Lagos",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <style>
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.05); }
+          .header { background-color: ${BRAND_NAVY}; color: #ffffff; padding: 32px 24px; text-align: center; }
+          .brand-title { font-size: 24px; font-weight: 900; margin: 0; }
+          .brand-accent { color: ${BRAND_AMBER}; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #ECFDF5; color: #047857; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 16px; border: 1px solid #A7F3D0; }
+          .heading { font-size: 20px; font-weight: 900; color: ${BRAND_NAVY}; margin-top: 0; margin-bottom: 8px; }
+          .desc { font-size: 14px; color: #52525b; line-height: 1.6; margin-bottom: 20px; }
+          .card { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 24px; font-size: 13px; line-height: 1.6; }
+          .card-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #EEF2F6; }
+          .card-row:last-child { border-bottom: none; }
+          .card-label { font-weight: 600; color: #64748B; }
+          .card-value { font-weight: 800; color: #0F172A; text-align: right; }
+          .btn { display: block; width: 100%; box-sizing: border-box; background-color: ${BRAND_NAVY}; color: #ffffff !important; text-align: center; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; margin-top: 20px; box-shadow: 0 4px 14px rgba(30, 27, 75, 0.25); }
+          .footer { text-align: center; padding: 20px; font-size: 11px; color: #94A3B8; border-top: 1px solid #F1F5F9; background: #FAFAFA; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            </div>
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
+            <p style="margin: 6px 0 0; font-size: 12px; color: #CBD5E1;">Supervisor Operations & Community Growth</p>
+          </div>
+          <div class="content">
+            <span class="badge">🎓 New Student Registration</span>
+            <h2 class="heading">A new student joined the marketplace!</h2>
+            <p class="desc">A new campus student just created an account. Account details are shown below:</p>
+
+            <div class="card">
+              <div class="card-row">
+                <span class="card-label">Full Name</span>
+                <span class="card-value" style="color: ${BRAND_NAVY}; font-size: 14px;">${name}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Email Address</span>
+                <span class="card-value"><a href="mailto:${email}" style="color: #2563EB; text-decoration: none;">${email}</a></span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Phone Number</span>
+                <span class="card-value">${phone ? `<a href="tel:${phone}" style="color: #2563EB; text-decoration: none;">${phone}</a>` : '<span style="color: #94A3B8; font-weight: normal;">Not provided</span>'}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Hostel / Hall</span>
+                <span class="card-value">${hostel || '<span style="color: #94A3B8; font-weight: normal;">Not specified</span>'}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Street / Room</span>
+                <span class="card-value">${addressDetail || '<span style="color: #94A3B8; font-weight: normal;">Not specified</span>'}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Signup Method</span>
+                <span class="card-value">${source || "Student Registration"}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Registered At</span>
+                <span class="card-value" style="font-weight: 600; color: #475569;">${timeString} WAT</span>
+              </div>
+            </div>
+
+            <a href="https://campuslightson.com/admin/dashboard" class="btn">
+              View All Registered Students in Admin Panel ➔
+            </a>
+          </div>
+          <div class="footer">
+            Lightson Campus Marketplace • Live Student User Growth Monitor
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export function generateAdminNewProductEmail({
+  productName,
+  price,
+  categoryName,
+  storeName,
+  ownerName,
+  vendorEmail,
+  vendorPhone,
+  description,
+  imageUrl,
+  estimatedDelivery,
+  deliveryFee,
+  productSlug,
+}: {
+  productName: string;
+  price: number;
+  categoryName?: string | null;
+  storeName: string;
+  ownerName?: string | null;
+  vendorEmail?: string | null;
+  vendorPhone?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  estimatedDelivery?: string | null;
+  deliveryFee?: number | null;
+  productSlug?: string | null;
+}) {
+  const timeString = new Date().toLocaleString("en-US", {
+    timeZone: "Africa/Lagos",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <style>
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.05); }
+          .header { background-color: ${BRAND_NAVY}; color: #ffffff; padding: 32px 24px; text-align: center; }
+          .brand-title { font-size: 24px; font-weight: 900; margin: 0; }
+          .brand-accent { color: ${BRAND_AMBER}; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #EEF2FF; color: ${BRAND_INDIGO}; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 16px; border: 1px solid #C7D2FE; }
+          .heading { font-size: 20px; font-weight: 900; color: ${BRAND_NAVY}; margin-top: 0; margin-bottom: 8px; }
+          .desc { font-size: 14px; color: #52525b; line-height: 1.6; margin-bottom: 20px; }
+          .product-card { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 24px; font-size: 13px; line-height: 1.6; }
+          .card-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #EEF2F6; }
+          .card-row:last-child { border-bottom: none; }
+          .card-label { font-weight: 600; color: #64748B; }
+          .card-value { font-weight: 800; color: #0F172A; text-align: right; }
+          .btn { display: block; width: 100%; box-sizing: border-box; background-color: ${BRAND_NAVY}; color: #ffffff !important; text-align: center; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; margin-top: 20px; box-shadow: 0 4px 14px rgba(30, 27, 75, 0.25); }
+          .footer { text-align: center; padding: 20px; font-size: 11px; color: #94A3B8; border-top: 1px solid #F1F5F9; background: #FAFAFA; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="48" height="48" style="border-radius: 12px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
+            </div>
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
+            <p style="margin: 6px 0 0; font-size: 12px; color: #CBD5E1;">Supervisor Operations & Catalogue Monitor</p>
+          </div>
+          <div class="content">
+            <span class="badge">📦 New Product Listed</span>
+            <h2 class="heading">A vendor just posted a new product!</h2>
+            <p class="desc">A new catalogue item has been published on the platform and is ready for campus orders:</p>
+
+            <div class="product-card">
+              ${imageUrl ? `
+                <div style="text-align: center; margin-bottom: 16px;">
+                  <img src="${imageUrl}" alt="${productName}" style="max-width: 140px; max-height: 140px; border-radius: 12px; object-fit: cover; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" />
+                </div>
+              ` : ""}
+
+              <div class="card-row">
+                <span class="card-label">Product Name</span>
+                <span class="card-value" style="color: ${BRAND_NAVY}; font-size: 15px;">${productName}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Price</span>
+                <span class="card-value" style="color: #059669; font-size: 16px;">₦${price.toLocaleString()}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Category</span>
+                <span class="card-value">${categoryName || "General / Uncategorized"}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Merchant Store</span>
+                <span class="card-value">${storeName}</span>
+              </div>
+              ${ownerName ? `
+                <div class="card-row">
+                  <span class="card-label">Vendor Contact</span>
+                  <span class="card-value">${ownerName} ${vendorPhone ? `(${vendorPhone})` : ""}</span>
+                </div>
+              ` : ""}
+              ${vendorEmail ? `
+                <div class="card-row">
+                  <span class="card-label">Vendor Email</span>
+                  <span class="card-value"><a href="mailto:${vendorEmail}" style="color: #2563EB; text-decoration: none;">${vendorEmail}</a></span>
+                </div>
+              ` : ""}
+              <div class="card-row">
+                <span class="card-label">Est. Delivery</span>
+                <span class="card-value">${estimatedDelivery || "Standard campus delivery"}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Delivery Fee</span>
+                <span class="card-value">${deliveryFee ? `₦${deliveryFee.toLocaleString()}` : "Store default"}</span>
+              </div>
+              <div class="card-row">
+                <span class="card-label">Posted At</span>
+                <span class="card-value" style="font-weight: 600; color: #475569;">${timeString} WAT</span>
+              </div>
+
+              ${description ? `
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #CBD5E1; font-size: 12px; color: #475569;">
+                  <strong>Description:</strong> "${description}"
+                </div>
+              ` : ""}
+            </div>
+
+            <a href="https://campuslightson.com/admin/dashboard" class="btn">
+              View Product in Admin Catalog ➔
+            </a>
+            ${productSlug ? `
+              <div style="text-align: center; margin-top: 10px;">
+                <a href="https://campuslightson.com/product/${productSlug}" style="font-size: 12px; color: #64748B; text-decoration: underline;">
+                  View Live Product Page on Student Marketplace
+                </a>
+              </div>
+            ` : ""}
+          </div>
+          <div class="footer">
+            Lightson Campus Marketplace • Live Merchant Product Monitor
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// -------------------------------------------------------------
+// ADMIN DIRECT NOTIFICATION HELPERS
+// -------------------------------------------------------------
+
+export async function notifyAdminNewVendor(data: {
+  storeName: string;
+  ownerName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  category?: string | null;
+  location?: string | null;
+  description?: string | null;
+  logoUrl?: string | null;
+}) {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com";
+    const html = generateAdminNewVendorEmail(data);
+    return await sendEmail({
+      to: adminEmail,
+      subject: `[LIGHTSON ADMIN] 🏪 New Vendor Registration: ${data.storeName} (${data.category || "General"})`,
+      html,
+    });
+  } catch (err) {
+    console.error("notifyAdminNewVendor error:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function notifyAdminNewStudent(data: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  hostel?: string | null;
+  addressDetail?: string | null;
+  source?: string;
+}) {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com";
+    const html = generateAdminNewStudentEmail(data);
+    return await sendEmail({
+      to: adminEmail,
+      subject: `[LIGHTSON ADMIN] 🎓 New Student Registered: ${data.name || "Student"} (${data.email || "No email"})`,
+      html,
+    });
+  } catch (err) {
+    console.error("notifyAdminNewStudent error:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function notifyAdminNewProduct(data: {
+  productName: string;
+  price: number;
+  categoryName?: string | null;
+  storeName: string;
+  ownerName?: string | null;
+  vendorEmail?: string | null;
+  vendorPhone?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  estimatedDelivery?: string | null;
+  deliveryFee?: number | null;
+  productSlug?: string | null;
+}) {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com";
+    const html = generateAdminNewProductEmail(data);
+    return await sendEmail({
+      to: adminEmail,
+      subject: `[LIGHTSON ADMIN] 📦 New Product Posted: ${data.productName} by ${data.storeName} (₦${data.price.toLocaleString()})`,
+      html,
+    });
+  } catch (err) {
+    console.error("notifyAdminNewProduct error:", err);
+    return { success: false, error: err };
+  }
 }
 
 export function generateAdminPlatformOrderAlertEmail({

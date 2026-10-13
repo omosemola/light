@@ -19,9 +19,17 @@ import {
   Gem, 
   Smartphone, 
   Watch, 
-  Zap 
+  Zap,
+  Briefcase,
+  MessageSquare,
+  Phone,
+  ShieldCheck,
+  Clock,
+  Star,
+  CheckCircle2
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
@@ -29,6 +37,8 @@ import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { parseProductImages } from "@/lib/productOptions";
+import { MerchantChatModal, MerchantChatVendor } from "@/components/ui/MerchantChatModal";
+import { getServicePersonnel } from "@/actions/marketplace";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -128,6 +138,22 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     description: "Smartwatches, sunglasses, tote bags, caps, and leather belts.",
     subcategories: ["All", "Watches", "Sunglasses", "Bags & Caps"],
   },
+  services: {
+    name: "Services",
+    Icon: Briefcase,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80",
+    description: "Reliable campus services — Hostel laundry, dry cleaning, medicals, pharmacy essentials, and student assistance.",
+    subcategories: ["All", "Medicals & Health", "Laundry & Dry Cleaning", "Errands & Tasks"],
+  },
+  medicals: {
+    name: "Medical & Health",
+    Icon: Stethoscope,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1200&q=80",
+    description: "First aid kits, OTC pain relief, vitamins, bandages, and campus pharmacy essentials.",
+    subcategories: ["All", "First Aid", "Pain Relief", "Vitamins & Supplements", "Personal Hygiene"],
+  },
   medical: {
     name: "Medical & Health",
     Icon: Stethoscope,
@@ -154,8 +180,22 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
   },
 };
 
+export interface ServicePersonnelStore {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  rating: number;
+  phone: string | null;
+  isOpen: boolean;
+  estimatedDelivery: string;
+  categoryType: string;
+  serviceOfferings?: string[];
+}
+
 interface CategoryClientProps {
   initialProducts: any[];
+  initialServiceStores?: ServicePersonnelStore[];
   slug: string;
 }
 
@@ -174,12 +214,13 @@ function formatProducts(list: any[]) {
       rating: 4.8,
       vendorId: p.storeId || p.vendorId || p.store?.id || "",
       vendorName: p.store?.name || p.vendorName || "Campus Vendor",
+      categoryName: p.category?.name || p.category || "",
       subcategory: "All",
     };
   });
 }
 
-export default function CategoryClient({ initialProducts = [], slug }: CategoryClientProps) {
+export default function CategoryClient({ initialProducts = [], initialServiceStores = [], slug }: CategoryClientProps) {
   const router = useRouter();
 
   const category = CATEGORY_DATA[slug] || {
@@ -193,12 +234,41 @@ export default function CategoryClient({ initialProducts = [], slug }: CategoryC
 
   const CategoryIcon = category.Icon;
   const [rawProducts, setRawProducts] = useState(() => formatProducts(initialProducts));
+  const [servicePersonnel, setServicePersonnel] = useState<ServicePersonnelStore[]>(initialServiceStores || []);
+
+  const [selectedChatVendor, setSelectedChatVendor] = useState<MerchantChatVendor | null>(null);
+  const [chatProductContext, setChatProductContext] = useState<string>("");
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   useEffect(() => {
     if (initialProducts && initialProducts.length > 0) {
       setRawProducts(formatProducts(initialProducts));
     }
   }, [initialProducts]);
+
+  useEffect(() => {
+    if (initialServiceStores && initialServiceStores.length > 0) {
+      setServicePersonnel(initialServiceStores);
+    } else if (slug === "services") {
+      getServicePersonnel().then((res) => {
+        if (res.success && res.stores && res.stores.length > 0) {
+          setServicePersonnel(res.stores);
+        }
+      }).catch(() => {});
+    }
+  }, [initialServiceStores, slug]);
+
+  const handleOpenChat = (vendor: { id: string; name: string; logo?: string; avatar?: string; phone?: string | null; categoryType?: string; category?: string }, contextText?: string) => {
+    setSelectedChatVendor({
+      id: vendor.id,
+      name: vendor.name,
+      avatar: vendor.logo || vendor.avatar || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80",
+      phone: vendor.phone || undefined,
+      category: vendor.categoryType || vendor.category || "Services",
+    });
+    setChatProductContext(contextText || "");
+    setIsChatModalOpen(true);
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("All");
@@ -212,7 +282,23 @@ export default function CategoryClient({ initialProducts = [], slug }: CategoryC
     const list = rawProducts.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             product.vendorName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSubcat = selectedSubcategory === "All" || product.subcategory === selectedSubcategory;
+      
+      let matchesSubcat = selectedSubcategory === "All";
+      if (!matchesSubcat) {
+        if (slug === "services") {
+          const t = `${product.name} ${product.description || ""} ${product.categoryName || ""}`.toLowerCase();
+          if (selectedSubcategory === "Medicals & Health") {
+            matchesSubcat = t.includes("medic") || t.includes("health") || t.includes("pharm") || t.includes("first aid") || t.includes("vitamin") || t.includes("drug");
+          } else if (selectedSubcategory === "Laundry & Dry Cleaning") {
+            matchesSubcat = t.includes("laundr") || t.includes("wash") || t.includes("dry clean") || t.includes("iron") || t.includes("duvet") || t.includes("fold") || t.includes("detergent");
+          } else if (selectedSubcategory === "Errands & Tasks") {
+            matchesSubcat = !t.includes("medic") && !t.includes("laundr") && !t.includes("wash");
+          }
+        } else {
+          matchesSubcat = product.subcategory === selectedSubcategory;
+        }
+      }
+
       return matchesSearch && matchesSubcat;
     });
 
@@ -224,7 +310,7 @@ export default function CategoryClient({ initialProducts = [], slug }: CategoryC
       return [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [rawProducts, searchQuery, selectedSubcategory, sortBy]);
+  }, [rawProducts, searchQuery, selectedSubcategory, sortBy, slug]);
 
   const handleOpenCustomizer = (productId: string) => {
     const product = rawProducts.find((p) => p.id === productId);
@@ -308,6 +394,190 @@ export default function CategoryClient({ initialProducts = [], slug }: CategoryC
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full mt-6 space-y-6">
         
+        {/* SERVICES CATEGORY SUB-HUB: MEDICALS & LAUNDRY QUICK ACCESS CARDS */}
+        {slug === "services" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div 
+              onClick={() => setSelectedSubcategory(selectedSubcategory === "Medicals & Health" ? "All" : "Medicals & Health")}
+              className={`p-4 rounded-3xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                selectedSubcategory === "Medicals & Health"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 shadow-md ring-2 ring-emerald-500/20"
+                  : "bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 hover:border-emerald-400 hover:shadow-md"
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <Stethoscope size={24} />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white">
+                    Medicals & Health
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+                    First aid, OTC relief, vitamins & pharmacy
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-heading font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                {selectedSubcategory === "Medicals & Health" ? "Filtered ✓" : "Explore →"}
+              </span>
+            </div>
+
+            <div 
+              onClick={() => setSelectedSubcategory(selectedSubcategory === "Laundry & Dry Cleaning" ? "All" : "Laundry & Dry Cleaning")}
+              className={`p-4 rounded-3xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                selectedSubcategory === "Laundry & Dry Cleaning"
+                  ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500 shadow-md ring-2 ring-indigo-500/20"
+                  : "bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 hover:border-indigo-400 hover:shadow-md"
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <Waves size={24} />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white">
+                    Laundry & Dry Cleaning
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+                    Wash & fold, ironing, duvets & hostel wash
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-heading font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                {selectedSubcategory === "Laundry & Dry Cleaning" ? "Filtered ✓" : "Explore →"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* SERVICES CATEGORY DIRECT PERSONNEL DIRECTORY & CHAT HUB */}
+        {slug === "services" && servicePersonnel.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative p-5 md:p-6 rounded-[28px] overflow-hidden text-white shadow-xl space-y-4 border border-indigo-900/50 group"
+          >
+            {/* BACKGROUND BANNER IMAGE (HOME BANNER PICTURE) */}
+            <Image
+              src="/support-banner.jpg"
+              alt="Services Personnel Banner"
+              fill
+              priority
+              className="object-cover object-center scale-105"
+            />
+
+            {/* SOLID HIGH CONTRAST OVERLAY (MATCHING HOMEPAGE HERO) */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1E1B4B]/95 via-[#1E1B4B]/90 to-[#312E81]/85 dark:from-[#09090B]/95 dark:to-[#121215]/95" />
+
+            <div className="relative z-10 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md text-amber-300 flex items-center justify-center shrink-0 border border-white/20 shadow-inner">
+                    <MessageSquare size={22} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-heading font-extrabold text-base md:text-lg">
+                        Registered Service Personnel & Live Chat
+                      </h2>
+                      <span className="text-[10px] font-heading font-extrabold px-2 py-0.5 rounded-full bg-emerald-400 text-emerald-950 uppercase tracking-wider shadow-xs">
+                        Exclusive
+                      </span>
+                    </div>
+                    <p className="text-xs text-indigo-100 font-medium">
+                      Direct consultation with registered campus laundry operators, dispensary pharmacists & runners
+                    </p>
+                  </div>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-semibold text-emerald-300 border border-emerald-400/30 self-start sm:self-auto shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Personnel Online</span>
+                </div>
+              </div>
+
+              {/* PERSONNEL TILES GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {servicePersonnel.map((person) => {
+                  const isLaundry = person.name.toLowerCase().includes("laundry") || (person.categoryType && person.categoryType.toLowerCase().includes("laundry"));
+                  const isMed = person.name.toLowerCase().includes("pharm") || person.name.toLowerCase().includes("health") || (person.categoryType && person.categoryType.toLowerCase().includes("pharm"));
+                  return (
+                    <div
+                      key={person.id}
+                      className="p-4 rounded-2xl bg-[#1E1B4B]/75 hover:bg-[#1E1B4B]/90 dark:bg-zinc-900/80 dark:hover:bg-zinc-900/95 backdrop-blur-md border border-white/20 transition-all flex flex-col justify-between gap-3 shadow-sm"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-white/20 shrink-0 border border-white/30">
+                          <Image
+                            src={person.logo || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80"}
+                            alt={person.name}
+                            fill
+                            className="object-cover"
+                          />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-indigo-900 rounded-full" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="font-heading font-extrabold text-sm text-white truncate">
+                              {person.name}
+                            </h3>
+                            <ShieldCheck size={14} className="text-amber-300 shrink-0" />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-[11px] text-indigo-200">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isLaundry
+                                ? "bg-indigo-400/30 text-indigo-100"
+                                : isMed
+                                ? "bg-emerald-400/30 text-emerald-100"
+                                : "bg-amber-400/30 text-amber-100"
+                            }`}>
+                              {person.categoryType}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={11} /> {person.estimatedDelivery}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-indigo-100 line-clamp-1 mt-1 font-normal opacity-90">
+                            {person.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-300">
+                          <Star size={12} className="fill-amber-300 text-amber-300" />
+                          <span>{person.rating ? person.rating.toFixed(1) : "5.0"}</span>
+                          <span className="text-indigo-200 font-normal ml-1">• Verified Provider</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {person.phone && (
+                            <a
+                              href={`tel:${person.phone}`}
+                              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                              title="Call Provider"
+                            >
+                              <Phone size={14} />
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenChat(person)}
+                            className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-heading font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                          >
+                            <MessageSquare size={13} />
+                            <span>Chat Now</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* SUBCATEGORY PILLS */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
@@ -377,6 +647,7 @@ export default function CategoryClient({ initialProducts = [], slug }: CategoryC
         product={customizerProduct}
         onClose={() => setCustomizerProduct(null)}
         onVendorConflict={(item, quantity) => setPendingProduct({ item, quantity })}
+        onChatWithVendor={slug === "services" ? (prod) => handleOpenChat({ id: prod.storeId, name: prod.storeName }, prod.name) : undefined}
       />
 
       {/* CONFIRM REPLACEMENT MODAL */}
@@ -403,6 +674,40 @@ export default function CategoryClient({ initialProducts = [], slug }: CategoryC
           </button>
         </div>
       </Modal>
+
+      {/* FLOATING ACTION PILL FOR SERVICES CHAT */}
+      {slug === "services" && servicePersonnel.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="fixed bottom-20 md:bottom-8 right-5 z-40"
+        >
+          <button
+            onClick={() => handleOpenChat(servicePersonnel[0])}
+            className="px-4 py-3 rounded-full bg-[#312E81] hover:bg-[#1E1B4B] text-white shadow-2xl flex items-center gap-2.5 font-heading font-extrabold text-xs transition-all active:scale-95 border border-indigo-400/30 cursor-pointer"
+          >
+            <div className="relative">
+              <MessageSquare size={17} className="text-amber-300" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#312E81] rounded-full" />
+            </div>
+            <span>Chat with Service Provider</span>
+          </button>
+        </motion.div>
+      )}
+
+      {/* EXCLUSIVE SERVICE PERSONNEL CHAT MODAL */}
+      {selectedChatVendor && (
+        <MerchantChatModal
+          isOpen={isChatModalOpen}
+          onClose={() => {
+            setIsChatModalOpen(false);
+            setSelectedChatVendor(null);
+            setChatProductContext("");
+          }}
+          vendor={selectedChatVendor}
+          initialProductContext={chatProductContext}
+        />
+      )}
     </div>
   );
 }

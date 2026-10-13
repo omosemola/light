@@ -30,6 +30,7 @@ function SessionSync({ children }: { children: React.ReactNode }) {
       // If unauthenticated on web app but store still has stale admin/vendor identity, reset to visitor
       if (
         profile.name === "Platform Super Admin" ||
+        profile.email === "lightmarketplace01@gmail.com" ||
         profile.email === "admin@campuslightson.com" ||
         profile.role === "ADMIN" ||
         profile.role === "VENDOR"

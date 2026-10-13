@@ -5,6 +5,7 @@ import { prisma } from "./prisma";
 import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
 import { checkRateLimit } from "./rateLimit";
+import { notifyAdminNewStudent } from "./email";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -75,7 +76,7 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!existing) {
-            await prisma.user.create({
+            const newStudent = await prisma.user.create({
               data: {
                 email: user.email,
                 name: user.name || user.email.split("@")[0],
@@ -83,6 +84,12 @@ export const authOptions: NextAuthOptions = {
                 role: Role.STUDENT,
               },
             });
+
+            notifyAdminNewStudent({
+              name: newStudent.name || user.name || "Student",
+              email: newStudent.email,
+              source: "Google OAuth",
+            }).catch((e) => console.error("Admin student alert failed:", e));
           } else if (!existing.image && user.image) {
             await prisma.user.update({
               where: { email: user.email },

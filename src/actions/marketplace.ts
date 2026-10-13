@@ -319,11 +319,85 @@ export async function getLiveProductById(productId: string) {
 
 export async function getLiveCategoryProducts(categorySlug: string) {
   try {
-    const normalized = categorySlug.toLowerCase().trim();
+    const rawNormalized = categorySlug.toLowerCase().trim();
+    const normalized = rawNormalized === "medicals" ? "medical" : rawNormalized;
     const now = Date.now();
     const cached = cachedCategoriesMap.get(normalized);
     if (cached && now - cached.timestamp < CACHE_TTL_MS) {
       return cached.data;
+    }
+
+    // SERVICES umbrella category: aggregates Medicals, Laundry, and Campus Services
+    if (normalized === "services") {
+      const products = await prisma.product.findMany({
+        where: {
+          isAvailable: true,
+          OR: [
+            { categoryId: "services" },
+            { categoryId: "medical" },
+            { categoryId: "medicals" },
+            { categoryId: "laundry" },
+            { category: { name: { contains: "service", mode: "insensitive" } } },
+            { category: { name: { contains: "medical", mode: "insensitive" } } },
+            { category: { name: { contains: "laundry", mode: "insensitive" } } },
+            { category: { name: { contains: "clean", mode: "insensitive" } } },
+            { name: { contains: "laundry", mode: "insensitive" } },
+            { name: { contains: "wash", mode: "insensitive" } },
+            { name: { contains: "medical", mode: "insensitive" } },
+            { name: { contains: "pharmacy", mode: "insensitive" } },
+            { name: { contains: "service", mode: "insensitive" } },
+          ],
+        },
+        include: {
+          store: true,
+          category: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const serviceStoreIds = Array.from(new Set(products.map((p) => p.storeId)));
+      const rawStores = await prisma.store.findMany({
+        where: {
+          OR: [
+            { id: { in: serviceStoreIds } },
+            { description: { contains: "service", mode: "insensitive" } },
+            { description: { contains: "laundry", mode: "insensitive" } },
+            { description: { contains: "medical", mode: "insensitive" } },
+            { description: { contains: "pharmacy", mode: "insensitive" } },
+            { name: { contains: "laundry", mode: "insensitive" } },
+            { name: { contains: "pharmacy", mode: "insensitive" } },
+          ],
+        },
+        include: {
+          user: { select: { name: true, phone: true, email: true } },
+          products: {
+            where: { isAvailable: true },
+            take: 4,
+            select: { id: true, name: true, price: true },
+          },
+        },
+      });
+
+      const serviceStores = rawStores.map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description || "Verified campus service provider",
+        logo: s.logo || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80",
+        rating: s.rating || 4.9,
+        phone: s.phone || s.user?.phone || null,
+        isOpen: computeIsStoreOpen(s),
+        estimatedDelivery: s.estimatedDelivery || "15-30 mins",
+        categoryType: (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry")))
+          ? "Laundry & Dry Cleaning"
+          : (s.name.toLowerCase().includes("health") || s.name.toLowerCase().includes("pharm") || (s.description && s.description.toLowerCase().includes("pharm")))
+          ? "Pharmacy & Medicals"
+          : "Campus Services & Errands",
+        serviceOfferings: s.products.map((p) => p.name),
+      }));
+
+      const result = { success: true, products, serviceStores };
+      cachedCategoriesMap.set(normalized, { timestamp: now, data: result });
+      return result;
     }
     
     const category = await prisma.category.findFirst({
@@ -338,6 +412,7 @@ export async function getLiveCategoryProducts(categorySlug: string) {
           where: { isAvailable: true },
           include: {
             store: true,
+            category: true,
           },
         },
       },
@@ -484,3 +559,68 @@ export async function searchLiveCatalog(query: string) {
     return { success: false, products: [], stores: [] };
   }
 }
+
+export async function getServicePersonnel() {
+  try {
+    const rawStores = await prisma.store.findMany({
+      where: {
+        OR: [
+          {
+            products: {
+              some: {
+                OR: [
+                  { categoryId: "services" },
+                  { categoryId: "medical" },
+                  { categoryId: "medicals" },
+                  { categoryId: "laundry" },
+                  { name: { contains: "laundry", mode: "insensitive" } },
+                  { name: { contains: "wash", mode: "insensitive" } },
+                  { name: { contains: "medical", mode: "insensitive" } },
+                  { name: { contains: "pharmacy", mode: "insensitive" } },
+                  { name: { contains: "service", mode: "insensitive" } },
+                ],
+              },
+            },
+          },
+          { description: { contains: "service", mode: "insensitive" } },
+          { description: { contains: "laundry", mode: "insensitive" } },
+          { description: { contains: "medical", mode: "insensitive" } },
+          { description: { contains: "pharmacy", mode: "insensitive" } },
+          { name: { contains: "laundry", mode: "insensitive" } },
+          { name: { contains: "pharmacy", mode: "insensitive" } },
+        ],
+      },
+      include: {
+        user: { select: { name: true, phone: true, email: true } },
+        products: {
+          where: { isAvailable: true },
+          take: 4,
+          select: { id: true, name: true, price: true },
+        },
+      },
+    });
+
+    const stores = rawStores.map((s) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description || "Verified campus service provider",
+      logo: s.logo || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80",
+      rating: s.rating || 4.9,
+      phone: s.phone || s.user?.phone || null,
+      isOpen: computeIsStoreOpen(s),
+      estimatedDelivery: s.estimatedDelivery || "15-30 mins",
+      categoryType: (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry")))
+        ? "Laundry & Dry Cleaning"
+        : (s.name.toLowerCase().includes("health") || s.name.toLowerCase().includes("pharm") || (s.description && s.description.toLowerCase().includes("pharm")))
+        ? "Pharmacy & Medicals"
+        : "Campus Services & Errands",
+      serviceOfferings: s.products.map((p) => p.name),
+    }));
+
+    return { success: true, stores };
+  } catch (error: any) {
+    console.error("Error fetching service personnel:", error);
+    return { success: false, stores: [] };
+  }
+}
+

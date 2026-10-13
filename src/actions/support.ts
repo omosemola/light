@@ -76,7 +76,7 @@ export async function createLiveSupportTicket(data: {
     revalidatePath("/support");
 
     // Send admin notification
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com";
     sendEmail({
       to: adminEmail,
       subject: `[LIGHTSON SUPPORT] New Ticket: ${data.subject} (${data.category})`,

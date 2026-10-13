@@ -404,7 +404,7 @@ export async function authenticateAdmin(email: string, pass: string) {
     const rateLimit = await checkRateLimit(rateLimitKey);
     if (!rateLimit.success) return { success: false, error: rateLimit.error };
 
-    const validEmail = (process.env.ADMIN_EMAIL || "admin@campuslightson.com").trim().toLowerCase();
+    const validEmail = (process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com").trim().toLowerCase();
     const validPassword = process.env.ADMIN_PASSWORD || "AdminMaster2026!";
 
     const cleanInputEmail = email?.trim().toLowerCase();
@@ -469,7 +469,7 @@ export async function checkAdminSession() {
     const cookieStore = await cookies();
     const token = cookieStore.get("lightson_admin_session")?.value;
     if (token === "authenticated_admin") {
-      const validEmail = (process.env.ADMIN_EMAIL || "admin@campuslightson.com").trim().toLowerCase();
+      const validEmail = (process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com").trim().toLowerCase();
       return {
         isAuthenticated: true,
         user: {

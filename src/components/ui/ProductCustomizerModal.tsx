@@ -31,6 +31,7 @@ interface ProductCustomizerModalProps {
   product: CustomizerProduct | null;
   onAddedToCart?: (productName: string, calculatedPrice: number) => void;
   onVendorConflict?: (newItem: any, quantity: number) => void;
+  onChatWithVendor?: (product: CustomizerProduct) => void;
 }
 
 export function parseProductOptions(description?: string | null) {
@@ -49,6 +50,7 @@ export function ProductCustomizerModal({
   product,
   onAddedToCart,
   onVendorConflict,
+  onChatWithVendor,
 }: ProductCustomizerModalProps) {
   const { addItem } = useCartStore();
 
@@ -340,6 +342,24 @@ export function ProductCustomizerModal({
                 <Plus size={14} />
               </button>
             </div>
+
+            {/* INQUIRE / CHAT BUTTON (FOR SERVICES) */}
+            {onChatWithVendor && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (product) {
+                    onClose();
+                    onChatWithVendor(product);
+                  }
+                }}
+                className="py-3.5 px-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-300 font-heading font-extrabold text-xs border border-indigo-200/80 dark:border-indigo-800 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                title="Chat with Service Provider"
+              >
+                <MessageSquare size={16} />
+                <span>Chat</span>
+              </button>
+            )}
 
             {/* ADD TO CART ACTION BUTTON */}
             <button

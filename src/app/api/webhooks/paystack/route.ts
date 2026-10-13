@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Trigger New Order Alert Email to Admin
-        const adminEmail = process.env.ADMIN_EMAIL || "admin@campuslightson.com";
+        const adminEmail = process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com";
         const adminEmailHtml = generateAdminPlatformOrderAlertEmail({
           orderId: updatedOrder.id.slice(-6).toUpperCase(),
           storeName: updatedOrder.store.name,

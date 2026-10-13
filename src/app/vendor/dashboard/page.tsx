@@ -2460,13 +2460,14 @@ export default function VendorDashboardPage() {
                       }`}
                     >
                       <option value="">Select Category (Default: General)</option>
+                      <option value="services">Services (Campus Services & Errands)</option>
+                      <option value="medical">Services: Medicals & Pharmacy</option>
+                      <option value="laundry">Services: Laundry & Dry Cleaning</option>
                       <option value="food">Food & Meals</option>
                       <option value="snacks">Snacks & Treats</option>
                       <option value="drinks">Drinks & Smoothies</option>
                       <option value="groceries">Groceries & Provisions</option>
                       <option value="pastries">Pastries & Bakery</option>
-                      <option value="medical">Medical & Pharmacy</option>
-                      <option value="laundry">Laundry & Dry Cleaning</option>
                       <option value="stationery">Stationery & Books</option>
                       <option value="care">Personal Care</option>
                       <option value="sports">Sports & Fitness</option>

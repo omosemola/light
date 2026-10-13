@@ -42,8 +42,8 @@ interface Product {
   reviewsCount?: number;
 }
 
-const CATEGORY_OPTIONS = ["All", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Medical", "Laundry", "Fashion", "Tech & Gadgets"];
-const POPULAR_SUGGESTIONS = ["Small Chops", "Pastries", "Snacks", "Drinks", "Meals"];
+const CATEGORY_OPTIONS = ["All", "Services", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Fashion", "Tech & Gadgets"];
+const POPULAR_SUGGESTIONS = ["Services", "Small Chops", "Pastries", "Snacks", "Drinks", "Meals"];
 
 interface SearchClientProps {
   initialCatalog?: any[];
@@ -178,6 +178,21 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     if (p === s || p.includes(s) || s.includes(p)) return true;
 
     // Campus smart category aliases
+    if (s === "services" && (
+      p.includes("service") ||
+      p.includes("medic") ||
+      p.includes("pharmacy") ||
+      p.includes("health") ||
+      p.includes("drug") ||
+      p.includes("laundr") ||
+      p.includes("wash") ||
+      p.includes("dry clean") ||
+      p.includes("clean") ||
+      p.includes("iron") ||
+      p.includes("errand")
+    )) return true;
+    if (s === "medical" && (p.includes("medic") || p.includes("pharm") || p.includes("health") || p.includes("drug") || p.includes("clinic"))) return true;
+    if (s === "laundry" && (p.includes("laundr") || p.includes("wash") || p.includes("dry clean") || p.includes("iron") || p.includes("clean"))) return true;
     if (s === "food" && (p.includes("pastr") || p.includes("snack") || p.includes("meal") || p.includes("food") || p.includes("bakery"))) return true;
     if (s === "pastries" && (p.includes("pastr") || p.includes("snack") || p.includes("bakery") || p.includes("bread") || p.includes("roll"))) return true;
     if (s === "snacks" && (p.includes("snack") || p.includes("pastr") || p.includes("pie") || p.includes("roll") || p.includes("chops"))) return true;
