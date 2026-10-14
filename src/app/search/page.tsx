@@ -5,12 +5,24 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0; // Real-time catalog
 
 export default async function SearchPage() {
-  const data = await getLiveHomepageData();
+  let initialCatalog: any[] = [];
+  let initialStores: any[] = [];
+
+  try {
+    const data = await getLiveHomepageData();
+    if (data && data.success) {
+      initialCatalog = data.products || [];
+      initialStores = data.stores || [];
+    }
+  } catch (err) {
+    console.error("Error prefetching search data in SearchPage:", err);
+  }
 
   return (
     <SearchClient
-      initialCatalog={data.success ? data.products : []}
-      initialStores={data.success ? data.stores : []}
+      initialCatalog={initialCatalog}
+      initialStores={initialStores}
     />
   );
 }
+

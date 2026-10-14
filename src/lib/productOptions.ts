@@ -57,6 +57,14 @@ export function getSafeImageUrl(imageField?: string | null | any): string {
 }
 
 /**
+ * Checks if an image should bypass Next.js image optimization (data URIs or local DB image route)
+ */
+export function isUnoptimizedImage(url?: string | null | any): boolean {
+  if (typeof url !== "string") return false;
+  return url.startsWith("data:") || url.startsWith("/api/img/");
+}
+
+/**
  * Encodes an array of images into a single string for storage.
  */
 export function encodeProductImages(images: string[]): string {

@@ -7,6 +7,7 @@ import { TopNav } from "@/components/layout/TopNav";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { PWAInstallBanner } from "@/components/ui/PWAInstallBanner";
+import { ServiceWorkerCleaner } from "@/components/ServiceWorkerCleaner";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
@@ -61,6 +62,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-[#FAFAFA] font-body transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>
+            <ServiceWorkerCleaner />
             <TopNav />
             <MainContainer>{children}</MainContainer>
             <BottomNav />

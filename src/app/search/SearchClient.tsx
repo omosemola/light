@@ -20,7 +20,7 @@ import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
 import { getLiveHomepageData, searchLiveCatalog } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
-import { getSafeImageUrl } from "@/lib/productOptions";
+import { getSafeImageUrl, isUnoptimizedImage } from "@/lib/productOptions";
 
 interface Product {
   id: string;
@@ -105,8 +105,9 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     }
   }, [initialCatalog, initialStores]);
 
-  // Always fetch full live catalog on mount if empty
+  // Fetch full live catalog on mount ONLY if initial catalog was empty
   useEffect(() => {
+    if (initialCatalog && initialCatalog.length > 0) return;
     let active = true;
     async function loadFreshMaster() {
       try {
@@ -127,7 +128,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialCatalog]);
 
   const vendorOptions = useMemo(() => {
     const storeNames = stores.map((s) => s.name).filter(Boolean);
@@ -434,7 +435,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
                             src={safeLogo}
                             alt={st.name}
                             fill
-                            unoptimized={safeLogo.startsWith("data:")}
+                            unoptimized={isUnoptimizedImage(safeLogo)}
                             className="object-cover group-hover:scale-105 transition-transform"
                           />
                         );
@@ -445,13 +446,18 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
                         <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white truncate">
                           {st.name}
                         </h4>
-                        <span className={`text-[8px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
-                          st.isOpen
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                            : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                        }`}>
-                          {st.isOpen ? "🟢 Open" : "🔴 Closed"}
-                        </span>
+                        {(() => {
+                          const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
+                          return (
+                            <span className={`text-[8px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                              open
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                                : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                            }`}>
+                              {open ? "🟢 Open" : "🔴 Closed"}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
                         {st.description || "Fresh food & campus supplies"}

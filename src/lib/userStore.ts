@@ -87,6 +87,34 @@ export const useUserStore = create<UserState>()(
     }),
     {
       name: "lightson-user-app-storage-v10",
+      version: 2,
+      migrate: (persistedState: any) => {
+        if (!persistedState || !persistedState.profile) {
+          return {
+            profile: {
+              name: "Visitor",
+              email: "",
+              hostel: "",
+              addressDetail: "",
+              phone: "",
+              avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
+              points: 0,
+              savedStoresCount: 0,
+              savedLocations: [],
+              ordersCount: 0,
+              reviewsCount: 0,
+              isVisitor: true,
+              role: "STUDENT",
+              twoFactorEnabled: true,
+              smsAlerts: true,
+              emailReceipts: true,
+              promoAlerts: false,
+            },
+            hasSeenOnboarding: false,
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

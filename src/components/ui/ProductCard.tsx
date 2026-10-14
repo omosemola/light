@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { useUserStore } from "@/lib/userStore";
 
-import { parseProductImages } from "@/lib/productOptions";
+import { parseProductImages, isUnoptimizedImage } from "@/lib/productOptions";
 
 export interface ProductCardProps {
   id: string;
@@ -51,7 +51,7 @@ export function ProductCard({
             src={mainImage}
             alt={`${name} by ${vendorName} — Lightson Marketplace`}
             fill
-            unoptimized={mainImage.startsWith("data:")}
+            unoptimized={isUnoptimizedImage(mainImage)}
             className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />

@@ -182,6 +182,20 @@ export const useFavoritesStore = create<FavoritesState>()(
     }),
     {
       name: "campus_favorites_storage",
+      version: 2,
+      migrate: (persistedState: any) => {
+        if (!persistedState || !Array.isArray(persistedState.favoriteProductIds)) {
+          return {
+            favoriteProductIds: [],
+            favoriteStoreIds: [],
+            favoriteProducts: [],
+            favoriteStores: [],
+            currentUserEmail: null,
+            isLoading: false,
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

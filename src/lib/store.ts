@@ -257,6 +257,19 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "campus-cart-storage",
+      version: 2,
+      migrate: (persistedState: any) => {
+        if (!persistedState || !Array.isArray(persistedState.items)) {
+          return {
+            items: [],
+            vendorId: null,
+            vendorName: null,
+            vendorDeliveryFee: 500,
+            vendorEstimatedDelivery: "20-35 mins",
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

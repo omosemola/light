@@ -714,28 +714,6 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
         {/* RETAIL PRODUCTS SECTION (FOR ALL OTHER CATEGORIES) */}
         {slug !== "services" && (
           <>
-            {/* SUBCATEGORY PILLS */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
-            >
-              {category.subcategories.map((subcat) => (
-                <button
-                  key={subcat}
-                  onClick={() => setSelectedSubcategory(subcat)}
-                  className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                    selectedSubcategory === subcat
-                      ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
-                      : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
-                  }`}
-                >
-                  {subcat}
-                </button>
-              ))}
-            </motion.div>
 
             {/* PRODUCTS COUNT & SORT BAR */}
             <div className="flex items-center justify-between pt-2">
