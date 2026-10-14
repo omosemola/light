@@ -19,6 +19,10 @@ export interface UserProfile {
   reviewsCount?: number;
   storeId?: string;
   storeName?: string;
+  twoFactorEnabled?: boolean;
+  smsAlerts?: boolean;
+  emailReceipts?: boolean;
+  promoAlerts?: boolean;
 }
 
 interface UserState {
@@ -46,6 +50,10 @@ export const useUserStore = create<UserState>()(
         reviewsCount: 0,
         isVisitor: true,
         role: "STUDENT",
+        twoFactorEnabled: true,
+        smsAlerts: true,
+        emailReceipts: true,
+        promoAlerts: false,
       },
       hasSeenOnboarding: false,
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
@@ -69,6 +77,10 @@ export const useUserStore = create<UserState>()(
             reviewsCount: 0,
             isVisitor: true,
             role: "STUDENT",
+            twoFactorEnabled: true,
+            smsAlerts: true,
+            emailReceipts: true,
+            promoAlerts: false,
           },
           hasSeenOnboarding: false,
         }),

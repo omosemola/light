@@ -33,6 +33,7 @@ interface LiveTicket {
   category: string;
   message: string;
   status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  adminReply?: string | null;
   createdAt: string;
   updatedAt: string;
   orderId?: string | null;
@@ -153,6 +154,7 @@ export default function SupportPage() {
           category: res.ticket.category,
           message: res.ticket.message,
           status: res.ticket.status as any,
+          adminReply: null,
           createdAt: res.ticket.createdAt ? new Date(res.ticket.createdAt).toISOString() : new Date().toISOString(),
           updatedAt: res.ticket.updatedAt ? new Date(res.ticket.updatedAt).toISOString() : new Date().toISOString(),
           orderId: res.ticket.orderId,
@@ -264,7 +266,7 @@ export default function SupportPage() {
         {/* EMERGENCY CAMPUS HOTLINE CARDS */}
         <div className="grid grid-cols-2 gap-3">
           <a
-            href="https://wa.me/2348123459900?text=Hello%20Campus%20Support,%20I%20need%20assistance%20with%20my%20order."
+            href="https://wa.me/2349121727769?text=Hello%20Campus%20Support,%20I%20need%20assistance%20with%20my%20order."
             target="_blank"
             rel="noopener noreferrer"
             className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-2xl flex items-center gap-3.5 hover:shadow-md transition-all active:scale-[0.98] group"
@@ -284,7 +286,7 @@ export default function SupportPage() {
           </a>
 
           <a
-            href="tel:+2348123459900"
+            href="tel:+2349121727769"
             className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 p-4 rounded-2xl flex items-center gap-3.5 hover:shadow-md transition-all active:scale-[0.98] group"
           >
             <div className="w-10 h-10 rounded-xl bg-[#312E81] dark:bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -297,7 +299,7 @@ export default function SupportPage() {
               <p className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate">
                 Campus Helpline
               </p>
-              <span className="text-[10px] text-slate-500 dark:text-zinc-400">+234 812 345 9900</span>
+              <span className="text-[10px] text-slate-500 dark:text-zinc-400">+234 912 172 7769</span>
             </div>
           </a>
         </div>
@@ -690,6 +692,18 @@ export default function SupportPage() {
                 </div>
               </div>
 
+              {selectedTicket.adminReply && (
+                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                    <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Campus Support Desk Response</span>
+                  </div>
+                  <p className="text-slate-800 dark:text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap font-medium">
+                    {selectedTicket.adminReply}
+                  </p>
+                </div>
+              )}
+
               <div className="bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-2xl text-[11px] text-indigo-950 dark:text-indigo-300 flex items-start gap-2 border border-indigo-200/60 dark:border-indigo-800/40">
                 <AlertCircle size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400 mt-0.5" />
                 <span>
@@ -700,7 +714,7 @@ export default function SupportPage() {
 
             <div className="pt-2 flex gap-2">
               <a
-                href={`https://wa.me/2348123459900?text=Hello,%20I%20am%20following%20up%20on%20support%20ticket%20%23${selectedTicket.id.slice(-6).toUpperCase()}`}
+                href={`https://wa.me/2349121727769?text=Hello,%20I%20am%20following%20up%20on%20support%20ticket%20%23${selectedTicket.id.slice(-6).toUpperCase()}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition"

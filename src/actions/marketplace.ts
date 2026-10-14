@@ -327,39 +327,13 @@ export async function getLiveCategoryProducts(categorySlug: string) {
       return cached.data;
     }
 
-    // SERVICES umbrella category: aggregates Medicals, Laundry, and Campus Services
+    // SERVICES umbrella category: aggregates registered service personnel and availability
     if (normalized === "services") {
-      const products = await prisma.product.findMany({
-        where: {
-          isAvailable: true,
-          OR: [
-            { categoryId: "services" },
-            { categoryId: "medical" },
-            { categoryId: "medicals" },
-            { categoryId: "laundry" },
-            { category: { name: { contains: "service", mode: "insensitive" } } },
-            { category: { name: { contains: "medical", mode: "insensitive" } } },
-            { category: { name: { contains: "laundry", mode: "insensitive" } } },
-            { category: { name: { contains: "clean", mode: "insensitive" } } },
-            { name: { contains: "laundry", mode: "insensitive" } },
-            { name: { contains: "wash", mode: "insensitive" } },
-            { name: { contains: "medical", mode: "insensitive" } },
-            { name: { contains: "pharmacy", mode: "insensitive" } },
-            { name: { contains: "service", mode: "insensitive" } },
-          ],
-        },
-        include: {
-          store: true,
-          category: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const serviceStoreIds = Array.from(new Set(products.map((p) => p.storeId)));
       const rawStores = await prisma.store.findMany({
         where: {
           OR: [
-            { id: { in: serviceStoreIds } },
+            { isService: true },
+            { category: { equals: "services", mode: "insensitive" } },
             { description: { contains: "service", mode: "insensitive" } },
             { description: { contains: "laundry", mode: "insensitive" } },
             { description: { contains: "medical", mode: "insensitive" } },
@@ -370,12 +344,8 @@ export async function getLiveCategoryProducts(categorySlug: string) {
         },
         include: {
           user: { select: { name: true, phone: true, email: true } },
-          products: {
-            where: { isAvailable: true },
-            take: 4,
-            select: { id: true, name: true, price: true },
-          },
         },
+        orderBy: { createdAt: "desc" },
       });
 
       const serviceStores = rawStores.map((s) => ({
@@ -387,15 +357,21 @@ export async function getLiveCategoryProducts(categorySlug: string) {
         phone: s.phone || s.user?.phone || null,
         isOpen: computeIsStoreOpen(s),
         estimatedDelivery: s.estimatedDelivery || "15-30 mins",
-        categoryType: (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry")))
-          ? "Laundry & Dry Cleaning"
-          : (s.name.toLowerCase().includes("health") || s.name.toLowerCase().includes("pharm") || (s.description && s.description.toLowerCase().includes("pharm")))
-          ? "Pharmacy & Medicals"
-          : "Campus Services & Errands",
-        serviceOfferings: s.products.map((p) => p.name),
+        categoryType: s.serviceSubcategory || (
+          (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry")))
+            ? "Laundry & Dry Cleaning"
+            : (s.name.toLowerCase().includes("health") || s.name.toLowerCase().includes("pharm") || (s.description && s.description.toLowerCase().includes("pharm")))
+            ? "Medicals & Pharmacy"
+            : "Campus Services"
+        ),
+        availabilityStatus: s.availabilityStatus || (computeIsStoreOpen(s) ? "AVAILABLE" : "CLOSED"),
+        startingPrice: s.startingPrice || null,
+        openingTime: s.openingTime || "08:00",
+        closingTime: s.closingTime || "22:00",
+        serviceOfferings: [],
       }));
 
-      const result = { success: true, products, serviceStores };
+      const result = { success: true, products: [], serviceStores };
       cachedCategoriesMap.set(normalized, { timestamp: now, data: result });
       return result;
     }
@@ -565,23 +541,8 @@ export async function getServicePersonnel() {
     const rawStores = await prisma.store.findMany({
       where: {
         OR: [
-          {
-            products: {
-              some: {
-                OR: [
-                  { categoryId: "services" },
-                  { categoryId: "medical" },
-                  { categoryId: "medicals" },
-                  { categoryId: "laundry" },
-                  { name: { contains: "laundry", mode: "insensitive" } },
-                  { name: { contains: "wash", mode: "insensitive" } },
-                  { name: { contains: "medical", mode: "insensitive" } },
-                  { name: { contains: "pharmacy", mode: "insensitive" } },
-                  { name: { contains: "service", mode: "insensitive" } },
-                ],
-              },
-            },
-          },
+          { isService: true },
+          { category: { equals: "services", mode: "insensitive" } },
           { description: { contains: "service", mode: "insensitive" } },
           { description: { contains: "laundry", mode: "insensitive" } },
           { description: { contains: "medical", mode: "insensitive" } },
@@ -592,12 +553,8 @@ export async function getServicePersonnel() {
       },
       include: {
         user: { select: { name: true, phone: true, email: true } },
-        products: {
-          where: { isAvailable: true },
-          take: 4,
-          select: { id: true, name: true, price: true },
-        },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     const stores = rawStores.map((s) => ({
@@ -609,12 +566,18 @@ export async function getServicePersonnel() {
       phone: s.phone || s.user?.phone || null,
       isOpen: computeIsStoreOpen(s),
       estimatedDelivery: s.estimatedDelivery || "15-30 mins",
-      categoryType: (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry")))
-        ? "Laundry & Dry Cleaning"
-        : (s.name.toLowerCase().includes("health") || s.name.toLowerCase().includes("pharm") || (s.description && s.description.toLowerCase().includes("pharm")))
-        ? "Pharmacy & Medicals"
-        : "Campus Services & Errands",
-      serviceOfferings: s.products.map((p) => p.name),
+      categoryType: s.serviceSubcategory || (
+        (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry")))
+          ? "Laundry & Dry Cleaning"
+          : (s.name.toLowerCase().includes("health") || s.name.toLowerCase().includes("pharm") || (s.description && s.description.toLowerCase().includes("pharm")))
+          ? "Medicals & Pharmacy"
+          : "Campus Services"
+      ),
+      availabilityStatus: s.availabilityStatus || (computeIsStoreOpen(s) ? "AVAILABLE" : "CLOSED"),
+      startingPrice: s.startingPrice || null,
+      openingTime: s.openingTime || "08:00",
+      closingTime: s.closingTime || "22:00",
+      serviceOfferings: [],
     }));
 
     return { success: true, stores };
@@ -623,4 +586,3 @@ export async function getServicePersonnel() {
     return { success: false, stores: [] };
   }
 }
-

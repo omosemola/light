@@ -36,29 +36,39 @@ export async function createLiveSupportTicket(data: {
 }) {
   try {
     let userId: string | undefined;
+    const cleanEmail = data.userEmail?.trim().toLowerCase();
 
-    if (data.userEmail) {
-      const user = await prisma.user.findUnique({
-        where: { email: data.userEmail },
+    if (cleanEmail) {
+      let user = await prisma.user.findFirst({
+        where: { email: { equals: cleanEmail, mode: "insensitive" } },
       });
-      if (user) {
-        userId = user.id;
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email: cleanEmail,
+            name: data.userName || cleanEmail.split("@")[0] || "Campus Student",
+            role: "STUDENT",
+          },
+        });
       }
+      userId = user.id;
     }
 
     if (!userId) {
-      const firstUser = await prisma.user.findFirst();
-      if (firstUser) {
-        userId = firstUser.id;
-      } else {
-        const newUser = await prisma.user.create({
+      const guestEmail = "guest.support@campuslightson.com";
+      let guestUser = await prisma.user.findFirst({
+        where: { email: { equals: guestEmail, mode: "insensitive" } },
+      });
+      if (!guestUser) {
+        guestUser = await prisma.user.create({
           data: {
-            email: data.userEmail || "support.user@campuslightson.com",
-            name: data.userName || "Campus User",
+            email: guestEmail,
+            name: data.userName || "Campus Guest",
+            role: "STUDENT",
           },
         });
-        userId = newUser.id;
       }
+      userId = guestUser.id;
     }
 
     const ticket = await prisma.supportTicket.create({
@@ -83,7 +93,7 @@ export async function createLiveSupportTicket(data: {
       html: `
         <div style="font-family: sans-serif; padding: 20px;">
           <h2>⚠️ New Support Ticket</h2>
-          <p><strong>From:</strong> ${data.userName || "User"} (${data.userEmail || "No email"})</p>
+          <p><strong>From:</strong> ${data.userName || "User"} (${cleanEmail || "No email"})</p>
           <p><strong>Category:</strong> ${data.category}</p>
           <p><strong>Subject:</strong> ${data.subject}</p>
           ${data.orderId ? `<p><strong>Order ID:</strong> #${data.orderId}</p>` : ""}
@@ -104,12 +114,13 @@ export async function createLiveSupportTicket(data: {
 
 export async function getLiveUserSupportTickets(userEmail?: string) {
   try {
-    if (!userEmail) {
+    const cleanEmail = userEmail?.trim().toLowerCase();
+    if (!cleanEmail) {
       return { success: true, tickets: [] };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: "insensitive" } },
       select: { id: true },
     });
 
@@ -140,6 +151,7 @@ export async function getLiveUserSupportTickets(userEmail?: string) {
         category: t.category,
         message: t.message,
         status: t.status,
+        adminReply: t.adminReply || null,
         createdAt: t.createdAt.toISOString(),
         updatedAt: t.updatedAt.toISOString(),
         orderId: t.orderId,
@@ -161,12 +173,13 @@ export async function getLiveUserSupportTickets(userEmail?: string) {
 
 export async function getLiveUserOrdersForSupport(userEmail?: string) {
   try {
-    if (!userEmail) {
+    const cleanEmail = userEmail?.trim().toLowerCase();
+    if (!cleanEmail) {
       return { success: true, orders: [] };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: "insensitive" } },
       select: { id: true },
     });
 

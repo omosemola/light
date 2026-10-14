@@ -56,6 +56,8 @@ import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/revi
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { 
   updateUserProfileDb, 
+  getUserProfileDb,
+  updateUserSettingsDb,
   changeUserPasswordDb, 
   deleteUserAccountSelf,
   getUserLocationsDb,
@@ -333,22 +335,89 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   const [passError, setPassError] = useState("");
   const [passSuccess, setPassSuccess] = useState("");
 
-  // Preferences state
-  const [smsAlerts, setSmsAlerts] = useState(true);
-  const [emailReceipts, setEmailReceipts] = useState(true);
-  const [promoAlerts, setPromoAlerts] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+  // Preferences state (Synced with Database)
+  const [smsAlerts, setSmsAlerts] = useState(() => profile.smsAlerts ?? true);
+  const [emailReceipts, setEmailReceipts] = useState(() => profile.emailReceipts ?? true);
+  const [promoAlerts, setPromoAlerts] = useState(() => profile.promoAlerts ?? false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => profile.twoFactorEnabled ?? true);
+  const [loadingSettingsDb, setLoadingSettingsDb] = useState(false);
 
   // Danger Zone
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
+  // Sync profile details and security settings from DB
   useEffect(() => {
     if (profile.name) setEditName(profile.name);
     if (profile.phone) setEditPhone(profile.phone);
     if (profile.hostel) setEditHostel(profile.hostel);
     if (profile.addressDetail) setEditAddressDetail(profile.addressDetail);
   }, [profile.name, profile.phone, profile.hostel, profile.addressDetail]);
+
+  useEffect(() => {
+    if (section === "settings" && effectiveEmail) {
+      setLoadingSettingsDb(true);
+      getUserProfileDb(effectiveEmail)
+        .then((res) => {
+          if (res.success && res.user) {
+            if (res.user.twoFactorEnabled !== undefined) setTwoFactorEnabled(res.user.twoFactorEnabled);
+            if (res.user.smsAlerts !== undefined) setSmsAlerts(res.user.smsAlerts);
+            if (res.user.emailReceipts !== undefined) setEmailReceipts(res.user.emailReceipts);
+            if (res.user.promoAlerts !== undefined) setPromoAlerts(res.user.promoAlerts);
+            if (res.user.name) setEditName(res.user.name);
+            if (res.user.phone) setEditPhone(res.user.phone);
+            if (res.user.hostel) setEditHostel(res.user.hostel);
+            if (res.user.addressDetail) setEditAddressDetail(res.user.addressDetail);
+            updateProfile({
+              twoFactorEnabled: res.user.twoFactorEnabled,
+              smsAlerts: res.user.smsAlerts,
+              emailReceipts: res.user.emailReceipts,
+              promoAlerts: res.user.promoAlerts,
+              name: res.user.name,
+              phone: res.user.phone,
+              hostel: res.user.hostel,
+              addressDetail: res.user.addressDetail,
+            });
+          }
+        })
+        .finally(() => setLoadingSettingsDb(false));
+    }
+  }, [section, effectiveEmail, updateProfile]);
+
+  const handleToggleSetting = async (
+    key: "twoFactorEnabled" | "smsAlerts" | "emailReceipts" | "promoAlerts",
+    newValue: boolean
+  ) => {
+    // 1. Optimistic UI update
+    if (key === "twoFactorEnabled") setTwoFactorEnabled(newValue);
+    if (key === "smsAlerts") setSmsAlerts(newValue);
+    if (key === "emailReceipts") setEmailReceipts(newValue);
+    if (key === "promoAlerts") setPromoAlerts(newValue);
+
+    updateProfile({ [key]: newValue });
+
+    const readableNames: Record<string, string> = {
+      twoFactorEnabled: `Two-Factor Authentication ${newValue ? "enabled" : "disabled"}`,
+      smsAlerts: `WhatsApp & SMS alerts ${newValue ? "turned on" : "turned off"}`,
+      emailReceipts: `Email PDF invoices ${newValue ? "turned on" : "turned off"}`,
+      promoAlerts: `Meal promos & deals ${newValue ? "turned on" : "turned off"}`,
+    };
+
+    setProfileSuccessMsg(`${readableNames[key]} (Database Synced)`);
+    setTimeout(() => setProfileSuccessMsg(""), 3000);
+
+    // 2. Persist to live database
+    if (effectiveEmail) {
+      try {
+        const res = await updateUserSettingsDb(effectiveEmail, { [key]: newValue });
+        if (!res.success) {
+          console.error("Failed to update setting in DB:", res.error);
+        }
+      } catch (err) {
+        console.error("Error updating setting in DB:", err);
+      }
+    }
+  };
 
   const handleSaveAccountInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,8 +432,8 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
         addressDetail: editAddressDetail,
       });
 
-      if (profile.email) {
-        await updateUserProfileDb(profile.email, {
+      if (effectiveEmail) {
+        await updateUserProfileDb(effectiveEmail, {
           name: editName,
           phone: editPhone,
           hostel: editHostel,
@@ -372,7 +441,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
         });
       }
 
-      setProfileSuccessMsg("Account details updated successfully!");
+      setProfileSuccessMsg("Account details updated successfully in database!");
       setTimeout(() => setProfileSuccessMsg(""), 3500);
     } catch (err) {
       console.error("Failed to update profile:", err);
@@ -398,7 +467,8 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
     setUpdatingPass(true);
     try {
-      const res = await changeUserPasswordDb(profile.email, currentPass, newPass);
+      const targetEmail = effectiveEmail || profile.email;
+      const res = await changeUserPasswordDb(targetEmail, currentPass, newPass);
       if (res.success) {
         setPassSuccess("Password updated successfully in database!");
         setCurrentPass("");
@@ -439,10 +509,11 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   };
 
   const handleDeleteAccount = async () => {
-    if (!profile.email) return;
+    const targetEmail = effectiveEmail || profile.email;
+    if (!targetEmail) return;
     setDeletingAccount(true);
     try {
-      await deleteUserAccountSelf(profile.email);
+      await deleteUserAccountSelf(targetEmail);
       useUserStore.getState().logoutUser();
       router.push("/");
     } catch (err) {
@@ -1226,7 +1297,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   <input
                     type="email"
                     disabled
-                    value={profile.email || "visitor@campuslightson.com"}
+                    value={effectiveEmail || profile.email || "visitor@campuslightson.com"}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-medium cursor-not-allowed"
                   />
                   <span className="text-[10px] text-slate-400 mt-1 block">Email address is managed by campus authentication.</span>
@@ -1397,12 +1468,8 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setTwoFactorEnabled(!twoFactorEnabled);
-                      setProfileSuccessMsg(`2FA ${!twoFactorEnabled ? "enabled" : "disabled"}`);
-                      setTimeout(() => setProfileSuccessMsg(""), 3000);
-                    }}
-                    className={`px-3 py-1 rounded-full font-bold text-[10px] transition-colors ${
+                    onClick={() => handleToggleSetting("twoFactorEnabled", !twoFactorEnabled)}
+                    className={`px-3 py-1 rounded-full font-bold text-[10px] transition-colors cursor-pointer ${
                       twoFactorEnabled
                         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                         : "bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300"
@@ -1447,7 +1514,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   <input
                     type="checkbox"
                     checked={smsAlerts}
-                    onChange={(e) => setSmsAlerts(e.target.checked)}
+                    onChange={(e) => handleToggleSetting("smsAlerts", e.target.checked)}
                     className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
                   />
                 </div>
@@ -1460,7 +1527,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   <input
                     type="checkbox"
                     checked={emailReceipts}
-                    onChange={(e) => setEmailReceipts(e.target.checked)}
+                    onChange={(e) => handleToggleSetting("emailReceipts", e.target.checked)}
                     className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
                   />
                 </div>
@@ -1473,7 +1540,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
                   <input
                     type="checkbox"
                     checked={promoAlerts}
-                    onChange={(e) => setPromoAlerts(e.target.checked)}
+                    onChange={(e) => handleToggleSetting("promoAlerts", e.target.checked)}
                     className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
                   />
                 </div>

@@ -45,8 +45,12 @@ model User {
   savedLocations String[] @default([])
   favoriteProductIds String[] @default([])
   favoriteStoreIds   String[] @default([])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  twoFactorEnabled   Boolean  @default(true)
+  smsAlerts          Boolean  @default(true)
+  emailReceipts      Boolean  @default(true)
+  promoAlerts        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   store         Store?
   orders        Order[]
@@ -64,6 +68,11 @@ model Store {
   coverImage          String?
   isOpen              Boolean   @default(true)
   isVerified          Boolean   @default(false)
+  isService           Boolean   @default(false)
+  category            String?
+  serviceSubcategory  String?
+  availabilityStatus  String?   @default("AVAILABLE") // "AVAILABLE" | "BUSY" | "AWAY" | "CLOSED"
+  startingPrice       Float?
   estimatedDelivery   String?   @default("30-45 mins")
   deliveryFee         Float     @default(500.0)
   rating              Float     @default(5.0)
@@ -157,6 +166,7 @@ model SupportTicket {
   category    String
   message     String
   status      TicketStatus @default(OPEN)
+  adminReply  String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

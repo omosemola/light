@@ -27,23 +27,34 @@ import {
   Lock,
   X,
   FileText,
-  Scale
+  Scale,
+  Briefcase
 } from "lucide-react";
 import { registerVendorStore } from "@/actions/vendor";
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { useUserStore } from "@/lib/userStore";
 
 const CAMPUS_CATEGORIES = [
-  "Campus Services (Laundry, Medicals, Cleaning & Errands)",
+  // SERVICES CATEGORIES (Service Profile & Live Availability)
+  "Services: Laundry & Dry Cleaning",
+  "Services: Medicals & Pharmacy",
+  "Services: Printing, Binding & Graphic Design",
+  "Services: Hair Styling, Barbing & Grooming",
+  "Services: Tech, Laptop & Phone Repair",
+  "Services: Room Cleaning, Fumigation & Errands",
+  "Services: Tailoring & Fashion Alterations",
+  "Services: Tutorials & Academic Coaching",
+  "Services: Photography & Video Media",
+  "Services: Other Campus Services",
+
+  // PRODUCT / RETAIL CATEGORIES (Products & Cart)
   "Campus Food & Meals",
   "Cafeteria & Snacks Combos",
   "Provisions & Hostel Groceries",
   "Tech, Gadgets & Accessories",
   "Fashion, Wears & Campus Merch",
-  "Stationery, Books & Print Services",
+  "Stationery, Books & Study Items",
   "Beauty, Skincare & Personal Care",
-  "Medical, Health & Pharmacy",
-  "Laundry, Dry Cleaning & Hostel Errands",
 ];
 
 const NIGERIAN_BANKS = [
@@ -77,7 +88,7 @@ export default function VendorRegistrationPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [category, setCategory] = useState("Hot Meals, Food & Dining");
+  const [category, setCategory] = useState(CAMPUS_CATEGORIES[0]);
 
   // Step 2: Store Operations & Location
   const [location, setLocation] = useState("");
@@ -451,6 +462,18 @@ export default function VendorRegistrationPage() {
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
+
+                      {category.startsWith("Services") && (
+                        <div className="mt-2.5 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-900 dark:text-indigo-200 flex items-start gap-2">
+                          <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-heading font-extrabold block">Campus Service Specialist</span>
+                            <p className="mt-0.5 text-indigo-800/90 dark:text-indigo-300 font-medium">
+                              Service vendors publish their profile and live availability for student bookings and direct chats (no physical product cart inventory required).
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

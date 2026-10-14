@@ -313,6 +313,17 @@ export async function createVendorProduct(data: {
     const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
     if (!sessionStoreId || sessionStoreId !== data.storeId) return { success: false, error: "Unauthorized" };
 
+    const storeRecord = await prisma.store.findUnique({
+      where: { id: data.storeId },
+      select: { isService: true },
+    });
+    if (storeRecord?.isService) {
+      return {
+        success: false,
+        error: "Service providers cannot post retail products. Your business renders campus services; please post and update your Service Availability Profile instead.",
+      };
+    }
+
     const numericPrice = typeof data.price === "number" && !isNaN(data.price) 
       ? data.price 
       : parseFloat(String(data.price)) || 0;
@@ -620,6 +631,31 @@ export async function registerVendorStore(data: {
     const finalLogo = (await ensureCloudinaryImageUrl(data.logoUrl, "lightson_marketplace/stores")) || data.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80";
     const finalCover = (await ensureCloudinaryImageUrl(data.coverImage, "lightson_marketplace/stores")) || data.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
 
+    const isServiceCategory = (cat: string) => {
+      const lower = (cat || "").toLowerCase();
+      return (
+        lower.startsWith("service") ||
+        lower.includes("service") ||
+        lower.includes("laundry") ||
+        lower.includes("medical") ||
+        lower.includes("pharmacy") ||
+        lower.includes("repair") ||
+        lower.includes("cleaning") ||
+        lower.includes("errand") ||
+        lower.includes("styling") ||
+        lower.includes("barbing") ||
+        lower.includes("print") ||
+        lower.includes("tailor") ||
+        lower.includes("tutor") ||
+        lower.includes("photo")
+      );
+    };
+
+    const isService = isServiceCategory(data.category);
+    const serviceSubcategory = isService
+      ? data.category.replace(/^Services:\s*/i, "").trim()
+      : null;
+
     const store = await prisma.store.create({
       data: {
         name: data.storeName,
@@ -629,6 +665,10 @@ export async function registerVendorStore(data: {
         userId: user.id,
         isOpen: false,
         isVerified: false,
+        isService,
+        category: isService ? "Services" : data.category,
+        serviceSubcategory,
+        availabilityStatus: "AVAILABLE",
       },
     });
 
@@ -901,6 +941,11 @@ export async function updateVendorProfile(data: {
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
+  isService?: boolean;
+  category?: string;
+  serviceSubcategory?: string;
+  availabilityStatus?: string;
+  startingPrice?: number;
 }) {
   try {
     const cookieStore = await cookies();
@@ -920,6 +965,11 @@ export async function updateVendorProfile(data: {
         closingTime: data.closingTime || undefined,
         estimatedDelivery: data.estimatedDelivery || undefined,
         deliveryFee: data.deliveryFee !== undefined ? Number(data.deliveryFee) : undefined,
+        ...(data.isService !== undefined ? { isService: data.isService } : {}),
+        ...(data.category !== undefined ? { category: data.category } : {}),
+        ...(data.serviceSubcategory !== undefined ? { serviceSubcategory: data.serviceSubcategory } : {}),
+        ...(data.availabilityStatus !== undefined ? { availabilityStatus: data.availabilityStatus } : {}),
+        ...(data.startingPrice !== undefined ? { startingPrice: Number(data.startingPrice) } : {}),
         ...(data.paystackSubaccountCode !== undefined
           ? { paystackSubaccountCode: data.paystackSubaccountCode ? data.paystackSubaccountCode.trim() : null }
           : {}),
@@ -950,6 +1000,7 @@ export async function updateVendorProfile(data: {
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath(`/vendor/${data.storeId}`);
+    revalidatePath("/category/services");
     revalidatePath("/checkout");
     await clearMarketplaceCache();
 
@@ -961,6 +1012,46 @@ export async function updateVendorProfile(data: {
   } catch (error: any) {
     console.error("Error updating vendor profile:", error);
     return { success: false, error: error.message || "Failed to update vendor profile" };
+  }
+}
+
+export async function updateServiceAvailability(data: {
+  storeId: string;
+  availabilityStatus: string;
+  startingPrice?: number;
+  serviceSubcategory?: string;
+  description?: string;
+  isOpen?: boolean;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    if (!sessionStoreId || sessionStoreId !== data.storeId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const updatedStore = await prisma.store.update({
+      where: { id: data.storeId },
+      data: {
+        availabilityStatus: data.availabilityStatus,
+        isOpen: data.isOpen !== undefined ? data.isOpen : (data.availabilityStatus === "AVAILABLE" || data.availabilityStatus === "BUSY"),
+        ...(data.startingPrice !== undefined ? { startingPrice: Number(data.startingPrice) } : {}),
+        ...(data.serviceSubcategory !== undefined ? { serviceSubcategory: data.serviceSubcategory } : {}),
+        ...(data.description !== undefined ? { description: data.description.trim() } : {}),
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    await clearMarketplaceCache({ storeId: data.storeId });
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/category/services");
+    revalidatePath("/");
+    return { success: true, store: updatedStore };
+  } catch (error: any) {
+    console.error("Error updating service availability:", error);
+    return { success: false, error: error.message || "Failed to update service availability" };
   }
 }
 

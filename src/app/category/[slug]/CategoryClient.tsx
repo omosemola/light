@@ -143,8 +143,20 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     Icon: Briefcase,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80",
-    description: "Reliable campus services — Hostel laundry, dry cleaning, medicals, pharmacy essentials, and student assistance.",
-    subcategories: ["All", "Medicals & Health", "Laundry & Dry Cleaning", "Errands & Tasks"],
+    description: "Reliable campus services — Medicals & pharmacy, laundry & dry cleaning, tech repair, printing & design, and student personal assistance.",
+    subcategories: [
+      "All",
+      "Medicals & Pharmacy",
+      "Laundry & Dry Cleaning",
+      "Printing, Binding & Design",
+      "Tech, Laptop & Phone Repair",
+      "Hair Styling, Barbing & Grooming",
+      "Room Cleaning, Fumigation & Errands",
+      "Tailoring & Alterations",
+      "Tutorials & Academic Coaching",
+      "Photography & Video Media",
+      "Other Campus Services",
+    ],
   },
   medicals: {
     name: "Medical & Health",
@@ -190,6 +202,10 @@ export interface ServicePersonnelStore {
   isOpen: boolean;
   estimatedDelivery: string;
   categoryType: string;
+  availabilityStatus?: string;
+  startingPrice?: number | null;
+  openingTime?: string;
+  closingTime?: string;
   serviceOfferings?: string[];
 }
 
@@ -312,6 +328,58 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
     return list;
   }, [rawProducts, searchQuery, selectedSubcategory, sortBy, slug]);
 
+  const filteredServicePersonnel = useMemo(() => {
+    if (slug !== "services") return [];
+    return servicePersonnel.filter((person) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          person.name.toLowerCase().includes(q) ||
+          person.description.toLowerCase().includes(q) ||
+          person.categoryType.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+
+      if (selectedSubcategory === "All") return true;
+
+      const subLower = selectedSubcategory.toLowerCase();
+      const pCat = (person.categoryType || "").toLowerCase();
+      const pName = (person.name || "").toLowerCase();
+      const pDesc = (person.description || "").toLowerCase();
+      const combined = `${pCat} ${pName} ${pDesc}`;
+
+      if (subLower.includes("laundry")) {
+        return combined.includes("laundr") || combined.includes("wash") || combined.includes("iron") || combined.includes("dry clean") || combined.includes("duvet");
+      }
+      if (subLower.includes("medic") || subLower.includes("pharm")) {
+        return combined.includes("medic") || combined.includes("pharm") || combined.includes("health") || combined.includes("first aid") || combined.includes("drug");
+      }
+      if (subLower.includes("print") || subLower.includes("bind") || subLower.includes("design")) {
+        return combined.includes("print") || combined.includes("bind") || combined.includes("graphic") || combined.includes("design") || combined.includes("copy");
+      }
+      if (subLower.includes("tech") || subLower.includes("laptop") || subLower.includes("phone") || subLower.includes("repair")) {
+        return combined.includes("tech") || combined.includes("phone") || combined.includes("laptop") || combined.includes("repair") || combined.includes("gadget");
+      }
+      if (subLower.includes("hair") || subLower.includes("barb") || subLower.includes("grooming") || subLower.includes("beauty")) {
+        return combined.includes("hair") || combined.includes("barb") || combined.includes("braid") || combined.includes("wig") || combined.includes("beauty");
+      }
+      if (subLower.includes("cleaning") || subLower.includes("errand") || subLower.includes("fumigation")) {
+        return combined.includes("clean") || combined.includes("errand") || combined.includes("fumigat");
+      }
+      if (subLower.includes("tailor") || subLower.includes("alteration")) {
+        return combined.includes("tailor") || combined.includes("alter") || combined.includes("sew") || combined.includes("cloth");
+      }
+      if (subLower.includes("tutor") || subLower.includes("academic")) {
+        return combined.includes("tutor") || combined.includes("coach") || combined.includes("acad") || combined.includes("lesson");
+      }
+      if (subLower.includes("photo") || subLower.includes("media") || subLower.includes("video")) {
+        return combined.includes("photo") || combined.includes("video") || combined.includes("camera") || combined.includes("media");
+      }
+
+      return pCat.includes(subLower) || combined.includes(subLower);
+    });
+  }, [servicePersonnel, selectedSubcategory, searchQuery, slug]);
+
   const handleOpenCustomizer = (productId: string) => {
     const product = rawProducts.find((p) => p.id === productId);
     if (!product) return;
@@ -398,9 +466,9 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
         {slug === "services" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div 
-              onClick={() => setSelectedSubcategory(selectedSubcategory === "Medicals & Health" ? "All" : "Medicals & Health")}
+              onClick={() => setSelectedSubcategory(selectedSubcategory === "Medicals & Pharmacy" ? "All" : "Medicals & Pharmacy")}
               className={`p-4 rounded-3xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                selectedSubcategory === "Medicals & Health"
+                selectedSubcategory === "Medicals & Pharmacy"
                   ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 shadow-md ring-2 ring-emerald-500/20"
                   : "bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 hover:border-emerald-400 hover:shadow-md"
               }`}
@@ -411,15 +479,15 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
                 </div>
                 <div>
                   <h3 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white">
-                    Medicals & Health
+                    Medicals & Pharmacy
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
-                    First aid, OTC relief, vitamins & pharmacy
+                    First aid, OTC relief, vitamins & health essentials
                   </p>
                 </div>
               </div>
               <span className="text-xs font-heading font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                {selectedSubcategory === "Medicals & Health" ? "Filtered ✓" : "Explore →"}
+                {selectedSubcategory === "Medicals & Pharmacy" ? "Filtered ✓" : "Explore →"}
               </span>
             </div>
 
@@ -451,8 +519,31 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
           </div>
         )}
 
+        {/* SUBCATEGORY PILLS */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
+        >
+          {category.subcategories.map((subcat) => (
+            <button
+              key={subcat}
+              onClick={() => setSelectedSubcategory(subcat)}
+              className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
+                selectedSubcategory === subcat
+                  ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                  : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
+              }`}
+            >
+              {subcat}
+            </button>
+          ))}
+        </motion.div>
+
         {/* SERVICES CATEGORY DIRECT PERSONNEL DIRECTORY & CHAT HUB */}
-        {slug === "services" && servicePersonnel.length > 0 && (
+        {slug === "services" && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -479,165 +570,212 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="font-heading font-extrabold text-base md:text-lg">
-                        Registered Service Personnel & Live Chat
+                        Campus Service Personnel Directory
                       </h2>
                       <span className="text-[10px] font-heading font-extrabold px-2 py-0.5 rounded-full bg-emerald-400 text-emerald-950 uppercase tracking-wider shadow-xs">
-                        Exclusive
+                        Verified Services
                       </span>
                     </div>
                     <p className="text-xs text-indigo-100 font-medium">
-                      Direct consultation with registered campus laundry operators, dispensary pharmacists & runners
+                      Consult directly with verified campus specialists for live bookings, inquiries & instant support
                     </p>
                   </div>
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-semibold text-emerald-300 border border-emerald-400/30 self-start sm:self-auto shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Personnel Online</span>
+                  <span>{filteredServicePersonnel.length} Available</span>
                 </div>
               </div>
 
               {/* PERSONNEL TILES GRID */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                {servicePersonnel.map((person) => {
-                  const isLaundry = person.name.toLowerCase().includes("laundry") || (person.categoryType && person.categoryType.toLowerCase().includes("laundry"));
-                  const isMed = person.name.toLowerCase().includes("pharm") || person.name.toLowerCase().includes("health") || (person.categoryType && person.categoryType.toLowerCase().includes("pharm"));
-                  return (
-                    <div
-                      key={person.id}
-                      className="p-4 rounded-2xl bg-[#1E1B4B]/75 hover:bg-[#1E1B4B]/90 dark:bg-zinc-900/80 dark:hover:bg-zinc-900/95 backdrop-blur-md border border-white/20 transition-all flex flex-col justify-between gap-3 shadow-sm"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-white/20 shrink-0 border border-white/30">
-                          <Image
-                            src={person.logo || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80"}
-                            alt={person.name}
-                            fill
-                            className="object-cover"
-                          />
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-indigo-900 rounded-full" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h3 className="font-heading font-extrabold text-sm text-white truncate">
-                              {person.name}
-                            </h3>
-                            <ShieldCheck size={14} className="text-amber-300 shrink-0" />
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 text-[11px] text-indigo-200">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              isLaundry
-                                ? "bg-indigo-400/30 text-indigo-100"
-                                : isMed
-                                ? "bg-emerald-400/30 text-emerald-100"
-                                : "bg-amber-400/30 text-amber-100"
-                            }`}>
-                              {person.categoryType}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={11} /> {person.estimatedDelivery}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-indigo-100 line-clamp-1 mt-1 font-normal opacity-90">
-                            {person.description}
-                          </p>
-                        </div>
-                      </div>
+              {filteredServicePersonnel.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  {filteredServicePersonnel.map((person) => {
+                    const isLaundry = person.name.toLowerCase().includes("laundry") || (person.categoryType && person.categoryType.toLowerCase().includes("laundry"));
+                    const isMed = person.name.toLowerCase().includes("pharm") || person.name.toLowerCase().includes("health") || (person.categoryType && person.categoryType.toLowerCase().includes("pharm"));
+                    const isBusy = person.availabilityStatus === "BUSY";
+                    const isOffline = person.availabilityStatus === "AWAY" || !person.isOpen;
 
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-300">
-                          <Star size={12} className="fill-amber-300 text-amber-300" />
-                          <span>{person.rating ? person.rating.toFixed(1) : "5.0"}</span>
-                          <span className="text-indigo-200 font-normal ml-1">• Verified Provider</span>
+                    return (
+                      <div
+                        key={person.id}
+                        className="p-4 rounded-2xl bg-[#1E1B4B]/75 hover:bg-[#1E1B4B]/90 dark:bg-zinc-900/80 dark:hover:bg-zinc-900/95 backdrop-blur-md border border-white/20 transition-all flex flex-col justify-between gap-3 shadow-sm"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-white/20 shrink-0 border border-white/30">
+                            <Image
+                              src={person.logo || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80"}
+                              alt={person.name}
+                              fill
+                              className="object-cover"
+                            />
+                            <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-indigo-900 ${
+                              isBusy ? "bg-amber-400" : isOffline ? "bg-zinc-400" : "bg-emerald-400"
+                            }`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="font-heading font-extrabold text-sm text-white truncate">
+                                {person.name}
+                              </h3>
+                              <ShieldCheck size={14} className="text-amber-300 shrink-0" />
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-indigo-200">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                isLaundry
+                                  ? "bg-indigo-400/30 text-indigo-100"
+                                  : isMed
+                                  ? "bg-emerald-400/30 text-emerald-100"
+                                  : "bg-amber-400/30 text-amber-100"
+                              }`}>
+                                {person.categoryType}
+                              </span>
+
+                              {/* REAL-TIME AVAILABILITY BADGE */}
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 ${
+                                isBusy
+                                  ? "bg-amber-400 text-amber-950"
+                                  : isOffline
+                                  ? "bg-zinc-600 text-zinc-100"
+                                  : "bg-emerald-400 text-emerald-950"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  isBusy ? "bg-amber-950" : isOffline ? "bg-zinc-300" : "bg-emerald-950 animate-pulse"
+                                }`} />
+                                <span>{isBusy ? "Busy" : isOffline ? "Offline" : "Available Now"}</span>
+                              </span>
+
+                              {person.startingPrice && person.startingPrice > 0 ? (
+                                <span className="font-heading font-black text-amber-300 text-[10px]">
+                                  From ₦{person.startingPrice.toLocaleString()}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="text-[11px] text-indigo-100 line-clamp-2 mt-1.5 font-normal opacity-90 leading-relaxed">
+                              {person.description}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {person.phone && (
-                            <a
-                              href={`tel:${person.phone}`}
-                              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
-                              title="Call Provider"
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+                          <div className="flex items-center gap-1 text-[11px] font-bold text-amber-300">
+                            <Star size={12} className="fill-amber-300 text-amber-300" />
+                            <span>{person.rating ? person.rating.toFixed(1) : "5.0"}</span>
+                            <span className="text-indigo-200 font-normal ml-1">
+                              • {person.estimatedDelivery || "Campus Coverage"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {person.phone && (
+                              <a
+                                href={`tel:${person.phone}`}
+                                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                title="Call Provider"
+                              >
+                                <Phone size={14} />
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenChat(person)}
+                              className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-heading font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                             >
-                              <Phone size={14} />
-                            </a>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenChat(person)}
-                            className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-heading font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                          >
-                            <MessageSquare size={13} />
-                            <span>Chat Now</span>
-                          </button>
+                              <MessageSquare size={13} />
+                              <span>Chat Now</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
+                  <Briefcase size={36} className="text-amber-300 mx-auto mb-2 opacity-80" />
+                  <h4 className="font-heading font-extrabold text-sm text-white">
+                    No specialists listed under &ldquo;{selectedSubcategory}&rdquo; yet
+                  </h4>
+                  <p className="text-xs text-indigo-100 max-w-md mx-auto mt-1 mb-4 font-normal leading-relaxed">
+                    Do you render this campus service? Publish your availability profile on Lightson to receive student inquiries and direct chat bookings.
+                  </p>
+                  <Link
+                    href="/vendor/register"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-heading font-black text-xs rounded-xl shadow-md transition-all active:scale-95"
+                  >
+                    <span>Register Service Profile</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
 
-        {/* SUBCATEGORY PILLS */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
-        >
-          {category.subcategories.map((subcat) => (
-            <button
-              key={subcat}
-              onClick={() => setSelectedSubcategory(subcat)}
-              className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                selectedSubcategory === subcat
-                  ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
-                  : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
-              }`}
+        {/* RETAIL PRODUCTS SECTION (FOR ALL OTHER CATEGORIES) */}
+        {slug !== "services" && (
+          <>
+            {/* SUBCATEGORY PILLS */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false }}
+              transition={{ duration: 0.4 }}
+              className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
             >
-              {subcat}
-            </button>
-          ))}
-        </motion.div>
+              {category.subcategories.map((subcat) => (
+                <button
+                  key={subcat}
+                  onClick={() => setSelectedSubcategory(subcat)}
+                  className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
+                    selectedSubcategory === subcat
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                      : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
+                  }`}
+                >
+                  {subcat}
+                </button>
+              ))}
+            </motion.div>
 
-        {/* PRODUCTS COUNT & SORT BAR */}
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs md:text-sm font-body font-semibold text-[#71717A] dark:text-zinc-400">
-            Showing <span className="text-[#18181B] dark:text-zinc-100 font-extrabold">{filteredProducts.length}</span> items
-          </p>
-          <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-zinc-800 shadow-xs">
-            <ArrowUpDown size={13} className="text-[#71717A] dark:text-zinc-400" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs font-body font-bold text-[#18181B] dark:text-zinc-200 bg-transparent focus:outline-none cursor-pointer"
-            >
-              <option value="popular">Sort: Popular 🔥</option>
-              <option value="price-asc">Price: Low to High ₦</option>
-              <option value="price-desc">Price: High to Low ₦</option>
-              <option value="name">Name: A to Z</option>
-            </select>
-          </div>
-        </div>
+            {/* PRODUCTS COUNT & SORT BAR */}
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs md:text-sm font-body font-semibold text-[#71717A] dark:text-zinc-400">
+                Showing <span className="text-[#18181B] dark:text-zinc-100 font-extrabold">{filteredProducts.length}</span> items
+              </p>
+              <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-zinc-800 shadow-xs">
+                <ArrowUpDown size={13} className="text-[#71717A] dark:text-zinc-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="text-xs font-body font-bold text-[#18181B] dark:text-zinc-200 bg-transparent focus:outline-none cursor-pointer"
+                >
+                  <option value="popular">Sort: Popular 🔥</option>
+                  <option value="price-asc">Price: Low to High ₦</option>
+                  <option value="price-desc">Price: High to Low ₦</option>
+                  <option value="name">Name: A to Z</option>
+                </select>
+              </div>
+            </div>
 
-        {/* PRODUCTS GRID WITH SCROLL ANIMATION */}
-        {filteredProducts.length > 0 ? (
-          <ProductGrid
-            products={filteredProducts}
-            onAddProduct={handleOpenCustomizer}
-          />
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: false }}
-            className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 p-8"
-          >
-            <CategoryIcon size={40} className="mx-auto mb-3 text-[#312E81] dark:text-indigo-400" />
-            <h3 className="font-heading font-bold text-lg text-[#18181B] dark:text-zinc-100">No items found</h3>
-            <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-1 font-body">Try switching subcategories or adjusting your search query.</p>
-          </motion.div>
+            {/* PRODUCTS GRID WITH SCROLL ANIMATION */}
+            {filteredProducts.length > 0 ? (
+              <ProductGrid
+                products={filteredProducts}
+                onAddProduct={handleOpenCustomizer}
+              />
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: false }}
+                className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 p-8"
+              >
+                <CategoryIcon size={40} className="mx-auto mb-3 text-[#312E81] dark:text-indigo-400" />
+                <h3 className="font-heading font-bold text-lg text-[#18181B] dark:text-zinc-100">No items found</h3>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-1 font-body">Try switching subcategories or adjusting your search query.</p>
+              </motion.div>
+            )}
+          </>
         )}
       </div>
 

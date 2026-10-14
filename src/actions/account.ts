@@ -68,6 +68,10 @@ export async function getUserProfileDb(email: string) {
         storeName: user.store?.name,
         favoriteProductIds: user.favoriteProductIds || [],
         favoriteStoreIds: user.favoriteStoreIds || [],
+        twoFactorEnabled: user.twoFactorEnabled ?? true,
+        smsAlerts: user.smsAlerts ?? true,
+        emailReceipts: user.emailReceipts ?? true,
+        promoAlerts: user.promoAlerts ?? false,
         ordersCount,
         reviewsCount,
         points,
@@ -76,6 +80,57 @@ export async function getUserProfileDb(email: string) {
   } catch (error: any) {
     console.error("Error retrieving user profile from DB:", error);
     return { success: false, error: error.message, user: null };
+  }
+}
+
+export async function updateUserSettingsDb(
+  email: string,
+  settings: {
+    twoFactorEnabled?: boolean;
+    smsAlerts?: boolean;
+    emailReceipts?: boolean;
+    promoAlerts?: boolean;
+  }
+) {
+  try {
+    if (!email || !email.trim()) return { success: false, error: "User email is required" };
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: cleanEmail,
+          mode: "insensitive",
+        },
+      },
+    });
+
+    if (!user) return { success: false, error: "User account not found" };
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        ...(settings.twoFactorEnabled !== undefined ? { twoFactorEnabled: settings.twoFactorEnabled } : {}),
+        ...(settings.smsAlerts !== undefined ? { smsAlerts: settings.smsAlerts } : {}),
+        ...(settings.emailReceipts !== undefined ? { emailReceipts: settings.emailReceipts } : {}),
+        ...(settings.promoAlerts !== undefined ? { promoAlerts: settings.promoAlerts } : {}),
+      },
+    });
+
+    revalidatePath("/profile");
+    revalidatePath("/profile/settings");
+
+    return {
+      success: true,
+      settings: {
+        twoFactorEnabled: updated.twoFactorEnabled,
+        smsAlerts: updated.smsAlerts,
+        emailReceipts: updated.emailReceipts,
+        promoAlerts: updated.promoAlerts,
+      },
+    };
+  } catch (error: any) {
+    console.error("Error updating user settings in DB:", error);
+    return { success: false, error: error.message || "Failed to update security settings" };
   }
 }
 
@@ -89,6 +144,10 @@ export async function updateUserProfileDb(
     hostel?: string;
     addressDetail?: string;
     savedLocations?: SavedLocationItem[];
+    twoFactorEnabled?: boolean;
+    smsAlerts?: boolean;
+    emailReceipts?: boolean;
+    promoAlerts?: boolean;
   }
 ) {
   try {
@@ -134,6 +193,10 @@ export async function updateUserProfileDb(
           addressDetail: data.addressDetail || null,
           savedLocations: stringifiedLocations || [],
           role: "STUDENT",
+          twoFactorEnabled: data.twoFactorEnabled ?? true,
+          smsAlerts: data.smsAlerts ?? true,
+          emailReceipts: data.emailReceipts ?? true,
+          promoAlerts: data.promoAlerts ?? false,
         },
       });
 
@@ -156,6 +219,10 @@ export async function updateUserProfileDb(
           hostel: data.hostel !== undefined ? data.hostel : user.hostel,
           addressDetail: data.addressDetail !== undefined ? data.addressDetail : user.addressDetail,
           ...(stringifiedLocations !== undefined ? { savedLocations: stringifiedLocations } : {}),
+          ...(data.twoFactorEnabled !== undefined ? { twoFactorEnabled: data.twoFactorEnabled } : {}),
+          ...(data.smsAlerts !== undefined ? { smsAlerts: data.smsAlerts } : {}),
+          ...(data.emailReceipts !== undefined ? { emailReceipts: data.emailReceipts } : {}),
+          ...(data.promoAlerts !== undefined ? { promoAlerts: data.promoAlerts } : {}),
         },
       });
     }

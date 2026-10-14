@@ -45,7 +45,10 @@ import {
   Filter,
   Eye,
   LogOut,
-  Utensils
+  Utensils,
+  Briefcase,
+  Radio,
+  UserCheck
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -63,6 +66,7 @@ import {
   deleteVendorProduct,
   updateStoreSchedule,
   updateVendorProfile,
+  updateServiceAvailability,
   logoutVendor
 } from "@/actions/vendor";
 import { uploadImageToCloud } from "@/lib/uploadClient";
@@ -109,6 +113,19 @@ function compressImage(file: File, maxWidth = 720, quality = 0.72): Promise<stri
   });
 }
 
+const CAMPUS_SERVICE_SUBCATEGORIES = [
+  "Laundry & Dry Cleaning",
+  "Medicals & Health Services",
+  "Printing, Typing & Graphic Design",
+  "Laptop, Phone & Tech Repair",
+  "Barbing & Hair Styling",
+  "Room Cleaning & Hostel Errands",
+  "Tailoring, Fashion & Alterations",
+  "Academic Tutorials & Project Assistance",
+  "Photography & Video Coverage",
+  "Catering & Event Baking",
+];
+
 export default function VendorDashboardPage() {
   const router = useRouter();
   const { isDark, setTheme } = useTheme();
@@ -120,6 +137,13 @@ export default function VendorDashboardPage() {
   const [productSearch, setProductSearch] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string>("");
+
+  // Service Vendor Profile & Real-Time Availability State
+  const [serviceSubcategory, setServiceSubcategory] = useState<string>("Laundry & Dry Cleaning");
+  const [serviceStartingPrice, setServiceStartingPrice] = useState<string>("");
+  const [serviceStatus, setServiceStatus] = useState<"AVAILABLE" | "BUSY" | "OFFLINE">("AVAILABLE");
+  const [serviceBio, setServiceBio] = useState<string>("");
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   // Add / Edit Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -191,6 +215,14 @@ export default function VendorDashboardPage() {
       setBankName(storeData.bankName || "");
       setAccountNumber(storeData.accountNumber || "");
       setAccountName(storeData.accountName || "");
+      if (storeData.serviceSubcategory) setServiceSubcategory(storeData.serviceSubcategory);
+      if (storeData.startingPrice !== undefined && storeData.startingPrice !== null) {
+        setServiceStartingPrice(String(storeData.startingPrice));
+      }
+      if (storeData.availabilityStatus) {
+        setServiceStatus(storeData.availabilityStatus as "AVAILABLE" | "BUSY" | "OFFLINE");
+      }
+      if (storeData.description) setServiceBio(storeData.description);
     }
     setShowProfileModal(true);
   };
@@ -374,7 +406,10 @@ export default function VendorDashboardPage() {
       if (!isPoll) {
         if (res.store.name) setStoreName(res.store.name);
         if (res.store.user?.name) setOwnerName(res.store.user.name);
-        if (res.store.description) setStoreDesc(res.store.description);
+        if (res.store.description) {
+          setStoreDesc(res.store.description);
+          setServiceBio(res.store.description);
+        }
         if (res.store.phone || res.store.user?.phone) setStorePhone(res.store.phone || res.store.user?.phone || "");
         if (res.store.user?.email) setStoreEmail(res.store.user.email);
         if (res.store.logo) setStoreLogo(res.store.logo);
@@ -387,6 +422,13 @@ export default function VendorDashboardPage() {
         if (res.store.bankName) setBankName(res.store.bankName);
         if (res.store.accountNumber) setAccountNumber(res.store.accountNumber);
         if (res.store.accountName) setAccountName(res.store.accountName);
+        if (res.store.serviceSubcategory) setServiceSubcategory(res.store.serviceSubcategory);
+        if (res.store.startingPrice !== undefined && res.store.startingPrice !== null) {
+          setServiceStartingPrice(String(res.store.startingPrice));
+        }
+        if (res.store.availabilityStatus) {
+          setServiceStatus(res.store.availabilityStatus as "AVAILABLE" | "BUSY" | "OFFLINE");
+        }
       }
 
       const currentPending = res.metrics?.pendingOrdersCount || 0;
@@ -446,7 +488,77 @@ export default function VendorDashboardPage() {
     showToast(`Product is now ${!current ? "IN STOCK" : "OUT OF STOCK"}`);
   };
 
+  const handleQuickAvailabilityChange = async (newStatus: "AVAILABLE" | "BUSY" | "OFFLINE") => {
+    if (!storeData?.id) return;
+    setServiceStatus(newStatus);
+    setStoreData((prev: any) => ({
+      ...prev,
+      availabilityStatus: newStatus,
+      isOpen: newStatus !== "OFFLINE",
+    }));
+
+    const res = await updateServiceAvailability({
+      storeId: storeData.id,
+      availabilityStatus: newStatus,
+      isOpen: newStatus !== "OFFLINE",
+    });
+
+    if (res.success) {
+      showToast(
+        newStatus === "AVAILABLE"
+          ? "🟢 Status: AVAILABLE NOW — Students can book & chat"
+          : newStatus === "BUSY"
+          ? "🟡 Status: BUSY / IN-SERVICE — Occupied, responses delayed"
+          : "⚪ Status: OFFLINE / AWAY — Not accepting requests"
+      );
+    } else {
+      showToast(res.error || "Failed to update availability");
+    }
+  };
+
+  const handleSaveServiceProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!storeData?.id) return;
+    setIsSavingAvailability(true);
+
+    try {
+      const parsedPrice = serviceStartingPrice !== "" ? parseFloat(serviceStartingPrice) : undefined;
+      const res = await updateServiceAvailability({
+        storeId: storeData.id,
+        availabilityStatus: serviceStatus,
+        serviceSubcategory: serviceSubcategory.trim(),
+        startingPrice: parsedPrice,
+        description: serviceBio.trim() || undefined,
+        isOpen: serviceStatus !== "OFFLINE",
+      });
+
+      if (res.success && res.store) {
+        setStoreData((prev: any) => ({
+          ...prev,
+          availabilityStatus: res.store.availabilityStatus,
+          serviceSubcategory: res.store.serviceSubcategory,
+          startingPrice: res.store.startingPrice,
+          description: res.store.description,
+          isOpen: res.store.isOpen,
+        }));
+        showToast("✓ Service profile & availability updated successfully!");
+      } else {
+        showToast(res.error || "Failed to update service profile.");
+      }
+    } catch (err: any) {
+      console.error("Error saving service availability:", err);
+      showToast(err?.message || "Error saving availability");
+    } finally {
+      setIsSavingAvailability(false);
+    }
+  };
+
   const openAddProductModal = () => {
+    if (storeData?.isService) {
+      showToast("ℹ️ Service providers post availability profiles, not retail products.");
+      setSelectedTab("products");
+      return;
+    }
     setEditingProductId(null);
     setProductName("");
     setProductPrice("");
@@ -463,6 +575,11 @@ export default function VendorDashboardPage() {
   };
 
   const openEditProductModal = (prod: any) => {
+    if (storeData?.isService) {
+      showToast("ℹ️ Service providers post availability profiles, not retail products.");
+      setSelectedTab("products");
+      return;
+    }
     setEditingProductId(prod.id);
     setProductName(prod.name || "");
     setProductPrice(prod.price !== undefined && prod.price !== null ? String(prod.price) : "");
@@ -661,6 +778,12 @@ export default function VendorDashboardPage() {
         bankName: bankName.trim(),
         accountNumber: accountNumber.trim(),
         accountName: accountName.trim(),
+        ...(storeData?.isService ? {
+          isService: true,
+          serviceSubcategory: serviceSubcategory.trim(),
+          availabilityStatus: serviceStatus,
+          startingPrice: serviceStartingPrice !== "" ? parseFloat(serviceStartingPrice) : undefined,
+        } : {}),
       });
 
       if (res.success && res.store) {
@@ -856,30 +979,51 @@ export default function VendorDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Bike size={13} className="text-amber-300" />
-                    Timeline: <strong className="text-white">{deliveryEstimate}</strong>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <DollarSign size={13} className="text-emerald-400" />
-                    Delivery: <strong className="text-white">{Number(deliveryFee) === 0 ? "Free Delivery" : `₦${Number(deliveryFee).toLocaleString()}`}</strong>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={13} className="text-sky-300" />
-                    Hours: <strong className="text-white">{openingTime} - {closingTime}</strong>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Star size={13} className="text-amber-400 fill-amber-400" />
-                    <strong className="text-white">{storeData?.rating || "4.9"}</strong>
-                  </span>
+                  {storeData?.isService ? (
+                    <>
+                      <span className="flex items-center gap-1">
+                        <Briefcase size={13} className="text-amber-300" />
+                        Service: <strong className="text-white">{serviceSubcategory || storeData?.serviceSubcategory || "Campus Services"}</strong>
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign size={13} className="text-emerald-400" />
+                        Rates: <strong className="text-white">{serviceStartingPrice ? `From ₦${Number(serviceStartingPrice).toLocaleString()}` : "Flexible / On Inquiry"}</strong>
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={13} className="text-sky-300" />
+                        Hours: <strong className="text-white">{openingTime} - {closingTime}</strong>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex items-center gap-1">
+                        <Bike size={13} className="text-amber-300" />
+                        Timeline: <strong className="text-white">{deliveryEstimate}</strong>
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign size={13} className="text-emerald-400" />
+                        Delivery: <strong className="text-white">{Number(deliveryFee) === 0 ? "Free Delivery" : `₦${Number(deliveryFee).toLocaleString()}`}</strong>
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={13} className="text-sky-300" />
+                        Hours: <strong className="text-white">{openingTime} - {closingTime}</strong>
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Star size={13} className="text-amber-400 fill-amber-400" />
+                        <strong className="text-white">{storeData?.rating || "4.9"}</strong>
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* QUICK ACTIONS & LIVE STORE TOGGLE */}
+            {/* QUICK ACTIONS & LIVE STORE / SERVICE TOGGLE */}
             <div className="flex flex-wrap items-center gap-2.5">
               
               {/* EDIT STORE PROFILE BUTTON ON HERO */}
@@ -890,22 +1034,67 @@ export default function VendorDashboardPage() {
                 title="Edit Store Profile, Branding, Hotlines & Hours"
               >
                 <Edit3 size={15} />
-                <span>Edit Store Profile</span>
+                <span>Edit Profile</span>
               </button>
 
-              {/* LIVE STORE ON/OFF SWITCH */}
-              <button
-                type="button"
-                onClick={handleToggleStore}
-                className={`px-4 py-2.5 rounded-2xl font-heading font-black text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-lg border ${
-                  storeData?.isOpen
-                    ? "bg-emerald-600 hover:bg-emerald-500 border-emerald-400 text-white"
-                    : "bg-rose-600 hover:bg-rose-500 border-rose-400 text-white"
-                }`}
-              >
-                <Power className={`w-4 h-4 ${storeData?.isOpen ? "animate-pulse" : ""}`} />
-                <span>{storeData?.isOpen ? "STORE OPEN & LIVE" : "STORE PAUSED / CLOSED"}</span>
-              </button>
+              {/* SERVICE AVAILABILITY BUTTONS OR RETAIL STORE TOGGLE */}
+              {storeData?.isService ? (
+                <div className="flex items-center gap-1 p-1 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAvailabilityChange("AVAILABLE")}
+                    className={`px-3 py-1.5 rounded-xl font-heading text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
+                      serviceStatus === "AVAILABLE"
+                        ? "bg-emerald-500 text-slate-950 shadow-md font-black"
+                        : "text-slate-300 hover:bg-white/10 font-bold"
+                    }`}
+                    title="Mark yourself Available Now for student bookings & inquiries"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                    <span>Available</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAvailabilityChange("BUSY")}
+                    className={`px-3 py-1.5 rounded-xl font-heading text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
+                      serviceStatus === "BUSY"
+                        ? "bg-amber-400 text-slate-950 shadow-md font-black"
+                        : "text-slate-300 hover:bg-white/10 font-bold"
+                    }`}
+                    title="Mark yourself Busy / In-Service (occupied with a student)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span>Busy</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAvailabilityChange("OFFLINE")}
+                    className={`px-3 py-1.5 rounded-xl font-heading text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
+                      serviceStatus === "OFFLINE"
+                        ? "bg-rose-600 text-white shadow-md font-black"
+                        : "text-slate-300 hover:bg-white/10 font-bold"
+                    }`}
+                    title="Mark yourself Offline / Away"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-rose-300" />
+                    <span>Offline</span>
+                  </button>
+                </div>
+              ) : (
+                /* LIVE STORE ON/OFF SWITCH */
+                <button
+                  type="button"
+                  onClick={handleToggleStore}
+                  className={`px-4 py-2.5 rounded-2xl font-heading font-black text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-lg border ${
+                    storeData?.isOpen
+                      ? "bg-emerald-600 hover:bg-emerald-500 border-emerald-400 text-white"
+                      : "bg-rose-600 hover:bg-rose-500 border-rose-400 text-white"
+                  }`}
+                >
+                  <Power className={`w-4 h-4 ${storeData?.isOpen ? "animate-pulse" : ""}`} />
+                  <span>{storeData?.isOpen ? "STORE OPEN & LIVE" : "STORE PAUSED / CLOSED"}</span>
+                </button>
+              )}
 
               {/* AUDIO ALARM TEST & TOGGLE */}
               <button
@@ -936,13 +1125,13 @@ export default function VendorDashboardPage() {
                 <span>Marketplace Website</span>
               </Link>
 
-              {/* STOREFRONT PREVIEW LINK */}
+              {/* SERVICES DIRECTORY OR STOREFRONT PREVIEW LINK */}
               <Link
-                href={`/vendor/${storeData?.id}`}
+                href={storeData?.isService ? "/category/services" : `/vendor/${storeData?.id}`}
                 className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95"
               >
                 <Eye size={14} className="text-indigo-300" />
-                <span>Storefront</span>
+                <span>{storeData?.isService ? "Services Directory" : "Storefront"}</span>
                 <ExternalLink size={12} />
               </Link>
 
@@ -1109,23 +1298,55 @@ export default function VendorDashboardPage() {
             </h3>
           </motion.div>
 
-          <motion.div
-            onClick={() => setSelectedTab("products")}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
-              isDark 
-                ? "bg-zinc-900 border-zinc-800 hover:border-indigo-500" 
-                : "bg-white border-slate-200 hover:border-indigo-500 shadow-xs"
-            }`}
-          >
-            <Package className="w-5 h-5 text-indigo-500 mb-1.5" />
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Store Products</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>
-              {storeData?.products?.length || 0} Products
-            </h3>
-          </motion.div>
+          {storeData?.isService ? (
+            <motion.div
+              onClick={() => setSelectedTab("products")}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+                isDark 
+                  ? "bg-zinc-900 border-zinc-800 hover:border-emerald-500" 
+                  : "bg-white border-slate-200 hover:border-emerald-500 shadow-xs"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <Radio className={`w-5 h-5 ${serviceStatus === "AVAILABLE" ? "text-emerald-500 animate-pulse" : serviceStatus === "BUSY" ? "text-amber-500" : "text-slate-400"}`} />
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                  serviceStatus === "AVAILABLE" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" :
+                  serviceStatus === "BUSY" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
+                  "bg-slate-500/10 text-slate-500 border border-slate-500/20"
+                }`}>
+                  {serviceStatus}
+                </span>
+              </div>
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Service Availability</span>
+              <h3 className={`text-sm sm:text-base font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>
+                {serviceStatus === "AVAILABLE" ? "🟢 Available Now" : serviceStatus === "BUSY" ? "🟡 Currently Busy" : "⚪ Offline / Away"}
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                {serviceStartingPrice ? `From ₦${Number(serviceStartingPrice).toLocaleString()}` : "Tap to update status"}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              onClick={() => setSelectedTab("products")}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+                isDark 
+                  ? "bg-zinc-900 border-zinc-800 hover:border-indigo-500" 
+                  : "bg-white border-slate-200 hover:border-indigo-500 shadow-xs"
+              }`}
+            >
+              <Package className="w-5 h-5 text-indigo-500 mb-1.5" />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Store Products</span>
+              <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>
+                {storeData?.products?.length || 0} Products
+              </h3>
+            </motion.div>
+          )}
 
           <motion.div
             onClick={() => setSelectedTab("reviews")}
@@ -1175,8 +1396,20 @@ export default function VendorDashboardPage() {
                 : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
             }`}
           >
-            <Package size={15} />
-            <span>Products & Catalog ({storeData?.products?.length || 0})</span>
+            {storeData?.isService ? (
+              <>
+                <Briefcase size={15} />
+                <span>Service Profile & Availability</span>
+                <span className={`w-2 h-2 rounded-full ${
+                  serviceStatus === "AVAILABLE" ? "bg-emerald-400 animate-pulse" : serviceStatus === "BUSY" ? "bg-amber-400" : "bg-slate-400"
+                }`} />
+              </>
+            ) : (
+              <>
+                <Package size={15} />
+                <span>Products & Catalog ({storeData?.products?.length || 0})</span>
+              </>
+            )}
           </button>
 
           <button
@@ -1409,155 +1642,466 @@ export default function VendorDashboardPage() {
           </div>
         )}
 
-        {/* 2. PRODUCTS & CATALOG TAB */}
+        {/* 2. PRODUCTS OR SERVICE PROFILE & AVAILABILITY TAB */}
         {selectedTab === "products" && (
-          <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative flex-1 max-w-md">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Search products by name or details..."
-                  className={`w-full h-11 pl-10 pr-4 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 border ${
-                    isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
-                  }`}
-                />
+          storeData?.isService ? (
+            <div className="space-y-6">
+              {/* SERVICE VENDOR NOTICE BANNER */}
+              <div className="p-5 rounded-3xl bg-linear-to-r from-indigo-900/30 via-purple-900/20 to-slate-900/40 border border-indigo-500/30 backdrop-blur-md">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-400 flex items-center justify-center shrink-0">
+                      <Briefcase size={24} />
+                    </div>
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-1">
+                        <Radio size={11} className="animate-pulse text-indigo-400" />
+                        <span>Service Provider Mode</span>
+                      </div>
+                      <h3 className="text-base font-heading font-black text-white">
+                        Campus Services Profile & Real-Time Availability
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                        As a campus service specialist ({storeData?.serviceSubcategory || "Campus Services"}), you provide on-demand services rather than inventory products. Students discover you directly on the <strong className="text-amber-300">Services Directory</strong> and initiate bookings or inquiries via real-time Chat and Calls. Keep your status updated so students know when you are open for work!
+                      </p>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/category/services"
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs rounded-2xl flex items-center gap-1.5 shrink-0 transition active:scale-95"
+                  >
+                    <Eye size={14} className="text-amber-300" />
+                    <span>View Public Directory</span>
+                    <ExternalLink size={12} />
+                  </Link>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={openAddProductModal}
-                className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Plus size={16} />
-                <span>Add New Product</span>
-              </button>
-            </div>
+              {/* REAL-TIME AVAILABILITY STATUS TOGGLE CARDS */}
+              <div className={`p-6 rounded-3xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                      <Radio size={18} className="text-indigo-500" />
+                      <span>Current Real-Time Availability</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Select your availability. This directly changes your live badge in the Campus Services Directory.
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-heading font-black uppercase ${
+                    serviceStatus === "AVAILABLE" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" :
+                    serviceStatus === "BUSY" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" :
+                    "bg-slate-500/10 text-slate-500 border border-slate-500/20"
+                  }`}>
+                    {serviceStatus === "AVAILABLE" ? "🟢 Live & Taking Bookings" : serviceStatus === "BUSY" ? "🟡 In Session / Busy" : "⚪ Offline / Closed"}
+                  </span>
+                </div>
 
-            {filteredProducts.length === 0 ? (
-              <div className={`p-12 text-center rounded-3xl border ${
-                isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
-              }`}>
-                <Package size={32} className="text-slate-400 mx-auto mb-3" />
-                <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
-                  No products found
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
-                  Add your first store product with customizable options, sizes, or variations.
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                  {/* AVAILABLE CARD */}
+                  <div
+                    onClick={() => handleQuickAvailabilityChange("AVAILABLE")}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${
+                      serviceStatus === "AVAILABLE"
+                        ? "border-emerald-500 bg-emerald-500/10 shadow-md ring-2 ring-emerald-500/20"
+                        : isDark ? "border-zinc-800 bg-zinc-950 hover:border-zinc-700" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" />
+                        <span className="font-heading font-black text-sm text-slate-900 dark:text-white">AVAILABLE NOW</span>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        serviceStatus === "AVAILABLE" ? "border-emerald-500 bg-emerald-500 text-slate-950" : "border-slate-400"
+                      }`}>
+                        {serviceStatus === "AVAILABLE" && <Check size={12} strokeWidth={3} />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Accepting immediate student requests, chats, and calls. Your profile is highlighted in the Services Directory.
+                    </p>
+                  </div>
+
+                  {/* BUSY CARD */}
+                  <div
+                    onClick={() => handleQuickAvailabilityChange("BUSY")}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${
+                      serviceStatus === "BUSY"
+                        ? "border-amber-500 bg-amber-500/10 shadow-md ring-2 ring-amber-500/20"
+                        : isDark ? "border-zinc-800 bg-zinc-950 hover:border-zinc-700" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-amber-400" />
+                        <span className="font-heading font-black text-sm text-slate-900 dark:text-white">BUSY / IN-SERVICE</span>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        serviceStatus === "BUSY" ? "border-amber-500 bg-amber-500 text-slate-950" : "border-slate-400"
+                      }`}>
+                        {serviceStatus === "BUSY" && <Check size={12} strokeWidth={3} />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Currently rendering service for another student or in class. Students can still message, but will know responses may be delayed.
+                    </p>
+                  </div>
+
+                  {/* OFFLINE CARD */}
+                  <div
+                    onClick={() => handleQuickAvailabilityChange("OFFLINE")}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${
+                      serviceStatus === "OFFLINE"
+                        ? "border-rose-500 bg-rose-500/10 shadow-md ring-2 ring-rose-500/20"
+                        : isDark ? "border-zinc-800 bg-zinc-950 hover:border-zinc-700" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-slate-400" />
+                        <span className="font-heading font-black text-sm text-slate-900 dark:text-white">OFFLINE / AWAY</span>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        serviceStatus === "OFFLINE" ? "border-rose-500 bg-rose-500 text-white" : "border-slate-400"
+                      }`}>
+                        {serviceStatus === "OFFLINE" && <Check size={12} strokeWidth={3} />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Closed for the day or taking a break. Your profile will be marked as away and new booking calls paused.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* SERVICE SPECIALTY & RATES FORM + LIVE CARD PREVIEW */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className={`lg:col-span-2 p-6 rounded-3xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"} space-y-5`}>
+                  <div className="flex items-center justify-between border-b pb-4 border-slate-100 dark:border-zinc-800">
+                    <div>
+                      <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
+                        Specialty Details & Pricing
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Define your campus service subcategory, base rates, and service offerings.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSaveServiceProfile} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase text-slate-500 dark:text-zinc-400 mb-1.5 font-heading">
+                        Service Subcategory
+                      </label>
+                      <select
+                        value={serviceSubcategory}
+                        onChange={(e) => setServiceSubcategory(e.target.value)}
+                        className={`w-full h-11 px-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                        }`}
+                      >
+                        {CAMPUS_SERVICE_SUBCATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase text-slate-500 dark:text-zinc-400 mb-1.5 font-heading">
+                        Starting Rate / Base Fee (₦)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-extrabold text-sm text-slate-400">
+                          ₦
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={serviceStartingPrice}
+                          onChange={(e) => setServiceStartingPrice(e.target.value)}
+                          placeholder="e.g. 1500 (Displayed as 'From ₦1,500' in directory)"
+                          className={`w-full h-11 pl-9 pr-4 rounded-2xl text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                          }`}
+                        />
+                      </div>
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        Students see this as your minimum rate before chatting for a custom quote.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase text-slate-500 dark:text-zinc-400 mb-1.5 font-heading">
+                        Specialty Offerings & Bio
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={serviceBio}
+                        onChange={(e) => setServiceBio(e.target.value)}
+                        placeholder="Detail your services (e.g. Wash & Fold, Suit Dry Cleaning, 24-hr Turnaround, Doorstep Pickup & Delivery at all hostels)..."
+                        className={`w-full p-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed ${
+                          isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
+                        }`}
+                      />
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={isSavingAvailability}
+                        className="px-6 py-3 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-black text-xs rounded-2xl shadow-lg transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                      >
+                        {isSavingAvailability ? (
+                          <>
+                            <RefreshCw size={14} className="animate-spin" />
+                            <span>Saving Changes...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={15} />
+                            <span>Save Profile & Availability</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* LIVE PREVIEW OF PERSONNEL CARD AS SEEN BY STUDENTS */}
+                <div className={`p-6 rounded-3xl border flex flex-col justify-between ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-heading font-extrabold text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                        Directory Card Preview
+                      </h4>
+                      <span className="text-[10px] text-amber-500 font-black">STUDENT VIEW</span>
+                    </div>
+
+                    {/* PREVIEW CARD */}
+                    <div className="rounded-2xl border border-white/10 overflow-hidden shadow-lg relative bg-cover bg-center text-white" style={{ backgroundImage: "url('/home.banner.png')" }}>
+                      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px]" />
+                      <div className="relative p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-heading font-black flex items-center gap-1.5 shadow-sm ${
+                            serviceStatus === "AVAILABLE"
+                              ? "bg-emerald-500 text-slate-950"
+                              : serviceStatus === "BUSY"
+                              ? "bg-amber-400 text-slate-950"
+                              : "bg-slate-700 text-slate-200"
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${serviceStatus === "AVAILABLE" ? "bg-slate-950 animate-pulse" : "bg-current"}`} />
+                            <span>{serviceStatus === "AVAILABLE" ? "Available Now" : serviceStatus === "BUSY" ? "Busy / In Session" : "Offline / Away"}</span>
+                          </span>
+
+                          <span className="px-2 py-0.5 rounded-lg bg-black/50 text-[10px] font-heading font-bold text-amber-300">
+                            ★ {storeData?.rating || "4.9"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-1">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 border border-white/20 shrink-0 flex items-center justify-center">
+                            {storeData?.logo ? (
+                              <img src={storeData.logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              <Store size={20} className="text-slate-400" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h5 className="font-heading font-extrabold text-sm truncate text-white">
+                              {storeData?.name || "Your Service Store"}
+                            </h5>
+                            <span className="inline-block px-2 py-0.5 bg-indigo-500/30 text-indigo-200 rounded-md text-[10px] font-medium border border-indigo-400/20 truncate">
+                              {serviceSubcategory || "Campus Services"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                          {serviceBio || storeData?.description || "Verified campus service provider."}
+                        </p>
+
+                        <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                          <span className="text-[11px] font-heading font-black text-emerald-400">
+                            {serviceStartingPrice ? `From ₦${Number(serviceStartingPrice).toLocaleString()}` : "Rates: Flexible"}
+                          </span>
+
+                          <div className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-heading font-black text-[10px] flex items-center gap-1 shadow-sm">
+                            <MessageSquare size={12} />
+                            <span>Chat Specialist</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-slate-100 dark:border-zinc-800 text-center">
+                    <Link
+                      href="/category/services"
+                      className="text-xs font-heading font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1"
+                    >
+                      <span>Open Services Category Page</span>
+                      <ExternalLink size={12} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* RETAIL PRODUCTS CATALOG (WHEN NOT SERVICE VENDOR) */
+            <div className="space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Search products by name or details..."
+                    className={`w-full h-11 pl-10 pr-4 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 border ${
+                      isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-slate-900"
+                    }`}
+                  />
+                </div>
+
                 <button
                   type="button"
                   onClick={openAddProductModal}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                  className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  + Add First Product
+                  <Plus size={16} />
+                  <span>Add New Product</span>
                 </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {filteredProducts.map((prod: any) => (
-                  <motion.div
-                    key={prod.id}
-                    layout
-                    className={`rounded-3xl border overflow-hidden shadow-xs transition-all flex flex-col justify-between ${
-                      isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
-                    }`}
+
+              {filteredProducts.length === 0 ? (
+                <div className={`p-12 text-center rounded-3xl border ${
+                  isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+                }`}>
+                  <Package size={32} className="text-slate-400 mx-auto mb-3" />
+                  <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
+                    No products found
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
+                    Add your first store product with customizable options, sizes, or variations.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openAddProductModal}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
                   >
-                    <div className="relative h-44 w-full bg-slate-100 dark:bg-zinc-800">
-                      <img
-                        src={parseProductImages(prod.image)[0]}
-                        alt={prod.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleProduct(prod.id, prod.isAvailable)}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-heading font-extrabold shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
-                            prod.isAvailable
-                              ? "bg-emerald-500 text-slate-950"
-                              : "bg-rose-600 text-white"
-                          }`}
-                        >
-                          {prod.isAvailable ? "✓ IN STOCK" : "✕ OUT OF STOCK"}
-                        </button>
-                      </div>
-                      <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/70 backdrop-blur-md text-white rounded-xl font-heading font-black text-xs">
-                        ₦{Number(prod.price).toLocaleString()}
-                      </div>
-                      {parseProductImages(prod.image).length > 1 && (
-                        <div className="absolute bottom-3 right-3 px-2 py-0.5 bg-black/70 backdrop-blur-md text-amber-300 rounded-lg font-heading font-extrabold text-[10px] flex items-center gap-1">
-                          <ImageIcon size={11} />
-                          <span>{parseProductImages(prod.image).length} photos</span>
+                    + Add First Product
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {filteredProducts.map((prod: any) => (
+                    <motion.div
+                      key={prod.id}
+                      layout
+                      className={`rounded-3xl border overflow-hidden shadow-xs transition-all flex flex-col justify-between ${
+                        isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+                      }`}
+                    >
+                      <div className="relative h-44 w-full bg-slate-100 dark:bg-zinc-800">
+                        <img
+                          src={parseProductImages(prod.image)[0]}
+                          alt={prod.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleProduct(prod.id, prod.isAvailable)}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-heading font-extrabold shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
+                              prod.isAvailable
+                                ? "bg-emerald-500 text-slate-950"
+                                : "bg-rose-600 text-white"
+                            }`}
+                          >
+                            {prod.isAvailable ? "✓ IN STOCK" : "✕ OUT OF STOCK"}
+                          </button>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h4 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
-                          {prod.name}
-                        </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                          {parseProductDescription(prod.description).description || "Verified store item."}
-                        </p>
-                        {parseProductDescription(prod.description).ingredients.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {parseProductDescription(prod.description).ingredients.slice(0, 3).map((ing, i) => (
-                              <span key={i} className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-medium border border-indigo-100 dark:border-indigo-900/40">
-                                {ing}
-                              </span>
-                            ))}
-                            {parseProductDescription(prod.description).ingredients.length > 3 && (
-                              <span className="text-[10px] text-slate-400 self-center">
-                                +{parseProductDescription(prod.description).ingredients.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {(prod.estimatedDelivery || (prod.deliveryFee !== undefined && prod.deliveryFee !== null)) && (
-                          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-500/20 flex items-center gap-1">
-                              <Bike size={11} />
-                              <span>
-                                {prod.deliveryFee !== undefined && prod.deliveryFee !== null
-                                  ? (Number(prod.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(prod.deliveryFee).toLocaleString()}`)
-                                  : "Default Fee"}
-                                {prod.estimatedDelivery ? ` • ${prod.estimatedDelivery}` : ""}
-                              </span>
-                            </span>
+                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/70 backdrop-blur-md text-white rounded-xl font-heading font-black text-xs">
+                          ₦{Number(prod.price).toLocaleString()}
+                        </div>
+                        {parseProductImages(prod.image).length > 1 && (
+                          <div className="absolute bottom-3 right-3 px-2 py-0.5 bg-black/70 backdrop-blur-md text-amber-300 rounded-lg font-heading font-extrabold text-[10px] flex items-center gap-1">
+                            <ImageIcon size={11} />
+                            <span>{parseProductImages(prod.image).length} photos</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditProductModal(prod)}
-                          className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white font-heading font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
-                        >
-                          <Edit3 size={13} />
-                          <span>Edit Product</span>
-                        </button>
+                      <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                            {prod.name}
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                            {parseProductDescription(prod.description).description || "Verified store item."}
+                          </p>
+                          {parseProductDescription(prod.description).ingredients.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {parseProductDescription(prod.description).ingredients.slice(0, 3).map((ing, i) => (
+                                <span key={i} className="px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-medium border border-indigo-100 dark:border-indigo-900/40">
+                                  {ing}
+                                </span>
+                              ))}
+                              {parseProductDescription(prod.description).ingredients.length > 3 && (
+                                <span className="text-[10px] text-slate-400 self-center">
+                                  +{parseProductDescription(prod.description).ingredients.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProduct(prod.id)}
-                          className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition cursor-pointer"
-                          title="Delete Product"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                          {(prod.estimatedDelivery || (prod.deliveryFee !== undefined && prod.deliveryFee !== null)) && (
+                            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-500/20 flex items-center gap-1">
+                                <Bike size={11} />
+                                <span>
+                                  {prod.deliveryFee !== undefined && prod.deliveryFee !== null
+                                    ? (Number(prod.deliveryFee) === 0 ? "Free Delivery" : `₦${Number(prod.deliveryFee).toLocaleString()}`)
+                                    : "Default Fee"}
+                                  {prod.estimatedDelivery ? ` • ${prod.estimatedDelivery}` : ""}
+                                </span>
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditProductModal(prod)}
+                            className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white font-heading font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
+                          >
+                            <Edit3 size={13} />
+                            <span>Edit Product</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(prod.id)}
+                            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition cursor-pointer"
+                            title="Delete Product"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {/* 3. STUDENT REVIEWS TAB */}
