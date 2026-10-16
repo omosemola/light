@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
@@ -8,8 +9,13 @@ export function MainContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { hasSeenOnboarding } = useUserStore();
+  const [isMounted, setIsMounted] = useState(false);
 
-  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isVisitorOnboarding = isMounted && (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
 
   const isNoNav =
     isVisitorOnboarding ||

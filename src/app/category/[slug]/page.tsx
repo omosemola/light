@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { getLiveCategoryProducts } from "@/actions/marketplace";
 import CategoryClient from "./CategoryClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Cache category catalogs on CDN edge for 60 seconds
+export const revalidate = 60;
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;

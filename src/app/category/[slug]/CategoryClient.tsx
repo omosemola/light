@@ -407,9 +407,8 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-32 transition-colors duration-200">
       {/* CATEGORY HEADER BANNER WITH SCROLL ANIMATION */}
       <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: false }}
+        initial={false}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="relative bg-[#1E1B4B] dark:bg-[#121215] text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-md overflow-hidden border-b dark:border-zinc-800/80"
       >
@@ -521,9 +520,8 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
 
         {/* SUBCATEGORY PILLS */}
         <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }}
+          initial={false}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
         >
@@ -545,7 +543,7 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
         {/* SERVICES CATEGORY DIRECT PERSONNEL DIRECTORY & CHAT HUB */}
         {slug === "services" && (
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="relative p-5 md:p-6 rounded-[28px] overflow-hidden text-white shadow-xl space-y-4 border border-indigo-900/50 group"
           >

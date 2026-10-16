@@ -27,30 +27,9 @@ export async function prefetchUserData(email: string) {
   const cleanEmail = email.trim().toLowerCase();
 
   try {
-    // 1. Parallel fetch across all user datasets
-    const [profileRes, ordersRes, reviewsRes] = await Promise.all([
-      getUserProfileDb(cleanEmail),
-      getUserOrders(cleanEmail),
-      getUserReviews(cleanEmail),
-      useFavoritesStore.getState().syncWithUserAccount(cleanEmail),
-      useNotificationStore.getState().syncWithDb(cleanEmail),
-    ]);
+    // 1. Prioritize critical profile fetch first to unblock UI header & identity
+    const profileRes = await getUserProfileDb(cleanEmail);
 
-    // 2. Cache orders in sessionStorage for instant /orders navigation
-    if (typeof window !== "undefined" && ordersRes?.success && ordersRes?.orders) {
-      try {
-        sessionStorage.setItem(`cached_orders_${cleanEmail}`, JSON.stringify(ordersRes.orders));
-      } catch {}
-    }
-
-    // 3. Cache reviews in sessionStorage for instant /profile/reviews navigation
-    if (typeof window !== "undefined" && reviewsRes?.success && reviewsRes?.reviews) {
-      try {
-        sessionStorage.setItem("cached_user_reviews", JSON.stringify(reviewsRes.reviews));
-      } catch {}
-    }
-
-    // 4. Extract and cache profile data & preload avatar into browser cache
     if (profileRes?.success && profileRes?.user) {
       const user = profileRes.user;
 
@@ -59,11 +38,11 @@ export async function prefetchUserData(email: string) {
         preloadBrowserImage(user.image);
       }
 
-      const ordersCount = ordersRes?.success && ordersRes?.orders ? ordersRes.orders.length : (user.ordersCount ?? 0);
-      const reviewsCount = reviewsRes?.success && reviewsRes?.reviews ? reviewsRes.reviews.length : (user.reviewsCount ?? 0);
+      const ordersCount = user.ordersCount ?? 0;
+      const reviewsCount = user.reviewsCount ?? 0;
       const points = ordersCount * 50;
 
-      // 5. Commit all data into persistent userStore (localStorage)
+      // Commit core profile data into persistent userStore immediately
       useUserStore.getState().updateProfile({
         name: user.name || (cleanEmail.includes("@") ? cleanEmail.split("@")[0].replace(".", " ") : "Student"),
         email: cleanEmail,
@@ -81,10 +60,40 @@ export async function prefetchUserData(email: string) {
         isVisitor: false,
       });
 
+      // 2. Schedule non-critical background data synchronization during browser idle time
+      // This prevents socket contention on low internet speeds, reserving bandwidth for page rendering
+      const scheduleIdle = typeof window !== "undefined" && "requestIdleCallback" in window
+        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 3500 })
+        : (cb: () => void) => setTimeout(cb, 2500);
+
+      scheduleIdle(async () => {
+        try {
+          const [favRes, notifRes, ordersRes, reviewsRes] = await Promise.allSettled([
+            useFavoritesStore.getState().syncWithUserAccount(cleanEmail),
+            useNotificationStore.getState().syncWithDb(cleanEmail),
+            getUserOrders(cleanEmail),
+            getUserReviews(cleanEmail),
+          ]);
+
+          if (typeof window !== "undefined") {
+            if (ordersRes.status === "fulfilled" && ordersRes.value?.success && ordersRes.value?.orders) {
+              try {
+                sessionStorage.setItem(`cached_orders_${cleanEmail}`, JSON.stringify(ordersRes.value.orders));
+              } catch {}
+            }
+            if (reviewsRes.status === "fulfilled" && reviewsRes.value?.success && reviewsRes.value?.reviews) {
+              try {
+                sessionStorage.setItem("cached_user_reviews", JSON.stringify(reviewsRes.value.reviews));
+              } catch {}
+            }
+          }
+        } catch {}
+      });
+
       return user;
     }
   } catch (err) {
-    console.error("Error prefetching comprehensive user data:", err);
+    console.error("Error prefetching user profile data:", err);
   }
 
   return null;

@@ -222,15 +222,15 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
       }
     }
 
-    loadLiveProducts();
-    if (profile.email && profile.email !== "lightmarketplace01@gmail.com" && profile.email !== "admin@campuslightson.com") {
-      useFavoritesStore.getState().syncWithUserAccount(profile.email);
+    // Only fetch on client if server didn't supply initial products
+    if (!initialProducts || initialProducts.length === 0) {
+      loadLiveProducts();
     }
 
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [initialProducts]);
 
   useEffect(() => {
     if (initialProducts && initialProducts.length > 0) {
@@ -313,11 +313,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     ? profile.avatar
     : (session?.user?.image || (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
 
-  if (!isMounted) {
-    return <div className="min-h-screen bg-[#FAFAF7] dark:bg-[#09090B]" />;
-  }
-
-  if (!hasSeenOnboarding && status !== "authenticated") {
+  if (isMounted && !hasSeenOnboarding && status !== "authenticated") {
     return <WelcomePage />;
   }
 
@@ -326,9 +322,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
       
       {/* HERO HEADER: Midnight Indigo (#1E1B4B) WITH BRAND BANNER */}
       <motion.section 
-        initial={{ opacity: 0, y: -20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: false }}
+        initial={false}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="relative bg-[#1E1B4B] dark:bg-zinc-950 text-white px-5 pt-8 pb-10 rounded-b-[32px] shadow-lg overflow-hidden border-b border-indigo-950 dark:border-zinc-800"
       >
@@ -347,8 +342,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
         <div className="relative z-10 max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white flex items-center gap-2">
-                Hey {firstName}!{" "}
+              <h1 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-white flex items-center gap-2" suppressHydrationWarning>
+                Hey {isMounted ? firstName : "Explorer"}!{" "}
                 <motion.span
                   className="inline-block origin-[70%_70%]"
                   animate={{ rotate: [0, 16, -8, 16, -4, 10, 0] }}
@@ -495,9 +490,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
         {/* BROWSE BY CATEGORY */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, margin: "-40px" }}
+          initial={false}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
           className="space-y-3"
         >
@@ -544,9 +538,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
         {/* POPULAR NEAR YOU SECTION (MAX 4 FEATURED ITEMS) */}
         <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, margin: "-40px" }}
+          initial={false}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="space-y-4"
         >

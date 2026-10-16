@@ -4,8 +4,8 @@ import { getLiveProductBySlugOrId } from "@/actions/marketplace";
 import { parseProductDescription, parseProductImages } from "@/lib/productOptions";
 import ProductDetailClient from "./ProductDetailClient";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Cache product detail pages on CDN edge for 60 seconds
+export const revalidate = 60;
 
 interface Props {
   params: Promise<{ slug: string }>;

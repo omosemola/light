@@ -12,11 +12,13 @@ import { ServiceWorkerCleaner } from "@/components/ServiceWorkerCleaner";
 const quicksand = Quicksand({
   variable: "--font-quicksand",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -59,6 +61,10 @@ export default function RootLayout({
       className={`${quicksand.variable} ${plusJakartaSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-[#FAFAFA] font-body transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>

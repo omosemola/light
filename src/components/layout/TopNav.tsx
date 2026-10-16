@@ -24,7 +24,7 @@ export function TopNav() {
     setIsMounted(true);
   }, []);
 
-  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+  const isVisitorOnboarding = isMounted && (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =
@@ -44,7 +44,7 @@ export function TopNav() {
     pathname === "/admin/login" ||
     pathname.startsWith("/admin");
 
-  if (!isMounted || isNoNav) {
+  if (isNoNav) {
     return null;
   }
 
