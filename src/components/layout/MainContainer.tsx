@@ -8,14 +8,15 @@ import { useUserStore } from "@/lib/userStore";
 export function MainContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { hasSeenOnboarding } = useUserStore();
+  const { hasSeenOnboarding, profile } = useUserStore();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const isVisitorOnboarding = isMounted && (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+  const hasAccount = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasAccount;
 
   const isNoNav =
     isVisitorOnboarding ||

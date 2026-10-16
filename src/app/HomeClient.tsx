@@ -313,7 +313,8 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     ? profile.avatar
     : (session?.user?.image || (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
 
-  if (isMounted && !hasSeenOnboarding && status !== "authenticated") {
+  // The main website always links to the onboarding page, unless the user already has an account logged in the browser
+  if (!isAuthenticated) {
     return <WelcomePage />;
   }
 

@@ -24,7 +24,8 @@ export function TopNav() {
     setIsMounted(true);
   }, []);
 
-  const isVisitorOnboarding = isMounted && (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+  const hasAccount = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasAccount;
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =
@@ -48,10 +49,12 @@ export function TopNav() {
     return null;
   }
 
+  const homeLink = hasAccount ? "/" : "/welcome";
+
   return (
     <header className="hidden md:flex items-center justify-between px-8 h-20 bg-white dark:bg-[#121215] border-b border-slate-200 dark:border-zinc-800/80 sticky top-0 z-50 shadow-sm font-body transition-colors duration-200">
       <div className="flex items-center gap-8">
-        <Link href="/" prefetch={true} className="flex items-center gap-3 group">
+        <Link href={homeLink} prefetch={true} className="flex items-center gap-3 group">
           <img src="/logo.png?v=2" alt="Lightson Marketplace" className="h-12 w-auto object-contain group-hover:scale-105 transition-transform" />
           <span className="text-2xl font-[900] text-[#312E81] dark:text-indigo-300 font-heading tracking-tight">
             Lights<span className="text-[#F5A623] dark:text-[#FBBF24]">on</span> Marketplace

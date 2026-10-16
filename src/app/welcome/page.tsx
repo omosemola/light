@@ -221,7 +221,7 @@ export default function WelcomePage() {
 
   const handleContinueAsGuest = () => {
     setHasSeenOnboarding(true);
-    router.push("/");
+    router.push("/category/food");
   };
 
   useEffect(() => {

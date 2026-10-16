@@ -16,7 +16,7 @@ import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 export function BottomNav() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { hasSeenOnboarding } = useUserStore();
+  const { hasSeenOnboarding, profile } = useUserStore();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
 
@@ -24,7 +24,8 @@ export function BottomNav() {
     setIsMounted(true);
   }, []);
 
-  const isVisitorOnboarding = isMounted && (pathname === "/" || pathname === "/welcome") && !hasSeenOnboarding && status !== "authenticated";
+  const hasAccount = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasAccount;
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =
@@ -51,9 +52,9 @@ export function BottomNav() {
   const navItems = [
     { 
       name: "Home", 
-      href: "/", 
+      href: hasAccount ? "/" : "/welcome", 
       icon: CustomHomeIcon,
-      active: pathname === "/" 
+      active: pathname === "/" || pathname === "/welcome"
     },
     { 
       name: "Search", 
