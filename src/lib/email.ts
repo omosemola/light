@@ -1126,4 +1126,186 @@ export function generateChatMessageEmailForStudent({
 // Backward compatibility alias
 export const generateOrderEmailHTML = generateStudentStatusUpdateEmail;
 
+// -------------------------------------------------------------
+// 10. PASSWORD RESET EMAILS
+// -------------------------------------------------------------
+
+export function generatePasswordResetEmailHTML({
+  recipientName,
+  resetUrl,
+  code,
+}: {
+  recipientName: string;
+  resetUrl: string;
+  code?: string | null;
+}) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Reset Your Password</title>
+        <style>
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
+          .header { background-color: ${BRAND_NAVY}; color: #ffffff; padding: 36px 24px; text-align: center; }
+          .brand-title { font-size: 26px; font-weight: 900; margin: 0; letter-spacing: -0.5px; }
+          .brand-accent { color: ${BRAND_AMBER}; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #EEF2FF; color: ${BRAND_INDIGO}; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 50px; border: 1px solid #C7D2FE; margin-bottom: 16px; }
+          .heading { font-size: 22px; font-weight: 800; color: ${BRAND_NAVY}; margin-top: 0; margin-bottom: 10px; }
+          .desc { font-size: 14px; color: #52525b; line-height: 1.6; margin-bottom: 24px; }
+          .btn { display: inline-block; background-color: ${BRAND_INDIGO}; color: #ffffff !important; font-weight: 800; font-size: 15px; text-decoration: none; padding: 15px 32px; border-radius: 50px; text-align: center; box-shadow: 0 4px 14px rgba(49, 46, 129, 0.3); }
+          .code-box { background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 16px; padding: 18px; text-align: center; margin: 24px 0; }
+          .code-digits { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 28px; font-weight: 900; letter-spacing: 6px; color: ${BRAND_NAVY}; }
+          .info-box { background-color: #FEF3C7; border: 1px solid #FCD34D; border-radius: 12px; padding: 14px 16px; font-size: 12px; color: #92400E; margin-top: 24px; line-height: 1.5; }
+          .footer { text-align: center; padding: 24px; font-size: 12px; color: #a1a1aa; border-top: 1px solid #f4f4f5; background: #fafafa; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div style="text-align: center; margin-bottom: 12px;">
+              <img src="${BRAND_LOGO_URL}" alt="Lightson Marketplace" width="56" height="56" style="border-radius: 14px; display: inline-block; vertical-align: middle; background: #ffffff; padding: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+            </div>
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #cbd5e1;">Password Security & Recovery</p>
+          </div>
+          <div class="content">
+            <div class="badge">🔐 PASSWORD RESET REQUEST</div>
+            <h2 class="heading">Hello, ${recipientName || "Valued User"}</h2>
+            <p class="desc">
+              We received a request to reset the password for your Lightson Marketplace account. Click the button below to choose a new password. This link is valid for <strong>60 minutes</strong>.
+            </p>
+
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${resetUrl}" class="btn">Reset My Password ➔</a>
+            </div>
+
+            ${code ? `
+              <div class="code-box">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 6px;">
+                  Or use this 6-digit verification code:
+                </div>
+                <div class="code-digits">${code}</div>
+              </div>
+            ` : ""}
+
+            <div class="info-box">
+              <strong>Security Alert:</strong> If you did not initiate this password reset, no action is needed. Your account remains secure and your current password has not been changed.
+            </div>
+
+            <p style="font-size: 12px; color: #94A3B8; margin-top: 24px; word-break: break-all; line-height: 1.4;">
+              If the button doesn't work, copy and paste this link into your browser:<br/>
+              <a href="${resetUrl}" style="color: ${BRAND_INDIGO};">${resetUrl}</a>
+            </p>
+          </div>
+          <div class="footer">
+            Lightson Campus Marketplace • Campus Commerce & Student Services
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendPasswordResetEmail({
+  to,
+  recipientName,
+  resetUrl,
+  code,
+}: {
+  to: string;
+  recipientName?: string;
+  resetUrl: string;
+  code?: string | null;
+}) {
+  const html = generatePasswordResetEmailHTML({
+    recipientName: recipientName || "User",
+    resetUrl,
+    code,
+  });
+
+  return sendEmail({
+    to,
+    subject: "Reset your Lightson Marketplace password 🔐",
+    html,
+  });
+}
+
+export function generatePasswordResetSuccessEmailHTML({
+  recipientName,
+}: {
+  recipientName: string;
+}) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <style>
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #FAFAF7; color: #18181B; margin: 0; padding: 24px 12px; }
+          .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
+          .header { background-color: ${BRAND_NAVY}; color: #ffffff; padding: 36px 24px; text-align: center; }
+          .brand-title { font-size: 26px; font-weight: 900; margin: 0; }
+          .brand-accent { color: ${BRAND_AMBER}; }
+          .content { padding: 32px 24px; }
+          .badge { display: inline-block; background-color: #ECFDF5; color: #047857; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 50px; border: 1px solid #A7F3D0; margin-bottom: 16px; }
+          .heading { font-size: 22px; font-weight: 800; color: ${BRAND_NAVY}; margin-top: 0; margin-bottom: 10px; }
+          .desc { font-size: 14px; color: #52525b; line-height: 1.6; margin-bottom: 24px; }
+          .btn { display: inline-block; background-color: ${BRAND_INDIGO}; color: #ffffff !important; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 28px; border-radius: 50px; text-align: center; }
+          .footer { text-align: center; padding: 24px; font-size: 12px; color: #a1a1aa; border-top: 1px solid #f4f4f5; background: #fafafa; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 class="brand-title">Lights<span class="brand-accent">on</span> Marketplace</h1>
+          </div>
+          <div class="content">
+            <div class="badge">✅ PASSWORD UPDATED</div>
+            <h2 class="heading">Password Changed Successfully</h2>
+            <p class="desc">
+              Hello ${recipientName || "there"}, this is a confirmation that the password for your Lightson Marketplace account was recently changed.
+            </p>
+            <p class="desc">
+              You can now sign in with your new credentials across the marketplace and merchant terminals.
+            </p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="https://campuslightson.com/login" class="btn">Sign In to Lightson ➔</a>
+            </div>
+            <p style="font-size: 12px; color: #ef4444; margin-top: 24px; line-height: 1.5;">
+              If you did not perform this change, please contact support immediately at <strong>support@lightsonmarketplace.com</strong>.
+            </p>
+          </div>
+          <div class="footer">
+            Lightson Campus Delivery & Multi-Vendor Marketplace
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendPasswordResetSuccessEmail({
+  to,
+  recipientName,
+}: {
+  to: string;
+  recipientName?: string;
+}) {
+  const html = generatePasswordResetSuccessEmailHTML({
+    recipientName: recipientName || "User",
+  });
+
+  return sendEmail({
+    to,
+    subject: "Your Lightson Marketplace password was changed ✅",
+    html,
+  });
+}
+
+
 

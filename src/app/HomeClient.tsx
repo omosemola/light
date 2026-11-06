@@ -33,7 +33,8 @@ import {
   Zap,
   Gift,
   ShieldCheck,
-  Briefcase
+  Briefcase,
+  Shuffle
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -184,6 +185,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const { profile, hasSeenOnboarding, updateProfile } = useUserStore();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [randomSeed, setRandomSeed] = useState<number>(0);
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [stores, setStores] = useState<any[]>(initialStores);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -204,6 +206,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
   useEffect(() => {
     setIsMounted(true);
+    setRandomSeed(Math.random());
     let isCurrent = true;
 
     async function loadLiveProducts() {
@@ -241,9 +244,12 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     }
   }, [initialProducts, initialStores]);
 
-  // Featured Homepage Products: Strictly at most 4 random/top items (if only 1 exists, only 1 shows)
+  // Featured Homepage Products: Randomize on every refresh from available platform products (max 4)
   const featuredProducts = useMemo(() => {
     const list = products.filter((p) => {
+      if (p.isAvailable === false) {
+        return false;
+      }
       if (selectedFilter === "open") {
         return p.vendorIsOpen !== false;
       }
@@ -257,8 +263,51 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
       return true;
     });
 
-    return list.slice(0, 4);
-  }, [products, selectedFilter]);
+    // Before mounting (SSR & initial client hydration), keep deterministic slice to prevent hydration mismatch
+    if (!isMounted || randomSeed === 0) {
+      return list.slice(0, 4);
+    }
+
+    // After mount (client-side): randomize products on every page refresh / visit
+    if (list.length <= 4) {
+      const shuffledAll = [...list];
+      for (let i = shuffledAll.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]];
+      }
+      return shuffledAll;
+    }
+
+    // When more than 4 items exist, pick 4 distinct random products
+    const shuffled = [...list];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Prioritize variety by avoiding duplicate product names when alternatives exist
+    const selected: any[] = [];
+    const seenNames = new Set<string>();
+
+    for (const item of shuffled) {
+      const cleanName = (item.name || "").trim().toLowerCase();
+      if (!seenNames.has(cleanName)) {
+        selected.push(item);
+        seenNames.add(cleanName);
+        if (selected.length === 4) return selected;
+      }
+    }
+
+    // Fill remaining slots if unique names were fewer than 4
+    for (const item of shuffled) {
+      if (!selected.some((s) => s.id === item.id)) {
+        selected.push(item);
+        if (selected.length === 4) break;
+      }
+    }
+
+    return selected;
+  }, [products, selectedFilter, isMounted, randomSeed]);
 
   const handleOpenCustomizer = (productId: string) => {
     const product = products.find((p) => p.id === productId);
@@ -600,6 +649,17 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                 }`}
               >
                 ⭐ Top (4.8+)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRandomSeed(Math.random())}
+                title="Shuffle featured products"
+                className="px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 bg-white dark:bg-zinc-900 text-[#312E81] dark:text-indigo-400 border border-slate-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-zinc-800 active:scale-95 shadow-xs"
+                aria-label="Shuffle featured products"
+              >
+                <Shuffle size={12} className="shrink-0" />
+                <span>Shuffle</span>
               </button>
             </div>
           </div>

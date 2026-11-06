@@ -144,7 +144,7 @@ const readHomepageData = unstable_cache(
           store: { select: LIST_STORE_SELECT },
           category: true,
         },
-        take: 60,
+        take: 100,
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({

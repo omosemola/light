@@ -118,9 +118,17 @@ export default function VendorLoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-extrabold uppercase text-slate-600 mb-1.5 font-heading">
-                Store Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-extrabold uppercase text-slate-600 font-heading">
+                  Store Password
+                </label>
+                <Link
+                  href={email.trim() ? `/forgot-password?role=vendor&email=${encodeURIComponent(email.trim())}` : "/forgot-password?role=vendor"}
+                  className="text-xs font-heading font-extrabold text-amber-600 hover:text-amber-700 hover:underline transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input

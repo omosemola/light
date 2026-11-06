@@ -207,9 +207,17 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-extrabold uppercase text-[#71717A] mb-1.5 font-heading">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-extrabold uppercase text-[#71717A] font-heading">
+                Password
+              </label>
+              <Link
+                href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+                className="text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-400 hover:underline transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input

@@ -130,9 +130,17 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-extrabold uppercase text-slate-400 mb-1.5 font-heading">
-                Security Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-extrabold uppercase text-slate-400 font-heading">
+                  Security Password
+                </label>
+                <Link
+                  href={email.trim() ? `/forgot-password?role=admin&email=${encodeURIComponent(email.trim())}` : "/forgot-password?role=admin"}
+                  className="text-xs font-heading font-extrabold text-indigo-400 hover:text-indigo-300 hover:underline transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input

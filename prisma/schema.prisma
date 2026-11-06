@@ -231,3 +231,15 @@ model ChatMessage {
   @@index([storeId, createdAt])
   @@index([userId, storeId])
 }
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  code      String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
