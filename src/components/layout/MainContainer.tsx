@@ -26,6 +26,10 @@ export function MainContainer({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/login/") ||
     pathname === "/signup" ||
     pathname.startsWith("/signup/") ||
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/forgot-password/") ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/reset-password/") ||
     pathname === "/vendor/login" ||
     pathname.startsWith("/vendor/login/") ||
     pathname === "/vendor/register" ||
