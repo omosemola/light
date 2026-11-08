@@ -11,6 +11,10 @@ export const vendorStoreRegistrationSchema = z.object({
   description: z.string().max(500).optional(),
   coverImage: z.string().optional(),
   logoUrl: z.string().optional(),
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  accountName: z.string().optional(),
+  paystackSubaccountCode: z.string().optional(),
 });
 
 export const productCreationSchema = z.object({

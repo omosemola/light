@@ -48,7 +48,7 @@ interface Product {
   reviewsCount?: number;
 }
 
-const CATEGORY_OPTIONS = ["All", "Services", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Fashion", "Fragrances", "Automobile", "Tech & Gadgets"];
+const CATEGORY_OPTIONS = ["All", "Services", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Fashion", "Fragrances", "Automobile", "Decorations", "Tech & Gadgets"];
 const POPULAR_SUGGESTIONS = ["Services", "Small Chops", "Pastries", "Snacks", "Drinks", "Meals"];
 
 interface SearchClientProps {
@@ -220,6 +220,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     if ((s === "fashion" || s === "wears") && (p.includes("wear") || p.includes("cloth") || p.includes("hoodie") || p.includes("shirt") || p.includes("pant") || p.includes("accessor") || p.includes("bag"))) return true;
     if ((s === "automobile" || s === "cars" || s === "bikes") && (p.includes("car") || p.includes("bike") || p.includes("bicycl") || p.includes("auto") || p.includes("motor") || p.includes("ride") || p.includes("vehicl"))) return true;
     if ((s === "fragrances" || s === "perfumes") && (p.includes("fragran") || p.includes("perfum") || p.includes("roll on") || p.includes("roll-on") || p.includes("scent") || p.includes("cologn") || p.includes("deodor") || p.includes("mist") || p.includes("body spray") || p.includes("oil"))) return true;
+    if ((s === "decorations" || s.includes("decor") || s.includes("interior") || s.includes("asthetic") || s.includes("aesthetic")) && (p.includes("decor") || p.includes("interior") || p.includes("asthetic") || p.includes("aesthetic") || p.includes("art") || p.includes("frame") || p.includes("light") || p.includes("led") || p.includes("lamp") || p.includes("poster") || p.includes("cushion") || p.includes("rug") || p.includes("vase") || p.includes("plant") || p.includes("mirror") || p.includes("clock"))) return true;
     if (s === "tech & gadgets" && (p.includes("gadget") || p.includes("electr") || p.includes("tech") || p.includes("phone"))) return true;
     return false;
   }

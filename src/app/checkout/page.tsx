@@ -57,19 +57,46 @@ export default function CheckoutPage() {
     accountName: string;
   } | null>(null);
 
-  const effectiveVendorId = vendorId || items[0]?.vendorId;
-
   useEffect(() => {
-    if (effectiveVendorId) {
-      getStoreBankDetails(effectiveVendorId).then((res) => {
-        if (res.success && res.bankDetails) {
-          setVendorBankDetails(res.bankDetails);
-        } else {
-          setVendorBankDetails(null);
+    let active = true;
+
+    async function resolveVendorBank() {
+      const candidates = [
+        vendorId,
+        items[0]?.vendorId,
+        items[0]?.id, // product ID fallback that resolves store
+        vendorName,
+        items[0]?.vendorName,
+      ].filter((c): c is string => Boolean(c && typeof c === "string" && c.trim() && c !== "vendor"));
+
+      if (candidates.length === 0) {
+        if (active) setVendorBankDetails(null);
+        return;
+      }
+
+      for (const candidate of candidates) {
+        try {
+          const res = await getStoreBankDetails(candidate);
+          if (!active) return;
+          if (res.success && res.bankDetails && res.bankDetails.accountNumber) {
+            setVendorBankDetails(res.bankDetails);
+            return;
+          }
+        } catch (e) {
+          console.error("Error resolving vendor bank details candidate:", candidate, e);
         }
-      });
+      }
+      if (active) {
+        setVendorBankDetails(null);
+      }
     }
-  }, [effectiveVendorId]);
+
+    resolveVendorBank();
+
+    return () => {
+      active = false;
+    };
+  }, [vendorId, items, vendorName]);
 
   const activeBankName = vendorBankDetails?.bankName || process.env.NEXT_PUBLIC_BANK_NAME || "Opay";
   const activeAccountNumber = vendorBankDetails?.accountNumber || process.env.NEXT_PUBLIC_ACCOUNT_NUMBER || "6146800590";

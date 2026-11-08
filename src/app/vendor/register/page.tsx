@@ -55,6 +55,7 @@ const CAMPUS_CATEGORIES = [
   "Fashion, Wears & Campus Merch",
   "Automobiles, Cars & Bikes",
   "Fragrances, Perfumes & Roll-ons",
+  "Interior Decorations & Asthetics",
   "Stationery, Books & Study Items",
   "Beauty, Skincare & Personal Care",
 ];
@@ -198,6 +199,9 @@ export default function VendorRegistrationPage() {
         description: description || `Official ${storeName} store on campus. Quick student orders and fast hostel delivery.`,
         logoUrl: finalLogo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=300&q=80",
         coverImage: finalCover || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        bankName: bankName ? bankName.trim() : "Commercial Bank",
+        accountNumber: accountNumber ? accountNumber.trim() : "",
+        accountName: (accountName || ownerName || storeName).trim(),
       });
 
       if (res.success) {

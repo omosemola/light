@@ -135,6 +135,7 @@ const STORE_CATEGORY_OPTIONS = [
   "Fashion, Wears & Campus Merch",
   "Automobiles, Cars & Bikes",
   "Fragrances, Perfumes & Roll-ons",
+  "Interior Decorations & Asthetics",
   "Stationery, Books & Study Items",
   "Beauty, Skincare & Personal Care",
   "Sports, Fitness & Gym Equipment",
@@ -3082,6 +3083,7 @@ export default function VendorDashboardPage() {
                       <option value="jewelries">Jewelries & Accessories</option>
                       <option value="automobile">Automobile (Cars, Bikes, Bicycles)</option>
                       <option value="fragrances">Fragrances (Perfumes, Roll-ons, Body Mists)</option>
+                      <option value="decorations">Interior Decorations & Asthetics (Decor, Lighting, Art)</option>
                       <option value="gadgets">Tech & Gadgets</option>
                       <option value="electronics">Electronics & Appliances</option>
                     </select>

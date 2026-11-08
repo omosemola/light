@@ -595,6 +595,10 @@ export async function registerVendorStore(data: {
   description?: string;
   coverImage?: string;
   logoUrl?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  paystackSubaccountCode?: string;
 }) {
   try {
     const parsedData = vendorStoreRegistrationSchema.parse(data);
@@ -669,6 +673,10 @@ export async function registerVendorStore(data: {
         category: isService ? "Services" : data.category,
         serviceSubcategory,
         availabilityStatus: "AVAILABLE",
+        bankName: data.bankName ? data.bankName.trim() : null,
+        accountNumber: data.accountNumber ? data.accountNumber.trim() : null,
+        accountName: data.accountName ? data.accountName.trim() : (data.ownerName || data.storeName).trim(),
+        paystackSubaccountCode: data.paystackSubaccountCode ? data.paystackSubaccountCode.trim() : null,
       },
     });
 
@@ -1095,14 +1103,17 @@ export async function updateVendorBankDetails(data: {
   }
 }
 
-export async function getStoreBankDetails(storeId: string) {
+export async function getStoreBankDetails(identifier: string) {
   try {
-    if (!storeId || !storeId.trim()) {
+    if (!identifier || !identifier.trim()) {
       return { success: false, bankDetails: null };
     }
 
-    const store = await prisma.store.findUnique({
-      where: { id: storeId.trim() },
+    const cleanId = identifier.trim();
+
+    // 1. Direct Store ID lookup
+    let store = await prisma.store.findUnique({
+      where: { id: cleanId },
       select: {
         id: true,
         name: true,
@@ -1111,6 +1122,55 @@ export async function getStoreBankDetails(storeId: string) {
         accountName: true,
       },
     });
+
+    // 2. Lookup by store owner's User ID
+    if (!store) {
+      store = await prisma.store.findFirst({
+        where: { userId: cleanId },
+        select: {
+          id: true,
+          name: true,
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+        },
+      });
+    }
+
+    // 3. Lookup by store name (case-insensitive)
+    if (!store) {
+      store = await prisma.store.findFirst({
+        where: { name: { equals: cleanId, mode: "insensitive" } },
+        select: {
+          id: true,
+          name: true,
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+        },
+      });
+    }
+
+    // 4. Lookup by Product ID (in case product ID was passed as the vendor/store reference)
+    if (!store) {
+      const product = await prisma.product.findUnique({
+        where: { id: cleanId },
+        select: {
+          store: {
+            select: {
+              id: true,
+              name: true,
+              bankName: true,
+              accountNumber: true,
+              accountName: true,
+            },
+          },
+        },
+      });
+      if (product?.store) {
+        store = product.store;
+      }
+    }
 
     if (!store || !store.accountNumber || !store.accountNumber.trim()) {
       return { success: false, bankDetails: null };

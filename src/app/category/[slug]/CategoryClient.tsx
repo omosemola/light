@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Car,
   SprayCan,
+  Palette,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
@@ -203,6 +204,22 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     description: "Luxury perfumes, roll-ons, body sprays, oil perfumes, and long-lasting fragrances.",
     subcategories: ["All", "Perfumes", "Roll-Ons", "Oil Perfumes", "Body Sprays & Mists"],
   },
+  decorations: {
+    name: "Interior Decorations & Asthetics",
+    Icon: Palette,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80",
+    description: "Aesthetic room decor, fairy lights, wall posters, desk organizers, cozy rugs, and dorm styling essentials.",
+    subcategories: ["All", "Wall Art & Frames", "Room Lights & LEDs", "Desk & Shelving", "Cushions & Rugs", "Aesthetic Plants & Vases", "Mirrors & Clocks"],
+  },
+  "interior-decorations": {
+    name: "Interior Decorations & Asthetics",
+    Icon: Palette,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80",
+    description: "Aesthetic room decor, fairy lights, wall posters, desk organizers, cozy rugs, and dorm styling essentials.",
+    subcategories: ["All", "Wall Art & Frames", "Room Lights & LEDs", "Desk & Shelving", "Cushions & Rugs", "Aesthetic Plants & Vases", "Mirrors & Clocks"],
+  },
   electronics: {
     name: "Electronics & Appliances",
     Icon: Zap,
@@ -345,6 +362,15 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
           else if (selectedSubcategory === "Roll-Ons") matchesSubcat = t.includes("roll on") || t.includes("roll-on") || t.includes("deodor");
           else if (selectedSubcategory === "Oil Perfumes") matchesSubcat = t.includes("oil");
           else if (selectedSubcategory === "Body Sprays & Mists") matchesSubcat = t.includes("spray") || t.includes("mist");
+          else matchesSubcat = product.subcategory === selectedSubcategory;
+        } else if (slug === "decorations" || slug === "interior-decorations") {
+          const t = `${product.name} ${product.description || ""}`.toLowerCase();
+          if (selectedSubcategory === "Wall Art & Frames") matchesSubcat = t.includes("art") || t.includes("frame") || t.includes("poster") || t.includes("canvas") || t.includes("paint");
+          else if (selectedSubcategory === "Room Lights & LEDs") matchesSubcat = t.includes("light") || t.includes("led") || t.includes("lamp") || t.includes("strip") || t.includes("neon");
+          else if (selectedSubcategory === "Desk & Shelving") matchesSubcat = t.includes("desk") || t.includes("shelf") || t.includes("organizer") || t.includes("stand") || t.includes("rack");
+          else if (selectedSubcategory === "Cushions & Rugs") matchesSubcat = t.includes("cushion") || t.includes("pillow") || t.includes("rug") || t.includes("mat") || t.includes("carpet") || t.includes("blanket");
+          else if (selectedSubcategory === "Aesthetic Plants & Vases") matchesSubcat = t.includes("plant") || t.includes("vase") || t.includes("flower") || t.includes("pot");
+          else if (selectedSubcategory === "Mirrors & Clocks") matchesSubcat = t.includes("mirror") || t.includes("clock") || t.includes("glass");
           else matchesSubcat = product.subcategory === selectedSubcategory;
         } else {
           matchesSubcat = product.subcategory === selectedSubcategory;

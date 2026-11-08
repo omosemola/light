@@ -36,7 +36,8 @@ import {
   Briefcase,
   Shuffle,
   Car,
-  SprayCan
+  SprayCan,
+  Palette
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -180,6 +181,13 @@ const CATEGORIES = [
     icon: SprayCan,
     iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
     badge: "Perfumes & Oils"
+  },
+  { 
+    name: "Decorations", 
+    slug: "decorations", 
+    icon: Palette,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Room & Asthetics"
   },
   { 
     name: "Electronics", 

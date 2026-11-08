@@ -79,6 +79,14 @@ const CATEGORY_TITLES: Record<string, { title: string; desc: string }> = {
     title: "Fragrances & Scents — Lightson Marketplace",
     desc: "Long-lasting perfumes, oil perfumes, roll-ons, and scented body sprays on Lightson Marketplace.",
   },
+  decorations: {
+    title: "Interior Decorations & Asthetics — Lightson Marketplace",
+    desc: "Campus dorm and room decor, aesthetic wall art, ambient lighting, plushies, and living space organizers.",
+  },
+  "interior-decorations": {
+    title: "Interior Decorations & Asthetics — Lightson Marketplace",
+    desc: "Campus dorm and room decor, aesthetic wall art, ambient lighting, plushies, and living space organizers.",
+  },
   electronics: {
     title: "Electronics & Appliances — Lightson Marketplace",
     desc: "Study lamps, electric kettles, room fans, and speakers on Lightson Marketplace.",
