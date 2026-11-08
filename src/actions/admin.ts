@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { TicketStatus, Role, OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, generateStudentStatusUpdateEmail } from "@/lib/email";
+import { sendOrderDeliverySMS } from "@/lib/sms";
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { checkRateLimit } from "@/lib/rateLimit";
 
@@ -43,10 +44,15 @@ export async function getAdminDashboardData() {
       });
 
       const recentOrders = await prisma.order.findMany({
-        take: 30,
+        take: 100,
         include: {
-          user: { select: { name: true, email: true, phone: true } },
-          store: { select: { name: true } },
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          store: { select: { id: true, name: true, phone: true } },
+          items: {
+            include: {
+              product: { select: { id: true, name: true, image: true, price: true } },
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -143,24 +149,174 @@ export async function updateOrderStatusAdmin(orderId: string, status: any) {
     const cookieStore = await cookies();
     if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
 
+    const validStatus = status as OrderStatus;
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: { status },
+      data: { status: validStatus },
       include: {
-        user: { select: { email: true, id: true, name: true } },
+        user: { select: { email: true, id: true, name: true, phone: true } },
+        store: { select: { id: true, name: true, phone: true } },
+        items: {
+          include: {
+            product: { select: { id: true, name: true, price: true, image: true } },
+          },
+        },
       },
     });
 
-    await clearMarketplaceCache();
+    await clearMarketplaceCache({ storeId: updatedOrder.storeId });
     revalidatePath("/admin/dashboard");
     revalidatePath("/vendor/dashboard");
     revalidatePath(`/orders/${orderId}`);
     revalidatePath("/orders");
     revalidatePath("/profile");
+
+    // Send transactional status update email to student
+    const recipientEmail = updatedOrder.user?.email;
+    if (recipientEmail) {
+      let statusTitle = `Order Update: ${validStatus}`;
+      let statusDesc = `Your order status has been updated to ${validStatus}.`;
+
+      if (validStatus === OrderStatus.ACCEPTED || validStatus === OrderStatus.PREPARING) {
+        statusTitle = "Order Accepted 📦";
+        statusDesc = `${updatedOrder.store.name} has accepted your order and is processing your items for delivery.`;
+      } else if (validStatus === OrderStatus.OUT_FOR_DELIVERY || validStatus === OrderStatus.READY_FOR_DELIVERY) {
+        statusTitle = "Out for Delivery 🛵";
+        statusDesc = `${updatedOrder.store.name}'s delivery team is en route to your hostel location (${updatedOrder.deliveryLocation}).`;
+      } else if (validStatus === OrderStatus.DELIVERED) {
+        statusTitle = "Order Delivered 🎉";
+        statusDesc = `Your order from ${updatedOrder.store.name} has been delivered to ${updatedOrder.deliveryLocation}. Thank you for shopping on Lightson!`;
+      } else if (validStatus === OrderStatus.CANCELLED) {
+        statusTitle = "Order Cancelled ✕";
+        statusDesc = `Your order #${updatedOrder.id.slice(-6).toUpperCase()} has been cancelled.`;
+      }
+
+      const emailHtml = generateStudentStatusUpdateEmail({
+        customerName: updatedOrder.user?.name || "Campus Student",
+        orderId: updatedOrder.id.slice(-6).toUpperCase(),
+        statusTitle,
+        statusDesc,
+        storeName: updatedOrder.store.name,
+        deliveryLocation: updatedOrder.deliveryLocation,
+        totalAmount: updatedOrder.totalAmount,
+      });
+
+      sendEmail({
+        to: recipientEmail,
+        subject: `Order Update: ${statusTitle} (#${updatedOrder.id.slice(-6).toUpperCase()}) - ${updatedOrder.store.name}`,
+        html: emailHtml,
+      }).catch((e) => console.error("Failed to send student status update email:", e));
+    }
+
+    // Send SMS / alert to student phone
+    const studentPhone = updatedOrder.user?.phone;
+    if (studentPhone && (validStatus === OrderStatus.OUT_FOR_DELIVERY || validStatus === OrderStatus.DELIVERED)) {
+      const smsText = validStatus === OrderStatus.OUT_FOR_DELIVERY
+        ? `[Lightson] 🛵 Your order #${updatedOrder.id.slice(-6).toUpperCase()} from ${updatedOrder.store.name} is on the way to ${updatedOrder.deliveryLocation}!`
+        : `[Lightson] 🎉 Your order #${updatedOrder.id.slice(-6).toUpperCase()} has arrived at ${updatedOrder.deliveryLocation}. Enjoy your meal!`;
+
+      sendOrderDeliverySMS({
+        toPhone: studentPhone,
+        message: smsText,
+      }).catch((err) => console.error("Failed to send delivery SMS alert:", err));
+    }
+
     return { success: true, order: updatedOrder };
   } catch (error: any) {
     console.error("Error updating order status in admin:", error);
     return { success: false, error: error.message || "Failed to update order status" };
+  }
+}
+
+export async function deleteOrderAdmin(orderId: string) {
+  try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { storeId: true },
+    });
+
+    if (!order) {
+      return { success: false, error: "Order not found" };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Detach tickets
+      await tx.supportTicket.updateMany({
+        where: { orderId },
+        data: { orderId: null },
+      });
+      // 2. Detach reviews
+      await tx.review.updateMany({
+        where: { orderId },
+        data: { orderId: null },
+      });
+      // 3. Detach chats
+      await tx.chatMessage.updateMany({
+        where: { orderId },
+        data: { orderId: null },
+      });
+      // 4. Delete items
+      await tx.orderItem.deleteMany({
+        where: { orderId },
+      });
+      // 5. Delete order
+      await tx.order.delete({
+        where: { id: orderId },
+      });
+    });
+
+    await clearMarketplaceCache({ storeId: order.storeId });
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/orders");
+    revalidatePath("/profile");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting order in admin:", error);
+    return { success: false, error: error.message || "Failed to delete order" };
+  }
+}
+
+export async function deleteAllOrdersAdmin() {
+  try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Detach all tickets
+      await tx.supportTicket.updateMany({
+        where: { orderId: { not: null } },
+        data: { orderId: null },
+      });
+      // 2. Detach all reviews
+      await tx.review.updateMany({
+        where: { orderId: { not: null } },
+        data: { orderId: null },
+      });
+      // 3. Detach all chats
+      await tx.chatMessage.updateMany({
+        where: { orderId: { not: null } },
+        data: { orderId: null },
+      });
+      // 4. Delete all items
+      await tx.orderItem.deleteMany({});
+      // 5. Delete all orders
+      await tx.order.deleteMany({});
+    });
+
+    await clearMarketplaceCache();
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/orders");
+    revalidatePath("/profile");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting all orders in admin:", error);
+    return { success: false, error: error.message || "Failed to delete all orders" };
   }
 }
 
