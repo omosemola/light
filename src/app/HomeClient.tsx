@@ -51,6 +51,7 @@ import WelcomePage from "@/app/welcome/page";
 import { getLiveHomepageData } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { useSession } from "next-auth/react";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 const PROMO_SLIDES = [
   {
@@ -191,6 +192,9 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "open" | "fast" | "top">("all");
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
+
+  // CATEGORY SWIPE SCROLL HOOK FOR BIG SCREENS
+  const categoriesSwipe = useSwipeScroll<HTMLDivElement>();
 
   // PROMOTIONAL CAROUSEL STATE
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -561,28 +565,60 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             </Link>
           </div>
           
-          <div className="flex gap-2.5 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
-            {CATEGORIES.map((cat, i) => {
-              const IconComponent = cat.icon;
-              return (
-                <Link
-                  key={i}
-                  href={`/category/${cat.slug}`}
-                  prefetch={true}
-                  className="flex flex-col items-center justify-center min-w-[88px] py-3.5 px-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 hover:shadow-md transition-all group cursor-pointer"
-                >
-                  <div className="w-10 h-10 flex items-center justify-center mb-1 transition-transform duration-200 group-hover:scale-115">
-                    <IconComponent size={28} className={`${cat.iconColor} transition-colors drop-shadow-xs`} />
-                  </div>
-                  <span className="text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-200 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors text-center">
-                    {cat.name}
-                  </span>
-                  <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap text-center">
-                    {cat.badge}
-                  </span>
-                </Link>
-              );
-            })}
+          <div className="relative group/cats">
+            {/* Desktop Navigation Chevrons */}
+            {categoriesSwipe.canScrollLeft && (
+              <button
+                type="button"
+                onClick={categoriesSwipe.scrollLeft}
+                aria-label="Scroll categories left"
+                className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            )}
+
+            {categoriesSwipe.canScrollRight && (
+              <button
+                type="button"
+                onClick={categoriesSwipe.scrollRight}
+                aria-label="Scroll categories right"
+                className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                <ChevronRight size={18} />
+              </button>
+            )}
+
+            <div 
+              ref={categoriesSwipe.containerRef}
+              {...categoriesSwipe.handlers}
+              className={`flex gap-2.5 overflow-x-auto pb-3 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0 select-none ${
+                categoriesSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+              }`}
+            >
+              {CATEGORIES.map((cat, i) => {
+                const IconComponent = cat.icon;
+                return (
+                  <Link
+                    key={i}
+                    href={`/category/${cat.slug}`}
+                    prefetch={true}
+                    draggable={false}
+                    className="flex flex-col items-center justify-center min-w-[88px] py-3.5 px-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-slate-200/80 dark:border-zinc-800 shrink-0 active:scale-95 hover:border-[#312E81] dark:hover:border-indigo-500 hover:shadow-md transition-all group cursor-pointer select-none"
+                  >
+                    <div className="w-10 h-10 flex items-center justify-center mb-1 transition-transform duration-200 group-hover:scale-115 pointer-events-none">
+                      <IconComponent size={28} className={`${cat.iconColor} transition-colors drop-shadow-xs`} />
+                    </div>
+                    <span className="text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-200 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors text-center pointer-events-none">
+                      {cat.name}
+                    </span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap text-center pointer-events-none">
+                      {cat.badge}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </motion.section>
 

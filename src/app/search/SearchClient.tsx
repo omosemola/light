@@ -10,10 +10,15 @@ import {
   Clock, 
   Star, 
   RotateCcw,
-  Check
+  Check,
+  Shuffle,
+  ChevronLeft,
+  ChevronRight,
+  Briefcase
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
@@ -21,6 +26,7 @@ import { Modal } from "@/components/ui/Modal";
 import { getLiveHomepageData, searchLiveCatalog } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { getSafeImageUrl, isUnoptimizedImage } from "@/lib/productOptions";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 interface Product {
   id: string;
@@ -51,6 +57,13 @@ interface SearchClientProps {
 }
 
 export default function SearchClient({ initialCatalog = [], initialStores = [] }: SearchClientProps) {
+  const router = useRouter();
+  const storesSwipe = useSwipeScroll<HTMLDivElement>();
+  const categoryPillsSwipe = useSwipeScroll<HTMLDivElement>();
+
+  const [isMounted, setIsMounted] = useState(false);
+  const [randomSeed, setRandomSeed] = useState<number>(0);
+
   const [query, setQuery] = useState("");
   const [masterCatalog, setMasterCatalog] = useState<Product[]>(() => initialCatalog.map(mapProduct));
   const [serverSearchResults, setServerSearchResults] = useState<Product[] | null>(null);
@@ -91,6 +104,12 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       reviewsCount: p.reviewsCount || 0,
     };
   }
+
+  // Hydration-safe client-side mount effect for randomizing Explore Catalog
+  useEffect(() => {
+    setIsMounted(true);
+    setRandomSeed(Math.random());
+  }, []);
 
   // Sync with initial props
   useEffect(() => {
@@ -222,7 +241,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
 
   // Comprehensive Filter & Sorting Logic
   const filteredProducts = useMemo(() => {
-    return baseProducts.filter((product) => {
+    const list = baseProducts.filter((product) => {
       const q = query.toLowerCase().trim();
       const name = (product.name || "").toLowerCase();
       const vendor = (product.vendorName || "").toLowerCase();
@@ -250,13 +269,26 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       }
 
       return matchesQuery && matchesCategory && matchesVendor && matchesPrice && matchesStock && matchesPrep;
-    }).sort((a, b) => {
-      if (sortBy === "price_low") return (a.price || 0) - (b.price || 0);
-      if (sortBy === "price_high") return (b.price || 0) - (a.price || 0);
-      if (sortBy === "rating") return (b.rating || 4.9) - (a.rating || 4.9);
-      return 0;
     });
-  }, [baseProducts, query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy]);
+
+    if (sortBy === "price_low") return [...list].sort((a, b) => (a.price || 0) - (b.price || 0));
+    if (sortBy === "price_high") return [...list].sort((a, b) => (b.price || 0) - (a.price || 0));
+    if (sortBy === "rating") return [...list].sort((a, b) => (b.rating || 4.9) - (a.rating || 4.9));
+
+    // Explore Catalog: Randomize on every refresh just as Featured Products on HomePage
+    // Before mounting (SSR & initial client hydration), keep deterministic order to prevent hydration mismatch
+    if (!isMounted || randomSeed === 0) {
+      return list;
+    }
+
+    // After mount (client-side): randomize products on every page refresh / visit
+    const shuffled = [...list];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [baseProducts, query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy, isMounted, randomSeed]);
 
   const activeFiltersCount = (selectedCategory !== "All" ? 1 : 0) +
     (selectedVendor !== "All Vendors" ? 1 : 0) +
@@ -264,6 +296,14 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     (inStockOnly ? 1 : 0) +
     (maxPrepTime !== "All" ? 1 : 0) +
     (sortBy !== "relevance" ? 1 : 0);
+
+  const handleCategoryClick = (cat: string) => {
+    if (cat.toLowerCase() === "services") {
+      router.push("/category/services");
+      return;
+    }
+    setSelectedCategory(cat);
+  };
 
   const handleResetFilters = () => {
     setSelectedCategory("All");
@@ -350,24 +390,56 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
           </button>
         </div>
 
-        {/* Quick Category Pills */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-4xl mx-auto pt-1 pb-0.5 px-0.5">
-          {CATEGORY_OPTIONS.map((cat) => {
-            const isSelected = selectedCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
-                    : "bg-[#F4F3FF] dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-indigo-100/50 dark:hover:bg-zinc-700"
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
+        {/* Quick Category Pills with Desktop Mouse-Drag Swipe */}
+        <div className="relative group/pills max-w-4xl mx-auto">
+          {categoryPillsSwipe.canScrollLeft && (
+            <button
+              type="button"
+              onClick={categoryPillsSwipe.scrollLeft}
+              aria-label="Scroll categories left"
+              className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              <ChevronLeft size={15} />
+            </button>
+          )}
+
+          {categoryPillsSwipe.canScrollRight && (
+            <button
+              type="button"
+              onClick={categoryPillsSwipe.scrollRight}
+              aria-label="Scroll categories right"
+              className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              <ChevronRight size={15} />
+            </button>
+          )}
+
+          <div 
+            ref={categoryPillsSwipe.containerRef}
+            {...categoryPillsSwipe.handlers}
+            className={`flex gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5 px-0.5 select-none ${
+              categoryPillsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+            }`}
+          >
+            {CATEGORY_OPTIONS.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  draggable={false}
+                  onClick={() => handleCategoryClick(cat)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer select-none ${
+                    isSelected
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
+                      : "bg-[#F4F3FF] dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-indigo-100/50 dark:hover:bg-zinc-700"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -389,7 +461,13 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
               {POPULAR_SUGGESTIONS.map((sug) => (
                 <button
                   key={sug}
-                  onClick={() => setQuery(sug)}
+                  onClick={() => {
+                    if (sug.toLowerCase() === "services") {
+                      router.push("/category/services");
+                    } else {
+                      setQuery(sug);
+                    }
+                  }}
                   className="px-3.5 py-1.5 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#18181B] dark:text-zinc-200 font-body font-medium text-xs hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white active:scale-95 transition-all border border-indigo-100 dark:border-zinc-700 cursor-pointer"
                 >
                   {sug}
@@ -419,62 +497,95 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
               </span>
             </div>
 
-            <div className="flex gap-3.5 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0">
-              {stores.map((st) => (
-                <Link
-                  key={st.id}
-                  href={`/vendor/${st.id}`}
-                  className="flex-shrink-0 w-60 p-3 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group flex flex-col justify-between"
+            <div className="relative group/stores">
+              {/* Desktop Navigation Chevrons */}
+              {storesSwipe.canScrollLeft && (
+                <button
+                  type="button"
+                  onClick={storesSwipe.scrollLeft}
+                  aria-label="Scroll stores left"
+                  className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 shrink-0 border border-slate-200/60 dark:border-zinc-700">
-                      {(() => {
-                        const safeLogo = getSafeImageUrl(st.logo);
-                        return (
-                          <Image
-                            src={safeLogo}
-                            alt={st.name}
-                            fill
-                            unoptimized={isUnoptimizedImage(safeLogo)}
-                            className="object-cover group-hover:scale-105 transition-transform"
-                          />
-                        );
-                      })()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white truncate">
-                          {st.name}
-                        </h4>
+                  <ChevronLeft size={16} />
+                </button>
+              )}
+
+              {storesSwipe.canScrollRight && (
+                <button
+                  type="button"
+                  onClick={storesSwipe.scrollRight}
+                  aria-label="Scroll stores right"
+                  className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              )}
+
+              <div 
+                ref={storesSwipe.containerRef}
+                {...storesSwipe.handlers}
+                className={`flex gap-3.5 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0 select-none ${
+                  storesSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+                }`}
+              >
+                {stores.map((st) => (
+                  <Link
+                    key={st.id}
+                    href={`/vendor/${st.id}`}
+                    draggable={false}
+                    className="flex-shrink-0 w-60 p-3 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group flex flex-col justify-between select-none"
+                  >
+                    <div className="flex items-center gap-3 pointer-events-none">
+                      <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 shrink-0 border border-slate-200/60 dark:border-zinc-700 pointer-events-none">
                         {(() => {
-                          const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
+                          const safeLogo = getSafeImageUrl(st.logo);
                           return (
-                            <span className={`text-[8px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
-                              open
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                                : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                            }`}>
-                              {open ? "🟢 Open" : "🔴 Closed"}
-                            </span>
+                            <Image
+                              src={safeLogo}
+                              alt={st.name}
+                              fill
+                              unoptimized={isUnoptimizedImage(safeLogo)}
+                              className="object-cover group-hover:scale-105 transition-transform pointer-events-none"
+                              draggable={false}
+                            />
                           );
                         })()}
                       </div>
-                      <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
-                        {st.description || "Fresh food & campus supplies"}
-                      </p>
+                      <div className="min-w-0 flex-1 pointer-events-none">
+                        <div className="flex items-center justify-between gap-1 pointer-events-none">
+                          <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white truncate pointer-events-none">
+                            {st.name}
+                          </h4>
+                          {(() => {
+                            const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
+                            return (
+                              <span className={`text-[8px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 pointer-events-none ${
+                                open
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                                  : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                              }`}>
+                                {open ? "🟢 Open" : "🔴 Closed"}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate mt-0.5 pointer-events-none">
+                          {st.description || "Fresh food & campus supplies"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-600 dark:text-zinc-400">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Clock size={11} className="text-amber-500" /> {st.estimatedDelivery || "15-25m"}
-                    </span>
-                    <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
-                      <Star size={11} className="fill-amber-400 text-amber-400" /> {st.rating ? st.rating.toFixed(1) : "4.9"}
-                    </span>
-                  </div>
-                </Link>
-              ))}
+                    <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-600 dark:text-zinc-400 pointer-events-none">
+                      <span className="flex items-center gap-1 font-medium pointer-events-none">
+                        <Clock size={11} className="text-amber-500 pointer-events-none" /> {st.estimatedDelivery || "15-25m"}
+                      </span>
+                      <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 pointer-events-none">
+                        <Star size={11} className="fill-amber-400 text-amber-400 pointer-events-none" /> {st.rating ? st.rating.toFixed(1) : "4.9"}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </motion.section>
         )}
@@ -532,9 +643,22 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
 
         {/* RESULTS HEADER & COUNT */}
         <div className="flex items-center justify-between">
-          <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
-            {query ? `Results for "${query}"` : "Explore Catalog"}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
+              {query ? `Results for "${query}"` : "Explore Catalog"}
+            </h2>
+            {!query && (
+              <button
+                type="button"
+                onClick={() => setRandomSeed(Math.random())}
+                title="Shuffle products"
+                className="p-1.5 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-colors cursor-pointer"
+                aria-label="Shuffle products"
+              >
+                <Shuffle size={13} />
+              </button>
+            )}
+          </div>
           <span className="text-xs font-body font-semibold text-[#71717A] dark:text-zinc-400">
             {filteredProducts.length} {filteredProducts.length === 1 ? "item" : "items"} available
           </span>
@@ -632,7 +756,14 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
               {CATEGORY_OPTIONS.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => {
+                    if (cat.toLowerCase() === "services") {
+                      setIsFilterModalOpen(false);
+                      router.push("/category/services");
+                      return;
+                    }
+                    setSelectedCategory(cat);
+                  }}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                     selectedCategory === cat
                       ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-xs"
