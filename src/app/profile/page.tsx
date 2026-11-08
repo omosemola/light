@@ -155,11 +155,9 @@ export default function ProfilePage() {
 
 
 
-  const isVisitor = profile.isVisitor || profile.name === "Visitor" || profile.email === "visitor@light.app" || !profile.email;
-  const displayName = profile.name && profile.name !== "Platform Super Admin" ? profile.name : (isVisitor ? "Campus Visitor" : "Student");
-  const userAvatar = isVisitor
-    ? (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_VISITOR_CARTOON_AVATAR)
-    : (profile.avatar && profile.avatar !== "/visitor-avatar.png" ? profile.avatar : DEFAULT_HUMAN_AVATAR);
+  const isVisitor = false;
+  const displayName = profile.name && profile.name !== "Platform Super Admin" ? profile.name : "Student";
+  const userAvatar = (profile.avatar && profile.avatar !== "/visitor-avatar.png") ? profile.avatar : DEFAULT_HUMAN_AVATAR;
 
   const displayHostel = profile.hostel && profile.hostel.trim() && profile.hostel !== "Campus Guest" && profile.hostel !== "Main Campus (Mellanby Hall)"
     ? profile.hostel

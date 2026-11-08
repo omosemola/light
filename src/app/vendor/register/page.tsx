@@ -53,6 +53,8 @@ const CAMPUS_CATEGORIES = [
   "Provisions & Hostel Groceries",
   "Tech, Gadgets & Accessories",
   "Fashion, Wears & Campus Merch",
+  "Automobiles, Cars & Bikes",
+  "Fragrances, Perfumes & Roll-ons",
   "Stationery, Books & Study Items",
   "Beauty, Skincare & Personal Care",
 ];

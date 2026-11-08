@@ -50,6 +50,7 @@ import { useSession } from "next-auth/react";
 import { useUserStore } from "@/lib/userStore";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { getSafeImageUrl } from "@/lib/productOptions";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getUserReviews, deleteUserReview, UserReviewItem } from "@/actions/reviews";
@@ -73,6 +74,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   const { data: session } = useSession();
   const { profile, updateProfile } = useUserStore();
   const { isDark, setTheme, theme } = useTheme();
+  const notifTabsSwipe = useSwipeScroll<HTMLDivElement>();
 
   const effectiveEmail = session?.user?.email || profile.email || "";
 
@@ -246,11 +248,11 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
   const [notifFilter, setNotifFilter] = useState<"all" | "order" | "promo" | "account">("all");
 
-  const activeEmailNormalized = profile.email?.trim().toLowerCase() || "visitor@light.app";
+  const activeEmailNormalized = profile.email?.trim().toLowerCase() || effectiveEmail?.trim().toLowerCase() || "";
 
   const userNotifications = allNotifications.filter((n) => {
     const notifEmail = n.userEmail?.trim().toLowerCase() || "";
-    const isForUser = !profile.email ? notifEmail === "visitor@light.app" : notifEmail === activeEmailNormalized;
+    const isForUser = !activeEmailNormalized ? true : notifEmail === activeEmailNormalized;
     if (!isForUser) return false;
     if (notifFilter === "all") return true;
     return n.type === notifFilter;
@@ -258,7 +260,7 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
 
   const unreadCount = allNotifications.filter((n) => {
     const notifEmail = n.userEmail?.trim().toLowerCase() || "";
-    const isForUser = !profile.email ? notifEmail === "visitor@light.app" : notifEmail === activeEmailNormalized;
+    const isForUser = !activeEmailNormalized ? true : notifEmail === activeEmailNormalized;
     return isForUser && !n.read;
   }).length;
 
@@ -964,7 +966,13 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
             </div>
 
             {/* FILTER TABS */}
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <div 
+              ref={notifTabsSwipe.containerRef}
+              {...notifTabsSwipe.handlers}
+              className={`flex gap-2 overflow-x-auto pb-1 no-scrollbar select-none ${
+                notifTabsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+              }`}
+            >
               {[
                 { id: "all", label: "All Alerts" },
                 { id: "order", label: "Orders 📦" },

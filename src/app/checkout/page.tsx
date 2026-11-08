@@ -30,6 +30,7 @@ import { getUserLocationsDb, SavedLocationItem } from "@/actions/account";
 import { getStoreBankDetails } from "@/actions/vendor";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { getSafeImageUrl } from "@/lib/productOptions";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
   const { items, getTotal, getDeliveryFee, getEstimatedDelivery, vendorName, vendorId, vendorDeliveryFee, vendorEstimatedDelivery, clearCart } = useCartStore();
   const { addNotification } = useNotificationStore();
   const { profile, updateProfile } = useUserStore();
+  const savedLocationsSwipe = useSwipeScroll<HTMLDivElement>();
   const [isMounted, setIsMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"transfer" | "paystack">("transfer");
@@ -234,7 +236,7 @@ export default function CheckoutPage() {
 
     const orderId = res.success && res.order ? res.order.id : `ORD-${Date.now().toString().slice(-4)}`;
     addNotification({
-      userEmail: profile.email || effectiveEmail || "visitor@light.app",
+      userEmail: profile.email || effectiveEmail || "student@campuslightson.com",
       title: "Order Placed Successfully! 🛍️",
       desc: `Your order for ₦${total.toLocaleString()} (${items.length} item${items.length === 1 ? "" : "s"}) has been sent to the store.`,
       type: "order",
@@ -312,7 +314,13 @@ export default function CheckoutPage() {
               <span className="text-[11px] font-heading font-bold text-[#71717A] dark:text-zinc-400 block mb-1.5">
                 Quick Select Saved Location:
               </span>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-0.5 no-scrollbar">
+              <div 
+                ref={savedLocationsSwipe.containerRef}
+                {...savedLocationsSwipe.handlers}
+                className={`flex items-center gap-2 overflow-x-auto pb-2 pt-0.5 no-scrollbar select-none ${
+                  savedLocationsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+                }`}
+              >
                 {savedLocationsList.map((loc) => {
                   const isSelected = houseName === loc.title && streetLocation === loc.address;
                   return (

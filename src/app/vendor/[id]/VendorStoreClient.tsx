@@ -14,7 +14,9 @@ import {
   CheckCircle2, 
   Award,
   Share2,
-  Bike
+  Bike,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,6 +32,7 @@ import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/Produ
 import { parseProductImages, getSafeImageUrl } from "@/lib/productOptions";
 import { formatReviewDate } from "@/lib/formatDate";
 import { getStoreScheduleStatus, computeIsStoreOpen } from "@/lib/storeSchedule";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 interface VendorStoreClientProps {
   initialStore?: any;
@@ -38,6 +41,7 @@ interface VendorStoreClientProps {
 
 export default function VendorStoreClient({ initialStore, id }: VendorStoreClientProps) {
   const router = useRouter();
+  const categoriesSwipe = useSwipeScroll<HTMLDivElement>();
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { profile } = useUserStore();
 
@@ -401,20 +405,52 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {categories.map((cat) => (
+          <div className="relative group/vendorcats">
+            {categoriesSwipe.canScrollLeft && (
               <button
-                key={cat}
-                onClick={() => setSelectedCat(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-heading font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCat === cat
-                    ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
-                    : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-300 border border-slate-200 dark:border-zinc-800 hover:border-slate-300"
-                }`}
+                type="button"
+                onClick={categoriesSwipe.scrollLeft}
+                aria-label="Scroll categories left"
+                className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
               >
-                {cat}
+                <ChevronLeft size={16} />
               </button>
-            ))}
+            )}
+
+            {categoriesSwipe.canScrollRight && (
+              <button
+                type="button"
+                onClick={categoriesSwipe.scrollRight}
+                aria-label="Scroll categories right"
+                className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </button>
+            )}
+
+            <div 
+              ref={categoriesSwipe.containerRef}
+              {...categoriesSwipe.handlers}
+              className={`flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar select-none ${
+                categoriesSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+              }`}
+            >
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  draggable={false}
+                  onClick={() => setSelectedCat(cat)}
+                  className={`px-4 py-2 rounded-xl text-xs font-heading font-bold whitespace-nowrap transition-all cursor-pointer select-none ${
+                    selectedCat === cat
+                      ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
+                      : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-300 border border-slate-200 dark:border-zinc-800 hover:border-slate-300"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export const DEFAULT_VISITOR_CARTOON_AVATAR = "https://api.dicebear.com/7.x/adventurer/png?seed=Midnight&backgroundColor=ffd5dc";
+export const DEFAULT_STUDENT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
+export const DEFAULT_VISITOR_CARTOON_AVATAR = DEFAULT_STUDENT_AVATAR;
 
 export interface UserProfile {
   name: string;
@@ -37,18 +38,18 @@ export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       profile: {
-        name: "Visitor",
+        name: "",
         email: "",
         hostel: "",
         addressDetail: "",
         phone: "",
-        avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
+        avatar: DEFAULT_STUDENT_AVATAR,
         points: 0,
         savedStoresCount: 0,
         savedLocations: [],
         ordersCount: 0,
         reviewsCount: 0,
-        isVisitor: true,
+        isVisitor: false,
         role: "STUDENT",
         twoFactorEnabled: true,
         smsAlerts: true,
@@ -64,18 +65,18 @@ export const useUserStore = create<UserState>()(
       logoutUser: () =>
         set({
           profile: {
-            name: "Visitor",
+            name: "",
             email: "",
             hostel: "",
             addressDetail: "",
             phone: "",
-            avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
+            avatar: DEFAULT_STUDENT_AVATAR,
             points: 0,
             savedStoresCount: 0,
             savedLocations: [],
             ordersCount: 0,
             reviewsCount: 0,
-            isVisitor: true,
+            isVisitor: false,
             role: "STUDENT",
             twoFactorEnabled: true,
             smsAlerts: true,
@@ -86,24 +87,24 @@ export const useUserStore = create<UserState>()(
         }),
     }),
     {
-      name: "lightson-user-app-storage-v10",
-      version: 2,
+      name: "lightson-user-app-storage-v11",
+      version: 3,
       migrate: (persistedState: any) => {
         if (!persistedState || !persistedState.profile) {
           return {
             profile: {
-              name: "Visitor",
+              name: "",
               email: "",
               hostel: "",
               addressDetail: "",
               phone: "",
-              avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
+              avatar: DEFAULT_STUDENT_AVATAR,
               points: 0,
               savedStoresCount: 0,
               savedLocations: [],
               ordersCount: 0,
               reviewsCount: 0,
-              isVisitor: true,
+              isVisitor: false,
               role: "STUDENT",
               twoFactorEnabled: true,
               smsAlerts: true,

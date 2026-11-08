@@ -26,7 +26,11 @@ import {
   ShieldCheck,
   Clock,
   Star,
-  CheckCircle2
+  CheckCircle2,
+  Car,
+  SprayCan,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,6 +43,7 @@ import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/Produ
 import { parseProductImages } from "@/lib/productOptions";
 import { MerchantChatModal, MerchantChatVendor } from "@/components/ui/MerchantChatModal";
 import { getServicePersonnel } from "@/actions/marketplace";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -182,6 +187,22 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     description: "Hostel wash & fold, dry cleaning, ironing, beddings, and laundry detergents.",
     subcategories: ["All", "Wash & Fold", "Ironing & Press", "Dry Cleaning", "Beddings & Duvets"],
   },
+  automobile: {
+    name: "Automobile",
+    Icon: Car,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=80",
+    description: "Cars, power bikes, motorcycles, bicycles, and personal mobility for sale on campus.",
+    subcategories: ["All", "Cars", "Bikes & Motorcycles", "Bicycles", "Auto Accessories"],
+  },
+  fragrances: {
+    name: "Fragrances",
+    Icon: SprayCan,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1200&q=80",
+    description: "Luxury perfumes, roll-ons, body sprays, oil perfumes, and long-lasting fragrances.",
+    subcategories: ["All", "Perfumes", "Roll-Ons", "Oil Perfumes", "Body Sprays & Mists"],
+  },
   electronics: {
     name: "Electronics & Appliances",
     Icon: Zap,
@@ -238,6 +259,7 @@ function formatProducts(list: any[]) {
 
 export default function CategoryClient({ initialProducts = [], initialServiceStores = [], slug }: CategoryClientProps) {
   const router = useRouter();
+  const subcategoriesSwipe = useSwipeScroll<HTMLDivElement>();
 
   const category = CATEGORY_DATA[slug] || {
     name: slug.charAt(0).toUpperCase() + slug.slice(1),
@@ -310,6 +332,20 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
           } else if (selectedSubcategory === "Errands & Tasks") {
             matchesSubcat = !t.includes("medic") && !t.includes("laundr") && !t.includes("wash");
           }
+        } else if (slug === "automobile") {
+          const t = `${product.name} ${product.description || ""}`.toLowerCase();
+          if (selectedSubcategory === "Cars") matchesSubcat = t.includes("car");
+          else if (selectedSubcategory === "Bikes & Motorcycles") matchesSubcat = t.includes("bike") || t.includes("motor");
+          else if (selectedSubcategory === "Bicycles") matchesSubcat = t.includes("bicycl") || t.includes("cycle");
+          else if (selectedSubcategory === "Auto Accessories") matchesSubcat = t.includes("part") || t.includes("accessor") || t.includes("tire") || t.includes("tyre") || t.includes("helmet");
+          else matchesSubcat = product.subcategory === selectedSubcategory;
+        } else if (slug === "fragrances") {
+          const t = `${product.name} ${product.description || ""}`.toLowerCase();
+          if (selectedSubcategory === "Perfumes") matchesSubcat = t.includes("perfum") || t.includes("cologn");
+          else if (selectedSubcategory === "Roll-Ons") matchesSubcat = t.includes("roll on") || t.includes("roll-on") || t.includes("deodor");
+          else if (selectedSubcategory === "Oil Perfumes") matchesSubcat = t.includes("oil");
+          else if (selectedSubcategory === "Body Sprays & Mists") matchesSubcat = t.includes("spray") || t.includes("mist");
+          else matchesSubcat = product.subcategory === selectedSubcategory;
         } else {
           matchesSubcat = product.subcategory === selectedSubcategory;
         }
@@ -519,26 +555,53 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
         )}
 
         {/* SUBCATEGORY PILLS */}
-        <motion.div 
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"
-        >
-          {category.subcategories.map((subcat) => (
+        <div className="relative group/subcats">
+          {subcategoriesSwipe.canScrollLeft && (
             <button
-              key={subcat}
-              onClick={() => setSelectedSubcategory(subcat)}
-              className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                selectedSubcategory === subcat
-                  ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
-                  : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
-              }`}
+              type="button"
+              onClick={subcategoriesSwipe.scrollLeft}
+              aria-label="Scroll subcategories left"
+              className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
-              {subcat}
+              <ChevronLeft size={16} />
             </button>
-          ))}
-        </motion.div>
+          )}
+
+          {subcategoriesSwipe.canScrollRight && (
+            <button
+              type="button"
+              onClick={subcategoriesSwipe.scrollRight}
+              aria-label="Scroll subcategories right"
+              className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
+
+          <div 
+            ref={subcategoriesSwipe.containerRef}
+            {...subcategoriesSwipe.handlers}
+            className={`flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 select-none ${
+              subcategoriesSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+            }`}
+          >
+            {category.subcategories.map((subcat) => (
+              <button
+                key={subcat}
+                type="button"
+                draggable={false}
+                onClick={() => setSelectedSubcategory(subcat)}
+                className={`px-4 py-2 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 select-none ${
+                  selectedSubcategory === subcat
+                    ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-600 shadow-sm"
+                    : "bg-white dark:bg-zinc-900 text-[#71717A] dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                {subcat}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* SERVICES CATEGORY DIRECT PERSONNEL DIRECTORY & CHAT HUB */}
         {slug === "services" && (

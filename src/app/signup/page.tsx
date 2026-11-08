@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, Mail, Lock, Building, MapPin, CheckCircle2, UserPlus, Store, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { useUserStore } from "@/lib/userStore";
 import { useNotificationStore } from "@/lib/notificationStore";
 import { sendStudentWelcomeNotification } from "@/actions/support";
 import { signIn } from "next-auth/react";
@@ -117,24 +117,6 @@ export default function SignupPage() {
     }, 900);
   };
 
-  const handleVisitorLogin = () => {
-    setIsSubmitting(true);
-    setHasSeenOnboarding(true);
-    updateProfile({
-      name: "Visitor",
-      email: "",
-      hostel: "Campus Guest",
-      phone: "",
-      avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
-      isVisitor: true,
-    });
-
-    setToastMessage("Welcome, Visitor! 🚀");
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 1000);
-  };
-
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
@@ -213,15 +195,6 @@ export default function SignupPage() {
           >
             <GoogleIcon />
             <span>Continue with Google</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleVisitorLogin}
-            disabled={isSubmitting}
-            className="w-full h-12 bg-[#F4F3FF] dark:bg-indigo-950/60 hover:bg-[#E0E7FF] dark:hover:bg-indigo-900/60 text-[#312E81] dark:text-indigo-200 font-heading font-bold text-xs rounded-full border border-indigo-100 dark:border-indigo-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <span>Continue as Campus Guest (Visitor)</span>
           </button>
         </div>
 

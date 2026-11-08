@@ -36,13 +36,13 @@ function SessionSync({ children }: { children: React.ReactNode }) {
         profile.role === "VENDOR"
       ) {
         updateProfile({
-          name: "Visitor",
+          name: "",
           email: "",
           hostel: "",
           phone: "",
-          avatar: "https://api.dicebear.com/7.x/adventurer/png?seed=Midnight&backgroundColor=ffd5dc",
+          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
           role: "STUDENT",
-          isVisitor: true,
+          isVisitor: false,
         });
       }
     }

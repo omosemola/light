@@ -48,7 +48,7 @@ interface Product {
   reviewsCount?: number;
 }
 
-const CATEGORY_OPTIONS = ["All", "Services", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Fashion", "Tech & Gadgets"];
+const CATEGORY_OPTIONS = ["All", "Services", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Fashion", "Fragrances", "Automobile", "Tech & Gadgets"];
 const POPULAR_SUGGESTIONS = ["Services", "Small Chops", "Pastries", "Snacks", "Drinks", "Meals"];
 
 interface SearchClientProps {
@@ -218,6 +218,8 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     if (s === "snacks" && (p.includes("snack") || p.includes("pastr") || p.includes("pie") || p.includes("roll") || p.includes("chops"))) return true;
     if (s === "drinks" && (p.includes("drink") || p.includes("juice") || p.includes("beverage") || p.includes("zobo") || p.includes("shake") || p.includes("cooler"))) return true;
     if ((s === "fashion" || s === "wears") && (p.includes("wear") || p.includes("cloth") || p.includes("hoodie") || p.includes("shirt") || p.includes("pant") || p.includes("accessor") || p.includes("bag"))) return true;
+    if ((s === "automobile" || s === "cars" || s === "bikes") && (p.includes("car") || p.includes("bike") || p.includes("bicycl") || p.includes("auto") || p.includes("motor") || p.includes("ride") || p.includes("vehicl"))) return true;
+    if ((s === "fragrances" || s === "perfumes") && (p.includes("fragran") || p.includes("perfum") || p.includes("roll on") || p.includes("roll-on") || p.includes("scent") || p.includes("cologn") || p.includes("deodor") || p.includes("mist") || p.includes("body spray") || p.includes("oil"))) return true;
     if (s === "tech & gadgets" && (p.includes("gadget") || p.includes("electr") || p.includes("tech") || p.includes("phone"))) return true;
     return false;
   }

@@ -40,7 +40,7 @@ export async function submitStudentReview(input: {
     }
 
     if (!userId) {
-      const defaultEmail = (input.userEmail || "visitor@light.app").trim().toLowerCase();
+      const defaultEmail = (input.userEmail || "student@campuslightson.com").trim().toLowerCase();
       const existingUser = await prisma.user.findUnique({
         where: { email: defaultEmail },
       });

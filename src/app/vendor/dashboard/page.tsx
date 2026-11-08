@@ -71,6 +71,7 @@ import {
 } from "@/actions/vendor";
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { OrderStatus } from "@prisma/client";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 import { 
   parseProductDescription, 
   encodeProductDescription, 
@@ -126,9 +127,34 @@ const CAMPUS_SERVICE_SUBCATEGORIES = [
   "Catering & Event Baking",
 ];
 
+const STORE_CATEGORY_OPTIONS = [
+  "Campus Food & Meals",
+  "Cafeteria & Snacks Combos",
+  "Provisions & Hostel Groceries",
+  "Tech, Gadgets & Accessories",
+  "Fashion, Wears & Campus Merch",
+  "Automobiles, Cars & Bikes",
+  "Fragrances, Perfumes & Roll-ons",
+  "Stationery, Books & Study Items",
+  "Beauty, Skincare & Personal Care",
+  "Sports, Fitness & Gym Equipment",
+  "Services: Laundry & Dry Cleaning",
+  "Services: Medicals & Pharmacy",
+  "Services: Printing, Binding & Graphic Design",
+  "Services: Hair Styling, Barbing & Grooming",
+  "Services: Tech, Laptop & Phone Repair",
+  "Services: Room Cleaning, Fumigation & Errands",
+  "Services: Tailoring & Fashion Alterations",
+  "Services: Tutorials & Academic Coaching",
+  "Services: Photography & Video Media",
+  "Services: Other Campus Services",
+];
+
 export default function VendorDashboardPage() {
   const router = useRouter();
   const { isDark, setTheme } = useTheme();
+  const vendorTabsSwipe = useSwipeScroll<HTMLDivElement>();
+  const orderFilterSwipe = useSwipeScroll<HTMLDivElement>();
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
@@ -165,6 +191,7 @@ export default function VendorDashboardPage() {
   // Store Profile & Operations State
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [storeName, setStoreName] = useState("");
+  const [storeCategory, setStoreCategory] = useState("Campus Food & Meals");
   const [ownerName, setOwnerName] = useState("");
   const [storeDesc, setStoreDesc] = useState("");
   const [storePhone, setStorePhone] = useState("+2348012345678");
@@ -201,6 +228,7 @@ export default function VendorDashboardPage() {
   const openEditProfileModal = () => {
     if (storeData) {
       setStoreName(storeData.name || "");
+      setStoreCategory(storeData.category || "Campus Food & Meals");
       setOwnerName(storeData.user?.name || "");
       setStoreDesc(storeData.description || "");
       setStorePhone(storeData.phone || storeData.user?.phone || "");
@@ -766,6 +794,7 @@ export default function VendorDashboardPage() {
         storeId: storeData.id,
         storeName: storeName.trim(),
         ownerName: ownerName.trim(),
+        category: storeCategory.trim(),
         phone: storePhone.trim(),
         description: storeDesc.trim(),
         openingTime,
@@ -790,6 +819,7 @@ export default function VendorDashboardPage() {
         setStoreData((prev: any) => ({
           ...prev,
           name: res.store.name,
+          category: res.store.category,
           description: res.store.description,
           phone: res.store.phone,
           openingTime: res.store.openingTime,
@@ -1368,7 +1398,13 @@ export default function VendorDashboardPage() {
         </div>
 
         {/* 4 MAIN OPERATION TABS */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b pb-4 mb-6">
+        <div 
+          ref={vendorTabsSwipe.containerRef}
+          {...vendorTabsSwipe.handlers}
+          className={`flex items-center gap-2 overflow-x-auto no-scrollbar border-b pb-4 mb-6 select-none ${
+            vendorTabsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+          }`}
+        >
           <button
             type="button"
             onClick={() => setSelectedTab("orders")}
@@ -1445,7 +1481,13 @@ export default function VendorDashboardPage() {
         {selectedTab === "orders" && (
           <div className="space-y-4">
             {/* ORDER STATUS FILTERS */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+            <div 
+              ref={orderFilterSwipe.containerRef}
+              {...orderFilterSwipe.handlers}
+              className={`flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 select-none ${
+                orderFilterSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+              }`}
+            >
               {["ALL", "PENDING", "ACCEPTED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].map((st) => (
                 <button
                   key={st}
@@ -2619,6 +2661,27 @@ export default function VendorDashboardPage() {
                   </div>
                 </div>
 
+                {/* Store Category Selection */}
+                <div>
+                  <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
+                    Store Category
+                  </label>
+                  <select
+                    value={storeCategory}
+                    onChange={(e) => setStoreCategory(e.target.value)}
+                    className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer ${
+                      isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
+                    }`}
+                  >
+                    {STORE_CATEGORY_OPTIONS.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Determines where your store and listings appear on the marketplace directory.
+                  </span>
+                </div>
+
                 <div>
                   <label className="block text-xs font-extrabold uppercase text-slate-500 mb-1.5 font-heading">
                     Store Bio / Description
@@ -3017,6 +3080,8 @@ export default function VendorDashboardPage() {
                       <option value="sports">Sports & Fitness</option>
                       <option value="wears">Fashion & Wears</option>
                       <option value="jewelries">Jewelries & Accessories</option>
+                      <option value="automobile">Automobile (Cars, Bikes, Bicycles)</option>
+                      <option value="fragrances">Fragrances (Perfumes, Roll-ons, Body Mists)</option>
                       <option value="gadgets">Tech & Gadgets</option>
                       <option value="electronics">Electronics & Appliances</option>
                     </select>

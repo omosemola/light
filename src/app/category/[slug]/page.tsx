@@ -71,6 +71,14 @@ const CATEGORY_TITLES: Record<string, { title: string; desc: string }> = {
     title: "Tech & Gadgets — Lightson Marketplace",
     desc: "Power banks, earbuds, chargers, and tech accessories on Lightson Marketplace.",
   },
+  automobile: {
+    title: "Automobile & Mobility — Lightson Marketplace",
+    desc: "Cars, motorbikes, power bikes, bicycles, and personal mobility for sale on Lightson Marketplace.",
+  },
+  fragrances: {
+    title: "Fragrances & Scents — Lightson Marketplace",
+    desc: "Long-lasting perfumes, oil perfumes, roll-ons, and scented body sprays on Lightson Marketplace.",
+  },
   electronics: {
     title: "Electronics & Appliances — Lightson Marketplace",
     desc: "Study lamps, electric kettles, room fans, and speakers on Lightson Marketplace.",

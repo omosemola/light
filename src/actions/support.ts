@@ -55,20 +55,20 @@ export async function createLiveSupportTicket(data: {
     }
 
     if (!userId) {
-      const guestEmail = "guest.support@campuslightson.com";
-      let guestUser = await prisma.user.findFirst({
-        where: { email: { equals: guestEmail, mode: "insensitive" } },
+      const defaultSupportEmail = "support.request@campuslightson.com";
+      let defaultUser = await prisma.user.findFirst({
+        where: { email: { equals: defaultSupportEmail, mode: "insensitive" } },
       });
-      if (!guestUser) {
-        guestUser = await prisma.user.create({
+      if (!defaultUser) {
+        defaultUser = await prisma.user.create({
           data: {
-            email: guestEmail,
-            name: data.userName || "Campus Guest",
+            email: defaultSupportEmail,
+            name: data.userName || "Campus Student",
             role: "STUDENT",
           },
         });
       }
-      userId = guestUser.id;
+      userId = defaultUser.id;
     }
 
     const ticket = await prisma.supportTicket.create({

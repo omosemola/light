@@ -34,7 +34,9 @@ import {
   Gift,
   ShieldCheck,
   Briefcase,
-  Shuffle
+  Shuffle,
+  Car,
+  SprayCan
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -166,6 +168,20 @@ const CATEGORIES = [
     badge: "Audio & More"
   },
   { 
+    name: "Automobile", 
+    slug: "automobile", 
+    icon: Car,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Cars & Bikes"
+  },
+  { 
+    name: "Fragrances", 
+    slug: "fragrances", 
+    icon: SprayCan,
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    badge: "Perfumes & Oils"
+  },
+  { 
     name: "Electronics", 
     slug: "electronics", 
     icon: Tv,
@@ -195,6 +211,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
   // CATEGORY SWIPE SCROLL HOOK FOR BIG SCREENS
   const categoriesSwipe = useSwipeScroll<HTMLDivElement>();
+  const filtersSwipe = useSwipeScroll<HTMLDivElement>();
 
   // PROMOTIONAL CAROUSEL STATE
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -356,15 +373,15 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
     }
   }, [profile.email, profile.isVisitor, profile.avatar, profile.name, updateProfile]);
 
-  const rawName = (profile.name && profile.name !== "Visitor" && profile.name !== "Platform Super Admin")
+  const rawName = (profile.name && profile.name !== "Platform Super Admin")
     ? profile.name
-    : (session?.user?.name || (isAuthenticated ? (session?.user?.email?.split("@")[0] || profile.email?.split("@")[0] || "Student") : "Explorer"));
+    : (session?.user?.name || (session?.user?.email?.split("@")[0] || profile.email?.split("@")[0] || "Student"));
 
   const firstName = rawName.split(" ")[0];
 
   const userAvatar = (profile.avatar && profile.avatar !== "/visitor-avatar.png")
     ? profile.avatar
-    : (session?.user?.image || (isAuthenticated ? DEFAULT_HUMAN_AVATAR : DEFAULT_VISITOR_CARTOON_AVATAR));
+    : (session?.user?.image || DEFAULT_HUMAN_AVATAR);
 
   // The main website always links to the onboarding page, unless the user already has an account logged in the browser
   if (!isAuthenticated) {
@@ -638,7 +655,13 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             </div>
 
             {/* QUICK STOREFRONT FILTER CHIPS */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            <div 
+              ref={filtersSwipe.containerRef}
+              {...filtersSwipe.handlers}
+              className={`flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none ${
+                filtersSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setSelectedFilter("all")}

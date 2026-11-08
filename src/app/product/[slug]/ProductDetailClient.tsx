@@ -34,7 +34,7 @@ import { ProductGrid } from "@/components/ui/ProductGrid";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
 import { getLiveProductBySlugOrId } from "@/actions/marketplace";
 import { useReviewsStore } from "@/lib/reviewsStore";
-import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { useUserStore } from "@/lib/userStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { submitStudentReview } from "@/actions/reviews";
 import { 
@@ -341,14 +341,11 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
 
     setIsSubmittingReview(true);
 
-    const isVisitor = profile.isVisitor || profile.name === "Visitor" || !profile.email;
-    const authorName = isVisitor ? "Campus Student" : (profile.name || "Student");
-    const authorAvatar = isVisitor 
-      ? (profile.avatar || DEFAULT_VISITOR_CARTOON_AVATAR) 
-      : (profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80");
+    const authorName = profile.name || "Student";
+    const authorAvatar = profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
     const authorHostel = profile.hostel || "Main Hostel";
 
-    if (profile.email && !profile.isVisitor) {
+    if (profile.email) {
       await submitStudentReview({
         userEmail: profile.email,
         storeId: product.vendorId,

@@ -113,3 +113,4 @@ export function useSwipeScroll<T extends HTMLElement = HTMLDivElement>() {
     checkScrollable,
   };
 }
+

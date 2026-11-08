@@ -5,8 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Compass } from "lucide-react";
-import { useUserStore } from "@/lib/userStore";
+import { ArrowRight } from "lucide-react";
 
 // CORPORATE MEMPHIS FLAT VECTOR ART 1: FOOD & DRINKS (FLOATING WITHOUT BOX CONTAINER)
 function FoodMemphisIllustration() {
@@ -216,13 +215,7 @@ const CHOWDECK_SLIDES = [
 
 export default function WelcomePage() {
   const router = useRouter();
-  const { setHasSeenOnboarding } = useUserStore();
   const [activeSlide, setActiveSlide] = useState(0);
-
-  const handleContinueAsGuest = () => {
-    setHasSeenOnboarding(true);
-    router.push("/category/food");
-  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -313,20 +306,12 @@ export default function WelcomePage() {
           <ArrowRight size={19} className="group-hover:translate-x-1 transition-transform" />
         </Link>
 
-        {/* EXPLORE AS GUEST OR LOG IN */}
-        <div className="flex items-center justify-between font-body text-sm text-[#71717A] pt-1 px-1">
-          <button
-            type="button"
-            onClick={handleContinueAsGuest}
-            className="font-heading font-bold text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Compass size={15} className="text-amber-500" />
-            <span>Explore as Guest</span>
-          </button>
-
+        {/* LOG IN LINK */}
+        <div className="flex items-center justify-center font-body text-sm text-[#71717A] pt-1 px-1">
+          <span>Already have an account?</span>
           <Link
             href="/login"
-            className="font-heading font-extrabold text-[#312E81] dark:text-indigo-400 hover:underline underline-offset-4"
+            className="ml-2 font-heading font-extrabold text-[#312E81] dark:text-indigo-400 hover:underline underline-offset-4"
           >
             Log In ➔
           </Link>

@@ -56,10 +56,13 @@ import {
 import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
 import { getSafeImageUrl } from "@/lib/productOptions";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { isDark, setTheme } = useTheme();
+  const adminTabsSwipe = useSwipeScroll<HTMLDivElement>();
+  const orderStatusFilterSwipe = useSwipeScroll<HTMLDivElement>();
   const INITIAL_ADMIN_DATA = {
     success: true,
     metrics: {
@@ -819,7 +822,13 @@ export default function AdminDashboardPage() {
 
         {/* TABS & SEARCH BAR */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4 mb-6">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          <div 
+            ref={adminTabsSwipe.containerRef}
+            {...adminTabsSwipe.handlers}
+            className={`flex items-center gap-2 overflow-x-auto no-scrollbar py-1 select-none ${
+              adminTabsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+            }`}
+          >
             <button
               onClick={() => { setActiveTab("products"); setSearchQuery(""); }}
               className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
@@ -1005,7 +1014,13 @@ export default function AdminDashboardPage() {
               isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
             }`}>
               {/* STATUS FILTER PILLS */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <div 
+                ref={orderStatusFilterSwipe.containerRef}
+                {...orderStatusFilterSwipe.handlers}
+                className={`flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none ${
+                  orderStatusFilterSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+                }`}
+              >
                 {[
                   { key: "ALL", label: `All (${adminData?.recentOrders?.length || 0})` },
                   { key: "PENDING", label: `Pending (${adminData?.recentOrders?.filter((o: any) => o.status === "PENDING").length || 0})` },

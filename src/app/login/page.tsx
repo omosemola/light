@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Mail, Lock, CheckCircle2, LogIn, Store, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
+import { useUserStore } from "@/lib/userStore";
 import { supabase } from "@/lib/supabaseClient";
 
 function GoogleIcon() {
@@ -76,24 +76,6 @@ export default function LoginPage() {
     setTimeout(() => {
       window.location.href = "/";
     }, 800);
-  };
-
-  const handleVisitorLogin = () => {
-    setIsSubmitting(true);
-    setHasSeenOnboarding(true);
-    updateProfile({
-      name: "Visitor",
-      email: "",
-      hostel: "Campus Guest",
-      phone: "",
-      avatar: DEFAULT_VISITOR_CARTOON_AVATAR,
-      isVisitor: true,
-    });
-
-    setToastMessage("Welcome, Visitor! 🚀");
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 1000);
   };
 
   const handleGoogleSignIn = async () => {
@@ -169,15 +151,6 @@ export default function LoginPage() {
           >
             <GoogleIcon />
             <span>Continue with Google</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleVisitorLogin}
-            disabled={isSubmitting}
-            className="w-full h-12 bg-[#F4F3FF] hover:bg-[#E0E7FF] text-[#312E81] font-heading font-bold text-xs rounded-full border border-indigo-100 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <span>Continue as Campus Guest (Visitor)</span>
           </button>
         </div>
 

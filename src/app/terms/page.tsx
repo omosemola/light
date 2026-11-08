@@ -24,10 +24,12 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 
 function TermsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const termsTabsSwipe = useSwipeScroll<HTMLDivElement>();
   const { isDark, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<"terms" | "privacy" | "merchant">("terms");
 
@@ -88,7 +90,13 @@ function TermsContent() {
       <div className="max-w-4xl mx-auto w-full px-5 py-6 space-y-6 -mt-6 relative z-20">
         
         {/* 3-TAB SWITCHER */}
-        <div className="flex bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm gap-1 overflow-x-auto no-scrollbar">
+        <div 
+          ref={termsTabsSwipe.containerRef}
+          {...termsTabsSwipe.handlers}
+          className={`flex bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm gap-1 overflow-x-auto no-scrollbar select-none ${
+            termsTabsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+          }`}
+        >
           <button
             onClick={() => setActiveTab("terms")}
             className={`flex-1 py-3 px-3 rounded-xl font-heading font-extrabold text-xs md:text-sm flex items-center justify-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
