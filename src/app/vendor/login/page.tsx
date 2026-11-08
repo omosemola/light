@@ -27,7 +27,28 @@ export default function VendorLoginPage() {
     setErrorMsg("");
 
     try {
-      const res = await authenticateVendor(email.trim(), password.trim());
+      let res: any;
+      try {
+        res = await authenticateVendor(email.trim(), password.trim());
+      } catch (saErr: any) {
+        console.warn("Server action failed, retrying via API route:", saErr);
+        const apiRes = await fetch("/api/vendor/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+        });
+        res = await apiRes.json();
+      }
+
+      if (!res?.success && (res?.error?.includes("Server Action") || res?.error?.includes("failed-to-find"))) {
+        const apiRes = await fetch("/api/vendor/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+        });
+        res = await apiRes.json();
+      }
+
       if (res.success) {
         setToastMessage(`Welcome back! Opening ${res.storeName || "Store"} Terminal...`);
         setTimeout(() => {

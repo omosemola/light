@@ -4,6 +4,17 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "15mb",
+      allowedOrigins: [
+        "lightsonmarketplace.com",
+        "*.lightsonmarketplace.com",
+        "vendor.lightsonmarketplace.com",
+        "merchant.lightsonmarketplace.com",
+        "admin.lightsonmarketplace.com",
+        "lightsonmarketplace.netlify.app",
+        "*.netlify.app",
+        "localhost:3000",
+        "127.0.0.1:3000",
+      ],
     },
   },
   turbopack: {},

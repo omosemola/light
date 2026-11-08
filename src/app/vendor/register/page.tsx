@@ -188,7 +188,7 @@ export default function VendorRegistrationPage() {
         }
       }
 
-      const res = await registerVendorStore({
+      const payload = {
         storeName,
         ownerName,
         email,
@@ -202,7 +202,30 @@ export default function VendorRegistrationPage() {
         bankName: bankName ? bankName.trim() : "Commercial Bank",
         accountNumber: accountNumber ? accountNumber.trim() : "",
         accountName: (accountName || ownerName || storeName).trim(),
-      });
+      };
+
+      let res: any;
+      try {
+        res = await registerVendorStore(payload);
+      } catch (saErr: any) {
+        console.warn("Direct Server Action failed, falling back to /api/vendor/register:", saErr);
+        const apiResponse = await fetch("/api/vendor/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        res = await apiResponse.json();
+      }
+
+      // If Server Action returned an error related to action not found, also retry via API route
+      if (!res?.success && (res?.error?.includes("Server Action") || res?.error?.includes("failed-to-find"))) {
+        const apiResponse = await fetch("/api/vendor/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        res = await apiResponse.json();
+      }
 
       if (res.success) {
         updateProfile({
@@ -216,7 +239,7 @@ export default function VendorRegistrationPage() {
         setErrorMessage(res.error || "Failed to register vendor store. Please try again.");
       }
     } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred.");
+      setErrorMessage(err.message || "An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
