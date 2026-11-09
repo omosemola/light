@@ -225,25 +225,20 @@ export default function VendorRegistrationPage() {
 
       let res: any;
       try {
-        res = await registerVendorStore(payload);
-      } catch (saErr: any) {
-        console.warn("Direct Server Action failed, falling back to /api/vendor/register:", saErr);
         const apiResponse = await fetch("/api/vendor/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         res = await apiResponse.json();
-      }
-
-      // If Server Action returned an error related to action not found, also retry via API route
-      if (!res?.success && (res?.error?.includes("Server Action") || res?.error?.includes("failed-to-find"))) {
-        const apiResponse = await fetch("/api/vendor/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        res = await apiResponse.json();
+      } catch (apiErr: any) {
+        console.warn("Direct /api/vendor/register failed, falling back to Server Action:", apiErr);
+        try {
+          res = await registerVendorStore(payload);
+        } catch (saErr: any) {
+          console.error("Both API route and Server Action failed:", saErr);
+          res = { success: false, error: saErr.message || "Failed to register vendor store." };
+        }
       }
 
       if (res.success) {

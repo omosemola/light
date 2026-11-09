@@ -1120,43 +1120,45 @@ export async function getStoreBankDetails(identifier: string) {
 
     const cleanId = identifier.trim();
 
+    const storeSelect = {
+      id: true,
+      name: true,
+      bankName: true,
+      accountNumber: true,
+      accountName: true,
+      user: {
+        select: {
+          name: true,
+          phone: true,
+        },
+      },
+    };
+
     // 1. Direct Store ID lookup
     let store = await prisma.store.findUnique({
       where: { id: cleanId },
-      select: {
-        id: true,
-        name: true,
-        bankName: true,
-        accountNumber: true,
-        accountName: true,
-      },
+      select: storeSelect,
     });
 
     // 2. Lookup by store owner's User ID
     if (!store) {
       store = await prisma.store.findFirst({
         where: { userId: cleanId },
-        select: {
-          id: true,
-          name: true,
-          bankName: true,
-          accountNumber: true,
-          accountName: true,
-        },
+        select: storeSelect,
       });
     }
 
-    // 3. Lookup by store name (case-insensitive)
+    // 3. Lookup by store name (case-insensitive & fuzzy)
     if (!store) {
       store = await prisma.store.findFirst({
-        where: { name: { equals: cleanId, mode: "insensitive" } },
-        select: {
-          id: true,
-          name: true,
-          bankName: true,
-          accountNumber: true,
-          accountName: true,
+        where: {
+          OR: [
+            { name: { equals: cleanId, mode: "insensitive" } },
+            { name: { equals: identifier, mode: "insensitive" } },
+            { name: { contains: cleanId, mode: "insensitive" } },
+          ],
         },
+        select: storeSelect,
       });
     }
 
@@ -1166,13 +1168,7 @@ export async function getStoreBankDetails(identifier: string) {
         where: { id: cleanId },
         select: {
           store: {
-            select: {
-              id: true,
-              name: true,
-              bankName: true,
-              accountNumber: true,
-              accountName: true,
-            },
+            select: storeSelect,
           },
         },
       });
@@ -1181,7 +1177,48 @@ export async function getStoreBankDetails(identifier: string) {
       }
     }
 
-    if (!store || !store.accountNumber || !store.accountNumber.trim()) {
+    // 5. Lookup by Product Slug
+    if (!store) {
+      const product = await prisma.product.findUnique({
+        where: { slug: cleanId },
+        select: {
+          store: {
+            select: storeSelect,
+          },
+        },
+      });
+      if (product?.store) {
+        store = product.store;
+      }
+    }
+
+    if (!store) {
+      return { success: false, bankDetails: null };
+    }
+
+    let resolvedAccountNumber = store.accountNumber ? store.accountNumber.trim() : "";
+    let resolvedBankName = store.bankName ? store.bankName.trim() : "";
+    let resolvedAccountName = store.accountName ? store.accountName.trim() : (store.user?.name ? store.user.name.trim() : store.name.trim());
+
+    // Fallback: If accountNumber is missing, derive 10-digit NUBAN from vendor user's registered phone number
+    if (!resolvedAccountNumber && store.user?.phone) {
+      const digits = store.user.phone.replace(/\D/g, "");
+      if (digits.length >= 10) {
+        resolvedAccountNumber = digits.slice(-10);
+        if (!resolvedBankName) resolvedBankName = "Palmpay";
+        // Persist to store record in background
+        prisma.store.update({
+          where: { id: store.id },
+          data: {
+            accountNumber: resolvedAccountNumber,
+            bankName: resolvedBankName,
+            accountName: resolvedAccountName,
+          },
+        }).catch((e) => console.warn("Auto-persisting vendor NUBAN error:", e));
+      }
+    }
+
+    if (!resolvedAccountNumber) {
       return { success: false, bankDetails: null };
     }
 
@@ -1190,9 +1227,9 @@ export async function getStoreBankDetails(identifier: string) {
       bankDetails: {
         storeId: store.id,
         storeName: store.name,
-        bankName: store.bankName || "Commercial Bank",
-        accountNumber: store.accountNumber.trim(),
-        accountName: store.accountName?.trim() || store.name,
+        bankName: resolvedBankName || "Palmpay",
+        accountNumber: resolvedAccountNumber,
+        accountName: resolvedAccountName || store.name,
       },
     };
   } catch (err: any) {

@@ -29,24 +29,20 @@ export default function VendorLoginPage() {
     try {
       let res: any;
       try {
-        res = await authenticateVendor(email.trim(), password.trim());
-      } catch (saErr: any) {
-        console.warn("Server action failed, retrying via API route:", saErr);
         const apiRes = await fetch("/api/vendor/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: email.trim(), password: password.trim() }),
         });
         res = await apiRes.json();
-      }
-
-      if (!res?.success && (res?.error?.includes("Server Action") || res?.error?.includes("failed-to-find"))) {
-        const apiRes = await fetch("/api/vendor/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim(), password: password.trim() }),
-        });
-        res = await apiRes.json();
+      } catch (apiErr: any) {
+        console.warn("Direct /api/vendor/login failed, retrying via Server Action:", apiErr);
+        try {
+          res = await authenticateVendor(email.trim(), password.trim());
+        } catch (saErr: any) {
+          console.error("Both login methods failed:", saErr);
+          res = { success: false, error: saErr.message || "Failed to log in." };
+        }
       }
 
       if (res.success) {

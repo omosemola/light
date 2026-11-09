@@ -56,30 +56,51 @@ export default function CheckoutPage() {
     accountNumber: string;
     accountName: string;
   } | null>(null);
+  const [isLoadingBank, setIsLoadingBank] = useState(true);
 
   useEffect(() => {
     let active = true;
 
     async function resolveVendorBank() {
+      setIsLoadingBank(true);
       const candidates = [
         vendorId,
         items[0]?.vendorId,
         items[0]?.id, // product ID fallback that resolves store
+        (items[0] as any)?.slug,
         vendorName,
         items[0]?.vendorName,
-      ].filter((c): c is string => Boolean(c && typeof c === "string" && c.trim() && c !== "vendor"));
+      ].filter((c): c is string => Boolean(c && typeof c === "string" && c.trim() && c !== "vendor" && c !== "Campus Merchant"));
 
       if (candidates.length === 0) {
-        if (active) setVendorBankDetails(null);
+        if (active) {
+          setVendorBankDetails(null);
+          setIsLoadingBank(false);
+        }
         return;
       }
 
       for (const candidate of candidates) {
         try {
-          const res = await getStoreBankDetails(candidate);
+          // Fast HTTP API check first
+          let res: any = null;
+          try {
+            const apiRes = await fetch(`/api/store/bank-details?identifier=${encodeURIComponent(candidate)}`);
+            if (apiRes.ok) {
+              res = await apiRes.json();
+            }
+          } catch {
+            // Fall back to server action
+          }
+
+          if (!res || !res.success) {
+            res = await getStoreBankDetails(candidate);
+          }
+
           if (!active) return;
-          if (res.success && res.bankDetails && res.bankDetails.accountNumber) {
+          if (res?.success && res.bankDetails && res.bankDetails.accountNumber) {
             setVendorBankDetails(res.bankDetails);
+            setIsLoadingBank(false);
             return;
           }
         } catch (e) {
@@ -88,6 +109,7 @@ export default function CheckoutPage() {
       }
       if (active) {
         setVendorBankDetails(null);
+        setIsLoadingBank(false);
       }
     }
 
@@ -98,7 +120,7 @@ export default function CheckoutPage() {
     };
   }, [vendorId, items, vendorName]);
 
-  const activeBankName = vendorBankDetails?.bankName || process.env.NEXT_PUBLIC_BANK_NAME || "Opay";
+  const activeBankName = vendorBankDetails?.bankName || process.env.NEXT_PUBLIC_BANK_NAME || "Palmpay";
   const activeAccountNumber = vendorBankDetails?.accountNumber || process.env.NEXT_PUBLIC_ACCOUNT_NUMBER || "6146800590";
   const activeAccountName = vendorBankDetails?.accountName || process.env.NEXT_PUBLIC_ACCOUNT_NAME || "Johnson Tomison Adeniken";
   const isVendorDirectAccount = Boolean(vendorBankDetails?.accountNumber);
@@ -642,14 +664,22 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="py-1">
-                    <span className="font-mono font-black text-2xl sm:text-3xl text-[#1E1B4B] dark:text-white tracking-wider sm:tracking-widest block select-all break-all sm:break-normal">
-                      {activeAccountNumber}
-                    </span>
+                    {isLoadingBank ? (
+                      <div className="h-9 w-48 bg-slate-200 dark:bg-zinc-700 animate-pulse rounded-lg" />
+                    ) : (
+                      <span className="font-mono font-black text-2xl sm:text-3xl text-[#1E1B4B] dark:text-white tracking-wider sm:tracking-widest block select-all break-all sm:break-normal">
+                        {activeAccountNumber}
+                      </span>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-slate-100 dark:border-zinc-700/60 flex items-center justify-between text-xs font-medium text-slate-600 dark:text-zinc-400">
                     <span>Destination Bank:</span>
-                    <strong className="text-slate-900 dark:text-zinc-100 font-extrabold">{activeBankName}</strong>
+                    {isLoadingBank ? (
+                      <div className="h-4 w-20 bg-slate-200 dark:bg-zinc-700 animate-pulse rounded" />
+                    ) : (
+                      <strong className="text-slate-900 dark:text-zinc-100 font-extrabold">{activeBankName}</strong>
+                    )}
                   </div>
                 </div>
 
@@ -681,9 +711,13 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="py-1">
-                    <span className="font-heading font-black text-base sm:text-lg text-[#18181B] dark:text-zinc-100 block break-words leading-snug">
-                      {activeAccountName}
-                    </span>
+                    {isLoadingBank ? (
+                      <div className="h-7 w-44 bg-slate-200 dark:bg-zinc-700 animate-pulse rounded-lg" />
+                    ) : (
+                      <span className="font-heading font-black text-base sm:text-lg text-[#18181B] dark:text-zinc-100 block break-words leading-snug">
+                        {activeAccountName}
+                      </span>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-slate-100 dark:border-zinc-700/60 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
