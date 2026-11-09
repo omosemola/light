@@ -15,70 +15,132 @@ export async function getAdminDashboardData() {
 
   try {
     const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
-      setTimeout(() => resolve({ isTimeout: true }), 25000)
+      setTimeout(() => resolve({ isTimeout: true }), 35000)
     );
 
     const queryPromise = (async () => {
-      const users = await prisma.user.findMany({
-        include: {
-          store: { select: { id: true, name: true } },
-          _count: { select: { orders: true, tickets: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const stores = await prisma.store.findMany({
-        include: {
-          user: { select: { email: true, name: true, phone: true } },
-          _count: { select: { products: true, orders: true, reviews: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const products = await prisma.product.findMany({
-        include: {
-          store: { select: { id: true, name: true } },
-          category: { select: { id: true, name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const recentOrders = await prisma.order.findMany({
-        take: 100,
-        include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
-          store: { select: { id: true, name: true, phone: true } },
-          items: {
-            include: {
-              product: { select: { id: true, name: true, image: true, price: true } },
+      // Execute all dashboard queries in parallel with lightweight projections
+      const [
+        users,
+        stores,
+        products,
+        recentOrders,
+        tickets,
+        totalOrdersCount,
+        gmvAggregate,
+        categories,
+      ] = await Promise.all([
+        prisma.user.findMany({
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            createdAt: true,
+            store: { select: { id: true, name: true } },
+            _count: { select: { orders: true, tickets: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.store.findMany({
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            logo: true,
+            coverImage: true,
+            isOpen: true,
+            isVerified: true,
+            isService: true,
+            category: true,
+            serviceSubcategory: true,
+            phone: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            createdAt: true,
+            updatedAt: true,
+            user: { select: { id: true, email: true, name: true, phone: true } },
+            _count: { select: { products: true, orders: true, reviews: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.product.findMany({
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            price: true,
+            image: true,
+            isAvailable: true,
+            createdAt: true,
+            categoryId: true,
+            category: { select: { id: true, name: true } },
+            store: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.order.findMany({
+          take: 100,
+          select: {
+            id: true,
+            totalAmount: true,
+            status: true,
+            deliveryLocation: true,
+            deliveryFee: true,
+            serviceFee: true,
+            deliveryInstructions: true,
+            paymentReference: true,
+            createdAt: true,
+            updatedAt: true,
+            user: { select: { id: true, name: true, email: true, phone: true } },
+            store: { select: { id: true, name: true, phone: true } },
+            items: {
+              select: {
+                id: true,
+                quantity: true,
+                price: true,
+                product: { select: { id: true, name: true, image: true, price: true } },
+              },
             },
           },
-        },
-        orderBy: { createdAt: "desc" },
-      });
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.supportTicket.findMany({
+          select: {
+            id: true,
+            subject: true,
+            category: true,
+            message: true,
+            status: true,
+            adminReply: true,
+            createdAt: true,
+            updatedAt: true,
+            orderId: true,
+            user: { select: { name: true, email: true } },
+            order: { select: { id: true, totalAmount: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.order.count(),
+        prisma.order.aggregate({
+          _sum: { totalAmount: true },
+          where: { status: { not: OrderStatus.CANCELLED } },
+        }),
+        prisma.category.findMany({
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      ]);
 
-      const tickets = await prisma.supportTicket.findMany({
-        include: {
-          user: { select: { name: true, email: true } },
-          order: { select: { id: true, totalAmount: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const totalOrdersCount = await prisma.order.count();
-
-      const gmvAggregate = await prisma.order.aggregate({
-        _sum: { totalAmount: true },
-        where: { status: { not: OrderStatus.CANCELLED } },
-      });
       const totalGMV = gmvAggregate._sum.totalAmount || 0;
-
       const finalStores = stores.length > 0 ? stores : DEFAULT_FALLBACK_STORES;
       const finalProducts = products.length > 0 ? products : DEFAULT_FALLBACK_PRODUCTS;
 
       return {
         metrics: {
-          totalUsers: users.length || 5,
+          totalUsers: users.length || 0,
           totalStores: finalStores.length,
           totalOrders: totalOrdersCount,
           totalProducts: finalProducts.length,
@@ -90,7 +152,7 @@ export async function getAdminDashboardData() {
         recentOrders,
         tickets,
         products: finalProducts,
-        categories: [],
+        categories,
       };
     })();
 
@@ -101,10 +163,10 @@ export async function getAdminDashboardData() {
       return {
         success: true,
         metrics: {
-          totalUsers: 5,
-          totalStores: 1,
+          totalUsers: 0,
+          totalStores: 0,
           totalOrders: 0,
-          totalProducts: 2,
+          totalProducts: 0,
           totalGMV: 0,
           openTicketsCount: 0,
         },
@@ -124,23 +186,80 @@ export async function getAdminDashboardData() {
   } catch (error: any) {
     console.error("Error fetching admin dashboard data:", error);
     return {
-      success: true,
-      metrics: {
-        totalUsers: 5,
-        totalStores: 1,
-        totalOrders: 0,
-        totalProducts: 2,
-        totalGMV: 0,
-        openTicketsCount: 0,
-      },
+      success: false,
+      error: error.message || "Failed to load dashboard data",
       stores: DEFAULT_FALLBACK_STORES,
       users: [],
       recentOrders: [],
       tickets: [],
       products: DEFAULT_FALLBACK_PRODUCTS,
       categories: [],
-      error: error.message || "Loaded in resilience mode",
     };
+  }
+}
+
+export async function updateProductCategoryAdmin(productId: string, categoryIdOrName: string) {
+  try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") {
+      return { success: false, error: "Unauthorized. Admin session required." };
+    }
+
+    if (!productId || !categoryIdOrName || !categoryIdOrName.trim()) {
+      return { success: false, error: "Missing product ID or category name." };
+    }
+
+    const cleanCat = categoryIdOrName.trim();
+
+    // 1. Find or create the category in the database
+    let category = await prisma.category.findFirst({
+      where: {
+        OR: [
+          { id: cleanCat },
+          { name: { equals: cleanCat, mode: "insensitive" } },
+        ],
+      },
+    });
+
+    if (!category) {
+      const slug = cleanCat
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      category = await prisma.category.create({
+        data: {
+          id: slug || `cat-${Date.now()}`,
+          name: cleanCat,
+        },
+      });
+    }
+
+    // 2. Update the product's categoryId
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: { categoryId: category.id },
+      include: {
+        category: { select: { id: true, name: true } },
+        store: { select: { id: true, name: true } },
+      },
+    });
+
+    // 3. Clear cache and revalidate all relevant paths across the marketplace
+    await clearMarketplaceCache({ productId, categorySlug: category.id, storeId: updatedProduct.storeId });
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath(`/category/${category.id}`);
+    revalidatePath(`/product/${updatedProduct.slug || updatedProduct.id}`);
+
+    return {
+      success: true,
+      product: updatedProduct,
+      category: { id: category.id, name: category.name },
+    };
+  } catch (error: any) {
+    console.error("Error updating product category as admin:", error);
+    return { success: false, error: error.message || "Failed to update category" };
   }
 }
 

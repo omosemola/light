@@ -47,6 +47,7 @@ import {
   logoutAdmin,
   updateOrderStatusAdmin,
   toggleProductAvailabilityAdmin,
+  updateProductCategoryAdmin,
   verifyStoreAdmin,
   toggleStoreStatusAdmin,
   deleteStoreAdmin,
@@ -91,10 +92,15 @@ export default function AdminDashboardPage() {
   const [roleUpdating, setRoleUpdating] = useState<string | null>(null);
   const [orderUpdating, setOrderUpdating] = useState<string | null>(null);
   const [productUpdating, setProductUpdating] = useState<string | null>(null);
+  const [productCategoryUpdating, setProductCategoryUpdating] = useState<string | null>(null);
+  const [customCategoryModalProduct, setCustomCategoryModalProduct] = useState<any>(null);
+  const [customCategoryName, setCustomCategoryName] = useState("");
+  const [isSavingCustomCategory, setIsSavingCustomCategory] = useState(false);
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>("ALL");
   const [toastMessage, setToastMessage] = useState("");
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showToast = (msg: string, durationMs = 1000) => {
+  const showToast = (msg: string, durationMs = 1200) => {
     setToastMessage(msg);
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
@@ -125,7 +131,21 @@ export default function AdminDashboardPage() {
   const fetchAdminData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const res = await getAdminDashboardData();
+      let res: any = null;
+      // Fast HTTP API fetch first
+      try {
+        const apiRes = await fetch("/api/admin/dashboard");
+        if (apiRes.ok) {
+          res = await apiRes.json();
+        }
+      } catch {
+        // Fall back to server action
+      }
+
+      if (!res || !res.success) {
+        res = await getAdminDashboardData();
+      }
+
       if (res && res.success) {
         setAdminData(res);
         try {
@@ -162,38 +182,32 @@ export default function AdminDashboardPage() {
     } catch {}
 
     async function verifyAndLoadAdmin() {
+      // Immediate data fetch without waiting for auth check roundtrip
+      fetchAdminData();
+
       try {
-        const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
-
-        if (hasAdminFlag) {
-          await fetchAdminData();
-          return;
-        }
-
-        // Check server session cookie
         const session = await checkAdminSession();
         if (session && session.isAuthenticated && session.user) {
           if (typeof window !== "undefined") {
             sessionStorage.setItem("lightson_admin_auth", "true");
           }
-          await fetchAdminData();
-          return;
+        } else {
+          const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
+          if (!hasAdminFlag) {
+            window.location.href = "/admin/login";
+          }
         }
-
-        // Not authenticated -> Redirect to login
-        window.location.href = "/admin/login";
       } catch (err) {
         console.error("Admin verification error:", err);
-        await fetchAdminData();
       }
     }
 
     verifyAndLoadAdmin();
 
-    // Periodic synchronization to keep GMV, live orders, stores, and tickets synced with vendor portal in real-time
+    // Periodic synchronization to keep GMV, live orders, stores, and tickets synced
     const syncInterval = setInterval(() => {
       fetchAdminData(false);
-    }, 15000);
+    }, 30000);
 
     const handleFocus = () => {
       fetchAdminData(false);
@@ -502,16 +516,172 @@ export default function AdminDashboardPage() {
     return `/vendor/${storeId}`;
   };
 
+  // Standard marketplace categories
+  const STANDARD_CATEGORIES = useMemo(() => [
+    "Campus Food & Meals",
+    "Cafeteria & Snacks Combos",
+    "Provisions & Hostel Groceries",
+    "Tech, Gadgets & Accessories",
+    "Fashion, Wears & Campus Merch",
+    "Automobiles, Cars & Bikes",
+    "Fragrances, Perfumes & Roll-ons",
+    "Interior Decorations & Asthetics",
+    "Stationery, Books & Study Items",
+    "Beauty, Skincare & Personal Care",
+    "Jewelries",
+    "Care",
+    "Pastries",
+    "Wears",
+    "Accessories",
+    "Drinks",
+    "Electronics",
+    "Food",
+    "Gadgets",
+    "Groceries",
+    "Services: Laundry & Dry Cleaning",
+    "Services: Medicals & Pharmacy",
+    "Services: Printing, Binding & Graphic Design",
+    "Services: Hair Styling, Barbing & Grooming",
+    "Services: Tech, Laptop & Phone Repair",
+    "Services: Room Cleaning, Fumigation & Errands",
+    "Services: Tailoring & Fashion Alterations",
+    "Services: Tutorials & Academic Coaching",
+    "Services: Photography & Video Media",
+    "Services: Other Campus Services",
+  ], []);
+
+  // Merge categories from DB + standard categories
+  const allAvailableCategories = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cat of STANDARD_CATEGORIES) {
+      map.set(cat.toLowerCase().trim(), cat.trim());
+    }
+    if (adminData?.categories && Array.isArray(adminData.categories)) {
+      for (const cat of adminData.categories) {
+        if (cat.name && cat.name.trim()) {
+          map.set(cat.name.toLowerCase().trim(), cat.name.trim());
+        }
+      }
+    }
+    if (adminData?.products && Array.isArray(adminData.products)) {
+      for (const prod of adminData.products) {
+        if (prod.category?.name && prod.category.name.trim()) {
+          map.set(prod.category.name.toLowerCase().trim(), prod.category.name.trim());
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
+  }, [adminData?.categories, adminData?.products, STANDARD_CATEGORIES]);
+
+  const popularProductCategories = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of adminData?.products || []) {
+      const name = p.category?.name || "Uncategorized";
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [adminData?.products]);
+
+  const handleUpdateProductCategory = async (productId: string, newCategoryName: string) => {
+    if (newCategoryName === "__CUSTOM__") {
+      const prod = adminData.products?.find((p: any) => p.id === productId);
+      if (prod) {
+        setCustomCategoryModalProduct(prod);
+        setCustomCategoryName(prod.category?.name && prod.category.name !== "Uncategorized" ? prod.category.name : "");
+      }
+      return;
+    }
+
+    if (!newCategoryName || !newCategoryName.trim()) return;
+
+    const trimmedCat = newCategoryName.trim();
+    setProductCategoryUpdating(productId);
+
+    // Optimistic UI update
+    setAdminData((prev: any) => ({
+      ...prev,
+      products: prev.products?.map((p: any) =>
+        p.id === productId
+          ? {
+              ...p,
+              category: { ...(p.category || {}), name: trimmedCat },
+            }
+          : p
+      ),
+    }));
+
+    try {
+      let res: any = null;
+      try {
+        const apiRes = await fetch("/api/admin/product/category", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, categoryIdOrName: trimmedCat }),
+        });
+        if (apiRes.ok) {
+          res = await apiRes.json();
+        }
+      } catch {
+        // Fall back to server action
+      }
+
+      if (!res || !res.success) {
+        res = await updateProductCategoryAdmin(productId, trimmedCat);
+      }
+
+      if (res.success) {
+        showToast(`✓ Category updated to "${trimmedCat}"!`);
+        if (res.product) {
+          setAdminData((prev: any) => ({
+            ...prev,
+            products: prev.products?.map((p: any) =>
+              p.id === productId ? { ...p, ...res.product } : p
+            ),
+          }));
+        }
+      } else {
+        showToast(res?.error || "Failed to update category");
+        fetchAdminData();
+      }
+    } catch (e: any) {
+      console.error("Error updating product category:", e);
+      showToast("Network error updating product category");
+      fetchAdminData();
+    } finally {
+      setProductCategoryUpdating(null);
+    }
+  };
+
+  const handleSaveCustomCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customCategoryModalProduct || !customCategoryName.trim()) return;
+
+    setIsSavingCustomCategory(true);
+    await handleUpdateProductCategory(customCategoryModalProduct.id, customCategoryName.trim());
+    setIsSavingCustomCategory(false);
+    setCustomCategoryModalProduct(null);
+    setCustomCategoryName("");
+  };
+
   // Filtered queries
   const filteredProducts = useMemo(() => {
-    const list = adminData?.products || [];
+    let list = adminData?.products || [];
+    if (productCategoryFilter !== "ALL") {
+      list = list.filter((p: any) => {
+        const catName = p.category?.name || "Uncategorized";
+        return catName.toLowerCase() === productCategoryFilter.toLowerCase();
+      });
+    }
     if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
     return list.filter((p: any) => 
       p.name?.toLowerCase().includes(q) || 
-      p.store?.name?.toLowerCase().includes(q)
+      p.store?.name?.toLowerCase().includes(q) ||
+      p.category?.name?.toLowerCase().includes(q)
     );
-  }, [adminData?.products, searchQuery]);
+  }, [adminData?.products, productCategoryFilter, searchQuery]);
 
   const filteredOrders = useMemo(() => {
     let list = adminData?.recentOrders || [];
@@ -897,81 +1067,189 @@ export default function AdminDashboardPage() {
 
         {/* PRODUCTS TAB */}
         {activeTab === "products" && (
-          <div className={`border rounded-2xl overflow-hidden shadow-sm ${
-            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
-          }`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className={`uppercase tracking-wider font-extrabold font-heading ${
-                  isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
-                }`}>
-                  <tr>
-                    <th className="p-4">Product Name</th>
-                    <th className="p-4">Vendor Store</th>
-                    <th className="p-4">Price</th>
-                    <th className="p-4">Live Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                  {filteredProducts?.map((prod: any) => (
-                    <tr key={prod.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-zinc-800 overflow-hidden relative border border-slate-200 dark:border-zinc-700 shrink-0">
-                            {prod.image ? (() => {
-                              const safeProdImg = getSafeImageUrl(prod.image);
-                              return (
-                                <Image
-                                  src={safeProdImg}
-                                  alt={prod.name}
-                                  fill
-                                  unoptimized={safeProdImg.startsWith("data:")}
-                                  className="object-cover"
-                                />
-                              );
-                            })() : (
-                              <Utensils size={18} className="m-auto text-indigo-500" />
-                            )}
-                          </div>
-                          <div>
-                            <div className={`font-bold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>{prod.name}</div>
-                            <div className="text-[11px] text-zinc-400 font-mono">ID: {prod.id}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
-                        {prod.store?.name || "Campus Store"}
-                      </td>
-                      <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-amber-400" : "text-[#312E81]"}`}>
-                        ₦{prod.price?.toLocaleString()}
-                      </td>
-                      <td className="p-4">
-                        <button
-                          disabled={productUpdating === prod.id}
-                          onClick={() => handleToggleProductAvailability(prod.id, prod.isAvailable !== false)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
-                            prod.isAvailable !== false
-                              ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
-                              : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
-                          }`}
-                        >
-                          {prod.isAvailable !== false ? "✓ IN STOCK" : "✕ OUT OF STOCK"}
-                        </button>
-                      </td>
-                      <td className="p-4 text-right">
-                        <Link
-                          href={`/product/${prod.slug || prod.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
-                        >
-                          <span>View on Site</span>
-                          <ExternalLink size={12} />
-                        </Link>
-                      </td>
+          <div className="space-y-4">
+            {/* CATEGORY FILTER BAR */}
+            <div className={`p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 ${
+              isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white border-slate-200"
+            }`}>
+              <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 scrollbar-none">
+                <span className="text-[10px] font-heading font-extrabold uppercase text-slate-400 dark:text-zinc-500 shrink-0 flex items-center gap-1 mr-1">
+                  <Tag size={12} /> Categories:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setProductCategoryFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer border ${
+                    productCategoryFilter === "ALL"
+                      ? "bg-[#312E81] text-white border-indigo-600 shadow-xs"
+                      : isDark
+                      ? "bg-zinc-950 text-zinc-400 border-zinc-800 hover:bg-zinc-800"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  All Products ({adminData?.products?.length || 0})
+                </button>
+                {popularProductCategories.map((cat: any) => (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    onClick={() => setProductCategoryFilter(cat.name)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer border flex items-center gap-1.5 ${
+                      productCategoryFilter.toLowerCase() === cat.name.toLowerCase()
+                        ? "bg-[#312E81] text-white border-indigo-600 shadow-xs"
+                        : isDark
+                        ? "bg-zinc-950 text-zinc-400 border-zinc-800 hover:bg-zinc-800"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                      productCategoryFilter.toLowerCase() === cat.name.toLowerCase()
+                        ? "bg-white/20 text-white"
+                        : isDark ? "bg-zinc-800 text-zinc-400" : "bg-slate-200 text-slate-600"
+                    }`}>
+                      {cat.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 shrink-0">
+                Showing <strong className="text-zinc-900 dark:text-white font-extrabold">{filteredProducts.length}</strong> of {adminData?.products?.length || 0} products
+              </div>
+            </div>
+
+            <div className={`border rounded-2xl overflow-hidden shadow-sm ${
+              isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
+            }`}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className={`uppercase tracking-wider font-extrabold font-heading ${
+                    isDark ? "bg-zinc-950 text-zinc-400" : "bg-slate-100 text-slate-600"
+                  }`}>
+                    <tr>
+                      <th className="p-4">Product Name</th>
+                      <th className="p-4">Vendor Store</th>
+                      <th className="p-4">Marketplace Category</th>
+                      <th className="p-4">Price</th>
+                      <th className="p-4">Live Status</th>
+                      <th className="p-4 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
+                    {filteredProducts?.map((prod: any) => {
+                      const currentCatName = prod.category?.name || "Uncategorized";
+                      const isUpdatingThisCat = productCategoryUpdating === prod.id;
+
+                      return (
+                        <tr key={prod.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-zinc-800 overflow-hidden relative border border-slate-200 dark:border-zinc-700 shrink-0">
+                                {prod.image ? (() => {
+                                  const safeProdImg = getSafeImageUrl(prod.image);
+                                  return (
+                                    <Image
+                                      src={safeProdImg}
+                                      alt={prod.name}
+                                      fill
+                                      unoptimized={safeProdImg.startsWith("data:")}
+                                      className="object-cover"
+                                    />
+                                  );
+                                })() : (
+                                  <Utensils size={18} className="m-auto text-indigo-500" />
+                                )}
+                              </div>
+                              <div>
+                                <div className={`font-bold font-heading text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>{prod.name}</div>
+                                <div className="text-[11px] text-zinc-400 font-mono">ID: {prod.id}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className={`p-4 font-semibold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
+                            {prod.store?.name || "Campus Store"}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1.5 min-w-[190px] max-w-[240px]">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/70 text-[#312E81] dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70 truncate max-w-[170px]">
+                                  <Tag size={10} className="shrink-0 text-indigo-500" />
+                                  <span className="truncate">{currentCatName}</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  title="Enter Custom Category Name"
+                                  onClick={() => {
+                                    setCustomCategoryModalProduct(prod);
+                                    setCustomCategoryName(currentCatName === "Uncategorized" ? "" : currentCatName);
+                                  }}
+                                  className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold shrink-0 cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+
+                              <div className="relative">
+                                <select
+                                  disabled={isUpdatingThisCat}
+                                  value={currentCatName}
+                                  onChange={(e) => handleUpdateProductCategory(prod.id, e.target.value)}
+                                  className={`w-full text-[11px] font-medium py-1 px-2 pr-6 rounded-lg border cursor-pointer outline-none transition disabled:opacity-50 ${
+                                    isDark 
+                                      ? "bg-zinc-800/90 border-zinc-700 text-zinc-200 hover:border-zinc-600 focus:border-indigo-500" 
+                                      : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 focus:border-indigo-500"
+                                  }`}
+                                >
+                                  <option value={currentCatName} disabled>Current: {currentCatName}</option>
+                                  <option value="__CUSTOM__">✏️ + Enter Custom Category...</option>
+                                  <optgroup label="All Available Categories">
+                                    {allAvailableCategories.map((cName) => (
+                                      <option key={cName} value={cName}>
+                                        {cName}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                </select>
+                                {isUpdatingThisCat && (
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                    <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className={`p-4 font-extrabold font-heading text-sm ${isDark ? "text-amber-400" : "text-[#312E81]"}`}>
+                            ₦{prod.price?.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            <button
+                              disabled={productUpdating === prod.id}
+                              onClick={() => handleToggleProductAvailability(prod.id, prod.isAvailable !== false)}
+                              className={`px-3 py-1 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
+                                prod.isAvailable !== false
+                                  ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
+                                  : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
+                              }`}
+                            >
+                              {prod.isAvailable !== false ? "✓ IN STOCK" : "✕ OUT OF STOCK"}
+                            </button>
+                          </td>
+                          <td className="p-4 text-right">
+                            <Link
+                              href={`/product/${prod.slug || prod.id}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
+                            >
+                              <span>View on Site</span>
+                              <ExternalLink size={12} />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -2067,6 +2345,117 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* EDIT / CUSTOM PRODUCT CATEGORY MODAL */}
+      <AnimatePresence>
+        {customCategoryModalProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`max-w-md w-full rounded-3xl p-6 shadow-2xl border ${
+                isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-zinc-900"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center border border-indigo-500/20">
+                    <Tag size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-extrabold text-base">Edit Product Category</h3>
+                    <p className="text-[11px] text-zinc-400 truncate max-w-[240px]">
+                      {customCategoryModalProduct.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomCategoryModalProduct(null);
+                    setCustomCategoryName("");
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveCustomCategory} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-heading font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Category Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customCategoryName}
+                    onChange={(e) => setCustomCategoryName(e.target.value)}
+                    placeholder="e.g. Jewelries, Automobiles, Fragrances..."
+                    required
+                    autoFocus
+                    className={`w-full h-11 px-3.5 rounded-xl text-xs font-semibold border outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                      isDark
+                        ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500"
+                        : "bg-slate-50 border-slate-200 text-zinc-900 placeholder-slate-400"
+                    }`}
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1.5">
+                    Assign any category to this product. The marketplace catalog, filters, search, and database will synchronize immediately.
+                  </p>
+                </div>
+
+                {/* Quick suggestions pills */}
+                <div>
+                  <span className="block text-[10px] font-heading font-bold text-slate-400 mb-1.5">
+                    Select Quick Category:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {allAvailableCategories.slice(0, 15).map((catName) => (
+                      <button
+                        key={catName}
+                        type="button"
+                        onClick={() => setCustomCategoryName(catName)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+                          customCategoryName.toLowerCase() === catName.toLowerCase()
+                            ? "bg-[#312E81] text-white border-indigo-600"
+                            : isDark
+                            ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
+                            : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        {catName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSavingCustomCategory || !customCategoryName.trim()}
+                    className="flex-1 h-11 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>{isSavingCustomCategory ? "Synchronizing DB..." : "Save Category"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomCategoryModalProduct(null);
+                      setCustomCategoryName("");
+                    }}
+                    className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all cursor-pointer ${
+                      isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

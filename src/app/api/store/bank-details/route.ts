@@ -23,3 +23,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: false, bankDetails: null, error: err.message }, { status: 500 });
   }
 }
+
