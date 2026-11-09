@@ -6,9 +6,28 @@ import { IconProps } from "./CustomHomeIcon";
 export function CustomProfileIcon({
   size = 22,
   strokeWidth = 2,
+  active = false,
   className,
   ...props
 }: IconProps) {
+  if (active) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+        {...props}
+      >
+        {/* Head */}
+        <circle cx="12" cy="7.5" r="3.5" />
+        {/* Shoulder Base */}
+        <path d="M5.2 19.5c.6-3.6 3.4-5.5 6.8-5.5s6.2 1.9 6.8 5.5c-1.8.8-4.2 1.3-6.8 1.3s-5-.5-6.8-1.3Z" />
+      </svg>
+    );
+  }
+
   return (
     <svg
       width={size}
@@ -22,15 +41,14 @@ export function CustomProfileIcon({
       className={className}
       {...props}
     >
-      {/* Outer Head Circle */}
-      <circle cx="12" cy="8" r="5" strokeWidth={strokeWidth} />
+      {/* Clean Head Circle */}
+      <circle cx="12" cy="7.5" r="3.4" strokeWidth={strokeWidth} />
       
-      {/* Inner Head Reflection Glint Arc */}
-      <path d="M 9.2 5.5 A 3.2 3.2 0 0 1 11.6 4.3" strokeWidth={strokeWidth * 0.85} />
-      <circle cx="9" cy="9" r="0.4" fill="currentColor" stroke="none" />
-
-      {/* Smooth Curved Shoulder Base */}
-      <path d="M 4 20.5 C 4 15.8, 7.5 13.8, 12 13.8 C 16.5 13.8, 20 15.8, 20 20.5" strokeWidth={strokeWidth} />
+      {/* Smooth Curved Shoulder Arc */}
+      <path
+        d="M5.5 19.5c.6-3.2 3.2-5.5 6.5-5.5s5.9 2.3 6.5 5.5"
+        strokeWidth={strokeWidth}
+      />
     </svg>
   );
 }

@@ -263,6 +263,114 @@ export async function updateProductCategoryAdmin(productId: string, categoryIdOr
   }
 }
 
+export async function updateStoreCategoryAdmin(storeId: string, categoryName: string) {
+  try {
+    const cookieStore = await cookies();
+    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") {
+      return { success: false, error: "Unauthorized. Admin session required." };
+    }
+
+    if (!storeId || !categoryName || !categoryName.trim()) {
+      return { success: false, error: "Missing store ID or category name." };
+    }
+
+    const cleanCat = categoryName.trim();
+    const lower = cleanCat.toLowerCase();
+
+    const isService =
+      lower === "services" ||
+      lower.startsWith("service") ||
+      lower.includes("service") ||
+      lower.includes("laundry") ||
+      lower.includes("medical") ||
+      lower.includes("pharmacy") ||
+      lower.includes("repair") ||
+      lower.includes("cleaning") ||
+      lower.includes("errand") ||
+      lower.includes("styling") ||
+      lower.includes("barbing") ||
+      lower.includes("print") ||
+      lower.includes("tailor") ||
+      lower.includes("tutor") ||
+      lower.includes("photo");
+
+    const serviceSubcategory = isService
+      ? cleanCat.replace(/^Services:\s*/i, "").trim() || "Campus Services"
+      : null;
+
+    // Update the store record in database
+    const updatedStore = await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        isService,
+        category: isService ? "Services" : cleanCat,
+        serviceSubcategory,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        logo: true,
+        coverImage: true,
+        isOpen: true,
+        isVerified: true,
+        isService: true,
+        category: true,
+        serviceSubcategory: true,
+        phone: true,
+        bankName: true,
+        accountNumber: true,
+        accountName: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, email: true, name: true, phone: true } },
+        _count: { select: { products: true, orders: true, reviews: true } },
+      },
+    });
+
+    // Also ensure the category exists in prisma.category if non-service
+    if (!isService) {
+      const existingCat = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { id: cleanCat },
+            { name: { equals: cleanCat, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (!existingCat) {
+        const slug = cleanCat
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        await prisma.category.create({
+          data: {
+            id: slug || `cat-${Date.now()}`,
+            name: cleanCat,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // Clear cache and revalidate all relevant paths across the platform
+    await clearMarketplaceCache({ storeId });
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/vendor/dashboard");
+    revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath("/category/services");
+    revalidatePath(`/vendor/${storeId}`);
+
+    return {
+      success: true,
+      store: updatedStore,
+    };
+  } catch (error: any) {
+    console.error("Error updating store category as admin:", error);
+    return { success: false, error: error.message || "Failed to update store category" };
+  }
+}
+
 export async function updateOrderStatusAdmin(orderId: string, status: any) {
   try {
     const cookieStore = await cookies();

@@ -37,7 +37,7 @@ export function MainContainer({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/admin");
 
   return (
-    <main className={`flex-1 ${isNoNav ? "pb-0" : "pb-20 md:pb-0"}`}>
+    <main className={`flex-1 ${isNoNav ? "pb-0" : "pb-24 md:pb-0"}`}>
       {children}
     </main>
   );

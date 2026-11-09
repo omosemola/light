@@ -1,25 +1,43 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { 
-  ArrowLeft, 
-  Search as SearchIcon, 
-  SlidersHorizontal, 
-  X, 
-  Store, 
-  Clock, 
-  Star, 
+import {
+  ArrowLeft,
+  Search as SearchIcon,
+  SlidersHorizontal,
+  X,
+  Store,
+  Clock,
+  Star,
   RotateCcw,
   Check,
   Shuffle,
   ChevronLeft,
   ChevronRight,
-  Briefcase
+  Briefcase,
+  Compass,
+  Utensils,
+  Cake,
+  Cookie,
+  Coffee,
+  ShoppingBag,
+  Shirt,
+  SprayCan,
+  Car,
+  Palette,
+  Smartphone,
+  Flame,
+  Zap,
+  ShieldCheck,
+  ArrowUpRight,
+  TrendingUp,
+  CheckCircle2,
+  Tag,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
@@ -48,24 +66,57 @@ interface Product {
   reviewsCount?: number;
 }
 
-const CATEGORY_OPTIONS = ["All", "Services", "Food", "Pastries", "Snacks", "Drinks", "Groceries", "Fashion", "Fragrances", "Automobile", "Decorations", "Tech & Gadgets"];
-const POPULAR_SUGGESTIONS = ["Services", "Small Chops", "Pastries", "Snacks", "Drinks", "Meals"];
+const CATEGORY_CONFIG = [
+  { name: "All", icon: Compass },
+  { name: "Services", icon: Briefcase },
+  { name: "Food", icon: Utensils },
+  { name: "Pastries", icon: Cake },
+  { name: "Snacks", icon: Cookie },
+  { name: "Drinks", icon: Coffee },
+  { name: "Groceries", icon: ShoppingBag },
+  { name: "Fashion", icon: Shirt },
+  { name: "Fragrances", icon: SprayCan },
+  { name: "Automobile", icon: Car },
+  { name: "Decorations", icon: Palette },
+  { name: "Tech & Gadgets", icon: Smartphone },
+];
+
+const CATEGORY_OPTIONS = CATEGORY_CONFIG.map((c) => c.name);
+
+const POPULAR_SUGGESTIONS = [
+  "Services",
+  "Small Chops",
+  "Pastries",
+  "Snacks",
+  "Drinks",
+  "Meals",
+  "Perfumes",
+  "Gadgets",
+];
 
 interface SearchClientProps {
   initialCatalog?: any[];
   initialStores?: any[];
 }
 
-export default function SearchClient({ initialCatalog = [], initialStores = [] }: SearchClientProps) {
+export default function SearchClient({
+  initialCatalog = [],
+  initialStores = [],
+}: SearchClientProps) {
   const router = useRouter();
   const storesSwipe = useSwipeScroll<HTMLDivElement>();
   const categoryPillsSwipe = useSwipeScroll<HTMLDivElement>();
+  const quickFiltersSwipe = useSwipeScroll<HTMLDivElement>();
 
   const [isMounted, setIsMounted] = useState(false);
   const [randomSeed, setRandomSeed] = useState<number>(0);
+  const [shuffleSpinCount, setShuffleSpinCount] = useState<number>(0);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const [query, setQuery] = useState("");
-  const [masterCatalog, setMasterCatalog] = useState<Product[]>(() => initialCatalog.map(mapProduct));
+  const [masterCatalog, setMasterCatalog] = useState<Product[]>(() =>
+    initialCatalog.map(mapProduct)
+  );
   const [serverSearchResults, setServerSearchResults] = useState<Product[] | null>(null);
   const [stores, setStores] = useState<any[]>(initialStores);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +132,7 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
-  const { addItem, confirmAndReplaceCart } = useCartStore();
+  const { confirmAndReplaceCart } = useCartStore();
 
   function mapProduct(p: any): Product {
     return {
@@ -198,30 +249,141 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     if (p === s || p.includes(s) || s.includes(p)) return true;
 
     // Campus smart category aliases
-    if (s === "services" && (
-      p.includes("service") ||
-      p.includes("medic") ||
-      p.includes("pharmacy") ||
-      p.includes("health") ||
-      p.includes("drug") ||
-      p.includes("laundr") ||
-      p.includes("wash") ||
-      p.includes("dry clean") ||
-      p.includes("clean") ||
-      p.includes("iron") ||
-      p.includes("errand")
-    )) return true;
-    if (s === "medical" && (p.includes("medic") || p.includes("pharm") || p.includes("health") || p.includes("drug") || p.includes("clinic"))) return true;
-    if (s === "laundry" && (p.includes("laundr") || p.includes("wash") || p.includes("dry clean") || p.includes("iron") || p.includes("clean"))) return true;
-    if (s === "food" && (p.includes("pastr") || p.includes("snack") || p.includes("meal") || p.includes("food") || p.includes("bakery"))) return true;
-    if (s === "pastries" && (p.includes("pastr") || p.includes("snack") || p.includes("bakery") || p.includes("bread") || p.includes("roll"))) return true;
-    if (s === "snacks" && (p.includes("snack") || p.includes("pastr") || p.includes("pie") || p.includes("roll") || p.includes("chops"))) return true;
-    if (s === "drinks" && (p.includes("drink") || p.includes("juice") || p.includes("beverage") || p.includes("zobo") || p.includes("shake") || p.includes("cooler"))) return true;
-    if ((s === "fashion" || s === "wears") && (p.includes("wear") || p.includes("cloth") || p.includes("hoodie") || p.includes("shirt") || p.includes("pant") || p.includes("accessor") || p.includes("bag"))) return true;
-    if ((s === "automobile" || s === "cars" || s === "bikes") && (p.includes("car") || p.includes("bike") || p.includes("bicycl") || p.includes("auto") || p.includes("motor") || p.includes("ride") || p.includes("vehicl"))) return true;
-    if ((s === "fragrances" || s === "perfumes") && (p.includes("fragran") || p.includes("perfum") || p.includes("roll on") || p.includes("roll-on") || p.includes("scent") || p.includes("cologn") || p.includes("deodor") || p.includes("mist") || p.includes("body spray") || p.includes("oil"))) return true;
-    if ((s === "decorations" || s.includes("decor") || s.includes("interior") || s.includes("asthetic") || s.includes("aesthetic")) && (p.includes("decor") || p.includes("interior") || p.includes("asthetic") || p.includes("aesthetic") || p.includes("art") || p.includes("frame") || p.includes("light") || p.includes("led") || p.includes("lamp") || p.includes("poster") || p.includes("cushion") || p.includes("rug") || p.includes("vase") || p.includes("plant") || p.includes("mirror") || p.includes("clock"))) return true;
-    if (s === "tech & gadgets" && (p.includes("gadget") || p.includes("electr") || p.includes("tech") || p.includes("phone"))) return true;
+    if (
+      s === "services" &&
+      (p.includes("service") ||
+        p.includes("medic") ||
+        p.includes("pharmacy") ||
+        p.includes("health") ||
+        p.includes("drug") ||
+        p.includes("laundr") ||
+        p.includes("wash") ||
+        p.includes("dry clean") ||
+        p.includes("clean") ||
+        p.includes("iron") ||
+        p.includes("errand"))
+    )
+      return true;
+    if (
+      s === "medical" &&
+      (p.includes("medic") ||
+        p.includes("pharm") ||
+        p.includes("health") ||
+        p.includes("drug") ||
+        p.includes("clinic"))
+    )
+      return true;
+    if (
+      s === "laundry" &&
+      (p.includes("laundr") ||
+        p.includes("wash") ||
+        p.includes("dry clean") ||
+        p.includes("iron") ||
+        p.includes("clean"))
+    )
+      return true;
+    if (
+      s === "food" &&
+      (p.includes("pastr") ||
+        p.includes("snack") ||
+        p.includes("meal") ||
+        p.includes("food") ||
+        p.includes("bakery"))
+    )
+      return true;
+    if (
+      s === "pastries" &&
+      (p.includes("pastr") ||
+        p.includes("snack") ||
+        p.includes("bakery") ||
+        p.includes("bread") ||
+        p.includes("roll"))
+    )
+      return true;
+    if (
+      s === "snacks" &&
+      (p.includes("snack") ||
+        p.includes("pastr") ||
+        p.includes("pie") ||
+        p.includes("roll") ||
+        p.includes("chops"))
+    )
+      return true;
+    if (
+      s === "drinks" &&
+      (p.includes("drink") ||
+        p.includes("juice") ||
+        p.includes("beverage") ||
+        p.includes("zobo") ||
+        p.includes("shake") ||
+        p.includes("cooler"))
+    )
+      return true;
+    if (
+      (s === "fashion" || s === "wears") &&
+      (p.includes("wear") ||
+        p.includes("cloth") ||
+        p.includes("hoodie") ||
+        p.includes("shirt") ||
+        p.includes("pant") ||
+        p.includes("accessor") ||
+        p.includes("bag"))
+    )
+      return true;
+    if (
+      (s === "automobile" || s === "cars" || s === "bikes") &&
+      (p.includes("car") ||
+        p.includes("bike") ||
+        p.includes("bicycl") ||
+        p.includes("auto") ||
+        p.includes("motor") ||
+        p.includes("ride") ||
+        p.includes("vehicl"))
+    )
+      return true;
+    if (
+      (s === "fragrances" || s === "perfumes") &&
+      (p.includes("fragran") ||
+        p.includes("perfum") ||
+        p.includes("roll on") ||
+        p.includes("roll-on") ||
+        p.includes("scent") ||
+        p.includes("cologn") ||
+        p.includes("deodor") ||
+        p.includes("mist") ||
+        p.includes("body spray") ||
+        p.includes("oil"))
+    )
+      return true;
+    if (
+      (s === "decorations" ||
+        s.includes("decor") ||
+        s.includes("interior") ||
+        s.includes("asthetic") ||
+        s.includes("aesthetic")) &&
+      (p.includes("decor") ||
+        p.includes("interior") ||
+        p.includes("asthetic") ||
+        p.includes("aesthetic") ||
+        p.includes("art") ||
+        p.includes("frame") ||
+        p.includes("light") ||
+        p.includes("led") ||
+        p.includes("lamp") ||
+        p.includes("poster") ||
+        p.includes("cushion") ||
+        p.includes("rug") ||
+        p.includes("vase") ||
+        p.includes("plant") ||
+        p.includes("mirror") ||
+        p.includes("clock"))
+    )
+      return true;
+    if (
+      s === "tech & gadgets" &&
+      (p.includes("gadget") || p.includes("electr") || p.includes("tech") || p.includes("phone"))
+    )
+      return true;
     return false;
   }
 
@@ -230,7 +392,6 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     if (!query.trim()) {
       return masterCatalog;
     }
-    // If server search results exist, merge with master catalog without duplicate IDs
     const merged = [...masterCatalog];
     if (serverSearchResults && serverSearchResults.length > 0) {
       for (const item of serverSearchResults) {
@@ -261,7 +422,8 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       }
 
       const matchesCategory = isCategoryMatch(product.category || "", selectedCategory);
-      const matchesVendor = selectedVendor === "All Vendors" || (product.vendorName || "") === selectedVendor;
+      const matchesVendor =
+        selectedVendor === "All Vendors" || (product.vendorName || "") === selectedVendor;
       const matchesPrice = (product.price || 0) <= maxPrice;
       const matchesStock = !inStockOnly || product.isAvailable !== false;
 
@@ -271,7 +433,14 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
         matchesPrep = prepStr.includes("5") || prepStr.includes("10") || prepStr.includes("15");
       }
 
-      return matchesQuery && matchesCategory && matchesVendor && matchesPrice && matchesStock && matchesPrep;
+      return (
+        matchesQuery &&
+        matchesCategory &&
+        matchesVendor &&
+        matchesPrice &&
+        matchesStock &&
+        matchesPrep
+      );
     });
 
     if (sortBy === "price_low") return [...list].sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -279,21 +448,44 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
     if (sortBy === "rating") return [...list].sort((a, b) => (b.rating || 4.9) - (a.rating || 4.9));
 
     // Explore Catalog: Randomize on every refresh just as Featured Products on HomePage
-    // Before mounting (SSR & initial client hydration), keep deterministic order to prevent hydration mismatch
     if (!isMounted || randomSeed === 0) {
       return list;
     }
 
-    // After mount (client-side): randomize products on every page refresh / visit
     const shuffled = [...list];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
-  }, [baseProducts, query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy, isMounted, randomSeed]);
+  }, [
+    baseProducts,
+    query,
+    selectedCategory,
+    selectedVendor,
+    maxPrice,
+    inStockOnly,
+    maxPrepTime,
+    sortBy,
+    isMounted,
+    randomSeed,
+  ]);
 
-  const activeFiltersCount = (selectedCategory !== "All" ? 1 : 0) +
+  // Filter stores when user types a search query
+  const displayedStores = useMemo(() => {
+    if (!query.trim()) return stores;
+    const q = query.toLowerCase().trim();
+    const matched = stores.filter(
+      (s) =>
+        (s.name || "").toLowerCase().includes(q) ||
+        (s.description || "").toLowerCase().includes(q) ||
+        (s.category || "").toLowerCase().includes(q)
+    );
+    return matched.length > 0 ? matched : stores;
+  }, [stores, query]);
+
+  const activeFiltersCount =
+    (selectedCategory !== "All" ? 1 : 0) +
     (selectedVendor !== "All Vendors" ? 1 : 0) +
     (maxPrice < 100000 ? 1 : 0) +
     (inStockOnly ? 1 : 0) +
@@ -306,6 +498,11 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       return;
     }
     setSelectedCategory(cat);
+  };
+
+  const handleShuffle = () => {
+    setRandomSeed(Math.random());
+    setShuffleSpinCount((c) => c + 1);
   };
 
   const handleResetFilters = () => {
@@ -341,90 +538,151 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200 pb-32">
-      
-      {/* STICKY SEARCH & FILTER HEADER */}
-      <div className="px-5 pt-6 pb-4 bg-white dark:bg-[#121215] border-b border-slate-200/80 dark:border-zinc-800 sticky top-0 md:top-20 z-40 shadow-sm space-y-3">
-        <div className="flex items-center gap-3 max-w-4xl mx-auto">
-          <Link 
-            href="/" 
-            className="w-10 h-10 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 flex items-center justify-center hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white transition-colors shrink-0"
+    <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-300 pb-32">
+      {/* STICKY GLASSMORPHIC SEARCH & DISCOVERY HEADER */}
+      <div className="px-4 sm:px-6 pt-4 pb-3.5 bg-white/80 dark:bg-[#0E0E12]/80 backdrop-blur-2xl backdrop-saturate-150 border-b border-slate-200/70 dark:border-zinc-800/80 sticky top-0 md:top-20 z-40 shadow-[0_4px_24px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 space-y-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 max-w-5xl mx-auto">
+          <Link
+            href="/"
+            className="w-11 h-11 rounded-2xl bg-slate-100/90 dark:bg-zinc-800/90 text-[#1E1B4B] dark:text-indigo-300 flex items-center justify-center hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white active:scale-95 transition-all duration-200 shrink-0 border border-slate-200/60 dark:border-zinc-700/60 shadow-2xs"
             aria-label="Back to home"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={19} />
           </Link>
 
-          {/* Search Input Field */}
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-[#71717A] dark:text-zinc-400">
-              <SearchIcon size={18} />
+          {/* Animated Search Input Field */}
+          <motion.div
+            animate={{
+              scale: isSearchFocused ? 1.005 : 1,
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className={`relative flex-1 rounded-2xl transition-all duration-300 ${
+              isSearchFocused || query
+                ? "bg-white dark:bg-zinc-900 ring-2 ring-[#312E81] dark:ring-indigo-500 shadow-[0_8px_28px_rgba(49,46,129,0.10)] dark:shadow-[0_8px_28px_rgba(99,102,241,0.15)] border-transparent"
+                : "bg-slate-100/85 dark:bg-zinc-800/80 border border-slate-200/70 dark:border-zinc-700/70 hover:bg-slate-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <div
+              className={`absolute inset-y-0 left-3.5 flex items-center pointer-events-none transition-colors duration-200 ${
+                isSearchFocused || query
+                  ? "text-[#312E81] dark:text-indigo-400"
+                  : "text-slate-400 dark:text-zinc-400"
+              }`}
+            >
+              <SearchIcon size={18} strokeWidth={2.3} />
             </div>
+
             <input
               type="text"
               value={query}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search food, small chops, drinks, stores..."
-              className="w-full h-12 pl-10 pr-10 rounded-full bg-[#F4F3FF]/70 dark:bg-zinc-800/80 text-[#18181B] dark:text-zinc-100 font-body font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#312E81] dark:focus:ring-indigo-500 border border-indigo-100 dark:border-zinc-700 placeholder-[#71717A] dark:placeholder-zinc-400"
+              placeholder="Search meals, pastries, perfumes, gadgets, stores..."
+              className="w-full h-11 sm:h-12 pl-10 pr-20 rounded-2xl bg-transparent text-[#18181B] dark:text-zinc-100 font-body font-medium text-sm focus:outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-500"
               autoFocus
             />
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                className="absolute inset-y-0 right-3 flex items-center text-[#71717A] dark:text-zinc-400 hover:text-[#18181B] dark:hover:text-zinc-200"
-                aria-label="Clear search"
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
 
-          {/* Filter Trigger Button */}
-          <button 
+            <div className="absolute inset-y-0 right-2.5 flex items-center gap-1.5">
+              <AnimatePresence>
+                {isLoading && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    className="w-4 h-4 rounded-full border-2 border-[#312E81]/30 dark:border-indigo-400/30 border-t-[#312E81] dark:border-t-indigo-400 animate-spin"
+                  />
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {query && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 28 }}
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="w-7 h-7 rounded-xl bg-slate-200/80 dark:bg-zinc-700/80 text-slate-600 dark:text-zinc-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <X size={14} strokeWidth={2.5} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
+          {/* Filter & Sort Trigger Button */}
+          <motion.button
+            whileTap={{ scale: 0.94 }}
             onClick={() => setIsFilterModalOpen(true)}
-            className="relative h-12 px-4 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-body font-semibold text-xs flex items-center gap-2 hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 active:scale-95 transition-all shadow-sm shrink-0 cursor-pointer"
+            className={`relative h-11 sm:h-12 px-3.5 sm:px-4 rounded-2xl font-heading font-bold text-xs flex items-center gap-2 transition-all duration-200 shrink-0 cursor-pointer border ${
+              activeFiltersCount > 0
+                ? "bg-[#312E81] dark:bg-indigo-600 text-white border-[#312E81] dark:border-indigo-500 shadow-md shadow-indigo-950/20"
+                : "bg-slate-900 dark:bg-zinc-800 text-white dark:text-zinc-100 border-slate-800 dark:border-zinc-700 hover:bg-[#312E81] dark:hover:bg-indigo-600 shadow-xs"
+            }`}
           >
             <SlidersHorizontal size={16} />
             <span className="hidden sm:inline">Filters</span>
-            {activeFiltersCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-[#FBBF24] text-[#312E81] font-heading font-extrabold text-[11px] flex items-center justify-center shadow-sm">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+            <AnimatePresence>
+              {activeFiltersCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="w-5 h-5 rounded-full bg-[#FBBF24] text-[#1E1B4B] font-heading font-black text-[10px] flex items-center justify-center shadow-xs"
+                >
+                  {activeFiltersCount}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
 
-        {/* Quick Category Pills with Desktop Mouse-Drag Swipe */}
-        <div className="relative group/pills max-w-4xl mx-auto">
-          {categoryPillsSwipe.canScrollLeft && (
-            <button
-              type="button"
-              onClick={categoryPillsSwipe.scrollLeft}
-              aria-label="Scroll categories left"
-              className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
-            >
-              <ChevronLeft size={15} />
-            </button>
-          )}
+        {/* Interactive Category Pills with Icons & Animated Active Indicator */}
+        <div className="relative group/pills max-w-5xl mx-auto">
+          <AnimatePresence>
+            {categoryPillsSwipe.canScrollLeft && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                type="button"
+                onClick={categoryPillsSwipe.scrollLeft}
+                aria-label="Scroll categories left"
+                className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md text-[#312E81] dark:text-zinc-100 shadow-lg border border-slate-200/80 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                <ChevronLeft size={16} />
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-          {categoryPillsSwipe.canScrollRight && (
-            <button
-              type="button"
-              onClick={categoryPillsSwipe.scrollRight}
-              aria-label="Scroll categories right"
-              className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
-            >
-              <ChevronRight size={15} />
-            </button>
-          )}
+          <AnimatePresence>
+            {categoryPillsSwipe.canScrollRight && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                type="button"
+                onClick={categoryPillsSwipe.scrollRight}
+                aria-label="Scroll categories right"
+                className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md text-[#312E81] dark:text-zinc-100 shadow-lg border border-slate-200/80 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-          <div 
+          <div
             ref={categoryPillsSwipe.containerRef}
             {...categoryPillsSwipe.handlers}
-            className={`flex gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5 px-0.5 select-none ${
+            className={`flex gap-2 overflow-x-auto no-scrollbar pt-0.5 pb-1 px-0.5 select-none ${
               categoryPillsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
             }`}
           >
-            {CATEGORY_OPTIONS.map((cat) => {
+            {CATEGORY_CONFIG.map(({ name: cat, icon: CatIcon }) => {
               const isSelected = selectedCategory === cat;
               return (
                 <button
@@ -432,13 +690,26 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
                   type="button"
                   draggable={false}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer select-none ${
+                  className={`relative px-3.5 py-2 rounded-xl text-xs font-heading font-bold whitespace-nowrap shrink-0 transition-colors duration-200 cursor-pointer select-none flex items-center gap-1.5 ${
                     isSelected
-                      ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-sm"
-                      : "bg-[#F4F3FF] dark:bg-zinc-800 text-[#71717A] dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-indigo-100/50 dark:hover:bg-zinc-700"
+                      ? "text-white"
+                      : "bg-slate-100/80 dark:bg-zinc-800/70 text-slate-600 dark:text-zinc-300 hover:text-[#312E81] dark:hover:text-indigo-300 hover:bg-indigo-50/70 dark:hover:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700/60"
                   }`}
                 >
-                  {cat}
+                  {isSelected && (
+                    <motion.div
+                      layoutId="search-active-category-pill"
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#312E81] to-[#4338CA] dark:from-indigo-600 dark:to-indigo-500 shadow-sm shadow-indigo-950/20"
+                    />
+                  )}
+                  <CatIcon
+                    size={13}
+                    className={`relative z-10 transition-transform duration-200 ${
+                      isSelected ? "text-[#FBBF24] scale-110" : "text-slate-400 dark:text-zinc-400"
+                    }`}
+                  />
+                  <span className="relative z-10">{cat}</span>
                 </button>
               );
             })}
@@ -447,270 +718,521 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="px-5 md:px-8 max-w-4xl mx-auto w-full mt-6 space-y-6">
+      <div className="px-4 sm:px-6 md:px-8 max-w-5xl mx-auto w-full mt-5 space-y-6">
+        {/* TRENDING CAMPUS DISCOVERY & QUICK SORT BAR */}
+        <AnimatePresence mode="popLayout">
+          {!query && activeFiltersCount === 0 && (
+            <motion.div
+              key="trending-discovery-card"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="relative overflow-hidden bg-white dark:bg-[#121215] rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 dark:border-zinc-800/80 space-y-3.5"
+            >
+              {/* Subtle Ambient Glow */}
+              <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-amber-500/5 dark:bg-amber-500/10 blur-2xl" />
 
-        {/* POPULAR SUGGESTIONS */}
-        {!query && activeFiltersCount === 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-slate-200/80 dark:border-zinc-800 space-y-3"
-          >
-            <div className="flex items-center gap-2 text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-400 uppercase tracking-wider">
-              <SearchIcon size={14} className="text-[#312E81] dark:text-indigo-400" />
-              <span>Popular Campus Searches</span>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {POPULAR_SUGGESTIONS.map((sug) => (
-                <button
-                  key={sug}
-                  onClick={() => {
-                    if (sug.toLowerCase() === "services") {
-                      router.push("/category/services");
-                    } else {
-                      setQuery(sug);
-                    }
-                  }}
-                  className="px-3.5 py-1.5 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#18181B] dark:text-zinc-200 font-body font-medium text-xs hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white active:scale-95 transition-all border border-indigo-100 dark:border-zinc-700 cursor-pointer"
-                >
-                  {sug}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-heading font-extrabold text-[#1E1B4B] dark:text-indigo-300 uppercase tracking-wider">
+                  <span className="w-6 h-6 rounded-lg bg-amber-400/20 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                    <Flame size={13} className="fill-amber-500 text-amber-500" />
+                  </span>
+                  <span>Trending on Campus</span>
+                </div>
+                <span className="text-[10px] font-heading font-bold text-slate-400 dark:text-zinc-500 flex items-center gap-1">
+                  <TrendingUp size={11} /> Live Searches
+                </span>
+              </div>
 
-        {/* CAMPUS STORES & MERCHANTS SECTION */}
-        {stores.length > 0 && (
+              <div className="relative flex flex-wrap gap-2">
+                {POPULAR_SUGGESTIONS.map((sug, idx) => (
+                  <motion.button
+                    key={sug}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.03, duration: 0.22 }}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      if (sug.toLowerCase() === "services") {
+                        router.push("/category/services");
+                      } else {
+                        setQuery(sug);
+                      }
+                    }}
+                    className="group px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-zinc-800/80 text-[#18181B] dark:text-zinc-200 font-body font-semibold text-xs hover:bg-[#312E81] dark:hover:bg-indigo-600 hover:text-white transition-all duration-200 border border-slate-200/70 dark:border-zinc-700/70 hover:border-[#312E81] dark:hover:border-indigo-500 flex items-center cursor-pointer shadow-2xs"
+                  >
+                    <span>{sug}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* CAMPUS STORES & MERCHANTS CAROUSEL */}
+        {displayedStores.length > 0 && (
           <motion.section
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-3"
           >
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-heading font-extrabold text-base md:text-lg text-[#18181B] dark:text-zinc-100 flex items-center gap-2">
-                  <Store size={18} className="text-[#312E81] dark:text-indigo-400" />
-                  Campus Stores & Merchants
-                </h3>
-                <p className="text-[11px] text-[#71717A] dark:text-zinc-400 font-body">Verified campus vendors with live store fulfillment</p>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#F4F3FF] dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800/50 text-[#312E81] dark:text-indigo-400 flex items-center justify-center shadow-2xs">
+                  <Store size={16} />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-sm sm:text-base text-[#18181B] dark:text-zinc-100 leading-tight">
+                    Campus Stores & Merchants
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-body">
+                    Verified campus vendors with direct fulfillment
+                  </p>
+                </div>
               </div>
-              <span className="text-xs font-semibold text-[#71717A] dark:text-zinc-400 font-body">
-                {stores.length} Stores Available
+              <span className="text-[11px] font-heading font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200/70 dark:border-zinc-700/70">
+                {displayedStores.length} {displayedStores.length === 1 ? "Store" : "Stores"}
               </span>
             </div>
 
             <div className="relative group/stores">
               {/* Desktop Navigation Chevrons */}
-              {storesSwipe.canScrollLeft && (
-                <button
-                  type="button"
-                  onClick={storesSwipe.scrollLeft}
-                  aria-label="Scroll stores left"
-                  className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-              )}
+              <AnimatePresence>
+                {storesSwipe.canScrollLeft && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    type="button"
+                    onClick={storesSwipe.scrollLeft}
+                    aria-label="Scroll stores left"
+                    className="hidden md:flex absolute -left-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md text-[#312E81] dark:text-zinc-100 shadow-lg border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <ChevronLeft size={17} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
 
-              {storesSwipe.canScrollRight && (
-                <button
-                  type="button"
-                  onClick={storesSwipe.scrollRight}
-                  aria-label="Scroll stores right"
-                  className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              )}
+              <AnimatePresence>
+                {storesSwipe.canScrollRight && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    type="button"
+                    onClick={storesSwipe.scrollRight}
+                    aria-label="Scroll stores right"
+                    className="hidden md:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md text-[#312E81] dark:text-zinc-100 shadow-lg border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <ChevronRight size={17} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
 
-              <div 
+              <div
                 ref={storesSwipe.containerRef}
                 {...storesSwipe.handlers}
-                className={`flex gap-3.5 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0 select-none ${
+                className={`flex gap-3.5 overflow-x-auto pb-2 pt-0.5 no-scrollbar -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 select-none ${
                   storesSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
                 }`}
               >
-                {stores.map((st) => (
-                  <Link
-                    key={st.id}
-                    href={`/vendor/${st.id}`}
-                    draggable={false}
-                    className="flex-shrink-0 w-60 p-3 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs hover:border-[#312E81] dark:hover:border-indigo-500 transition-all group flex flex-col justify-between select-none"
-                  >
-                    <div className="flex items-center gap-3 pointer-events-none">
-                      <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 shrink-0 border border-slate-200/60 dark:border-zinc-700 pointer-events-none">
-                        {(() => {
-                          const safeLogo = getSafeImageUrl(st.logo);
-                          return (
+                {displayedStores.map((st, idx) => {
+                  const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
+                  const safeLogo = getSafeImageUrl(st.logo);
+
+                  return (
+                    <motion.div
+                      key={st.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: Math.min(idx * 0.04, 0.25) }}
+                      whileHover={{ y: -3 }}
+                      className="flex-shrink-0 w-64 sm:w-68"
+                    >
+                      <Link
+                        href={`/vendor/${st.id}`}
+                        draggable={false}
+                        className="h-full p-3.5 bg-white dark:bg-[#121215] rounded-2xl border border-slate-200/80 dark:border-zinc-800/90 shadow-xs hover:shadow-lg hover:shadow-indigo-950/5 hover:border-[#312E81]/60 dark:hover:border-indigo-500/60 transition-all duration-200 group flex flex-col justify-between select-none relative overflow-hidden"
+                      >
+                        <div className="flex items-center gap-3 pointer-events-none">
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 shrink-0 border border-slate-200/70 dark:border-zinc-700 pointer-events-none shadow-2xs">
                             <Image
                               src={safeLogo}
                               alt={st.name}
                               fill
                               unoptimized={isUnoptimizedImage(safeLogo)}
-                              className="object-cover group-hover:scale-105 transition-transform pointer-events-none"
+                              className="object-cover group-hover:scale-110 transition-transform duration-500 pointer-events-none"
                               draggable={false}
                             />
-                          );
-                        })()}
-                      </div>
-                      <div className="min-w-0 flex-1 pointer-events-none">
-                        <div className="flex items-center justify-between gap-1 pointer-events-none">
-                          <h4 className="font-heading font-bold text-xs text-slate-900 dark:text-white truncate pointer-events-none">
-                            {st.name}
-                          </h4>
-                          {(() => {
-                            const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
-                            return (
-                              <span className={`text-[8px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 pointer-events-none ${
-                                open
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                                  : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                              }`}>
-                                {open ? "🟢 Open" : "🔴 Closed"}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate mt-0.5 pointer-events-none">
-                          {st.description || "Fresh food & campus supplies"}
-                        </p>
-                      </div>
-                    </div>
+                          </div>
 
-                    <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-600 dark:text-zinc-400 pointer-events-none">
-                      <span className="flex items-center gap-1 font-medium pointer-events-none">
-                        <Clock size={11} className="text-amber-500 pointer-events-none" /> {st.estimatedDelivery || "15-25m"}
-                      </span>
-                      <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 pointer-events-none">
-                        <Star size={11} className="fill-amber-400 text-amber-400 pointer-events-none" /> {st.rating ? st.rating.toFixed(1) : "4.9"}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                          <div className="min-w-0 flex-1 pointer-events-none">
+                            <div className="flex items-center justify-between gap-1.5 pointer-events-none">
+                              <h4 className="font-heading font-bold text-xs sm:text-[13px] text-slate-900 dark:text-white truncate flex items-center gap-1 pointer-events-none group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
+                                <span className="truncate">{st.name}</span>
+                                <ShieldCheck
+                                  size={12}
+                                  className="text-[#312E81] dark:text-indigo-400 shrink-0"
+                                />
+                              </h4>
+                              <span
+                                className={`inline-flex items-center gap-1 text-[8.5px] font-heading font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 pointer-events-none ${
+                                  open
+                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80"
+                                    : "bg-rose-50 text-rose-600 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/80"
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    open ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                                  }`}
+                                />
+                                {open ? "Open" : "Closed"}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5 pointer-events-none">
+                              {st.description || "Fresh food & campus supplies"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-zinc-800/80 text-[10.5px] text-slate-600 dark:text-zinc-400 pointer-events-none">
+                          <div className="flex items-center gap-2.5 pointer-events-none">
+                            <span className="flex items-center gap-1 font-semibold pointer-events-none">
+                              <Clock size={11} className="text-amber-500 pointer-events-none" />
+                              {st.estimatedDelivery || "15-25m"}
+                            </span>
+                            <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 pointer-events-none">
+                              <Star
+                                size={11}
+                                className="fill-amber-400 text-amber-400 pointer-events-none"
+                              />
+                              {st.rating ? st.rating.toFixed(1) : "4.9"}
+                            </span>
+                          </div>
+
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-heading font-bold text-[#312E81] dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform pointer-events-none">
+                            Visit <ArrowUpRight size={11} />
+                          </span>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           </motion.section>
         )}
 
+        {/* ONE-TAP QUICK SORT & FILTER STRIP */}
+        <div
+          ref={quickFiltersSwipe.containerRef}
+          {...quickFiltersSwipe.handlers}
+          className={`flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 select-none ${
+            quickFiltersSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+          }`}
+        >
+          {[
+            {
+              id: "relevance",
+              label: "Recommended",
+              active: sortBy === "relevance",
+              onClick: () => setSortBy("relevance"),
+              icon: CheckCircle2,
+            },
+            {
+              id: "price_low",
+              label: "Lowest Price",
+              active: sortBy === "price_low",
+              onClick: () => setSortBy(sortBy === "price_low" ? "relevance" : "price_low"),
+              icon: Tag,
+            },
+            {
+              id: "rating",
+              label: "Top Rated ★",
+              active: sortBy === "rating",
+              onClick: () => setSortBy(sortBy === "rating" ? "relevance" : "rating"),
+              icon: Star,
+            },
+            {
+              id: "fast_prep",
+              label: "Fast Prep < 15m",
+              active: maxPrepTime === "15",
+              onClick: () => setMaxPrepTime(maxPrepTime === "15" ? "All" : "15"),
+              icon: Zap,
+            },
+            {
+              id: "in_stock",
+              label: "In Stock Only",
+              active: inStockOnly,
+              onClick: () => setInStockOnly(!inStockOnly),
+              icon: ShieldCheck,
+            },
+          ].map((chip) => {
+            const ChipIcon = chip.icon;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                draggable={false}
+                onClick={chip.onClick}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-heading font-bold whitespace-nowrap shrink-0 flex items-center gap-1.5 border transition-all duration-200 cursor-pointer select-none ${
+                  chip.active
+                    ? "bg-[#EEF2FF] dark:bg-indigo-950/90 text-[#312E81] dark:text-indigo-300 border-[#312E81]/30 dark:border-indigo-500/50 shadow-2xs"
+                    : "bg-white dark:bg-[#121215] text-slate-600 dark:text-zinc-400 border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <ChipIcon
+                  size={12}
+                  className={
+                    chip.active
+                      ? "text-[#312E81] dark:text-indigo-400"
+                      : "text-slate-400 dark:text-zinc-500"
+                  }
+                />
+                <span>{chip.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* ACTIVE FILTER CHIPS BAR */}
-        {activeFiltersCount > 0 && (
-          <div className="flex items-center justify-between gap-2 flex-wrap bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-sm text-xs font-body">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-heading font-bold text-[#71717A] dark:text-zinc-400">Active Filters:</span>
-              
-              {selectedCategory !== "All" && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
-                  {selectedCategory}
-                  <X size={12} className="cursor-pointer" onClick={() => setSelectedCategory("All")} />
-                </span>
-              )}
-
-              {selectedVendor !== "All Vendors" && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
-                  {selectedVendor}
-                  <X size={12} className="cursor-pointer" onClick={() => setSelectedVendor("All Vendors")} />
-                </span>
-              )}
-
-              {maxPrice < 100000 && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
-                  Under ₦{maxPrice.toLocaleString()}
-                  <X size={12} className="cursor-pointer" onClick={() => setMaxPrice(100000)} />
-                </span>
-              )}
-
-              {inStockOnly && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
-                  In Stock Only
-                  <X size={12} className="cursor-pointer" onClick={() => setInStockOnly(false)} />
-                </span>
-              )}
-
-              {maxPrepTime !== "All" && (
-                <span className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700">
-                  Prep &lt; {maxPrepTime}m
-                  <X size={12} className="cursor-pointer" onClick={() => setMaxPrepTime("All")} />
-                </span>
-              )}
-            </div>
-
-            <button
-              onClick={handleResetFilters}
-              className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
+        <AnimatePresence>
+          {activeFiltersCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -8 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="overflow-hidden"
             >
-              <RotateCcw size={12} /> Clear All
-            </button>
-          </div>
-        )}
+              <div className="flex items-center justify-between gap-2 flex-wrap bg-white dark:bg-[#121215] p-3.5 rounded-2xl border border-indigo-100 dark:border-zinc-800 shadow-xs text-xs font-body">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-heading font-bold text-slate-500 dark:text-zinc-400 text-[11px] uppercase tracking-wider">
+                    Active:
+                  </span>
 
-        {/* RESULTS HEADER & COUNT */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="font-heading font-extrabold text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
-              {query ? `Results for "${query}"` : "Explore Catalog"}
+                  {selectedCategory !== "All" && (
+                    <motion.span
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700"
+                    >
+                      {selectedCategory}
+                      <X
+                        size={12}
+                        className="cursor-pointer hover:text-rose-500 transition-colors"
+                        onClick={() => setSelectedCategory("All")}
+                      />
+                    </motion.span>
+                  )}
+
+                  {selectedVendor !== "All Vendors" && (
+                    <motion.span
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700"
+                    >
+                      {selectedVendor}
+                      <X
+                        size={12}
+                        className="cursor-pointer hover:text-rose-500 transition-colors"
+                        onClick={() => setSelectedVendor("All Vendors")}
+                      />
+                    </motion.span>
+                  )}
+
+                  {maxPrice < 100000 && (
+                    <motion.span
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700"
+                    >
+                      Under ₦{maxPrice.toLocaleString()}
+                      <X
+                        size={12}
+                        className="cursor-pointer hover:text-rose-500 transition-colors"
+                        onClick={() => setMaxPrice(100000)}
+                      />
+                    </motion.span>
+                  )}
+
+                  {inStockOnly && (
+                    <motion.span
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700"
+                    >
+                      In Stock Only
+                      <X
+                        size={12}
+                        className="cursor-pointer hover:text-rose-500 transition-colors"
+                        onClick={() => setInStockOnly(false)}
+                      />
+                    </motion.span>
+                  )}
+
+                  {maxPrepTime !== "All" && (
+                    <motion.span
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700"
+                    >
+                      Prep &lt; {maxPrepTime}m
+                      <X
+                        size={12}
+                        className="cursor-pointer hover:text-rose-500 transition-colors"
+                        onClick={() => setMaxPrepTime("All")}
+                      />
+                    </motion.span>
+                  )}
+
+                  {sortBy !== "relevance" && (
+                    <motion.span
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-100 dark:border-zinc-700"
+                    >
+                      Sort: {sortBy === "price_low" ? "Low to High" : sortBy === "price_high" ? "High to Low" : "Top Rated"}
+                      <X
+                        size={12}
+                        className="cursor-pointer hover:text-rose-500 transition-colors"
+                        onClick={() => setSortBy("relevance")}
+                      />
+                    </motion.span>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleResetFilters}
+                  className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <RotateCcw size={12} /> Reset All
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* RESULTS HEADER & ANIMATED SHUFFLE */}
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-2.5">
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-[#18181B] dark:text-zinc-100 tracking-tight">
+              {query
+                ? `Results for "${query}"`
+                : selectedCategory !== "All"
+                ? `${selectedCategory} Catalog`
+                : "Explore Catalog"}
             </h2>
             {!query && (
-              <button
+              <motion.button
                 type="button"
-                onClick={() => setRandomSeed(Math.random())}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={handleShuffle}
                 title="Shuffle products"
-                className="p-1.5 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-300 hover:bg-[#312E81] hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white border border-indigo-100 dark:border-zinc-700 transition-colors cursor-pointer text-[11px] font-heading font-bold shadow-2xs"
                 aria-label="Shuffle products"
               >
-                <Shuffle size={13} />
-              </button>
+                <motion.span
+                  animate={{ rotate: shuffleSpinCount * 180 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  className="inline-flex"
+                >
+                  <Shuffle size={12} />
+                </motion.span>
+                <span className="hidden sm:inline">Shuffle</span>
+              </motion.button>
             )}
           </div>
-          <span className="text-xs font-body font-semibold text-[#71717A] dark:text-zinc-400">
-            {filteredProducts.length} {filteredProducts.length === 1 ? "item" : "items"} available
+          <span className="text-xs font-heading font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-800/90 text-slate-600 dark:text-zinc-400">
+            {filteredProducts.length} {filteredProducts.length === 1 ? "item" : "items"}
           </span>
         </div>
 
-        {/* PRODUCT GRID RESULTS */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center space-y-3.5">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce" />
-            </div>
-            <p className="text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 tracking-wider">
-              Loading...
-            </p>
-          </div>
-        ) : filteredProducts.length > 0 ? (
-          <ProductGrid 
-            products={filteredProducts} 
-            onAddProduct={handleOpenCustomizer}
-          />
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200/80 dark:border-zinc-800 shadow-sm space-y-4"
-          >
-            <div className="w-16 h-16 rounded-full bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto">
-              <SearchIcon size={32} />
-            </div>
-            <h3 className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">
-              No matching products found
-            </h3>
-            <p className="text-xs font-body font-normal text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
-              Try adjusting your search terms, clearing filters, or browsing other categories.
-            </p>
-            <button
-              onClick={() => {
-                setQuery("");
-                handleResetFilters();
-              }}
-              className="px-5 py-2.5 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-body font-semibold text-xs shadow-md active:scale-95 transition-transform cursor-pointer"
+        {/* PRODUCT GRID RESULTS WITH SMOOTH TRANSITIONS */}
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="loading-grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 md:gap-6"
             >
-              Reset Search & Filters
-            </button>
-          </motion.div>
-        )}
-
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-[#121215] rounded-2xl p-2 border border-slate-200/70 dark:border-zinc-800/80 space-y-2.5 animate-pulse"
+                >
+                  <div className="w-full aspect-[4/3] rounded-xl bg-slate-100 dark:bg-zinc-800/80" />
+                  <div className="h-3.5 bg-slate-200/80 dark:bg-zinc-800 rounded-md w-3/4" />
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="h-4 bg-slate-200/80 dark:bg-zinc-800 rounded-md w-16" />
+                    <div className="h-6 w-6 bg-slate-100 dark:bg-zinc-800 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          ) : filteredProducts.length > 0 ? (
+            <motion.div
+              key={`grid-${selectedCategory}-${sortBy}-${shuffleSpinCount}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <ProductGrid
+                products={filteredProducts}
+                onAddProduct={handleOpenCustomizer}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty-state"
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="text-center py-14 px-6 bg-white dark:bg-[#121215] rounded-3xl border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-4 max-w-lg mx-auto my-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-[#F4F3FF] dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 flex items-center justify-center mx-auto border border-indigo-100 dark:border-zinc-700 shadow-xs">
+                <SearchIcon size={28} />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">
+                  No matching items found
+                </h3>
+                <p className="text-xs font-body text-slate-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                  We couldn&apos;t find anything matching your current search or filter criteria. Try exploring another category or resetting filters.
+                </p>
+              </div>
+              <div className="pt-1 flex items-center justify-center gap-2.5 flex-wrap">
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    handleResetFilters();
+                  }}
+                  className="px-5 py-2.5 bg-[#312E81] dark:bg-indigo-600 text-white rounded-full font-heading font-bold text-xs shadow-md hover:bg-[#1E1B4B] dark:hover:bg-indigo-500 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <RotateCcw size={13} /> Reset Search & Filters
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* RICH FILTER MODAL DRAWER */}
@@ -721,7 +1243,6 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
         isBottomSheet
       >
         <div className="space-y-6 font-body text-[#18181B] dark:text-zinc-100 text-sm">
-          
           {/* SORT BY */}
           <div className="space-y-2">
             <label className="font-heading font-extrabold text-xs text-[#71717A] dark:text-zinc-400 uppercase tracking-wider block">
@@ -858,7 +1379,9 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
               <span className="font-heading font-bold text-sm text-[#18181B] dark:text-zinc-100 block">
                 In Stock Items Only
               </span>
-              <span className="text-xs text-[#71717A] dark:text-zinc-400">Hide items currently sold out</span>
+              <span className="text-xs text-[#71717A] dark:text-zinc-400">
+                Hide items currently sold out
+              </span>
             </div>
             <input
               type="checkbox"
@@ -883,7 +1406,6 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
               Apply Filters ({filteredProducts.length})
             </button>
           </div>
-
         </div>
       </Modal>
 
@@ -902,7 +1424,8 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
         title="Replace Cart?"
       >
         <p className="text-[#71717A] dark:text-zinc-300 text-sm mb-6 leading-relaxed font-body">
-          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from <strong>{pendingProduct?.item?.vendorName}</strong>?
+          Your cart currently contains items from another vendor. Would you like to clear your current cart and add this item from{" "}
+          <strong>{pendingProduct?.item?.vendorName}</strong>?
         </p>
         <div className="flex flex-col gap-3 font-body">
           <button
@@ -919,7 +1442,6 @@ export default function SearchClient({ initialCatalog = [], initialStores = [] }
           </button>
         </div>
       </Modal>
-
     </div>
   );
 }

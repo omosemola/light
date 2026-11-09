@@ -48,6 +48,7 @@ import {
   updateOrderStatusAdmin,
   toggleProductAvailabilityAdmin,
   updateProductCategoryAdmin,
+  updateStoreCategoryAdmin,
   verifyStoreAdmin,
   toggleStoreStatusAdmin,
   deleteStoreAdmin,
@@ -97,6 +98,11 @@ export default function AdminDashboardPage() {
   const [customCategoryName, setCustomCategoryName] = useState("");
   const [isSavingCustomCategory, setIsSavingCustomCategory] = useState(false);
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>("ALL");
+
+  const [storeCategoryUpdating, setStoreCategoryUpdating] = useState<string | null>(null);
+  const [customCategoryModalStore, setCustomCategoryModalStore] = useState<any>(null);
+  const [customStoreCategoryName, setCustomStoreCategoryName] = useState("");
+  const [isSavingCustomStoreCategory, setIsSavingCustomStoreCategory] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -550,7 +556,25 @@ export default function AdminDashboardPage() {
     "Services: Other Campus Services",
   ], []);
 
-  // Merge categories from DB + standard categories
+  const getStoreDisplayCategory = (st: any): string => {
+    if (!st) return "Campus Food & Meals";
+    if (st.isService && st.serviceSubcategory && st.serviceSubcategory.trim()) {
+      const sub = st.serviceSubcategory.trim();
+      return sub.toLowerCase().startsWith("services:") ? sub : `Services: ${sub}`;
+    }
+    if (st.category && st.category.trim()) {
+      if (st.category.trim().toLowerCase() === "services" && st.serviceSubcategory) {
+        return `Services: ${st.serviceSubcategory.trim()}`;
+      }
+      return st.category.trim();
+    }
+    if (st.isService) {
+      return "Services: Other Campus Services";
+    }
+    return "Campus Food & Meals";
+  };
+
+  // Merge categories from DB + standard categories + store categories
   const allAvailableCategories = useMemo(() => {
     const map = new Map<string, string>();
     for (const cat of STANDARD_CATEGORIES) {
@@ -570,8 +594,16 @@ export default function AdminDashboardPage() {
         }
       }
     }
+    if (adminData?.stores && Array.isArray(adminData.stores)) {
+      for (const st of adminData.stores) {
+        const displayCat = getStoreDisplayCategory(st);
+        if (displayCat && displayCat.trim()) {
+          map.set(displayCat.toLowerCase().trim(), displayCat.trim());
+        }
+      }
+    }
     return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
-  }, [adminData?.categories, adminData?.products, STANDARD_CATEGORIES]);
+  }, [adminData?.categories, adminData?.products, adminData?.stores, STANDARD_CATEGORIES]);
 
   const popularProductCategories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -665,6 +697,119 @@ export default function AdminDashboardPage() {
     setCustomCategoryName("");
   };
 
+  const handleUpdateStoreCategory = async (storeId: string, newCategoryName: string) => {
+    if (newCategoryName === "__CUSTOM__") {
+      const st = adminData.stores?.find((s: any) => s.id === storeId);
+      if (st) {
+        setCustomCategoryModalStore(st);
+        setCustomStoreCategoryName(getStoreDisplayCategory(st));
+      }
+      return;
+    }
+
+    if (!newCategoryName || !newCategoryName.trim()) return;
+
+    const trimmedCat = newCategoryName.trim();
+    const lower = trimmedCat.toLowerCase();
+    const isService =
+      lower === "services" ||
+      lower.startsWith("service") ||
+      lower.includes("service") ||
+      lower.includes("laundry") ||
+      lower.includes("medical") ||
+      lower.includes("pharmacy") ||
+      lower.includes("repair") ||
+      lower.includes("cleaning") ||
+      lower.includes("errand") ||
+      lower.includes("styling") ||
+      lower.includes("barbing") ||
+      lower.includes("print") ||
+      lower.includes("tailor") ||
+      lower.includes("tutor") ||
+      lower.includes("photo");
+
+    const serviceSubcategory = isService
+      ? trimmedCat.replace(/^Services:\s*/i, "").trim() || "Campus Services"
+      : null;
+
+    setStoreCategoryUpdating(storeId);
+
+    // Optimistic UI & session cache update
+    setAdminData((prev: any) => {
+      const updatedStores = prev.stores?.map((s: any) =>
+        s.id === storeId
+          ? {
+              ...s,
+              isService,
+              category: isService ? "Services" : trimmedCat,
+              serviceSubcategory,
+            }
+          : s
+      );
+      const updated = { ...prev, stores: updatedStores };
+      try {
+        sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      let res: any = null;
+      try {
+        const apiRes = await fetch("/api/admin/store/category", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ storeId, categoryName: trimmedCat }),
+        });
+        if (apiRes.ok) {
+          res = await apiRes.json();
+        }
+      } catch {
+        // Fall back to server action
+      }
+
+      if (!res || !res.success) {
+        res = await updateStoreCategoryAdmin(storeId, trimmedCat);
+      }
+
+      if (res.success) {
+        showToast(`✓ Vendor category updated to "${trimmedCat}"!`);
+        if (res.store) {
+          setAdminData((prev: any) => {
+            const updatedStores = prev.stores?.map((s: any) =>
+              s.id === storeId ? { ...s, ...res.store } : s
+            );
+            const updated = { ...prev, stores: updatedStores };
+            try {
+              sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        }
+      } else {
+        showToast(res?.error || "Failed to update store category");
+        fetchAdminData();
+      }
+    } catch (e: any) {
+      console.error("Error updating store category:", e);
+      showToast("Network error updating store category");
+      fetchAdminData();
+    } finally {
+      setStoreCategoryUpdating(null);
+    }
+  };
+
+  const handleSaveCustomStoreCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customCategoryModalStore || !customStoreCategoryName.trim()) return;
+
+    setIsSavingCustomStoreCategory(true);
+    await handleUpdateStoreCategory(customCategoryModalStore.id, customStoreCategoryName.trim());
+    setIsSavingCustomStoreCategory(false);
+    setCustomCategoryModalStore(null);
+    setCustomStoreCategoryName("");
+  };
+
   // Filtered queries
   const filteredProducts = useMemo(() => {
     let list = adminData?.products || [];
@@ -743,6 +888,8 @@ export default function AdminDashboardPage() {
       s.user?.name?.toLowerCase().includes(q) ||
       s.user?.email?.toLowerCase().includes(q) ||
       s.user?.phone?.toLowerCase().includes(q) ||
+      s.category?.toLowerCase().includes(q) ||
+      s.serviceSubcategory?.toLowerCase().includes(q) ||
       s.id?.toLowerCase().includes(q)
     );
   }, [adminData?.stores, searchQuery]);
@@ -1619,6 +1766,7 @@ export default function AdminDashboardPage() {
                   }`}>
                     <tr>
                       <th className="p-4">Store & Owner</th>
+                      <th className="p-4">Vendor Category</th>
                       <th className="p-4">Contact Info</th>
                       <th className="p-4">Products & Orders</th>
                       <th className="p-4">Verification Status</th>
@@ -1628,24 +1776,81 @@ export default function AdminDashboardPage() {
                   </thead>
                   <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
                     {filteredStores.length > 0 ? (
-                      filteredStores.map((st: any) => (
-                        <tr key={st.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
-                          {/* Store Name & ID */}
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-base shrink-0 border border-indigo-500/30">
-                                {st.name ? st.name[0]?.toUpperCase() : "S"}
-                              </div>
-                              <div>
-                                <div className={`font-heading font-bold text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>
-                                  {st.name || "Campus Store"}
+                      filteredStores.map((st: any) => {
+                        const currentStoreCat = getStoreDisplayCategory(st);
+                        const isUpdatingThisStoreCat = storeCategoryUpdating === st.id;
+
+                        return (
+                          <tr key={st.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
+                            {/* Store Name & ID */}
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-base shrink-0 border border-indigo-500/30">
+                                  {st.name ? st.name[0]?.toUpperCase() : "S"}
                                 </div>
-                                <div className="text-[10px] text-zinc-400 font-mono">
-                                  Owner: <strong className={isDark ? "text-zinc-200" : "text-zinc-700"}>{st.user?.name || "Merchant"}</strong>
+                                <div>
+                                  <div className={`font-heading font-bold text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>
+                                    {st.name || "Campus Store"}
+                                  </div>
+                                  <div className="text-[10px] text-zinc-400 font-mono">
+                                    Owner: <strong className={isDark ? "text-zinc-200" : "text-zinc-700"}>{st.user?.name || "Merchant"}</strong>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
+
+                            {/* Editable Vendor Category */}
+                            <td className="p-4">
+                              <div className="flex flex-col gap-1.5 min-w-[195px] max-w-[245px]">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/70 text-[#312E81] dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70 truncate max-w-[175px]">
+                                    <Tag size={10} className="shrink-0 text-indigo-500" />
+                                    <span className="truncate">{currentStoreCat}</span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    title="Edit Vendor Store Category"
+                                    onClick={() => {
+                                      setCustomCategoryModalStore(st);
+                                      setCustomStoreCategoryName(currentStoreCat);
+                                    }}
+                                    className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold shrink-0 cursor-pointer"
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+
+                                <div className="relative">
+                                  <select
+                                    disabled={isUpdatingThisStoreCat}
+                                    value={currentStoreCat}
+                                    onChange={(e) => handleUpdateStoreCategory(st.id, e.target.value)}
+                                    className={`w-full text-[11px] font-medium py-1 px-2 pr-6 rounded-lg border cursor-pointer outline-none transition disabled:opacity-50 ${
+                                      isDark
+                                        ? "bg-zinc-800/90 border-zinc-700 text-zinc-200 hover:border-zinc-600 focus:border-indigo-500"
+                                        : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 focus:border-indigo-500"
+                                    }`}
+                                  >
+                                    <option value={currentStoreCat} disabled>
+                                      Current: {currentStoreCat}
+                                    </option>
+                                    <option value="__CUSTOM__">✏️ + Enter Custom Category...</option>
+                                    <optgroup label="All Available Categories">
+                                      {allAvailableCategories.map((cName) => (
+                                        <option key={cName} value={cName}>
+                                          {cName}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  </select>
+                                  {isUpdatingThisStoreCat && (
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                      <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
 
                           {/* Contact Info */}
                           <td className="p-4">
@@ -1761,10 +1966,11 @@ export default function AdminDashboardPage() {
                             </div>
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-zinc-400">
+                        <td colSpan={7} className="p-8 text-center text-zinc-400">
                           No stores matching your search query.
                         </td>
                       </tr>
@@ -2447,6 +2653,118 @@ export default function AdminDashboardPage() {
                     onClick={() => {
                       setCustomCategoryModalProduct(null);
                       setCustomCategoryName("");
+                    }}
+                    className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all cursor-pointer ${
+                      isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* EDIT / CUSTOM VENDOR STORE CATEGORY MODAL */}
+      <AnimatePresence>
+        {customCategoryModalStore && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`max-w-md w-full rounded-3xl p-6 shadow-2xl border ${
+                isDark ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-slate-200 text-zinc-900"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center border border-indigo-500/20">
+                    <Store size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-extrabold text-base">Edit Vendor Category</h3>
+                    <p className="text-[11px] text-zinc-400 truncate max-w-[240px]">
+                      {customCategoryModalStore.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomCategoryModalStore(null);
+                    setCustomStoreCategoryName("");
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveCustomStoreCategory} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-heading font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Vendor Store Category
+                  </label>
+                  <input
+                    type="text"
+                    value={customStoreCategoryName}
+                    onChange={(e) => setCustomStoreCategoryName(e.target.value)}
+                    placeholder="e.g. Campus Food & Meals, Automobiles, Services: Laundry..."
+                    required
+                    autoFocus
+                    className={`w-full h-11 px-3.5 rounded-xl text-xs font-semibold border outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                      isDark
+                        ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500"
+                        : "bg-slate-50 border-slate-200 text-zinc-900 placeholder-slate-400"
+                    }`}
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1.5">
+                    Update the category this vendor signed up with. Changes synchronize immediately with the database, vendor dashboard, and student marketplace.
+                  </p>
+                </div>
+
+                {/* Quick suggestions pills */}
+                <div>
+                  <span className="block text-[10px] font-heading font-bold text-slate-400 mb-1.5">
+                    Select Quick Category:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                    {allAvailableCategories.map((catName) => (
+                      <button
+                        key={catName}
+                        type="button"
+                        onClick={() => setCustomStoreCategoryName(catName)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
+                          customStoreCategoryName.toLowerCase() === catName.toLowerCase()
+                            ? "bg-[#312E81] text-white border-indigo-600"
+                            : isDark
+                            ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
+                            : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        {catName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSavingCustomStoreCategory || !customStoreCategoryName.trim()}
+                    className="flex-1 h-11 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>{isSavingCustomStoreCategory ? "Synchronizing DB..." : "Save Vendor Category"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomCategoryModalStore(null);
+                      setCustomStoreCategoryName("");
                     }}
                     className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all cursor-pointer ${
                       isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
