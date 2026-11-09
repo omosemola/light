@@ -23,6 +23,7 @@ import { submitStudentReview } from "@/actions/reviews";
 import { getLiveOrderById } from "@/actions/orders";
 import { useUserStore } from "@/lib/userStore";
 import { getSafeImageUrl } from "@/lib/productOptions";
+import { getOrderStatusMeta } from "@/lib/machines/orderMachine";
 
 interface OrderDetail {
   id: string;
@@ -77,46 +78,14 @@ const MOCK_ORDERS: Record<string, OrderDetail> = {
 };
 
 const getStatusDisplay = (status: string) => {
-  switch (status) {
-    case "PENDING":
-      return {
-        label: "Order Placed & Awaiting Confirmation",
-        color: "bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-        dotColor: "bg-blue-500",
-      };
-    case "ACCEPTED":
-    case "PREPARING":
-      return {
-        label: "Store Preparing Your Order",
-        color: "bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-        dotColor: "bg-amber-500",
-      };
-    case "READY_FOR_DELIVERY":
-    case "OUT_FOR_DELIVERY":
-      return {
-        label: "Out for Delivery to Your Hostel",
-        color: "bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
-        dotColor: "bg-indigo-500",
-      };
-    case "DELIVERED":
-      return {
-        label: "Delivered Successfully",
-        color: "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-        dotColor: "bg-emerald-500",
-      };
-    case "CANCELLED":
-      return {
-        label: "Order Cancelled",
-        color: "bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
-        dotColor: "bg-rose-500",
-      };
-    default:
-      return {
-        label: "Order Received",
-        color: "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700",
-        dotColor: "bg-slate-500",
-      };
-  }
+  const meta = getOrderStatusMeta(status);
+  return {
+    label: meta.label,
+    color: meta.colorClass,
+    dotColor: meta.dotColor,
+    progressPercentage: meta.progressPercentage,
+    studentDescription: meta.studentDescription,
+  };
 };
 
 function formatDbOrder(dbOrder: any, fallback: OrderDetail): OrderDetail {

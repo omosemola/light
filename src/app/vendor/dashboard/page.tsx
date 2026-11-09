@@ -72,6 +72,7 @@ import {
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { OrderStatus } from "@prisma/client";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+import { resolveStoreAvailability } from "@/lib/machines/storeAvailabilityMachine";
 import { 
   parseProductDescription, 
   encodeProductDescription, 
@@ -1005,6 +1006,13 @@ export default function VendorDashboardPage() {
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-heading font-extrabold tracking-wider uppercase animate-pulse">
                       <Clock size={12} className="text-amber-400" />
                       Pending Verification
+                    </span>
+                  )}
+
+                  {storeData && (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-heading font-extrabold tracking-wider uppercase border ${resolveStoreAvailability(storeData).badgeClass}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${resolveStoreAvailability(storeData).dotClass}`} />
+                      {resolveStoreAvailability(storeData).label}
                     </span>
                   )}
                 </div>

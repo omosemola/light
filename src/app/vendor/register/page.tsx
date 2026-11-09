@@ -33,6 +33,7 @@ import {
 import { registerVendorStore } from "@/actions/vendor";
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { useUserStore } from "@/lib/userStore";
+import { validateOnboardingStep } from "@/lib/machines/vendorOnboardingMachine";
 
 const CAMPUS_CATEGORIES = [
   // SERVICES CATEGORIES (Service Profile & Live Availability)
@@ -145,17 +146,28 @@ export default function VendorRegistrationPage() {
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+
+    const validation = validateOnboardingStep(currentStep as 1 | 2 | 3, {
+      storeName,
+      ownerName,
+      email,
+      phone,
+      password,
+      category,
+      location,
+      bankName,
+      accountNumber,
+      accountName,
+    });
+
+    if (!validation.isValid) {
+      setErrorMessage(validation.error || "Please complete all required fields.");
+      return;
+    }
+
     if (currentStep === 1) {
-      if (!storeName || !ownerName || !email || !phone || !password) {
-        setErrorMessage("Please fill in all required contact, business, and password fields.");
-        return;
-      }
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      if (!location.trim()) {
-        setErrorMessage("Please specify your campus store, outlet, or dispatch location.");
-        return;
-      }
       setCurrentStep(3);
     }
   };
@@ -163,8 +175,15 @@ export default function VendorRegistrationPage() {
   const handleSubmitRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
-    if (!accountNumber || accountNumber.length < 10) {
-      setErrorMessage("Please enter a valid 10-digit NUBAN bank account number.");
+
+    const validation = validateOnboardingStep(3, {
+      bankName,
+      accountNumber,
+      accountName,
+    });
+
+    if (!validation.isValid) {
+      setErrorMessage(validation.error || "Please enter a valid 10-digit NUBAN bank account number.");
       return;
     }
 

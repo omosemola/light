@@ -19,6 +19,7 @@ import { clearMarketplaceCache } from "@/actions/marketplace";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { productCreationSchema, productUpdateSchema, vendorStoreRegistrationSchema, storeScheduleSchema } from "@/lib/validations";
+import { canTransitionOrder } from "@/lib/machines/orderMachine";
 
 async function ensureCloudinaryImageUrl(
   imageStr: string | undefined,
@@ -174,6 +175,14 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
     const orderToUpdate = await prisma.order.findUnique({ where: { id: orderId } });
     if (!orderToUpdate || orderToUpdate.storeId !== sessionStoreId) {
       return { success: false, error: "Unauthorized to update this order" };
+    }
+
+    // State Machine Transition Guard: prevent illegal jumps (e.g. from DELIVERED or CANCELLED)
+    if (!canTransitionOrder(orderToUpdate.status, newStatus)) {
+      return {
+        success: false,
+        error: `Invalid order state transition: cannot change order status from ${orderToUpdate.status} to ${newStatus}.`,
+      };
     }
 
     const updatedOrder = await prisma.order.update({

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Store, Sun, Moon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/lib/store";
-import { useUserStore } from "@/lib/userStore";
+import { useAuthMachine } from "@/lib/machines/authMachine";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
@@ -14,8 +14,7 @@ import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
 export function TopNav() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const { hasSeenOnboarding, profile } = useUserStore();
+  const { isAuthenticated, isReady, profile } = useAuthMachine();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
   const { isDark, toggleTheme } = useTheme();
@@ -24,8 +23,8 @@ export function TopNav() {
     setIsMounted(true);
   }, []);
 
-  const hasAccount = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
-  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasAccount;
+  const hasAccount = isAuthenticated;
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && (!isReady || !isAuthenticated);
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =

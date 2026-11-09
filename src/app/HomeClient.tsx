@@ -53,8 +53,8 @@ import { useFavoritesStore } from "@/lib/favoritesStore";
 import WelcomePage from "@/app/welcome/page";
 import { getLiveHomepageData } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
-import { useSession } from "next-auth/react";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+import { useAuthMachine } from "@/lib/machines/authMachine";
 
 const PROMO_SLIDES = [
   {
@@ -206,8 +206,7 @@ interface HomeClientProps {
 export default function HomeClient({ initialProducts = [], initialStores = [] }: HomeClientProps) {
   const { addItem, confirmAndReplaceCart } = useCartStore();
   const { isDark, toggleTheme } = useTheme();
-  const { data: session, status } = useSession();
-  const { profile, hasSeenOnboarding, updateProfile } = useUserStore();
+  const { isAuthenticated, isReady, profile, session, updateProfile } = useAuthMachine();
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [randomSeed, setRandomSeed] = useState<number>(0);
@@ -362,9 +361,6 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   };
 
   const DEFAULT_HUMAN_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80";
-
-  // Seamless Identity Resolution: check active session or store email first to prevent any visitor flash
-  const isAuthenticated = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
 
   useEffect(() => {
     if (profile.email && !profile.isVisitor && profile.email !== "visitor@light.app") {

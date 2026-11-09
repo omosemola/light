@@ -2,21 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useUserStore } from "@/lib/userStore";
+import { useAuthMachine } from "@/lib/machines/authMachine";
 
 export function MainContainer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const { hasSeenOnboarding, profile } = useUserStore();
+  const { isAuthenticated, isReady } = useAuthMachine();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const hasAccount = status === "authenticated" || (Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app");
-  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && !hasAccount;
+  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && (!isReady || !isAuthenticated);
 
   const isNoNav =
     isVisitorOnboarding ||
