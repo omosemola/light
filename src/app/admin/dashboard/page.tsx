@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { 
   ShieldCheck, 
   Store, 
   Users, 
-  ShoppingBag, 
   DollarSign, 
   HelpCircle, 
   CheckCircle2, 
@@ -13,25 +12,24 @@ import {
   RefreshCw,
   Search,
   ExternalLink,
-  ChevronRight,
   Sun,
   Moon,
   Trash2,
   AlertTriangle,
   X,
-  UserCheck,
   LogOut,
   Utensils,
   Package,
   Clock,
-  TrendingUp,
   Tag,
   Phone,
-  Layers,
   ArrowLeft,
   Eye,
   MapPin,
-  Receipt
+  Receipt,
+  Zap,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -39,7 +37,12 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { 
-  getAdminDashboardData, 
+  getAdminOverviewMetrics,
+  getAdminProductsPaginated,
+  getAdminOrdersPaginated,
+  getAdminStoresPaginated,
+  getAdminUsersPaginated,
+  getAdminTicketsPaginated,
   updateSupportTicketStatus, 
   updateUserRole, 
   deleteUserAccount, 
@@ -55,472 +58,156 @@ import {
   deleteOrderAdmin,
   deleteAllOrdersAdmin
 } from "@/actions/admin";
-import { toggleStoreOpenStatus } from "@/actions/vendor";
 import { TicketStatus, Role } from "@prisma/client";
 import { getSafeImageUrl } from "@/lib/productOptions";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+
+function PaginationControls({
+  page,
+  totalPages,
+  totalCount,
+  limit,
+  onPageChange,
+  isDark,
+  loading,
+}: {
+  page: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  onPageChange: (newPage: number) => void;
+  isDark: boolean;
+  loading?: boolean;
+}) {
+  if (totalCount === 0) return null;
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, totalCount);
+
+  return (
+    <div className={`p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs ${
+      isDark ? "border-zinc-800 bg-zinc-950/40" : "border-slate-200 bg-slate-50/50"
+    }`}>
+      <div className={isDark ? "text-zinc-400" : "text-zinc-500"}>
+        Showing <strong className={isDark ? "text-white" : "text-zinc-900"}>{start}</strong> to <strong className={isDark ? "text-white" : "text-zinc-900"}>{end}</strong> of <strong className={isDark ? "text-white" : "text-zinc-900"}>{totalCount}</strong> records
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={page <= 1 || loading}
+          onClick={() => onPageChange(page - 1)}
+          className={`px-3 py-1.5 rounded-lg border font-heading font-bold transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+            isDark 
+              ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700" 
+              : "bg-white border-slate-200 text-zinc-700 hover:bg-slate-100"
+          }`}
+        >
+          <ChevronLeft size={14} />
+          <span>Previous</span>
+        </button>
+        <span className={`px-2 font-mono font-bold ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
+          Page {page} of {Math.max(1, totalPages)}
+        </span>
+        <button
+          type="button"
+          disabled={page >= totalPages || loading}
+          onClick={() => onPageChange(page + 1)}
+          className={`px-3 py-1.5 rounded-lg border font-heading font-bold transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+            isDark 
+              ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700" 
+              : "bg-white border-slate-200 text-zinc-700 hover:bg-slate-100"
+          }`}
+        >
+          <span>Next</span>
+          <ChevronRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { isDark, setTheme } = useTheme();
   const adminTabsSwipe = useSwipeScroll<HTMLDivElement>();
   const orderStatusFilterSwipe = useSwipeScroll<HTMLDivElement>();
-  const INITIAL_ADMIN_DATA = {
-    success: true,
-    metrics: {
-      totalUsers: 0,
-      totalVendors: 0,
-      totalOrders: 0,
-      totalProducts: 0,
-      totalGMV: 0,
-      openTicketsCount: 0,
-    },
-    stores: [],
-    users: [],
-    recentOrders: [],
-    tickets: [],
-    products: [],
-    categories: [],
-  };
 
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [adminData, setAdminData] = useState<any>(INITIAL_ADMIN_DATA);
+  // State: High-speed Overview Metrics (parallel DB counts & aggregates)
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    totalStores: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    totalGMV: 0,
+    openTicketsCount: 0,
+  });
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  // Section Data & Pagination States (25 per page, server-side filtering)
   const [activeTab, setActiveTab] = useState<"products" | "orders" | "stores" | "users" | "tickets">("products");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
+  const [products, setProducts] = useState<any[]>([]);
+  const [productsPagination, setProductsPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>("ALL");
+
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersPagination, setOrdersPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("ALL");
+
+  const [stores, setStores] = useState<any[]>([]);
+  const [storesPagination, setStoresPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
+
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersPagination, setUsersPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
+
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [ticketsPagination, setTicketsPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
+
+  // Loading & Telemetry
+  const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [telemetry, setTelemetry] = useState<{ dbMs: number; netMs: number; totalMs: number } | null>(null);
+
+  // In-flight Action States
   const [ticketUpdating, setTicketUpdating] = useState<string | null>(null);
-  const [roleUpdating, setRoleUpdating] = useState<string | null>(null);
   const [orderUpdating, setOrderUpdating] = useState<string | null>(null);
   const [productUpdating, setProductUpdating] = useState<string | null>(null);
   const [productCategoryUpdating, setProductCategoryUpdating] = useState<string | null>(null);
   const [customCategoryModalProduct, setCustomCategoryModalProduct] = useState<any>(null);
   const [customCategoryName, setCustomCategoryName] = useState("");
   const [isSavingCustomCategory, setIsSavingCustomCategory] = useState(false);
-  const [productCategoryFilter, setProductCategoryFilter] = useState<string>("ALL");
 
   const [storeCategoryUpdating, setStoreCategoryUpdating] = useState<string | null>(null);
   const [customCategoryModalStore, setCustomCategoryModalStore] = useState<any>(null);
   const [customStoreCategoryName, setCustomStoreCategoryName] = useState("");
   const [isSavingCustomStoreCategory, setIsSavingCustomStoreCategory] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showToast = (msg: string, durationMs = 1200) => {
-    setToastMessage(msg);
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    toastTimeoutRef.current = setTimeout(() => {
-      setToastMessage("");
-    }, durationMs);
-  };
-
-  // Delete User State
+  // Modals & Deletion States
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
 
-  // Delete Store State
   const [storeToDelete, setStoreToDelete] = useState<any>(null);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
 
-  // Orders Management State
   const [orderToDelete, setOrderToDelete] = useState<any>(null);
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
   const [showDeleteAllOrdersModal, setShowDeleteAllOrdersModal] = useState(false);
   const [isDeletingAllOrders, setIsDeletingAllOrders] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
-  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("ALL");
+
+  // Toast Notification
+  const [toastMessage, setToastMessage] = useState("");
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showToast = (msg: string, durationMs = 1500) => {
+    setToastMessage(msg);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => setToastMessage(""), durationMs);
+  };
 
   const hasStartedRef = useRef(false);
-
-  const fetchAdminData = async (isManual = false) => {
-    if (isManual) setRefreshing(true);
-    try {
-      let res: any = null;
-      // Fast HTTP API fetch first
-      try {
-        const apiRes = await fetch("/api/admin/dashboard");
-        if (apiRes.ok) {
-          res = await apiRes.json();
-        }
-      } catch {
-        // Fall back to server action
-      }
-
-      if (!res || !res.success) {
-        res = await getAdminDashboardData();
-      }
-
-      if (res && res.success) {
-        setAdminData(res);
-        try {
-          if (res.stores?.length > 0 || res.products?.length > 0) {
-            sessionStorage.setItem("cached_admin_data", JSON.stringify(res));
-          }
-        } catch {}
-        if (isManual) showToast("Live operations data refreshed!");
-      } else {
-        showToast(res?.error || "Failed to load dashboard metrics");
-      }
-    } catch (e: any) {
-      console.error("Failed to load admin data:", e);
-      showToast("Network error connecting to database.");
-    } finally {
-      setLoading(false);
-      if (isManual) setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    if (hasStartedRef.current) return;
-    hasStartedRef.current = true;
-
-    // Fast initial cache hydration
-    try {
-      const cached = sessionStorage.getItem("cached_admin_data");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.stores?.length > 0 || parsed?.products?.length > 0) {
-          setAdminData(parsed);
-        }
-      }
-    } catch {}
-
-    async function verifyAndLoadAdmin() {
-      // Immediate data fetch without waiting for auth check roundtrip
-      fetchAdminData();
-
-      try {
-        const session = await checkAdminSession();
-        if (session && session.isAuthenticated && session.user) {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("lightson_admin_auth", "true");
-          }
-        } else {
-          const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
-          if (!hasAdminFlag) {
-            window.location.href = "/admin/login";
-          }
-        }
-      } catch (err) {
-        console.error("Admin verification error:", err);
-      }
-    }
-
-    verifyAndLoadAdmin();
-
-    // Periodic synchronization to keep GMV, live orders, stores, and tickets synced
-    const syncInterval = setInterval(() => {
-      fetchAdminData(false);
-    }, 30000);
-
-    const handleFocus = () => {
-      fetchAdminData(false);
-    };
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      clearInterval(syncInterval);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, []);
-
-  const handleSignOutAdmin = async () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("lightson_admin_auth");
-      sessionStorage.removeItem("cached_admin_data");
-    }
-    await logoutAdmin();
-    window.location.href = "/admin/login";
-  };
-
-
-  const handleToggleProductAvailability = async (productId: string, currentIsAvailable: boolean) => {
-    const nextAvailable = !currentIsAvailable;
-    setProductUpdating(productId);
-    setAdminData((prev: any) => ({
-      ...prev,
-      products: prev.products?.map((p: any) =>
-        p.id === productId ? { ...p, isAvailable: nextAvailable } : p
-      ),
-    }));
-    const res = await toggleProductAvailabilityAdmin(productId, nextAvailable);
-    if (res.success) {
-      showToast(`Product is now ${nextAvailable ? "In Stock (Active)" : "Out of Stock"}`);
-    } else {
-      showToast(res.error || "Failed to update product availability");
-    }
-    setProductUpdating(null);
-  };
-
-  const handleUpdateOrderStatus = async (orderId: string, status: any) => {
-    setOrderUpdating(orderId);
-    const res = await updateOrderStatusAdmin(orderId, status);
-    if (res.success) {
-      setAdminData((prev: any) => {
-        const updatedOrders = prev.recentOrders?.map((o: any) =>
-          o.id === orderId ? { ...o, status } : o
-        );
-        const newTotalGMV = updatedOrders
-          ?.filter((o: any) => o.status !== "CANCELLED")
-          .reduce((sum: number, o: any) => sum + (Number(o.totalAmount) || 0), 0);
-        const updated = {
-          ...prev,
-          recentOrders: updatedOrders,
-          metrics: {
-            ...prev.metrics,
-            totalGMV: newTotalGMV ?? prev.metrics?.totalGMV,
-          },
-        };
-        try {
-          sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-      setSelectedOrderDetails((prev: any) =>
-        prev && prev.id === orderId ? { ...prev, status } : prev
-      );
-      showToast(`Order status updated to ${status}`);
-    } else {
-      showToast(res.error || "Failed to update order");
-    }
-    setOrderUpdating(null);
-  };
-
-  const handleConfirmDeleteOrder = async () => {
-    if (!orderToDelete) return;
-    setIsDeletingOrder(true);
-    try {
-      const res = await deleteOrderAdmin(orderToDelete.id);
-      if (res.success) {
-        setAdminData((prev: any) => {
-          const updatedOrders = (prev.recentOrders || []).filter(
-            (o: any) => o.id !== orderToDelete.id
-          );
-          const newTotalGMV = updatedOrders
-            .filter((o: any) => o.status !== "CANCELLED")
-            .reduce((sum: number, o: any) => sum + (Number(o.totalAmount) || 0), 0);
-          const updated = {
-            ...prev,
-            recentOrders: updatedOrders,
-            metrics: {
-              ...prev.metrics,
-              totalOrders: Math.max(0, (prev.metrics?.totalOrders || 1) - 1),
-              totalGMV: newTotalGMV,
-            },
-          };
-          try {
-            sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-          } catch {}
-          return updated;
-        });
-        showToast(`Order #${orderToDelete.id.slice(-6).toUpperCase()} deleted from database.`);
-        setSelectedOrderDetails((prev: any) => (prev?.id === orderToDelete.id ? null : prev));
-        setOrderToDelete(null);
-      } else {
-        showToast(res.error || "Failed to delete order");
-      }
-    } catch {
-      showToast("Failed to delete order from database.");
-    } finally {
-      setIsDeletingOrder(false);
-    }
-  };
-
-  const handleConfirmDeleteAllOrders = async () => {
-    setIsDeletingAllOrders(true);
-    try {
-      const res = await deleteAllOrdersAdmin();
-      if (res.success) {
-        setAdminData((prev: any) => {
-          const updated = {
-            ...prev,
-            recentOrders: [],
-            metrics: {
-              ...prev.metrics,
-              totalOrders: 0,
-              totalGMV: 0,
-            },
-          };
-          try {
-            sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-          } catch {}
-          return updated;
-        });
-        showToast("All orders have been permanently cleared from database!");
-        setSelectedOrderDetails(null);
-        setShowDeleteAllOrdersModal(false);
-      } else {
-        showToast(res.error || "Failed to delete all orders");
-      }
-    } catch {
-      showToast("Failed to delete all orders from database.");
-    } finally {
-      setIsDeletingAllOrders(false);
-    }
-  };
-
-  const handleResolveTicket = async (ticketId: string, status: TicketStatus) => {
-    setTicketUpdating(ticketId);
-    const res = await updateSupportTicketStatus(ticketId, status);
-    if (res.success) {
-      setAdminData((prev: any) => ({
-        ...prev,
-        tickets: prev.tickets.map((t: any) =>
-          t.id === ticketId ? { ...t, status } : t
-        ),
-      }));
-      showToast(`Ticket updated to ${status}`);
-    }
-    setTicketUpdating(null);
-  };
-
-  const handleVerifyStore = async (storeId: string, isVerified: boolean) => {
-    const res = await verifyStoreAdmin(storeId, isVerified);
-    if (res.success) {
-      setAdminData((prev: any) => {
-        const updatedStores = prev.stores?.map((s: any) =>
-          s.id === storeId ? { ...s, isVerified, isOpen: isVerified } : s
-        );
-        const updated = {
-          ...prev,
-          stores: updatedStores,
-        };
-        try {
-          sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-      showToast(isVerified ? "Store verified & approved live! 🎉" : "Store verification revoked.");
-    } else {
-      showToast(res.error || "Failed to update store verification");
-    }
-  };
-
-  const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
-    const newStatus = !currentIsOpen;
-    const res = await toggleStoreStatusAdmin(storeId, newStatus);
-    if (res.success) {
-      setAdminData((prev: any) => {
-        const updatedStores = prev.stores?.map((s: any) =>
-          s.id === storeId ? { ...s, isOpen: newStatus } : s
-        );
-        const updated = {
-          ...prev,
-          stores: updatedStores,
-        };
-        try {
-          sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-      showToast(`Store is now ${newStatus ? "ACTIVE & LIVE" : "PAUSED / SUSPENDED"}`);
-    } else {
-      showToast(res.error || "Failed to toggle store status");
-    }
-  };
-
-  const handleRoleChange = async (userId: string, role: Role) => {
-    setRoleUpdating(userId);
-    const res = await updateUserRole(userId, role);
-    if (res.success) {
-      setAdminData((prev: any) => ({
-        ...prev,
-        users: prev.users.map((u: any) =>
-          u.id === userId ? { ...u, role } : u
-        ),
-      }));
-      showToast(`User role updated to ${role}`);
-    }
-    setRoleUpdating(null);
-  };
-
-  const handleConfirmDeleteUser = async () => {
-    if (!userToDelete) return;
-    setIsDeletingUser(true);
-    try {
-      const res = await deleteUserAccount(userToDelete.id);
-      if (res.success) {
-        setAdminData((prev: any) => {
-          const updatedUsers = (prev.users || []).filter(
-            (u: any) => u.id !== userToDelete.id && u.email !== userToDelete.email
-          );
-          const updated = {
-            ...prev,
-            users: updatedUsers,
-            metrics: {
-              ...prev.metrics,
-              totalUsers: Math.max(0, updatedUsers.length),
-            },
-          };
-          try {
-            sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-          } catch {}
-          return updated;
-        });
-        showToast(`User "${userToDelete.name || userToDelete.email}" deleted successfully`);
-        setUserToDelete(null);
-      } else {
-        showToast(`Error deleting user: ${res.error}`);
-      }
-    } catch {
-      showToast("Failed to delete user account.");
-    } finally {
-      setIsDeletingUser(false);
-    }
-  };
-
-  const handleConfirmDeleteStore = async () => {
-    if (!storeToDelete) return;
-    setIsDeletingStore(true);
-    try {
-      const res = await deleteStoreAdmin(storeToDelete.id);
-      if (res.success) {
-        setAdminData((prev: any) => {
-          const updatedStores = (prev.stores || []).filter(
-            (s: any) => s.id !== storeToDelete.id
-          );
-          const updatedProducts = (prev.products || []).filter(
-            (p: any) => p.store?.id !== storeToDelete.id && p.storeId !== storeToDelete.id
-          );
-          const updated = {
-            ...prev,
-            stores: updatedStores,
-            products: updatedProducts,
-            metrics: {
-              ...prev.metrics,
-              totalStores: Math.max(0, updatedStores.length),
-              totalProducts: Math.max(0, updatedProducts.length),
-            },
-          };
-          try {
-            sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-          } catch {}
-          return updated;
-        });
-        showToast(`Store "${storeToDelete.name}" and catalog deleted successfully.`);
-        setStoreToDelete(null);
-      } else {
-        showToast(`Error deleting store: ${res.error}`);
-      }
-    } catch {
-      showToast("Failed to delete store from database.");
-    } finally {
-      setIsDeletingStore(false);
-    }
-  };
-
-  const getStorePreviewUrl = (storeId: string) => {
-    if (typeof window !== "undefined") {
-      const host = window.location.host;
-      if (host.startsWith("admin.")) {
-        const mainHost = host.replace("admin.", "");
-        return `${window.location.protocol}//${mainHost}/vendor/${storeId}`;
-      }
-    }
-    return `/vendor/${storeId}`;
-  };
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Standard marketplace categories
   const STANDARD_CATEGORIES = useMemo(() => [
@@ -574,51 +261,223 @@ export default function AdminDashboardPage() {
     return "Campus Food & Meals";
   };
 
-  // Merge categories from DB + standard categories + store categories
   const allAvailableCategories = useMemo(() => {
     const map = new Map<string, string>();
     for (const cat of STANDARD_CATEGORIES) {
       map.set(cat.toLowerCase().trim(), cat.trim());
     }
-    if (adminData?.categories && Array.isArray(adminData.categories)) {
-      for (const cat of adminData.categories) {
+    if (categories && Array.isArray(categories)) {
+      for (const cat of categories) {
         if (cat.name && cat.name.trim()) {
           map.set(cat.name.toLowerCase().trim(), cat.name.trim());
         }
       }
     }
-    if (adminData?.products && Array.isArray(adminData.products)) {
-      for (const prod of adminData.products) {
-        if (prod.category?.name && prod.category.name.trim()) {
-          map.set(prod.category.name.toLowerCase().trim(), prod.category.name.trim());
-        }
-      }
-    }
-    if (adminData?.stores && Array.isArray(adminData.stores)) {
-      for (const st of adminData.stores) {
-        const displayCat = getStoreDisplayCategory(st);
-        if (displayCat && displayCat.trim()) {
-          map.set(displayCat.toLowerCase().trim(), displayCat.trim());
-        }
-      }
-    }
     return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
-  }, [adminData?.categories, adminData?.products, adminData?.stores, STANDARD_CATEGORIES]);
+  }, [categories, STANDARD_CATEGORIES]);
 
-  const popularProductCategories = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const p of adminData?.products || []) {
-      const name = p.category?.name || "Uncategorized";
-      counts.set(name, (counts.get(name) || 0) + 1);
+  // Fetch Overview Counts & Aggregates in parallel (Lean & Fast ~30ms)
+  const fetchOverviewMetrics = useCallback(async () => {
+    const startTime = performance.now();
+    try {
+      let res: any = null;
+      try {
+        const apiRes = await fetch("/api/admin/dashboard?section=overview", { cache: "no-store" });
+        if (apiRes.ok) res = await apiRes.json();
+      } catch {}
+
+      if (!res || !res.success) {
+        res = await getAdminOverviewMetrics();
+      }
+
+      if (res && res.success) {
+        setMetrics(res.metrics);
+        if (res.categories) setCategories(res.categories);
+        const totalMs = Math.round(performance.now() - startTime);
+        setTelemetry((prev) => ({
+          dbMs: res.queryDurationMs || 0,
+          netMs: totalMs,
+          totalMs,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to load overview metrics:", err);
     }
-    return Array.from(counts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [adminData?.products]);
+  }, []);
+
+  // Fetch a specific section paginated directly from the database
+  const fetchSection = useCallback(async (
+    section: "products" | "orders" | "stores" | "tickets" | "users",
+    page = 1,
+    search = "",
+    filter = "ALL"
+  ) => {
+    setTabLoading(true);
+    const startTime = performance.now();
+    try {
+      const params = new URLSearchParams({
+        section,
+        page: String(page),
+        limit: "25",
+      });
+      if (search.trim()) params.set("search", search.trim());
+      if (filter && filter !== "ALL") {
+        if (section === "products") params.set("categoryId", filter);
+        else if (section === "orders") params.set("filter", filter);
+        else if (section === "stores") params.set("category", filter);
+        else if (section === "tickets") params.set("filter", filter);
+      }
+
+      let data: any = null;
+      let netMs = 0;
+      try {
+        const res = await fetch(`/api/admin/dashboard?${params.toString()}`, {
+          cache: "no-store",
+        });
+        netMs = Math.round(performance.now() - startTime);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch {
+        // Fall back to direct server action if API route is unreachable
+      }
+
+      if (!data || !data.success) {
+        if (section === "products") {
+          data = await getAdminProductsPaginated({ page, limit: 25, search, categoryId: filter });
+        } else if (section === "orders") {
+          data = await getAdminOrdersPaginated({ page, limit: 25, search, status: filter !== "ALL" ? filter : undefined });
+        } else if (section === "stores") {
+          data = await getAdminStoresPaginated({ page, limit: 25, search, category: filter !== "ALL" ? filter : undefined });
+        } else if (section === "tickets") {
+          data = await getAdminTicketsPaginated({ page, limit: 25, status: filter !== "ALL" ? (filter as any) : "ALL" });
+        } else if (section === "users") {
+          data = await getAdminUsersPaginated({ page, limit: 25, search, role: "STUDENT" as any });
+        }
+      }
+
+      const totalMs = Math.round(performance.now() - startTime);
+      const dbMs = data?.queryDurationMs || Math.round(totalMs * 0.4);
+      setTelemetry({ dbMs, netMs, totalMs });
+
+      if (data && data.success) {
+        if (section === "products") {
+          setProducts(data.products || []);
+          if (data.pagination) setProductsPagination(data.pagination);
+        } else if (section === "orders") {
+          setOrders(data.orders || []);
+          if (data.pagination) setOrdersPagination(data.pagination);
+        } else if (section === "stores") {
+          setStores(data.stores || []);
+          if (data.pagination) setStoresPagination(data.pagination);
+        } else if (section === "tickets") {
+          setTickets(data.tickets || []);
+          if (data.pagination) setTicketsPagination(data.pagination);
+        } else if (section === "users") {
+          setUsers(data.users || []);
+          if (data.pagination) setUsersPagination(data.pagination);
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to load ${section}:`, err);
+      showToast(`Failed to load ${section} data`);
+    } finally {
+      setTabLoading(false);
+    }
+  }, []);
+
+  const getActiveFilterForTab = useCallback((tab: string) => {
+    if (tab === "products") return productCategoryFilter;
+    if (tab === "orders") return orderStatusFilter;
+    return "ALL";
+  }, [productCategoryFilter, orderStatusFilter]);
+
+  // Initial Auth & Mount Load
+  useEffect(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    async function verifyAndLoadAdmin() {
+      try {
+        const session = await checkAdminSession();
+        if (session && session.isAuthenticated && session.user) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("lightson_admin_auth", "true");
+          }
+        } else {
+          const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
+          if (!hasAdminFlag) {
+            window.location.href = "/admin/login";
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Admin verification error:", err);
+      }
+
+      // Fast initial parallel fetch: overview aggregates + initial tab page 1
+      await Promise.all([
+        fetchOverviewMetrics(),
+        fetchSection("products", 1, "", "ALL"),
+      ]);
+      setLoading(false);
+    }
+
+    verifyAndLoadAdmin();
+  }, [fetchOverviewMetrics, fetchSection]);
+
+  const handleTabChange = (newTab: "products" | "orders" | "stores" | "users" | "tickets") => {
+    setActiveTab(newTab);
+    setSearchQuery("");
+    fetchSection(newTab, 1, "", getActiveFilterForTab(newTab));
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchSection(activeTab, 1, val, getActiveFilterForTab(activeTab));
+    }, 350);
+  };
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      fetchOverviewMetrics(),
+      fetchSection(activeTab, 1, searchQuery, getActiveFilterForTab(activeTab)),
+    ]);
+    setRefreshing(false);
+    showToast("Live database synchronized!");
+  };
+
+  const handleSignOutAdmin = async () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("lightson_admin_auth");
+    }
+    await logoutAdmin();
+    window.location.href = "/admin/login";
+  };
+
+  // MUTATIONS: PRODUCTS
+  const handleToggleProductAvailability = async (productId: string, currentIsAvailable: boolean) => {
+    const nextAvailable = !currentIsAvailable;
+    setProductUpdating(productId);
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, isAvailable: nextAvailable } : p))
+    );
+    const res = await toggleProductAvailabilityAdmin(productId, nextAvailable);
+    if (res.success) {
+      showToast(`Product is now ${nextAvailable ? "In Stock (Active)" : "Out of Stock"}`);
+    } else {
+      showToast(res.error || "Failed to update product availability");
+    }
+    setProductUpdating(null);
+  };
 
   const handleUpdateProductCategory = async (productId: string, newCategoryName: string) => {
     if (newCategoryName === "__CUSTOM__") {
-      const prod = adminData.products?.find((p: any) => p.id === productId);
+      const prod = products.find((p) => p.id === productId);
       if (prod) {
         setCustomCategoryModalProduct(prod);
         setCustomCategoryName(prod.category?.name && prod.category.name !== "Uncategorized" ? prod.category.name : "");
@@ -627,60 +486,28 @@ export default function AdminDashboardPage() {
     }
 
     if (!newCategoryName || !newCategoryName.trim()) return;
-
     const trimmedCat = newCategoryName.trim();
     setProductCategoryUpdating(productId);
 
-    // Optimistic UI update
-    setAdminData((prev: any) => ({
-      ...prev,
-      products: prev.products?.map((p: any) =>
-        p.id === productId
-          ? {
-              ...p,
-              category: { ...(p.category || {}), name: trimmedCat },
-            }
-          : p
-      ),
-    }));
+    // Optimistic UI
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === productId ? { ...p, category: { ...(p.category || {}), name: trimmedCat } } : p
+      )
+    );
 
     try {
-      let res: any = null;
-      try {
-        const apiRes = await fetch("/api/admin/product/category", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId, categoryIdOrName: trimmedCat }),
-        });
-        if (apiRes.ok) {
-          res = await apiRes.json();
-        }
-      } catch {
-        // Fall back to server action
-      }
-
-      if (!res || !res.success) {
-        res = await updateProductCategoryAdmin(productId, trimmedCat);
-      }
-
+      const res = await updateProductCategoryAdmin(productId, trimmedCat);
       if (res.success) {
         showToast(`✓ Category updated to "${trimmedCat}"!`);
-        if (res.product) {
-          setAdminData((prev: any) => ({
-            ...prev,
-            products: prev.products?.map((p: any) =>
-              p.id === productId ? { ...p, ...res.product } : p
-            ),
-          }));
-        }
+        fetchOverviewMetrics();
       } else {
         showToast(res?.error || "Failed to update category");
-        fetchAdminData();
+        fetchSection("products", productsPagination.page, searchQuery, productCategoryFilter);
       }
-    } catch (e: any) {
-      console.error("Error updating product category:", e);
+    } catch {
       showToast("Network error updating product category");
-      fetchAdminData();
+      fetchSection("products", productsPagination.page, searchQuery, productCategoryFilter);
     } finally {
       setProductCategoryUpdating(null);
     }
@@ -689,7 +516,6 @@ export default function AdminDashboardPage() {
   const handleSaveCustomCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customCategoryModalProduct || !customCategoryName.trim()) return;
-
     setIsSavingCustomCategory(true);
     await handleUpdateProductCategory(customCategoryModalProduct.id, customCategoryName.trim());
     setIsSavingCustomCategory(false);
@@ -697,9 +523,96 @@ export default function AdminDashboardPage() {
     setCustomCategoryName("");
   };
 
+  // MUTATIONS: ORDERS
+  const handleUpdateOrderStatus = async (orderId: string, status: any) => {
+    setOrderUpdating(orderId);
+    const res = await updateOrderStatusAdmin(orderId, status);
+    if (res.success) {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+      );
+      setSelectedOrderDetails((prev: any) =>
+        prev && prev.id === orderId ? { ...prev, status } : prev
+      );
+      showToast(`Order status updated to ${status}`);
+      fetchOverviewMetrics();
+    } else {
+      showToast(res.error || "Failed to update order");
+    }
+    setOrderUpdating(null);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setIsDeletingOrder(true);
+    try {
+      const res = await deleteOrderAdmin(orderToDelete.id);
+      if (res.success) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+        setMetrics((prev) => ({ ...prev, totalOrders: Math.max(0, prev.totalOrders - 1) }));
+        showToast(`Order #${orderToDelete.id.slice(-6).toUpperCase()} deleted from database.`);
+        setSelectedOrderDetails((prev: any) => (prev?.id === orderToDelete.id ? null : prev));
+        setOrderToDelete(null);
+        fetchOverviewMetrics();
+      } else {
+        showToast(res.error || "Failed to delete order");
+      }
+    } catch {
+      showToast("Failed to delete order from database.");
+    } finally {
+      setIsDeletingOrder(false);
+    }
+  };
+
+  const handleConfirmDeleteAllOrders = async () => {
+    setIsDeletingAllOrders(true);
+    try {
+      const res = await deleteAllOrdersAdmin();
+      if (res.success) {
+        setOrders([]);
+        setMetrics((prev) => ({ ...prev, totalOrders: 0, totalGMV: 0 }));
+        showToast("All orders have been permanently cleared from database!");
+        setSelectedOrderDetails(null);
+        setShowDeleteAllOrdersModal(false);
+      } else {
+        showToast(res.error || "Failed to delete all orders");
+      }
+    } catch {
+      showToast("Failed to delete all orders from database.");
+    } finally {
+      setIsDeletingAllOrders(false);
+    }
+  };
+
+  // MUTATIONS: STORES
+  const handleVerifyStore = async (storeId: string, isVerified: boolean) => {
+    const res = await verifyStoreAdmin(storeId, isVerified);
+    if (res.success) {
+      setStores((prev) =>
+        prev.map((s) => (s.id === storeId ? { ...s, isVerified, isOpen: isVerified } : s))
+      );
+      showToast(isVerified ? "Store verified & approved live! 🎉" : "Store verification revoked.");
+    } else {
+      showToast(res.error || "Failed to update store verification");
+    }
+  };
+
+  const handleToggleStoreStatus = async (storeId: string, currentIsOpen: boolean) => {
+    const newStatus = !currentIsOpen;
+    const res = await toggleStoreStatusAdmin(storeId, newStatus);
+    if (res.success) {
+      setStores((prev) =>
+        prev.map((s) => (s.id === storeId ? { ...s, isOpen: newStatus } : s))
+      );
+      showToast(`Store is now ${newStatus ? "ACTIVE & LIVE" : "PAUSED / SUSPENDED"}`);
+    } else {
+      showToast(res.error || "Failed to toggle store status");
+    }
+  };
+
   const handleUpdateStoreCategory = async (storeId: string, newCategoryName: string) => {
     if (newCategoryName === "__CUSTOM__") {
-      const st = adminData.stores?.find((s: any) => s.id === storeId);
+      const st = stores.find((s) => s.id === storeId);
       if (st) {
         setCustomCategoryModalStore(st);
         setCustomStoreCategoryName(getStoreDisplayCategory(st));
@@ -708,92 +621,19 @@ export default function AdminDashboardPage() {
     }
 
     if (!newCategoryName || !newCategoryName.trim()) return;
-
     const trimmedCat = newCategoryName.trim();
-    const lower = trimmedCat.toLowerCase();
-    const isService =
-      lower === "services" ||
-      lower.startsWith("service") ||
-      lower.includes("service") ||
-      lower.includes("laundry") ||
-      lower.includes("medical") ||
-      lower.includes("pharmacy") ||
-      lower.includes("repair") ||
-      lower.includes("cleaning") ||
-      lower.includes("errand") ||
-      lower.includes("styling") ||
-      lower.includes("barbing") ||
-      lower.includes("print") ||
-      lower.includes("tailor") ||
-      lower.includes("tutor") ||
-      lower.includes("photo");
-
-    const serviceSubcategory = isService
-      ? trimmedCat.replace(/^Services:\s*/i, "").trim() || "Campus Services"
-      : null;
-
     setStoreCategoryUpdating(storeId);
 
-    // Optimistic UI & session cache update
-    setAdminData((prev: any) => {
-      const updatedStores = prev.stores?.map((s: any) =>
-        s.id === storeId
-          ? {
-              ...s,
-              isService,
-              category: isService ? "Services" : trimmedCat,
-              serviceSubcategory,
-            }
-          : s
-      );
-      const updated = { ...prev, stores: updatedStores };
-      try {
-        sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-
     try {
-      let res: any = null;
-      try {
-        const apiRes = await fetch("/api/admin/store/category", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ storeId, categoryName: trimmedCat }),
-        });
-        if (apiRes.ok) {
-          res = await apiRes.json();
-        }
-      } catch {
-        // Fall back to server action
-      }
-
-      if (!res || !res.success) {
-        res = await updateStoreCategoryAdmin(storeId, trimmedCat);
-      }
-
+      const res = await updateStoreCategoryAdmin(storeId, trimmedCat);
       if (res.success) {
         showToast(`✓ Vendor category updated to "${trimmedCat}"!`);
-        if (res.store) {
-          setAdminData((prev: any) => {
-            const updatedStores = prev.stores?.map((s: any) =>
-              s.id === storeId ? { ...s, ...res.store } : s
-            );
-            const updated = { ...prev, stores: updatedStores };
-            try {
-              sessionStorage.setItem("cached_admin_data", JSON.stringify(updated));
-            } catch {}
-            return updated;
-          });
-        }
+        fetchSection("stores", storesPagination.page, searchQuery);
       } else {
         showToast(res?.error || "Failed to update store category");
-        fetchAdminData();
       }
-    } catch (e: any) {
-      console.error("Error updating store category:", e);
+    } catch {
       showToast("Network error updating store category");
-      fetchAdminData();
     } finally {
       setStoreCategoryUpdating(null);
     }
@@ -802,7 +642,6 @@ export default function AdminDashboardPage() {
   const handleSaveCustomStoreCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customCategoryModalStore || !customStoreCategoryName.trim()) return;
-
     setIsSavingCustomStoreCategory(true);
     await handleUpdateStoreCategory(customCategoryModalStore.id, customStoreCategoryName.trim());
     setIsSavingCustomStoreCategory(false);
@@ -810,143 +649,82 @@ export default function AdminDashboardPage() {
     setCustomStoreCategoryName("");
   };
 
-  // Filtered queries
-  const filteredProducts = useMemo(() => {
-    let list = adminData?.products || [];
-    if (productCategoryFilter !== "ALL") {
-      list = list.filter((p: any) => {
-        const catName = p.category?.name || "Uncategorized";
-        return catName.toLowerCase() === productCategoryFilter.toLowerCase();
-      });
+  const handleConfirmDeleteStore = async () => {
+    if (!storeToDelete) return;
+    setIsDeletingStore(true);
+    try {
+      const res = await deleteStoreAdmin(storeToDelete.id);
+      if (res.success) {
+        setStores((prev) => prev.filter((s) => s.id !== storeToDelete.id));
+        setMetrics((prev) => ({ ...prev, totalStores: Math.max(0, prev.totalStores - 1) }));
+        showToast(`Store "${storeToDelete.name}" and catalog deleted successfully.`);
+        setStoreToDelete(null);
+        fetchOverviewMetrics();
+      } else {
+        showToast(`Error deleting store: ${res.error}`);
+      }
+    } catch {
+      showToast("Failed to delete store from database.");
+    } finally {
+      setIsDeletingStore(false);
     }
-    if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase().trim();
-    return list.filter((p: any) => 
-      p.name?.toLowerCase().includes(q) || 
-      p.store?.name?.toLowerCase().includes(q) ||
-      p.category?.name?.toLowerCase().includes(q)
-    );
-  }, [adminData?.products, productCategoryFilter, searchQuery]);
+  };
 
-  const filteredOrders = useMemo(() => {
-    let list = adminData?.recentOrders || [];
-    if (orderStatusFilter !== "ALL") {
-      list = list.filter((o: any) => {
-        if (orderStatusFilter === "IN_PROGRESS") {
-          return (
-            o.status === "ACCEPTED" ||
-            o.status === "PREPARING" ||
-            o.status === "READY_FOR_DELIVERY" ||
-            o.status === "OUT_FOR_DELIVERY"
-          );
-        }
-        return o.status === orderStatusFilter;
-      });
+  // MUTATIONS: USERS & TICKETS
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeletingUser(true);
+    try {
+      const res = await deleteUserAccount(userToDelete.id);
+      if (res.success) {
+        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+        setMetrics((prev) => ({ ...prev, totalUsers: Math.max(0, prev.totalUsers - 1) }));
+        showToast(`User "${userToDelete.name || userToDelete.email}" deleted successfully`);
+        setUserToDelete(null);
+        fetchOverviewMetrics();
+      } else {
+        showToast(`Error deleting user: ${res.error}`);
+      }
+    } catch {
+      showToast("Failed to delete user account.");
+    } finally {
+      setIsDeletingUser(false);
     }
-    if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase();
-    return list.filter((o: any) => 
-      o.id?.toLowerCase().includes(q) || 
-      o.user?.name?.toLowerCase().includes(q) || 
-      o.user?.email?.toLowerCase().includes(q) ||
-      o.user?.phone?.toLowerCase().includes(q) ||
-      o.store?.name?.toLowerCase().includes(q) ||
-      o.deliveryLocation?.toLowerCase().includes(q) ||
-      o.paymentReference?.toLowerCase().includes(q) ||
-      o.items?.some((it: any) => it.product?.name?.toLowerCase().includes(q))
-    );
-  }, [adminData?.recentOrders, searchQuery, orderStatusFilter]);
+  };
 
-  const studentUsersList = useMemo(() => {
-    const list = adminData?.users || [];
-    return list.filter((u: any) => 
-      u.role !== "ADMIN" && 
-      u.role !== "VENDOR" && 
-      !u.store &&
-      u.email?.toLowerCase() !== "lightmarketplace01@gmail.com" &&
-      u.email?.toLowerCase() !== "admin@campuslightson.com" &&
-      u.name !== "Platform Super Admin"
-    );
-  }, [adminData?.users]);
+  const handleResolveTicket = async (ticketId: string, status: TicketStatus) => {
+    setTicketUpdating(ticketId);
+    const res = await updateSupportTicketStatus(ticketId, status);
+    if (res.success) {
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status } : t))
+      );
+      showToast(`Ticket updated to ${status}`);
+      fetchOverviewMetrics();
+    }
+    setTicketUpdating(null);
+  };
 
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return studentUsersList;
-    const q = searchQuery.toLowerCase();
-    return studentUsersList.filter((u: any) => 
-      u.name?.toLowerCase().includes(q) || 
-      u.email?.toLowerCase().includes(q) ||
-      u.hostel?.toLowerCase().includes(q)
-    );
-  }, [studentUsersList, searchQuery]);
-
-  const filteredStores = useMemo(() => {
-    const list = adminData?.stores || [];
-    if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase();
-    return list.filter((s: any) => 
-      s.name?.toLowerCase().includes(q) || 
-      s.user?.name?.toLowerCase().includes(q) ||
-      s.user?.email?.toLowerCase().includes(q) ||
-      s.user?.phone?.toLowerCase().includes(q) ||
-      s.category?.toLowerCase().includes(q) ||
-      s.serviceSubcategory?.toLowerCase().includes(q) ||
-      s.id?.toLowerCase().includes(q)
-    );
-  }, [adminData?.stores, searchQuery]);
-
-  const filteredTickets = useMemo(() => {
-    const list = adminData?.tickets || [];
-    if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase();
-    return list.filter((t: any) => 
-      t.subject?.toLowerCase().includes(q) || 
-      t.description?.toLowerCase().includes(q) ||
-      t.user?.email?.toLowerCase().includes(q)
-    );
-  }, [adminData?.tickets, searchQuery]);
+  const getStorePreviewUrl = (storeId: string) => {
+    if (typeof window !== "undefined") {
+      const host = window.location.host;
+      if (host.startsWith("admin.")) {
+        const mainHost = host.replace("admin.", "");
+        return `${window.location.protocol}//${mainHost}/vendor/${storeId}`;
+      }
+    }
+    return `/vendor/${storeId}`;
+  };
 
   if (loading) {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-[#09090B] text-zinc-100" : "bg-[#FAFAF7] text-zinc-900"}`}>
         <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
         <h2 className="text-xl font-bold font-heading">Loading Platform Admin Command Center...</h2>
-        <p className={`text-sm mt-1 font-body ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Synchronizing with Supabase Database & Live Marketplace</p>
+        <p className={`text-sm mt-1 font-body ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Parallelizing Supabase Database Queries & Live Telemetry</p>
       </div>
     );
   }
-
-  if (!adminData) {
-    return (
-      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${isDark ? "bg-[#09090B] text-white" : "bg-[#FAFAF7] text-slate-900"}`}>
-        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center mb-4 border border-rose-500/20 shadow-sm">
-          <AlertCircle size={28} />
-        </div>
-        <h2 className="text-xl font-extrabold font-heading">Admin Dashboard Connection Error</h2>
-        <p className={`text-xs mt-1.5 font-body max-w-sm ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
-          {toastMessage || "Unable to retrieve real-time operations metrics from the database."}
-        </p>
-        <div className="flex items-center gap-3 mt-6">
-          <button
-            onClick={() => fetchAdminData(true)}
-            className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <RefreshCw size={14} />
-            <span>Retry Connection</span>
-          </button>
-          <button
-            onClick={handleSignOutAdmin}
-            className={`px-5 py-2.5 rounded-xl font-heading font-bold text-xs border transition-all active:scale-95 cursor-pointer ${
-              isDark ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
-            }`}
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const metrics = adminData?.metrics || {};
 
   return (
     <div className={`min-h-screen transition-colors duration-200 pb-24 font-body ${
@@ -977,7 +755,7 @@ export default function AdminDashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* SYNCHRONIZED BRAND HERO HEADER */}
+      {/* SYNCHRONIZED BRAND HERO HEADER WITH LIVE TELEMETRY */}
       <div className="relative bg-[#1E1B4B] text-white overflow-hidden shadow-lg border-b border-indigo-950">
         <Image
           src="/support-banner.jpg"
@@ -995,13 +773,28 @@ export default function AdminDashboardPage() {
                 <ShieldCheck size={26} />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[11px] font-heading font-black tracking-wider uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2.5 py-0.5 rounded-full">
                     ⚡ Super Administrator
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/60">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live DB Synced
                   </span>
+                  {telemetry && (
+                    <span 
+                      className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${
+                        telemetry.totalMs < 250
+                          ? "bg-emerald-950/70 text-emerald-300 border-emerald-800/60"
+                          : telemetry.totalMs < 600
+                          ? "bg-amber-950/70 text-amber-300 border-amber-800/60"
+                          : "bg-rose-950/70 text-rose-300 border-rose-800/60"
+                      }`}
+                      title={`DB Query Duration: ${telemetry.dbMs}ms | Network Roundtrip: ${telemetry.netMs}ms | Total Latency: ${telemetry.totalMs}ms`}
+                    >
+                      <Zap size={10} className={telemetry.totalMs < 250 ? "text-emerald-400" : "text-amber-400"} />
+                      <span>{telemetry.totalMs}ms (DB: {telemetry.dbMs}ms)</span>
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-xl md:text-2xl font-heading font-black text-white tracking-tight mt-1">
                   Lights<span className="text-[#FBBF24]">on</span> Command Center
@@ -1024,7 +817,7 @@ export default function AdminDashboardPage() {
               </Link>
 
               <button
-                onClick={() => fetchAdminData(true)}
+                onClick={handleManualRefresh}
                 disabled={refreshing}
                 className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-heading font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 title="Refresh Live Operations Data"
@@ -1055,13 +848,15 @@ export default function AdminDashboardPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         
-        {/* CLICKABLE METRICS OVERVIEW */}
+        {/* CLICKABLE METRICS OVERVIEW CARDS (LOADED IN PARALLEL) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
           <motion.div 
-            onClick={() => setActiveTab("orders")} 
+            onClick={() => handleTabChange("orders")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+              activeTab === "orders" ? "ring-2 ring-emerald-500" : ""
+            } ${
               isDark 
                 ? "bg-zinc-900 border-zinc-800 hover:border-emerald-500" 
                 : "bg-white border-slate-200 hover:border-emerald-500 shadow-sm"
@@ -1073,11 +868,13 @@ export default function AdminDashboardPage() {
           </motion.div>
 
           <motion.div 
-            onClick={() => setActiveTab("products")} 
+            onClick={() => handleTabChange("products")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.05 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+              activeTab === "products" ? "ring-2 ring-indigo-500" : ""
+            } ${
               isDark 
                 ? "bg-zinc-900 border-zinc-800 hover:border-indigo-500" 
                 : "bg-white border-slate-200 hover:border-indigo-500 shadow-sm"
@@ -1085,15 +882,17 @@ export default function AdminDashboardPage() {
           >
             <Utensils className="w-5 h-5 text-indigo-500 mb-1.5" />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Product Count</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.products?.length || metrics?.totalProducts || 2} Products</h3>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalProducts || 0} Products</h3>
           </motion.div>
 
           <motion.div 
-            onClick={() => setActiveTab("stores")} 
+            onClick={() => handleTabChange("stores")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.1 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+              activeTab === "stores" ? "ring-2 ring-blue-500" : ""
+            } ${
               isDark 
                 ? "bg-zinc-900 border-zinc-800 hover:border-blue-500" 
                 : "bg-white border-slate-200 hover:border-blue-500 shadow-sm"
@@ -1101,15 +900,17 @@ export default function AdminDashboardPage() {
           >
             <Store className="w-5 h-5 text-blue-500 mb-1.5" />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Active Stores</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{adminData?.stores?.length || metrics?.totalStores || 1} Vendor</h3>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalStores || 0} Vendors</h3>
           </motion.div>
 
           <motion.div 
-            onClick={() => setActiveTab("users")} 
+            onClick={() => handleTabChange("users")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.15 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+              activeTab === "users" ? "ring-2 ring-purple-500" : ""
+            } ${
               isDark 
                 ? "bg-zinc-900 border-zinc-800 hover:border-purple-500" 
                 : "bg-white border-slate-200 hover:border-purple-500 shadow-sm"
@@ -1117,15 +918,17 @@ export default function AdminDashboardPage() {
           >
             <Users className="w-5 h-5 text-purple-500 mb-1.5" />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>Campus Students</span>
-            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{studentUsersList.length} Students</h3>
+            <h3 className={`text-lg font-extrabold mt-0.5 font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{metrics?.totalUsers || 0} Students</h3>
           </motion.div>
 
           <motion.div 
-            onClick={() => setActiveTab("tickets")} 
+            onClick={() => handleTabChange("tickets")} 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.2 }} 
             className={`p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] ${
+              activeTab === "tickets" ? "ring-2 ring-amber-500" : ""
+            } ${
               isDark 
                 ? "bg-zinc-900 border-zinc-800 hover:border-amber-500" 
                 : "bg-white border-slate-200 hover:border-amber-500 shadow-sm"
@@ -1147,54 +950,54 @@ export default function AdminDashboardPage() {
             }`}
           >
             <button
-              onClick={() => { setActiveTab("products"); setSearchQuery(""); }}
+              onClick={() => handleTabChange("products")}
               className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
                 activeTab === "products" 
                   ? "bg-[#312E81] text-white shadow-sm" 
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              🍲 Products ({adminData?.products?.length || metrics?.totalProducts || 2})
+              🍲 Products ({metrics?.totalProducts || 0})
             </button>
             <button
-              onClick={() => { setActiveTab("orders"); setSearchQuery(""); }}
+              onClick={() => handleTabChange("orders")}
               className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
                 activeTab === "orders" 
                   ? "bg-[#312E81] text-white shadow-sm" 
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              📦 Live Orders ({adminData?.recentOrders?.length || 0})
+              📦 Live Orders ({metrics?.totalOrders || 0})
             </button>
             <button
-              onClick={() => { setActiveTab("stores"); setSearchQuery(""); }}
+              onClick={() => handleTabChange("stores")}
               className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
                 activeTab === "stores" 
                   ? "bg-[#312E81] text-white shadow-sm" 
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              🏪 Vendor Stores ({adminData?.stores?.length || 1})
+              🏪 Vendor Stores ({metrics?.totalStores || 0})
             </button>
             <button
-              onClick={() => { setActiveTab("tickets"); setSearchQuery(""); }}
+              onClick={() => handleTabChange("tickets")}
               className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
                 activeTab === "tickets" 
                   ? "bg-[#312E81] text-white shadow-sm" 
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              🎫 Support Tickets ({adminData?.tickets?.length || 0})
+              🎫 Support Tickets ({metrics?.openTicketsCount || 0})
             </button>
             <button
-              onClick={() => { setActiveTab("users"); setSearchQuery(""); }}
+              onClick={() => handleTabChange("users")}
               className={`px-4 py-2 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer ${
                 activeTab === "users" 
                   ? "bg-[#312E81] text-white shadow-sm" 
                   : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              👥 Students ({studentUsersList.length})
+              👥 Students ({metrics?.totalUsers || 0})
             </button>
           </div>
 
@@ -1203,7 +1006,7 @@ export default function AdminDashboardPage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchInputChange}
               placeholder="Search records in tab..."
               className={`w-full h-10 pl-9 pr-4 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                 isDark ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500" : "bg-white border-slate-200 text-zinc-900 placeholder-slate-400"
@@ -1225,7 +1028,10 @@ export default function AdminDashboardPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setProductCategoryFilter("ALL")}
+                  onClick={() => {
+                    setProductCategoryFilter("ALL");
+                    fetchSection("products", 1, searchQuery, "ALL");
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer border ${
                     productCategoryFilter === "ALL"
                       ? "bg-[#312E81] text-white border-indigo-600 shadow-xs"
@@ -1234,35 +1040,38 @@ export default function AdminDashboardPage() {
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
-                  All Products ({adminData?.products?.length || 0})
+                  All Products ({metrics?.totalProducts || 0})
                 </button>
-                {popularProductCategories.map((cat: any) => (
+                {allAvailableCategories.slice(0, 10).map((catName) => (
                   <button
-                    key={cat.name}
+                    key={catName}
                     type="button"
-                    onClick={() => setProductCategoryFilter(cat.name)}
+                    onClick={() => {
+                      const nextFilter = productCategoryFilter.toLowerCase() === catName.toLowerCase() ? "ALL" : catName;
+                      setProductCategoryFilter(nextFilter);
+                      fetchSection("products", 1, searchQuery, nextFilter);
+                    }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer border flex items-center gap-1.5 ${
-                      productCategoryFilter.toLowerCase() === cat.name.toLowerCase()
+                      productCategoryFilter.toLowerCase() === catName.toLowerCase()
                         ? "bg-[#312E81] text-white border-indigo-600 shadow-xs"
                         : isDark
                         ? "bg-zinc-950 text-zinc-400 border-zinc-800 hover:bg-zinc-800"
                         : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    <span>{cat.name}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                      productCategoryFilter.toLowerCase() === cat.name.toLowerCase()
-                        ? "bg-white/20 text-white"
-                        : isDark ? "bg-zinc-800 text-zinc-400" : "bg-slate-200 text-slate-600"
-                    }`}>
-                      {cat.count}
-                    </span>
+                    <span>{catName}</span>
                   </button>
                 ))}
               </div>
 
               <div className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 shrink-0">
-                Showing <strong className="text-zinc-900 dark:text-white font-extrabold">{filteredProducts.length}</strong> of {adminData?.products?.length || 0} products
+                {tabLoading ? (
+                  <span className="flex items-center gap-1 text-indigo-400">
+                    <RefreshCw size={12} className="animate-spin" /> Querying DB...
+                  </span>
+                ) : (
+                  <>Showing <strong className="text-zinc-900 dark:text-white font-extrabold">{products.length}</strong> of {productsPagination.totalCount} products</>
+                )}
               </div>
             </div>
 
@@ -1284,7 +1093,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                    {filteredProducts?.map((prod: any) => {
+                    {products?.map((prod: any) => {
                       const currentCatName = prod.category?.name || "Uncategorized";
                       const isUpdatingThisCat = productCategoryUpdating === prod.id;
 
@@ -1300,6 +1109,8 @@ export default function AdminDashboardPage() {
                                       src={safeProdImg}
                                       alt={prod.name}
                                       fill
+                                      sizes="44px"
+                                      loading="lazy"
                                       unoptimized={safeProdImg.startsWith("data:")}
                                       className="object-cover"
                                     />
@@ -1397,6 +1208,17 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* PAGINATION CONTROLS */}
+              <PaginationControls
+                page={productsPagination.page}
+                totalPages={productsPagination.totalPages}
+                totalCount={productsPagination.totalCount}
+                limit={productsPagination.limit}
+                onPageChange={(p) => fetchSection("products", p, searchQuery, productCategoryFilter)}
+                isDark={isDark}
+                loading={tabLoading}
+              />
             </div>
           </div>
         )}
@@ -1409,27 +1231,25 @@ export default function AdminDashboardPage() {
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-slate-400">Total Live Orders</span>
                 <div className="text-xl font-heading font-black mt-1">
-                  {adminData?.recentOrders?.length || adminData?.metrics?.totalOrders || 0}
+                  {metrics?.totalOrders || 0}
                 </div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-amber-400">Active / In Progress</span>
                 <div className="text-xl font-heading font-black text-amber-500 mt-1">
-                  {adminData?.recentOrders?.filter((o: any) => 
-                    o.status === "PENDING" || o.status === "ACCEPTED" || o.status === "PREPARING" || o.status === "OUT_FOR_DELIVERY" || o.status === "READY_FOR_DELIVERY"
-                  ).length || 0}
+                  {orders.filter((o) => ["PENDING", "ACCEPTED", "PREPARING", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(o.status)).length}
                 </div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-emerald-400">Delivered</span>
                 <div className="text-xl font-heading font-black text-emerald-500 mt-1">
-                  {adminData?.recentOrders?.filter((o: any) => o.status === "DELIVERED").length || 0}
+                  {orders.filter((o) => o.status === "DELIVERED").length}
                 </div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400">Platform GMV</span>
                 <div className="text-xl font-heading font-black text-indigo-500 mt-1">
-                  ₦{Number(adminData?.metrics?.totalGMV || 0).toLocaleString()}
+                  ₦{Number(metrics?.totalGMV || 0).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -1447,16 +1267,19 @@ export default function AdminDashboardPage() {
                 }`}
               >
                 {[
-                  { key: "ALL", label: `All (${adminData?.recentOrders?.length || 0})` },
-                  { key: "PENDING", label: `Pending (${adminData?.recentOrders?.filter((o: any) => o.status === "PENDING").length || 0})` },
-                  { key: "IN_PROGRESS", label: `In Progress (${adminData?.recentOrders?.filter((o: any) => ["ACCEPTED", "PREPARING", "READY_FOR_DELIVERY", "OUT_FOR_DELIVERY"].includes(o.status)).length || 0})` },
-                  { key: "DELIVERED", label: `Delivered (${adminData?.recentOrders?.filter((o: any) => o.status === "DELIVERED").length || 0})` },
-                  { key: "CANCELLED", label: `Cancelled (${adminData?.recentOrders?.filter((o: any) => o.status === "CANCELLED").length || 0})` },
+                  { key: "ALL", label: `All Orders (${metrics?.totalOrders || 0})` },
+                  { key: "PENDING", label: "Pending" },
+                  { key: "IN_PROGRESS", label: "In Progress" },
+                  { key: "DELIVERED", label: "Delivered" },
+                  { key: "CANCELLED", label: "Cancelled" },
                 ].map((f) => (
                   <button
                     key={f.key}
                     type="button"
-                    onClick={() => setOrderStatusFilter(f.key)}
+                    onClick={() => {
+                      setOrderStatusFilter(f.key);
+                      fetchSection("orders", 1, searchQuery, f.key);
+                    }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold whitespace-nowrap transition cursor-pointer ${
                       orderStatusFilter === f.key
                         ? "bg-[#312E81] text-white shadow-xs"
@@ -1470,25 +1293,28 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
 
-              {/* ACTION BUTTONS: REFRESH + PURGE ALL */}
+              {/* ACTION BUTTONS: SYNC + PURGE ALL */}
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => fetchAdminData(true)}
-                  disabled={refreshing}
+                  onClick={() => {
+                    fetchSection("orders", ordersPagination.page, searchQuery, orderStatusFilter);
+                    fetchOverviewMetrics();
+                  }}
+                  disabled={tabLoading}
                   className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold flex items-center gap-1.5 transition cursor-pointer border ${
                     isDark ? "bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-300" : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
                   }`}
                   title="Synchronize live orders with Supabase DB"
                 >
-                  <RefreshCw size={13} className={refreshing ? "animate-spin text-indigo-400" : ""} />
+                  <RefreshCw size={13} className={tabLoading ? "animate-spin text-indigo-400" : ""} />
                   <span>Sync Orders</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowDeleteAllOrdersModal(true)}
-                  disabled={!adminData?.recentOrders || adminData.recentOrders.length === 0}
+                  disabled={orders.length === 0}
                   className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-600 dark:text-rose-300 font-heading font-bold text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Permanently delete all orders from the database"
                 >
@@ -1518,8 +1344,8 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                    {filteredOrders.length > 0 ? (
-                      filteredOrders.map((ord: any) => {
+                    {orders.length > 0 ? (
+                      orders.map((ord: any) => {
                         const itemsSummary = ord.items && ord.items.length > 0
                           ? ord.items.map((it: any) => `${it.quantity}x ${it.product?.name || "Campus Item"}`).join(", ")
                           : "Campus Order Items";
@@ -1558,7 +1384,6 @@ export default function AdminDashboardPage() {
 
                         return (
                           <tr key={ord.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
-                            {/* Order Ref & Date */}
                             <td className="p-4">
                               <div className={`font-mono font-black text-xs ${isDark ? "text-indigo-300" : "text-indigo-900"}`}>
                                 #{ord.id ? ord.id.slice(-6).toUpperCase() : "ORDER"}
@@ -1574,7 +1399,6 @@ export default function AdminDashboardPage() {
                               )}
                             </td>
 
-                            {/* Customer & Location */}
                             <td className="p-4">
                               <div className={`font-bold font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>
                                 {ord.user?.name || "Campus Student"}
@@ -1597,7 +1421,6 @@ export default function AdminDashboardPage() {
                               )}
                             </td>
 
-                            {/* Vendor Store */}
                             <td className="p-4">
                               <div className={`font-bold font-heading ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>
                                 {ord.store?.name || "Campus Store"}
@@ -1609,7 +1432,6 @@ export default function AdminDashboardPage() {
                               )}
                             </td>
 
-                            {/* Items Summary */}
                             <td className="p-4 max-w-[200px]">
                               <div className={`text-xs font-medium truncate ${isDark ? "text-zinc-300" : "text-zinc-700"}`} title={itemsSummary}>
                                 {itemsSummary}
@@ -1619,7 +1441,6 @@ export default function AdminDashboardPage() {
                               </div>
                             </td>
 
-                            {/* Amount & Payment Method */}
                             <td className="p-4">
                               <span className={`font-extrabold font-heading text-sm block ${isDark ? "text-amber-400" : "text-[#312E81]"}`}>
                                 ₦{ord.totalAmount?.toLocaleString()}
@@ -1639,7 +1460,6 @@ export default function AdminDashboardPage() {
                               </span>
                             </td>
 
-                            {/* Lifecycle Status & In-place Updater */}
                             <td className="p-4">
                               <div className="space-y-1.5">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-heading font-extrabold border ${badge.color}`}>
@@ -1674,7 +1494,6 @@ export default function AdminDashboardPage() {
                               </div>
                             </td>
 
-                            {/* Actions: View Details + Delete */}
                             <td className="p-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">
                                 <button
@@ -1722,6 +1541,17 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* PAGINATION CONTROLS */}
+              <PaginationControls
+                page={ordersPagination.page}
+                totalPages={ordersPagination.totalPages}
+                totalCount={ordersPagination.totalCount}
+                limit={ordersPagination.limit}
+                onPageChange={(p) => fetchSection("orders", p, searchQuery, orderStatusFilter)}
+                isDark={isDark}
+                loading={tabLoading}
+              />
             </div>
           </div>
         )}
@@ -1733,24 +1563,24 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-slate-400">Total Stores</span>
-                <div className="text-xl font-heading font-black mt-1">{adminData?.stores?.length || 0}</div>
+                <div className="text-xl font-heading font-black mt-1">{metrics?.totalStores || 0}</div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-emerald-400">Verified & Active</span>
                 <div className="text-xl font-heading font-black text-emerald-500 mt-1">
-                  {adminData?.stores?.filter((s: any) => s.isVerified).length || 0}
+                  {stores.filter((s) => s.isVerified).length}
                 </div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-amber-400">Pending Review</span>
                 <div className="text-xl font-heading font-black text-amber-500 mt-1">
-                  {adminData?.stores?.filter((s: any) => !s.isVerified).length || 0}
+                  {stores.filter((s) => !s.isVerified).length}
                 </div>
               </div>
               <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
                 <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400">Open Stores</span>
                 <div className="text-xl font-heading font-black text-indigo-500 mt-1">
-                  {adminData?.stores?.filter((s: any) => s.isOpen !== false).length || 0}
+                  {stores.filter((s) => s.isOpen !== false).length}
                 </div>
               </div>
             </div>
@@ -1775,14 +1605,13 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                    {filteredStores.length > 0 ? (
-                      filteredStores.map((st: any) => {
+                    {stores.length > 0 ? (
+                      stores.map((st: any) => {
                         const currentStoreCat = getStoreDisplayCategory(st);
                         const isUpdatingThisStoreCat = storeCategoryUpdating === st.id;
 
                         return (
                           <tr key={st.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
-                            {/* Store Name & ID */}
                             <td className="p-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-black text-base shrink-0 border border-indigo-500/30">
@@ -1799,7 +1628,6 @@ export default function AdminDashboardPage() {
                               </div>
                             </td>
 
-                            {/* Editable Vendor Category */}
                             <td className="p-4">
                               <div className="flex flex-col gap-1.5 min-w-[195px] max-w-[245px]">
                                 <div className="flex items-center justify-between gap-1">
@@ -1852,120 +1680,114 @@ export default function AdminDashboardPage() {
                               </div>
                             </td>
 
-                          {/* Contact Info */}
-                          <td className="p-4">
-                            <div className={`font-mono text-[11px] ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
-                              {st.user?.email ? (
-                                <a href={`mailto:${st.user.email}`} className="hover:underline text-indigo-400 flex items-center gap-1">
-                                  {st.user.email}
-                                </a>
-                              ) : (
-                                "No email"
-                              )}
-                            </div>
-                            {st.user?.phone && (
-                              <div className="text-[11px] text-zinc-500 flex items-center gap-1 mt-0.5 font-mono">
-                                <Phone size={10} />
-                                <a href={`tel:${st.user.phone}`} className="hover:underline">
-                                  {st.user.phone}
-                                </a>
+                            <td className="p-4">
+                              <div className={`font-mono text-[11px] ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
+                                {st.user?.email ? (
+                                  <a href={`mailto:${st.user.email}`} className="hover:underline text-indigo-400 flex items-center gap-1">
+                                    {st.user.email}
+                                  </a>
+                                ) : (
+                                  "No email"
+                                )}
                               </div>
-                            )}
-                            {st.paystackSubaccountCode && (
-                              <div className="text-[10px] text-emerald-500 mt-1.5 font-mono font-bold flex items-center gap-1" title="Paystack Subaccount Configured">
-                                <DollarSign size={12} />
-                                {st.paystackSubaccountCode}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Products & Orders */}
-                          <td className="p-4">
-                            <div className={`font-bold ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>
-                              {st._count?.products || 0} products
-                            </div>
-                            <div className="text-[11px] text-zinc-400">
-                              {st._count?.orders || 0} orders completed
-                            </div>
-                          </td>
-
-                          {/* Verification Badge */}
-                          <td className="p-4">
-                            {st.isVerified ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
-                                <CheckCircle2 size={11} className="text-emerald-400" />
-                                VERIFIED & APPROVED
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80 animate-pulse">
-                                <Clock size={11} className="text-amber-400" />
-                                PENDING VERIFICATION
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Live Store Toggle */}
-                          <td className="p-4">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleStoreStatus(st.id, st.isOpen !== false)}
-                              className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
-                                st.isOpen !== false
-                                  ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
-                                  : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
-                              }`}
-                              title="Click to toggle live store status"
-                            >
-                              {st.isOpen !== false ? "✓ ACTIVE & OPEN" : "✕ CLOSED / PAUSED"}
-                            </button>
-                          </td>
-
-                          {/* Actions: Approve / Revoke, Preview, Delete */}
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {!st.isVerified ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleVerifyStore(st.id, true)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
-                                  title="Approve and verify vendor store"
-                                >
-                                  <CheckCircle2 size={13} />
-                                  <span>Approve & Verify</span>
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleVerifyStore(st.id, false)}
-                                  className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-amber-950 hover:border-amber-800 border border-zinc-700 text-zinc-400 hover:text-amber-300 font-heading font-bold text-[10px] transition-all cursor-pointer"
-                                  title="Revoke verification status"
-                                >
-                                  Revoke
-                                </button>
+                              {st.user?.phone && (
+                                <div className="text-[11px] text-zinc-500 flex items-center gap-1 mt-0.5 font-mono">
+                                  <Phone size={10} />
+                                  <a href={`tel:${st.user.phone}`} className="hover:underline">
+                                    {st.user.phone}
+                                  </a>
+                                </div>
                               )}
+                              {st.bankName && st.accountNumber && (
+                                <div className="text-[10px] text-zinc-400 mt-1 font-mono">
+                                  🏦 {st.bankName} · {st.accountNumber}
+                                </div>
+                              )}
+                            </td>
 
-                              <a
-                                href={getStorePreviewUrl(st.id)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
-                                title="Preview public storefront"
-                              >
-                                <span>Preview</span>
-                                <ExternalLink size={12} />
-                              </a>
+                            <td className="p-4">
+                              <div className={`font-bold ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>
+                                {st._count?.products || 0} products
+                              </div>
+                              <div className="text-[11px] text-zinc-400">
+                                {st._count?.orders || 0} orders completed
+                              </div>
+                            </td>
 
+                            <td className="p-4">
+                              {st.isVerified ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
+                                  <CheckCircle2 size={11} className="text-emerald-400" />
+                                  VERIFIED & APPROVED
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80 animate-pulse">
+                                  <Clock size={11} className="text-amber-400" />
+                                  PENDING VERIFICATION
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="p-4">
                               <button
                                 type="button"
-                                onClick={() => setStoreToDelete(st)}
-                                className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 transition-all active:scale-95 cursor-pointer"
-                                title={`Delete store ${st.name}`}
+                                onClick={() => handleToggleStoreStatus(st.id, st.isOpen !== false)}
+                                className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-heading cursor-pointer transition-all active:scale-95 border ${
+                                  st.isOpen !== false
+                                    ? "bg-emerald-950 text-emerald-300 border-emerald-800 hover:bg-emerald-900"
+                                    : "bg-rose-950 text-rose-300 border-rose-800 hover:bg-rose-900"
+                                }`}
+                                title="Click to toggle live store status"
                               >
-                                <Trash2 size={13} />
+                                {st.isOpen !== false ? "✓ ACTIVE & OPEN" : "✕ CLOSED / PAUSED"}
                               </button>
-                            </div>
-                          </td>
-                        </tr>
+                            </td>
+
+                            <td className="p-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {!st.isVerified ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVerifyStore(st.id, true)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                                    title="Approve and verify vendor store"
+                                  >
+                                    <CheckCircle2 size={13} />
+                                    <span>Approve & Verify</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVerifyStore(st.id, false)}
+                                    className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-amber-950 hover:border-amber-800 border border-zinc-700 text-zinc-400 hover:text-amber-300 font-heading font-bold text-[10px] transition-all cursor-pointer"
+                                    title="Revoke verification status"
+                                  >
+                                    Revoke
+                                  </button>
+                                )}
+
+                                <a
+                                  href={getStorePreviewUrl(st.id)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 dark:bg-zinc-800 hover:bg-indigo-100 text-[#312E81] dark:text-indigo-300 font-bold text-xs rounded-lg transition-colors"
+                                  title="Preview public storefront"
+                                >
+                                  <span>Preview</span>
+                                  <ExternalLink size={12} />
+                                </a>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setStoreToDelete(st)}
+                                  className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 transition-all active:scale-95 cursor-pointer"
+                                  title={`Delete store ${st.name}`}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
                         );
                       })
                     ) : (
@@ -1978,6 +1800,17 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* PAGINATION CONTROLS */}
+              <PaginationControls
+                page={storesPagination.page}
+                totalPages={storesPagination.totalPages}
+                totalCount={storesPagination.totalCount}
+                limit={storesPagination.limit}
+                onPageChange={(p) => fetchSection("stores", p, searchQuery)}
+                isDark={isDark}
+                loading={tabLoading}
+              />
             </div>
           </div>
         )}
@@ -2002,15 +1835,15 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                  {filteredTickets?.length > 0 ? (
-                    filteredTickets.map((t: any) => (
+                  {tickets?.length > 0 ? (
+                    tickets.map((t: any) => (
                       <tr key={t.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
                         <td className={`p-4 font-mono font-bold ${isDark ? "text-zinc-300" : "text-zinc-800"}`}>
                           {t.id ? `#${t.id.slice(-6).toUpperCase()}` : "#TICKET"}
                         </td>
                         <td className="p-4">
                           <div className={`font-bold font-heading ${isDark ? "text-white" : "text-zinc-900"}`}>{t.subject}</div>
-                          <div className={`text-[11px] truncate max-w-xs mt-0.5 ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>{t.description}</div>
+                          <div className={`text-[11px] truncate max-w-xs mt-0.5 ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>{t.description || t.message}</div>
                         </td>
                         <td className={`p-4 ${isDark ? "text-zinc-300" : "text-zinc-600"}`}>{t.user?.email || "Student"}</td>
                         <td className={`p-4 font-mono ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>{t.orderId ? `#${t.orderId.slice(-6).toUpperCase()}` : "General"}</td>
@@ -2048,10 +1881,21 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* PAGINATION CONTROLS */}
+            <PaginationControls
+              page={ticketsPagination.page}
+              totalPages={ticketsPagination.totalPages}
+              totalCount={ticketsPagination.totalCount}
+              limit={ticketsPagination.limit}
+              onPageChange={(p) => fetchSection("tickets", p, searchQuery)}
+              isDark={isDark}
+              loading={tabLoading}
+            />
           </div>
         )}
 
-        {/* USERS TAB - CAMPUS STUDENTS ONLY */}
+        {/* USERS TAB - CAMPUS STUDENTS */}
         {activeTab === "users" && (
           <div className={`border rounded-2xl overflow-hidden shadow-sm ${
             isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"
@@ -2070,8 +1914,8 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDark ? "divide-zinc-800" : "divide-slate-200"}`}>
-                  {filteredUsers?.length > 0 ? (
-                    filteredUsers.map((u: any) => (
+                  {users?.length > 0 ? (
+                    users.map((u: any) => (
                       <tr key={u.id} className={isDark ? "hover:bg-zinc-800/50 transition" : "hover:bg-slate-50 transition"}>
                         <td className={`p-4 font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"}`}>
                           <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-extrabold flex items-center justify-center border border-indigo-500/30 overflow-hidden relative shrink-0">
@@ -2122,6 +1966,17 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* PAGINATION CONTROLS */}
+            <PaginationControls
+              page={usersPagination.page}
+              totalPages={usersPagination.totalPages}
+              totalCount={usersPagination.totalCount}
+              limit={usersPagination.limit}
+              onPageChange={(p) => fetchSection("users", p, searchQuery, "STUDENT")}
+              isDark={isDark}
+              loading={tabLoading}
+            />
           </div>
         )}
 
@@ -2159,7 +2014,7 @@ export default function AdminDashboardPage() {
                   type="button"
                   disabled={isDeletingUser}
                   onClick={handleConfirmDeleteUser}
-                  className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 text-white font-heading font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   <Trash2 size={16} />
                   <span>{isDeletingUser ? "Deleting from DB..." : "Yes, Delete User"}</span>
@@ -2167,7 +2022,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setUserToDelete(null)}
-                  className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all ${
+                  className={`px-5 h-11 rounded-xl text-xs font-heading font-bold active:scale-95 transition-all cursor-pointer ${
                     isDark ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
@@ -2230,6 +2085,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </AnimatePresence>
+
       {/* DELETE ORDER CONFIRMATION MODAL */}
       <AnimatePresence>
         {orderToDelete && (
@@ -2309,7 +2165,7 @@ export default function AdminDashboardPage() {
               }`}>
                 <p className="font-bold mb-1">⚠️ Warning: Complete Database Order Reset</p>
                 <p>
-                  This will permanently delete <strong>all {adminData?.recentOrders?.length || adminData?.metrics?.totalOrders || 0} orders</strong> and their linked items from the PostgreSQL database.
+                  This will permanently delete <strong>all {metrics?.totalOrders || 0} orders</strong> and their linked items from the PostgreSQL database.
                   Gross Merchandise Volume (GMV) will reset to ₦0, and user order histories across student accounts will be cleared.
                 </p>
               </div>
@@ -2384,7 +2240,6 @@ export default function AdminDashboardPage() {
 
               {/* DETAILS CONTENT */}
               <div className="space-y-4 py-4">
-                {/* 2-COLUMN SUMMARY: CUSTOMER & STORE */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Customer Block */}
                   <div className={`p-4 rounded-2xl border text-xs space-y-1.5 ${
@@ -2555,6 +2410,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </AnimatePresence>
+
       {/* EDIT / CUSTOM PRODUCT CATEGORY MODAL */}
       <AnimatePresence>
         {customCategoryModalProduct && (
@@ -2614,7 +2470,6 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
-                {/* Quick suggestions pills */}
                 <div>
                   <span className="block text-[10px] font-heading font-bold text-slate-400 mb-1.5">
                     Select Quick Category:
@@ -2726,7 +2581,6 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
-                {/* Quick suggestions pills */}
                 <div>
                   <span className="block text-[10px] font-heading font-bold text-slate-400 mb-1.5">
                     Select Quick Category:

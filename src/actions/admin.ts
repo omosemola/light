@@ -8,160 +8,20 @@ import { sendEmail, generateStudentStatusUpdateEmail } from "@/lib/email";
 import { sendOrderDeliverySMS } from "@/lib/sms";
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { formatCloudinaryUrl, getOptimizedCloudinaryUrl } from "@/lib/productOptions";
 
-export async function getAdminDashboardData() {
-  const DEFAULT_FALLBACK_PRODUCTS: any[] = [];
-  const DEFAULT_FALLBACK_STORES: any[] = [];
-
+/**
+ * Fast Overview Metrics: Loads all dashboard counts, aggregates, and categories in parallel.
+ * Replaces monolithic multi-MB row fetching with lean, sub-50ms database aggregate queries.
+ */
+export async function getAdminOverviewMetrics() {
+  const startTime = performance.now();
   try {
-    const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
-      setTimeout(() => resolve({ isTimeout: true }), 35000)
-    );
-
-    const queryPromise = (async () => {
-      // Execute all dashboard queries in parallel with lightweight projections
-      const [
-        users,
-        stores,
-        products,
-        recentOrders,
-        tickets,
-        totalOrdersCount,
-        gmvAggregate,
-        categories,
-      ] = await Promise.all([
-        prisma.user.findMany({
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            role: true,
-            createdAt: true,
-            store: { select: { id: true, name: true } },
-            _count: { select: { orders: true, tickets: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.store.findMany({
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            logo: true,
-            coverImage: true,
-            isOpen: true,
-            isVerified: true,
-            isService: true,
-            category: true,
-            serviceSubcategory: true,
-            phone: true,
-            bankName: true,
-            accountNumber: true,
-            accountName: true,
-            createdAt: true,
-            updatedAt: true,
-            user: { select: { id: true, email: true, name: true, phone: true } },
-            _count: { select: { products: true, orders: true, reviews: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.product.findMany({
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            price: true,
-            image: true,
-            isAvailable: true,
-            createdAt: true,
-            categoryId: true,
-            category: { select: { id: true, name: true } },
-            store: { select: { id: true, name: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.order.findMany({
-          take: 100,
-          select: {
-            id: true,
-            totalAmount: true,
-            status: true,
-            deliveryLocation: true,
-            deliveryFee: true,
-            serviceFee: true,
-            deliveryInstructions: true,
-            paymentReference: true,
-            createdAt: true,
-            updatedAt: true,
-            user: { select: { id: true, name: true, email: true, phone: true } },
-            store: { select: { id: true, name: true, phone: true } },
-            items: {
-              select: {
-                id: true,
-                quantity: true,
-                price: true,
-                product: { select: { id: true, name: true, image: true, price: true } },
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.supportTicket.findMany({
-          select: {
-            id: true,
-            subject: true,
-            category: true,
-            message: true,
-            status: true,
-            adminReply: true,
-            createdAt: true,
-            updatedAt: true,
-            orderId: true,
-            user: { select: { name: true, email: true } },
-            order: { select: { id: true, totalAmount: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.order.count(),
-        prisma.order.aggregate({
-          _sum: { totalAmount: true },
-          where: { status: { not: OrderStatus.CANCELLED } },
-        }),
-        prisma.category.findMany({
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
-      ]);
-
-      const totalGMV = gmvAggregate._sum.totalAmount || 0;
-      const finalStores = stores.length > 0 ? stores : DEFAULT_FALLBACK_STORES;
-      const finalProducts = products.length > 0 ? products : DEFAULT_FALLBACK_PRODUCTS;
-
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
       return {
-        metrics: {
-          totalUsers: users.length || 0,
-          totalStores: finalStores.length,
-          totalOrders: totalOrdersCount,
-          totalProducts: finalProducts.length,
-          totalGMV,
-          openTicketsCount: tickets.filter((t) => t.status === TicketStatus.OPEN).length,
-        },
-        stores: finalStores,
-        users,
-        recentOrders,
-        tickets,
-        products: finalProducts,
-        categories,
-      };
-    })();
-
-    const result = await Promise.race([queryPromise, timeoutPromise]);
-
-    if ("isTimeout" in result) {
-      console.warn("getAdminDashboardData query timed out, returning fallback metrics");
-      return {
-        success: true,
+        success: false,
+        error: "Unauthorized access. Admin credentials required.",
         metrics: {
           totalUsers: 0,
           totalStores: 0,
@@ -170,30 +30,688 @@ export async function getAdminDashboardData() {
           totalGMV: 0,
           openTicketsCount: 0,
         },
-        stores: DEFAULT_FALLBACK_STORES,
-        users: [],
-        recentOrders: [],
-        tickets: [],
-        products: DEFAULT_FALLBACK_PRODUCTS,
         categories: [],
+        queryDurationMs: 0,
       };
+    }
+
+    const [
+      totalUsers,
+      totalStores,
+      totalOrders,
+      totalProducts,
+      gmvAggregate,
+      openTicketsCount,
+      categories,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.store.count(),
+      prisma.order.count(),
+      prisma.product.count(),
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { status: { not: OrderStatus.CANCELLED } },
+      }),
+      prisma.supportTicket.count({
+        where: { status: TicketStatus.OPEN },
+      }),
+      prisma.category.findMany({
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    const totalGMV = gmvAggregate._sum.totalAmount || 0;
+    const queryDurationMs = Math.round(performance.now() - startTime);
+
+    if (queryDurationMs > 300) {
+      console.warn(`[PERF WARNING] getAdminOverviewMetrics took ${queryDurationMs}ms`);
     }
 
     return {
       success: true,
-      ...result,
+      metrics: {
+        totalUsers,
+        totalStores,
+        totalOrders,
+        totalProducts,
+        totalGMV,
+        openTicketsCount,
+      },
+      categories,
+      queryDurationMs,
+    };
+  } catch (error: any) {
+    console.error("Error in getAdminOverviewMetrics:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to load admin overview metrics",
+      metrics: {
+        totalUsers: 0,
+        totalStores: 0,
+        totalOrders: 0,
+        totalProducts: 0,
+        totalGMV: 0,
+        openTicketsCount: 0,
+      },
+      categories: [],
+      queryDurationMs: Math.round(performance.now() - startTime),
+    };
+  }
+}
+
+/**
+ * Paginated Products Query with server-side category/status filtering and search.
+ */
+export async function getAdminProductsPaginated(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  categoryId?: string;
+  status?: "ALL" | "AVAILABLE" | "OUT_OF_STOCK";
+} = {}) {
+  const startTime = performance.now();
+  try {
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
+      return {
+        success: false,
+        error: "Unauthorized access.",
+        products: [],
+        pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+        queryDurationMs: 0,
+      };
+    }
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 25));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.categoryId && params.categoryId !== "ALL") {
+      where.OR = [
+        { categoryId: params.categoryId },
+        { category: { name: { equals: params.categoryId, mode: "insensitive" } } },
+      ];
+    }
+
+    if (params.status === "AVAILABLE") {
+      where.isAvailable = true;
+    } else if (params.status === "OUT_OF_STOCK") {
+      where.isAvailable = false;
+    }
+
+    if (params.search && params.search.trim()) {
+      const q = params.search.trim();
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { slug: { contains: q, mode: "insensitive" } },
+            { store: { name: { contains: q, mode: "insensitive" } } },
+          ],
+        },
+      ];
+    }
+
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          price: true,
+          image: true,
+          isAvailable: true,
+          createdAt: true,
+          categoryId: true,
+          category: { select: { id: true, name: true } },
+          store: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    // Optimize images for table display (compact thumbnails)
+    const formatted = products.map((p) => {
+      let mainImg = p.image;
+      if (mainImg?.startsWith("[")) {
+        try {
+          const arr = JSON.parse(mainImg);
+          if (Array.isArray(arr) && arr.length > 0) mainImg = arr[0];
+        } catch {}
+      }
+      return {
+        ...p,
+        image: getOptimizedCloudinaryUrl(mainImg, { width: 140, height: 140, crop: "fill", quality: "auto:good" }) || formatCloudinaryUrl(mainImg),
+      };
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const queryDurationMs = Math.round(performance.now() - startTime);
+
+    return {
+      success: true,
+      products: formatted,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+      queryDurationMs,
+    };
+  } catch (error: any) {
+    console.error("Error in getAdminProductsPaginated:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to load products",
+      products: [],
+      pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+      queryDurationMs: Math.round(performance.now() - startTime),
+    };
+  }
+}
+
+/**
+ * Paginated Orders Query with server-side status/vendor filtering and search.
+ * Leverages PostgreSQL indexes on [status], [storeId], [createdAt].
+ */
+export async function getAdminOrdersPaginated(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  storeId?: string;
+} = {}) {
+  const startTime = performance.now();
+  try {
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
+      return {
+        success: false,
+        error: "Unauthorized access.",
+        orders: [],
+        pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+        queryDurationMs: 0,
+      };
+    }
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 25));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.status && params.status !== "ALL") {
+      if (params.status === "IN_PROGRESS") {
+        where.status = {
+          in: [
+            OrderStatus.ACCEPTED,
+            OrderStatus.PREPARING,
+            OrderStatus.READY_FOR_DELIVERY,
+            OrderStatus.OUT_FOR_DELIVERY,
+          ],
+        };
+      } else {
+        where.status = params.status as OrderStatus;
+      }
+    }
+
+    if (params.storeId && params.storeId !== "ALL") {
+      where.storeId = params.storeId;
+    }
+
+    if (params.search && params.search.trim()) {
+      const q = params.search.trim();
+      where.AND = [
+        {
+          OR: [
+            { paymentReference: { contains: q, mode: "insensitive" } },
+            { deliveryLocation: { contains: q, mode: "insensitive" } },
+            { user: { name: { contains: q, mode: "insensitive" } } },
+            { user: { email: { contains: q, mode: "insensitive" } } },
+            { user: { phone: { contains: q, mode: "insensitive" } } },
+            { store: { name: { contains: q, mode: "insensitive" } } },
+          ],
+        },
+      ];
+    }
+
+    const [orders, totalCount] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          totalAmount: true,
+          status: true,
+          deliveryLocation: true,
+          deliveryFee: true,
+          serviceFee: true,
+          deliveryInstructions: true,
+          paymentReference: true,
+          createdAt: true,
+          updatedAt: true,
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          store: { select: { id: true, name: true, phone: true } },
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              price: true,
+              product: { select: { id: true, name: true, image: true, price: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const queryDurationMs = Math.round(performance.now() - startTime);
+
+    return {
+      success: true,
+      orders,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+      queryDurationMs,
+    };
+  } catch (error: any) {
+    console.error("Error in getAdminOrdersPaginated:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to load orders",
+      orders: [],
+      pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+      queryDurationMs: Math.round(performance.now() - startTime),
+    };
+  }
+}
+
+/**
+ * Paginated Stores/Vendors Query with server-side category/verification filtering.
+ */
+export async function getAdminStoresPaginated(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  isVerified?: "ALL" | "VERIFIED" | "UNVERIFIED";
+} = {}) {
+  const startTime = performance.now();
+  try {
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
+      return {
+        success: false,
+        error: "Unauthorized access.",
+        stores: [],
+        pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+        queryDurationMs: 0,
+      };
+    }
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 25));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.category && params.category !== "ALL") {
+      where.category = { equals: params.category, mode: "insensitive" };
+    }
+
+    if (params.isVerified === "VERIFIED") {
+      where.isVerified = true;
+    } else if (params.isVerified === "UNVERIFIED") {
+      where.isVerified = false;
+    }
+
+    if (params.search && params.search.trim()) {
+      const q = params.search.trim();
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { phone: { contains: q, mode: "insensitive" } },
+            { user: { email: { contains: q, mode: "insensitive" } } },
+            { user: { name: { contains: q, mode: "insensitive" } } },
+          ],
+        },
+      ];
+    }
+
+    const [stores, totalCount] = await Promise.all([
+      prisma.store.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          logo: true,
+          coverImage: true,
+          isOpen: true,
+          isVerified: true,
+          isService: true,
+          category: true,
+          serviceSubcategory: true,
+          phone: true,
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+          createdAt: true,
+          updatedAt: true,
+          user: { select: { id: true, email: true, name: true, phone: true } },
+          _count: { select: { products: true, orders: true, reviews: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.store.count({ where }),
+    ]);
+
+    const formatted = stores.map((s) => ({
+      ...s,
+      logo: s.logo ? formatCloudinaryUrl(s.logo) : null,
+      coverImage: s.coverImage ? formatCloudinaryUrl(s.coverImage) : null,
+    }));
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const queryDurationMs = Math.round(performance.now() - startTime);
+
+    return {
+      success: true,
+      stores: formatted,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+      queryDurationMs,
+    };
+  } catch (error: any) {
+    console.error("Error in getAdminStoresPaginated:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to load stores",
+      stores: [],
+      pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+      queryDurationMs: Math.round(performance.now() - startTime),
+    };
+  }
+}
+
+/**
+ * Paginated Users Query with server-side role filtering and search.
+ */
+export async function getAdminUsersPaginated(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: "ALL" | Role;
+} = {}) {
+  const startTime = performance.now();
+  try {
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
+      return {
+        success: false,
+        error: "Unauthorized access.",
+        users: [],
+        pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+        queryDurationMs: 0,
+      };
+    }
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 25));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.role && params.role !== "ALL") {
+      if ((params.role as any) === "STUDENT") {
+        where.role = { notIn: [Role.ADMIN, Role.VENDOR] };
+        where.store = null;
+        where.email = {
+          notIn: [
+            "lightmarketplace01@gmail.com",
+            "admin@campuslightson.com",
+          ],
+        };
+      } else {
+        where.role = params.role as Role;
+      }
+    }
+
+    if (params.search && params.search.trim()) {
+      const q = params.search.trim();
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { email: { contains: q, mode: "insensitive" } },
+            { phone: { contains: q, mode: "insensitive" } },
+            { hostel: { contains: q, mode: "insensitive" } },
+          ],
+        },
+      ];
+    }
+
+    const [users, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          image: true,
+          hostel: true,
+          createdAt: true,
+          store: { select: { id: true, name: true } },
+          _count: { select: { orders: true, tickets: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const queryDurationMs = Math.round(performance.now() - startTime);
+
+    return {
+      success: true,
+      users,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+      queryDurationMs,
+    };
+  } catch (error: any) {
+    console.error("Error in getAdminUsersPaginated:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to load users",
+      users: [],
+      pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+      queryDurationMs: Math.round(performance.now() - startTime),
+    };
+  }
+}
+
+/**
+ * Paginated Support Tickets Query with server-side status filtering.
+ */
+export async function getAdminTicketsPaginated(params: {
+  page?: number;
+  limit?: number;
+  status?: "ALL" | TicketStatus;
+} = {}) {
+  const startTime = performance.now();
+  try {
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
+      return {
+        success: false,
+        error: "Unauthorized access.",
+        tickets: [],
+        pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+        queryDurationMs: 0,
+      };
+    }
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 25));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.status && params.status !== "ALL") {
+      where.status = params.status as TicketStatus;
+    }
+
+    const [tickets, totalCount] = await Promise.all([
+      prisma.supportTicket.findMany({
+        where,
+        select: {
+          id: true,
+          subject: true,
+          category: true,
+          message: true,
+          status: true,
+          adminReply: true,
+          createdAt: true,
+          updatedAt: true,
+          orderId: true,
+          user: { select: { name: true, email: true } },
+          order: { select: { id: true, totalAmount: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.supportTicket.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const queryDurationMs = Math.round(performance.now() - startTime);
+
+    return {
+      success: true,
+      tickets,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+      queryDurationMs,
+    };
+  } catch (error: any) {
+    console.error("Error in getAdminTicketsPaginated:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to load tickets",
+      tickets: [],
+      pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 0, hasMore: false },
+      queryDurationMs: Math.round(performance.now() - startTime),
+    };
+  }
+}
+
+export async function getAdminDashboardData() {
+  const startTime = performance.now();
+  try {
+    const session = await checkAdminSession();
+    if (!session || !session.isAuthenticated) {
+      return {
+        success: false,
+        error: "Unauthorized access.",
+        metrics: {
+          totalUsers: 0,
+          totalStores: 0,
+          totalOrders: 0,
+          totalProducts: 0,
+          totalGMV: 0,
+          openTicketsCount: 0,
+        },
+        stores: [],
+        users: [],
+        recentOrders: [],
+        tickets: [],
+        products: [],
+        categories: [],
+        queryDurationMs: 0,
+      };
+    }
+
+    const [overview, productsRes, ordersRes, storesRes, usersRes, ticketsRes] = await Promise.all([
+      getAdminOverviewMetrics(),
+      getAdminProductsPaginated({ page: 1, limit: 50 }),
+      getAdminOrdersPaginated({ page: 1, limit: 50 }),
+      getAdminStoresPaginated({ page: 1, limit: 50 }),
+      getAdminUsersPaginated({ page: 1, limit: 50 }),
+      getAdminTicketsPaginated({ page: 1, limit: 50 }),
+    ]);
+
+    return {
+      success: true,
+      metrics: overview.metrics,
+      categories: overview.categories,
+      products: productsRes.products,
+      recentOrders: ordersRes.orders,
+      stores: storesRes.stores,
+      users: usersRes.users,
+      tickets: ticketsRes.tickets,
+      queryDurationMs: Math.round(performance.now() - startTime),
     };
   } catch (error: any) {
     console.error("Error fetching admin dashboard data:", error);
     return {
       success: false,
       error: error.message || "Failed to load dashboard data",
-      stores: DEFAULT_FALLBACK_STORES,
+      metrics: {
+        totalUsers: 0,
+        totalStores: 0,
+        totalOrders: 0,
+        totalProducts: 0,
+        totalGMV: 0,
+        openTicketsCount: 0,
+      },
+      stores: [],
       users: [],
       recentOrders: [],
       tickets: [],
-      products: DEFAULT_FALLBACK_PRODUCTS,
+      products: [],
       categories: [],
+      queryDurationMs: Math.round(performance.now() - startTime),
     };
   }
 }
