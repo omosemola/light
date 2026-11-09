@@ -674,19 +674,24 @@ export default function VendorDashboardPage() {
         addons: addOns.filter((a) => a.name.trim()),
       });
 
-      // 3. Resolve & Encode images
-      const resolvedImages = await Promise.all(
-        productImages.map(async (img) => {
-          if (img && img.startsWith("data:image/")) {
-            try {
-              return await uploadImageToCloud(img, "lightson_marketplace/products");
-            } catch {
-              return img;
-            }
+      // 3. Resolve & Encode images directly to Cloudinary
+      const resolvedImages: string[] = [];
+      for (let i = 0; i < productImages.length; i++) {
+        const img = productImages[i];
+        if (img && img.startsWith("data:image/")) {
+          try {
+            showToast(`Uploading photo ${i + 1} of ${productImages.length} to Cloudinary... ☁️`);
+            const cloudUrl = await uploadImageToCloud(img, "lightson_marketplace/products");
+            resolvedImages.push(cloudUrl);
+          } catch (uploadError: any) {
+            setSubmittingProduct(false);
+            showToast(`⚠️ Cloudinary photo upload failed: ${uploadError.message || "Failed to upload image"}. Please try again.`);
+            return;
           }
-          return img;
-        })
-      );
+        } else if (img) {
+          resolvedImages.push(img);
+        }
+      }
       const finalImage = encodeProductImages(resolvedImages);
 
       if (editingProductId) {

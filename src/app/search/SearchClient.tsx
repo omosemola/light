@@ -127,6 +127,12 @@ export default function SearchClient({
   const [inStockOnly, setInStockOnly] = useState(false);
   const [maxPrepTime, setMaxPrepTime] = useState<string>("All");
   const [sortBy, setSortBy] = useState<string>("relevance");
+  const [visibleCount, setVisibleCount] = useState<number>(24);
+
+  // Reset pagination when search/filter criteria change
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [query, selectedCategory, selectedVendor, maxPrice, inStockOnly, maxPrepTime, sortBy]);
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
@@ -470,6 +476,11 @@ export default function SearchClient({
     isMounted,
     randomSeed,
   ]);
+
+  // Progressive pagination for silky-smooth rendering
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
 
   // Filter stores when user types a search query
   const displayedStores = useMemo(() => {
@@ -1195,9 +1206,27 @@ export default function SearchClient({
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
               <ProductGrid
-                products={filteredProducts}
+                products={paginatedProducts}
                 onAddProduct={handleOpenCustomizer}
               />
+
+              {filteredProducts.length > visibleCount && (
+                <div className="flex flex-col items-center justify-center pt-8 pb-4 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((prev) => prev + 24)}
+                    className="px-6 py-3 rounded-full bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-xs shadow-md active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <span>Load More Products</span>
+                    <span className="text-[11px] font-normal opacity-85">
+                      ({paginatedProducts.length} of {filteredProducts.length})
+                    </span>
+                  </button>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Showing {paginatedProducts.length} of {filteredProducts.length} products
+                  </p>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div

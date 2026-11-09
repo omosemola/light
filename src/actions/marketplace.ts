@@ -3,7 +3,7 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { computeIsStoreOpen } from "@/lib/storeSchedule";
-import { parseProductImages } from "@/lib/productOptions";
+import { parseProductImages, formatCloudinaryUrl } from "@/lib/productOptions";
 import { slugify } from "@/lib/slugify";
 import {
   optimizeProductImageField,
@@ -140,11 +140,12 @@ const readHomepageData = unstable_cache(
   async () => {
     const [products, stores, categories] = await Promise.all([
       prisma.product.findMany({
+        where: { isAvailable: true },
         include: {
           store: { select: LIST_STORE_SELECT },
-          category: true,
+          category: { select: { id: true, name: true } },
         },
-        take: 100,
+        take: 48,
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
@@ -475,12 +476,14 @@ const readServiceStoresCached = unstable_cache(readServiceStores, ["marketplace-
 
 /** Slim product shape for category pages (keeps what CategoryClient reads, drops base64 + store blobs). */
 function formatCategoryProduct(p: any) {
+  const image = optimizeProductImageField(p.image, p.id, p.updatedAt, { firstOnly: true });
+  const mainImage = parseProductImages(image)[0] || image;
   return {
     id: p.id,
-    slug: p.slug,
+    slug: p.slug || p.id,
     name: p.name,
     price: p.price,
-    image: optimizeProductImageField(p.image, p.id, p.updatedAt, { firstOnly: true }),
+    image: formatCloudinaryUrl(mainImage),
     description: p.description,
     isAvailable: p.isAvailable,
     storeId: p.storeId,
@@ -498,7 +501,7 @@ async function readCategoryProducts(normalized: string) {
 
   const categoryProductInclude = {
     store: { select: { id: true, name: true } },
-    category: true,
+    category: { select: { id: true, name: true } },
   };
 
   const category = await prisma.category.findFirst({
@@ -665,5 +668,104 @@ export async function getServicePersonnel() {
   } catch (error: any) {
     console.error("Error fetching service personnel:", error);
     return { success: false, stores: [] as any[] };
+  }
+}
+
+/**
+ * High-performance paginated product queries with server-side filtering, sorting, and lean projection.
+ * Designed for infinite scroll and progressive loading.
+ */
+export async function getPaginatedProducts(options: {
+  page?: number;
+  limit?: number;
+  categorySlug?: string;
+  storeId?: string;
+  search?: string;
+  sortBy?: "newest" | "price-asc" | "price-desc" | "name";
+} = {}) {
+  try {
+    const page = Math.max(1, Number(options.page) || 1);
+    const limit = Math.min(60, Math.max(1, Number(options.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const where: any = { isAvailable: true };
+
+    if (options.storeId) {
+      where.storeId = options.storeId;
+    }
+
+    if (options.categorySlug && options.categorySlug !== "all") {
+      const cleanSlug = options.categorySlug.toLowerCase().trim();
+      where.OR = [
+        { categoryId: cleanSlug },
+        { category: { name: { equals: cleanSlug, mode: "insensitive" } } },
+      ];
+    }
+
+    if (options.search && options.search.trim().length > 0) {
+      const q = options.search.trim().toLowerCase();
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { description: { contains: q, mode: "insensitive" } },
+            { category: { name: { contains: q, mode: "insensitive" } } },
+          ],
+        },
+      ];
+    }
+
+    let orderBy: any = { createdAt: "desc" };
+    if (options.sortBy === "price-asc") orderBy = { price: "asc" };
+    else if (options.sortBy === "price-desc") orderBy = { price: "desc" };
+    else if (options.sortBy === "name") orderBy = { name: "asc" };
+
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          price: true,
+          image: true,
+          description: true,
+          isAvailable: true,
+          estimatedDelivery: true,
+          deliveryFee: true,
+          createdAt: true,
+          updatedAt: true,
+          storeId: true,
+          store: { select: LIST_STORE_SELECT },
+          category: { select: { id: true, name: true } },
+        },
+        skip,
+        take: limit,
+        orderBy,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasMore = page < totalPages;
+
+    return {
+      success: true,
+      products: products.map((p) => formatListProduct(p, 4.8)),
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasMore,
+      },
+    };
+  } catch (error: any) {
+    console.error("Error in getPaginatedProducts:", error);
+    return {
+      success: false,
+      products: [],
+      pagination: { page: 1, limit: 20, totalCount: 0, totalPages: 0, hasMore: false },
+    };
   }
 }

@@ -21,8 +21,9 @@ const nextConfig: NextConfig = {
   compress: true,
   reactStrictMode: true,
   images: {
-    minimumCacheTTL: 86400,
-    formats: ["image/avif", "image/webp"],
+    // Avoid unnecessary Netlify serverless image processing & quota usage:
+    // Images deliver directly from Cloudinary CDN edge with f_auto,q_auto transformations.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -96,12 +97,33 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Immutable Next.js static JavaScript, CSS, and media chunks (hashed filenames)
       {
-        source: "/:all*(svg|jpg|jpeg|png|webp|avif|woff2|ico)",
+        source: "/_next/static/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=604800",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      // Font files: long-term immutable caching
+      {
+        source: "/:all*(woff|woff2|ttf|otf|eot)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      // Static media files and public images (30-day edge caching)
+      {
+        source: "/:all*(svg|jpg|jpeg|png|webp|avif|ico)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=2592000, stale-while-revalidate=86400",
           },
         ],
       },

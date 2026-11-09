@@ -1,4 +1,4 @@
-import { parseProductImages, encodeProductImages } from "@/lib/productOptions";
+import { parseProductImages, encodeProductImages, formatCloudinaryUrl } from "@/lib/productOptions";
 
 /**
  * Uploaded images may be stored in the database as base64 `data:` URIs (when Cloudinary is
@@ -47,6 +47,7 @@ export function optimizeSingleImage<T extends string | null | undefined>(
   updatedAt: DateLike
 ): T | string {
   if (isDataUri(value)) return buildImageUrl(kind, id, 0, updatedAt);
+  if (typeof value === "string") return formatCloudinaryUrl(value) as T;
   return value;
 }
 

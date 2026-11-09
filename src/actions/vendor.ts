@@ -36,24 +36,31 @@ async function ensureCloudinaryImageUrl(
           parsed.map(async (img) => {
             if (typeof img === "string" && img.startsWith("data:image/")) {
               const res = await uploadToCloudinary(img, folder);
-              return res.success && res.url ? res.url : img;
+              if (!res.success || !res.url) {
+                throw new Error(res.error || "Failed to upload image to Cloudinary CDN");
+              }
+              return res.url;
             }
             return img;
           })
         );
         return JSON.stringify(uploaded);
       }
-    } catch {
-      // Fall through
+    } catch (err: any) {
+      if (err.message && err.message.includes("Cloudinary")) {
+        throw err;
+      }
+      // Fall through if json parse error
     }
   }
 
   // 2. Single base64 image
   if (imageStr.startsWith("data:image/")) {
     const res = await uploadToCloudinary(imageStr, folder);
-    if (res.success && res.url) {
-      return res.url;
+    if (!res.success || !res.url) {
+      throw new Error(res.error || "Failed to upload image to Cloudinary CDN");
     }
+    return res.url;
   }
 
   return imageStr;
@@ -358,7 +365,11 @@ export async function createVendorProduct(data: {
     }
 
     const productSlug = await generateUniqueProductSlug(prisma, data.name.trim());
-    const finalProductImage = (await ensureCloudinaryImageUrl(data.image, "lightson_marketplace/products")) || data.image;
+    const uploadedImage = await ensureCloudinaryImageUrl(data.image, "lightson_marketplace/products");
+    const finalProductImage = uploadedImage || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
+    if (finalProductImage.includes("data:image/")) {
+      return { success: false, error: "Image failed to upload to Cloudinary CDN. Base64 images cannot be saved directly." };
+    }
 
     const product = await prisma.product.create({
       data: {
@@ -468,6 +479,9 @@ export async function updateVendorProduct(data: {
     }
 
     const finalProductImage = data.image !== undefined ? await ensureCloudinaryImageUrl(data.image, "lightson_marketplace/products") : undefined;
+    if (finalProductImage && finalProductImage.includes("data:image/")) {
+      return { success: false, error: "Image failed to upload to Cloudinary CDN. Base64 images cannot be saved directly." };
+    }
 
     if (!existing) {
       // If product record wasn't in DB yet, find current vendor store and insert it

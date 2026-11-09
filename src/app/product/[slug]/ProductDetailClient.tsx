@@ -41,6 +41,7 @@ import {
   parseProductDescription, 
   parseProductImages, 
   getSafeImageUrl,
+  getOptimizedCloudinaryUrl,
   VariationOption, 
   AddOnOption 
 } from "@/lib/productOptions";
@@ -400,7 +401,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
         className="relative w-full aspect-square md:aspect-[21/9] max-h-[460px] bg-slate-950 overflow-hidden group"
       >
         <Image
-          src={productImages[activeImageIdx] || productImages[0]}
+          src={getOptimizedCloudinaryUrl(productImages[activeImageIdx] || productImages[0], { width: 1200, quality: "auto:good" })}
           alt={`${product.name} by ${product.vendorName} — Lightson Marketplace`}
           fill
           priority

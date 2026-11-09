@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { useUserStore } from "@/lib/userStore";
 
-import { parseProductImages, isUnoptimizedImage } from "@/lib/productOptions";
+import { parseProductImages, isUnoptimizedImage, getOptimizedCloudinaryUrl } from "@/lib/productOptions";
 
 export interface ProductCardProps {
   id: string;
@@ -34,7 +34,8 @@ export function ProductCard({
   const { isProductFavorite, toggleProductFavorite } = useFavoritesStore();
   const { profile } = useUserStore();
   const isFavorite = isProductFavorite(id);
-  const mainImage = parseProductImages(image)[0] || image;
+  const rawImage = parseProductImages(image)[0] || image;
+  const mainImage = getOptimizedCloudinaryUrl(rawImage, { width: 600, quality: "auto:good" });
 
   const cardContent = (
     <motion.div

@@ -328,6 +328,11 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("All");
   const [sortBy, setSortBy] = useState<"popular" | "price-asc" | "price-desc" | "name">("popular");
+  const [visibleCount, setVisibleCount] = useState<number>(24);
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [searchQuery, selectedSubcategory, sortBy]);
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
@@ -389,6 +394,10 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
     }
     return list;
   }, [rawProducts, searchQuery, selectedSubcategory, sortBy, slug]);
+
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
 
   const filteredServicePersonnel = useMemo(() => {
     if (slug !== "services") return [];
@@ -824,10 +833,30 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
 
             {/* PRODUCTS GRID WITH SCROLL ANIMATION */}
             {filteredProducts.length > 0 ? (
-              <ProductGrid
-                products={filteredProducts}
-                onAddProduct={handleOpenCustomizer}
-              />
+              <>
+                <ProductGrid
+                  products={paginatedProducts}
+                  onAddProduct={handleOpenCustomizer}
+                />
+
+                {filteredProducts.length > visibleCount && (
+                  <div className="flex flex-col items-center justify-center pt-8 pb-4 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((prev) => prev + 24)}
+                      className="px-6 py-3 rounded-full bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-heading font-extrabold text-xs shadow-md active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2"
+                    >
+                      <span>Load More Products</span>
+                      <span className="text-[11px] font-normal opacity-85">
+                        ({paginatedProducts.length} of {filteredProducts.length})
+                      </span>
+                    </button>
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      Showing {paginatedProducts.length} of {filteredProducts.length} products
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}

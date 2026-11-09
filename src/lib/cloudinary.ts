@@ -26,7 +26,7 @@ export async function uploadToCloudinary(
       console.warn("[Cloudinary] Credentials not configured in .env");
       return { 
         success: false, 
-        error: "Cloudinary credentials missing. Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file." 
+        error: "Cloudinary credentials missing. Please check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file." 
       };
     }
 
@@ -34,7 +34,7 @@ export async function uploadToCloudinary(
       folder,
       resource_type: "image" as const,
       transformation: [
-        { quality: "auto:eco", fetch_format: "auto", max_width: 1600, max_height: 1600, crop: "limit" },
+        { quality: "auto:good", fetch_format: "auto", max_width: 1600, max_height: 1600, crop: "limit" },
       ],
     };
 
@@ -59,6 +59,51 @@ export async function uploadToCloudinary(
     }
   } catch (error: any) {
     console.error("[Cloudinary Upload Error]:", error);
-    return { success: false, error: error.message || "Failed to upload image to Cloudinary" };
+    const msg = error?.message || (typeof error === "string" ? error : "Failed to upload image to Cloudinary");
+    return { success: false, error: msg };
   }
+}
+
+/**
+ * Formats a Cloudinary URL to request optimized, transformed images directly from the CDN edge.
+ * Injects automatic format negotiation (AVIF/WebP) and quality adjustments.
+ */
+export function getOptimizedCloudinaryUrl(
+  url: string | null | undefined,
+  options?: {
+    width?: number;
+    height?: number;
+    quality?: "auto" | "auto:good" | "auto:eco" | "auto:best" | number;
+    crop?: "fill" | "limit" | "fit" | "scale" | "thumb";
+    format?: "auto" | "webp" | "avif" | "jpg";
+  }
+): string {
+  if (!url || typeof url !== "string") return "";
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+    return url;
+  }
+
+  const parts = url.split("/upload/");
+  if (parts.length !== 2) return url;
+
+  const transformations: string[] = [];
+  const format = options?.format || "auto";
+  const quality = options?.quality || "auto:good";
+  transformations.push(`f_${format}`);
+  transformations.push(`q_${quality}`);
+
+  if (options?.width) transformations.push(`w_${options.width}`);
+  if (options?.height) transformations.push(`h_${options.height}`);
+  if (options?.crop) transformations.push(`c_${options.crop}`);
+  else if (options?.width || options?.height) transformations.push("c_limit");
+
+  const transformString = transformations.join(",");
+  const afterUpload = parts[1];
+
+  // If already contains a transformation segment right before the version or folder, replace or append
+  if (afterUpload.startsWith("v") || afterUpload.startsWith("lightson_marketplace")) {
+    return `${parts[0]}/upload/${transformString}/${afterUpload}`;
+  }
+
+  return `${parts[0]}/upload/${transformString}/${afterUpload}`;
 }
