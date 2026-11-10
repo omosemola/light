@@ -1,4 +1,4 @@
-import { getLiveHomepageData } from "@/actions/marketplace";
+import { getLiveSearchCatalog } from "@/actions/marketplace";
 import SearchClient from "./SearchClient";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export default async function SearchPage() {
   let initialStores: any[] = [];
 
   try {
-    const data = await getLiveHomepageData();
+    const data = await getLiveSearchCatalog();
     if (data && data.success) {
       initialCatalog = data.products || [];
       initialStores = data.stores || [];

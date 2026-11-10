@@ -41,7 +41,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ProductGrid } from "@/components/ui/ProductGrid";
 import { useCartStore } from "@/lib/store";
 import { Modal } from "@/components/ui/Modal";
-import { getLiveHomepageData, searchLiveCatalog } from "@/actions/marketplace";
+import { getLiveSearchCatalog, searchLiveCatalog } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { getSafeImageUrl, isUnoptimizedImage } from "@/lib/productOptions";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
@@ -187,7 +187,7 @@ export default function SearchClient({
     let active = true;
     async function loadFreshMaster() {
       try {
-        const data = await getLiveHomepageData();
+        const data = await getLiveSearchCatalog();
         if (active && data.success) {
           if (data.products && data.products.length > 0) {
             setMasterCatalog(data.products.map(mapProduct));

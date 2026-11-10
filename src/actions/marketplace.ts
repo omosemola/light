@@ -210,6 +210,80 @@ export async function getLiveHomepageData() {
   }
 }
 
+/* ───────────────────────────── Search Catalog (Full Platform) ───────────────────────────── */
+
+const readSearchCatalogData = unstable_cache(
+  async () => {
+    const [products, stores, categories] = await Promise.all([
+      prisma.product.findMany({
+        where: { isAvailable: true },
+        include: {
+          store: { select: LIST_STORE_SELECT },
+          category: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.store.findMany({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          logo: true,
+          isOpen: true,
+          isService: true,
+          category: true,
+          serviceSubcategory: true,
+          availabilityStatus: true,
+          startingPrice: true,
+          estimatedDelivery: true,
+          deliveryFee: true,
+          rating: true,
+          openingTime: true,
+          closingTime: true,
+          updatedAt: true,
+          _count: { select: { products: true, orders: true } },
+        },
+        orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
+      }),
+      prisma.category.findMany({
+        select: {
+          id: true,
+          name: true,
+          updatedAt: true,
+          _count: { select: { products: true } },
+        },
+      }),
+    ]);
+
+    return {
+      success: true as const,
+      products: products.map((p) => formatListProduct(p, 4.8)),
+      stores: stores.map(slimStore),
+      categories: categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        _count: c._count,
+      })),
+    };
+  },
+  ["marketplace-search-catalog-v1"],
+  { tags: [TAG_ALL, TAG_PRODUCTS, TAG_STORES, TAG_CATEGORIES], revalidate: CACHE_TTL_SECONDS }
+);
+
+export async function getLiveSearchCatalog() {
+  try {
+    return await readSearchCatalogData();
+  } catch (error: any) {
+    console.error("Error fetching live search catalog:", error);
+    return { success: false, products: [], stores: [], categories: [] } as {
+      success: boolean;
+      products: any[];
+      stores: any[];
+      categories: any[];
+    };
+  }
+}
+
 /* ───────────────────────────── Store ───────────────────────────── */
 
 async function readStoreById(storeId: string) {
@@ -620,7 +694,6 @@ export async function searchLiveCatalog(query: string) {
           store: { select: LIST_STORE_SELECT },
           category: true,
         },
-        take: 60,
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
@@ -646,7 +719,7 @@ export async function searchLiveCatalog(query: string) {
           updatedAt: true,
           _count: { select: { products: true, orders: true } },
         },
-        take: 20,
+        orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
       }),
     ]);
 
