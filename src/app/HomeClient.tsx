@@ -52,6 +52,7 @@ import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
 import { getLiveHomepageData } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
+import { getSafeImageUrl, isUnoptimizedImage } from "@/lib/productOptions";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 import { useAuthMachine } from "@/lib/machines/authMachine";
 
@@ -213,10 +214,12 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const [stores, setStores] = useState<any[]>(initialStores);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "open" | "fast" | "top">("all");
+  const [selectedVendorTab, setSelectedVendorTab] = useState<"all" | "open" | "food" | "fashion" | "services">("all");
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
-  // CATEGORY SWIPE SCROLL HOOK FOR BIG SCREENS
+  // SWIPE SCROLL HOOKS FOR BIG SCREENS
   const categoriesSwipe = useSwipeScroll<HTMLDivElement>();
+  const vendorsSwipe = useSwipeScroll<HTMLDivElement>();
   const filtersSwipe = useSwipeScroll<HTMLDivElement>();
 
   // PROMOTIONAL CAROUSEL STATE
@@ -335,6 +338,64 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
     return selected;
   }, [products, selectedFilter, isMounted, randomSeed]);
+
+  // Filtered Vendor Profiles for Homepage Glassmorphism Showcase
+  const filteredStores = useMemo(() => {
+    if (!stores || stores.length === 0) return [];
+
+    return stores.filter((st) => {
+      const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
+      const cat = (st.category || "").toLowerCase();
+      const desc = (st.description || "").toLowerCase();
+      const name = (st.name || "").toLowerCase();
+
+      if (selectedVendorTab === "open") {
+        return Boolean(open);
+      }
+      if (selectedVendorTab === "food") {
+        return (
+          cat.includes("food") ||
+          cat.includes("snack") ||
+          cat.includes("cafeteria") ||
+          cat.includes("pastr") ||
+          desc.includes("food") ||
+          desc.includes("meal") ||
+          desc.includes("cake") ||
+          desc.includes("chop") ||
+          name.includes("kitchen") ||
+          name.includes("food") ||
+          name.includes("pastr")
+        );
+      }
+      if (selectedVendorTab === "fashion") {
+        return (
+          cat.includes("fashion") ||
+          cat.includes("wear") ||
+          cat.includes("jewel") ||
+          cat.includes("fragrance") ||
+          desc.includes("cloth") ||
+          desc.includes("wear") ||
+          desc.includes("perfume") ||
+          desc.includes("wig") ||
+          desc.includes("skin") ||
+          desc.includes("bag") ||
+          name.includes("fashion") ||
+          name.includes("collection")
+        );
+      }
+      if (selectedVendorTab === "services") {
+        return (
+          Boolean(st.isService) ||
+          cat.includes("service") ||
+          desc.includes("laundry") ||
+          desc.includes("barbing") ||
+          desc.includes("clean") ||
+          desc.includes("groom")
+        );
+      }
+      return true;
+    });
+  }, [stores, selectedVendorTab]);
 
   const handleOpenCustomizer = (productId: string) => {
     const product = products.find((p) => p.id === productId);
@@ -636,6 +697,213 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             </div>
           </div>
         </motion.section>
+
+        {/* CAMPUS VENDOR PROFILES (GLASSMORPHISM UI WITH TABS) */}
+        {stores && stores.length > 0 && (
+          <motion.section
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-4"
+          >
+            {/* SECTION HEADER & FILTER TABS */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-400/10 text-[#312E81] dark:text-indigo-400 backdrop-blur-md border border-indigo-200/50 dark:border-indigo-800/50">
+                    <Store size={18} />
+                  </span>
+                  <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100">
+                    Verified Campus Vendors
+                  </h2>
+                </div>
+                <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal mt-1">
+                  Discover verified student merchants, campus kitchens & delivery plugs
+                </p>
+              </div>
+
+              {/* GLASSMORPHIC FILTER TABS */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none">
+                {[
+                  { id: "all", label: "All Vendors" },
+                  { id: "open", label: "🟢 Open Now" },
+                  { id: "food", label: "🍱 Food & Kitchens" },
+                  { id: "fashion", label: "👔 Fashion & Beauty" },
+                  { id: "services", label: "⚡ Campus Services" },
+                ].map((tab) => {
+                  const isActive = selectedVendorTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedVendorTab(tab.id as any)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap backdrop-blur-md ${
+                        isActive
+                          ? "bg-[#312E81] text-white shadow-md shadow-indigo-950/20 dark:bg-indigo-600 border border-[#312E81] dark:border-indigo-500"
+                          : "bg-white/60 dark:bg-zinc-900/60 text-slate-600 dark:text-zinc-300 border border-white/60 dark:border-white/10 hover:bg-white/80 dark:hover:bg-zinc-800/80 shadow-xs"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* HORIZONTAL SWIPEABLE GLASSMORPHIC VENDOR CARDS */}
+            <div className="relative group/vendors">
+              {/* Desktop Navigation Chevrons */}
+              {vendorsSwipe.canScrollLeft && (
+                <button
+                  type="button"
+                  onClick={vendorsSwipe.scrollLeft}
+                  aria-label="Scroll vendors left"
+                  className="hidden md:flex absolute -left-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md text-[#312E81] dark:text-zinc-100 shadow-lg border border-white/70 dark:border-white/10 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+              )}
+
+              {vendorsSwipe.canScrollRight && (
+                <button
+                  type="button"
+                  onClick={vendorsSwipe.scrollRight}
+                  aria-label="Scroll vendors right"
+                  className="hidden md:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md text-[#312E81] dark:text-zinc-100 shadow-lg border border-white/70 dark:border-white/10 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              )}
+
+              <div
+                ref={vendorsSwipe.containerRef}
+                {...vendorsSwipe.handlers}
+                className={`flex gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0 select-none ${
+                  vendorsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+                }`}
+              >
+                {filteredStores.map((st, idx) => {
+                  const open = st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen;
+                  const safeLogo = getSafeImageUrl(st.logo);
+                  const isUnopt = isUnoptimizedImage(safeLogo);
+                  const productsCount = st._count?.products ?? 0;
+
+                  return (
+                    <motion.div
+                      key={st.id}
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.25) }}
+                      className="shrink-0 w-[290px] sm:w-[320px]"
+                    >
+                      <Link
+                        href={`/vendor/${st.id}`}
+                        prefetch={true}
+                        draggable={false}
+                        className="relative h-full p-4 rounded-3xl bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/80 dark:border-white/10 shadow-lg shadow-indigo-950/5 hover:shadow-2xl hover:shadow-indigo-500/15 hover:border-indigo-400/60 dark:hover:border-indigo-500/60 hover:-translate-y-1.5 transition-all duration-300 group flex flex-col justify-between overflow-hidden select-none"
+                      >
+                        {/* Top Ambient Glow Orb */}
+                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-br from-indigo-400/20 via-indigo-500/10 to-amber-400/15 rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
+
+                        <div>
+                          {/* Store Header: Logo + Names + Live Status */}
+                          <div className="flex items-start gap-3 relative z-10 pointer-events-none">
+                            <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md shrink-0 border border-white dark:border-zinc-700 shadow-xs group-hover:scale-105 transition-transform duration-300">
+                              <Image
+                                src={safeLogo}
+                                alt={st.name}
+                                fill
+                                unoptimized={isUnopt}
+                                className="object-cover"
+                                draggable={false}
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <h3 className="font-heading font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate flex items-center gap-1 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
+                                  <span className="truncate">{st.name}</span>
+                                  <ShieldCheck size={14} className="text-[#312E81] dark:text-indigo-400 shrink-0" />
+                                </h3>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[9px] font-heading font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-md ${
+                                    open
+                                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                                      : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      open ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                                    }`}
+                                  />
+                                  {open ? "Open Now" : "Closed"}
+                                </span>
+
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-heading font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 backdrop-blur-md">
+                                  <Star size={10} className="fill-amber-400 text-amber-400" />
+                                  <span>{st.rating ? Number(st.rating).toFixed(1) : "5.0"}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Vendor Bio / Description */}
+                          <p className="text-xs text-slate-600 dark:text-zinc-300 line-clamp-2 mt-3 leading-relaxed font-body relative z-10 pointer-events-none">
+                            {st.description || "Verified campus vendor • Quick orders & hostel delivery"}
+                          </p>
+                        </div>
+
+                        {/* Store Meta Chips & Action Button */}
+                        <div className="mt-4 pt-3 border-t border-white/60 dark:border-white/10 relative z-10">
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400 mb-2.5 pointer-events-none">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock size={12} className="text-indigo-500 dark:text-indigo-400" />
+                              <span>{st.estimatedDelivery || "15-25m"}</span>
+                            </span>
+
+                            <span className="inline-flex items-center gap-1 font-medium">
+                              <ShoppingBag size={12} className="text-amber-500 dark:text-amber-400" />
+                              <span>{productsCount} {productsCount === 1 ? "product" : "products"}</span>
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1 text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-200 transition-colors">
+                            <span className="inline-flex items-center gap-1">
+                              View Vendor Profile
+                            </span>
+                            <span className="w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md border border-white dark:border-zinc-700 flex items-center justify-center shadow-xs group-hover:translate-x-1 group-hover:bg-[#312E81] group-hover:text-white dark:group-hover:bg-indigo-600 transition-all duration-300">
+                              <ArrowRight size={13} />
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+
+                {filteredStores.length === 0 && (
+                  <div className="w-full py-8 text-center bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-3xl border border-white/60 dark:border-white/10 p-6">
+                    <Store size={28} className="mx-auto text-slate-400 dark:text-zinc-500 mb-2 opacity-60" />
+                    <p className="text-xs font-heading font-bold text-slate-700 dark:text-zinc-300">
+                      No vendors found matching this filter
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedVendorTab("all")}
+                      className="mt-2 text-xs font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      Show all vendors
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.section>
+        )}
 
         {/* POPULAR NEAR YOU SECTION (MAX 4 FEATURED ITEMS) */}
         <motion.section
