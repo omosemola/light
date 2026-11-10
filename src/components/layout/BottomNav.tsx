@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useCartStore } from "@/lib/store";
-import { useAuthMachine } from "@/lib/machines/authMachine";
 import { CustomHomeIcon } from "@/components/icons/CustomHomeIcon";
 import { CustomSearchIcon } from "@/components/icons/CustomSearchIcon";
 import { CustomCartIcon } from "@/components/icons/CustomCartIcon";
@@ -15,15 +14,12 @@ import { CustomProfileIcon } from "@/components/icons/CustomProfileIcon";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { isAuthenticated, isReady } = useAuthMachine();
   const itemCount = useCartStore((state) => state.getItemCount());
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  const hasAccount = isAuthenticated;
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =

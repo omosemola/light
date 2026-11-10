@@ -23,8 +23,6 @@ export function TopNav() {
     setIsMounted(true);
   }, []);
 
-  const hasAccount = isAuthenticated;
-
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =
     pathname === "/welcome" ||
