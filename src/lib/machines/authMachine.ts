@@ -56,18 +56,40 @@ export function computeAuthState(
   profile: UserProfile,
   isMounted: boolean
 ): AuthMachineState {
-  if (!isMounted || sessionStatus === "loading") {
+  if (!isMounted) {
     return {
       status: "INITIALIZING",
       isAuthenticated: false,
       role: null,
-      profile: isMounted ? profile : null,
+      profile: null,
       session: null,
     };
   }
 
   const hasNextAuth = sessionStatus === "authenticated" && Boolean(session?.user?.email);
-  const hasLocalAccount = Boolean(profile.email) && !profile.isVisitor && profile.email !== "visitor@light.app";
+  const hasLocalAccount = Boolean(profile?.email) && !profile?.isVisitor && profile?.email !== "visitor@light.app";
+
+  // If session is still loading from NextAuth, but we already have an existing local profile account,
+  // authenticate immediately to prevent UI flashes or onboarding leaks on page reload
+  if (sessionStatus === "loading") {
+    if (hasLocalAccount) {
+      const role = resolveAuthRole(profile.email, profile.role, profile.name);
+      return {
+        status: "AUTHENTICATED",
+        isAuthenticated: true,
+        role,
+        profile,
+        session: null,
+      };
+    }
+    return {
+      status: "INITIALIZING",
+      isAuthenticated: false,
+      role: null,
+      profile,
+      session: null,
+    };
+  }
 
   if (hasNextAuth || hasLocalAccount) {
     const activeEmail = session?.user?.email || profile.email;
