@@ -13,10 +13,7 @@ export function MainContainer({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
   }, []);
 
-  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && (!isReady || !isAuthenticated);
-
   const isNoNav =
-    isVisitorOnboarding ||
     pathname === "/welcome" ||
     pathname.startsWith("/welcome/") ||
     pathname === "/login" ||

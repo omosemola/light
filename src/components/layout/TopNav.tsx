@@ -24,11 +24,9 @@ export function TopNav() {
   }, []);
 
   const hasAccount = isAuthenticated;
-  const isVisitorOnboarding = (pathname === "/" || pathname === "/welcome") && (!isReady || !isAuthenticated);
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =
-    isVisitorOnboarding ||
     pathname === "/welcome" ||
     pathname.startsWith("/welcome/") ||
     pathname === "/login" ||
@@ -52,7 +50,7 @@ export function TopNav() {
     return null;
   }
 
-  const homeLink = hasAccount ? "/" : "/welcome";
+  const homeLink = "/";
 
   return (
     <header className="hidden md:flex items-center justify-between px-8 h-20 bg-white dark:bg-[#121215] border-b border-slate-200 dark:border-zinc-800/80 sticky top-0 z-50 shadow-sm font-body transition-colors duration-200">

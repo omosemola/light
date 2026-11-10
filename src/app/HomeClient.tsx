@@ -50,7 +50,6 @@ import { useTheme } from "@/components/providers/ThemeProvider";
 import { getUserProfileDb } from "@/actions/account";
 import { useUserStore, DEFAULT_VISITOR_CARTOON_AVATAR } from "@/lib/userStore";
 import { useFavoritesStore } from "@/lib/favoritesStore";
-import WelcomePage from "@/app/welcome/page";
 import { getLiveHomepageData } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
@@ -386,48 +385,6 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const userAvatar = (profile.avatar && profile.avatar !== "/visitor-avatar.png")
     ? profile.avatar
     : (session?.user?.image || DEFAULT_HUMAN_AVATAR);
-
-  // Display an elegant branded loading animation during session initialization to prevent any onboarding flicker
-  if (!isReady) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] text-[#18181B] dark:text-zinc-100 font-body select-none">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.25 }}
-          className="flex flex-col items-center justify-center text-center p-6"
-        >
-          {/* Pulsing Lightson Brand Icon */}
-          <div className="relative flex items-center justify-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 shadow-md flex items-center justify-center overflow-hidden p-2">
-              <img
-                src="/logo.png?v=2"
-                alt="Lightson Marketplace"
-                className="w-10 h-10 object-contain"
-              />
-            </div>
-            <span className="absolute -inset-2 rounded-3xl border-2 border-[#312E81]/30 dark:border-indigo-400/30 animate-ping opacity-25 pointer-events-none" />
-          </div>
-
-          {/* Staggered Bounce Dots */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce [animation-delay:-0.3s]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F5A623] dark:bg-[#FBBF24] animate-bounce [animation-delay:-0.15s]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-bounce" />
-          </div>
-
-          <p className="text-xs font-heading font-extrabold text-[#312E81] dark:text-indigo-300 tracking-wider">
-            Loading Lightson Marketplace...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // The main website links to the onboarding page if user is not authenticated
-  if (!isAuthenticated) {
-    return <WelcomePage />;
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 transition-colors duration-200">

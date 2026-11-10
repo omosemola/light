@@ -24,12 +24,9 @@ export function BottomNav() {
   }, []);
 
   const hasAccount = isAuthenticated;
-  const isVisitorOnboarding =
-    (pathname === "/" || pathname === "/welcome") && (!isReady || !isAuthenticated);
 
   // Hide on onboarding, auth, vendor, and admin pages
   const isNoNav =
-    isVisitorOnboarding ||
     pathname === "/welcome" ||
     pathname.startsWith("/welcome/") ||
     pathname === "/login" ||
@@ -56,9 +53,9 @@ export function BottomNav() {
   const navItems = [
     {
       name: "Home",
-      href: hasAccount ? "/" : "/welcome",
+      href: "/",
       icon: CustomHomeIcon,
-      active: pathname === "/" || pathname === "/welcome",
+      active: pathname === "/",
     },
     {
       name: "Search",
