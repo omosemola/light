@@ -810,41 +810,36 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
           )}
         </motion.section>
 
-        {/* CAMPUS VENDOR PROFILES (GLASSMORPHISM UI WITH TABS) */}
+        {/* CAMPUS VENDOR PROFILES (CLEAN, COMPACT, NO GRADIENTS) */}
         <motion.section
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="relative overflow-hidden rounded-3xl p-5 sm:p-7 md:p-8 backdrop-blur-2xl bg-white/70 dark:bg-zinc-900/60 border border-white/60 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] space-y-6"
+          transition={{ duration: 0.4 }}
+          className="space-y-3"
         >
-          {/* AMBIENT FROSTED GLOW ORBS */}
-          <div className="absolute -top-24 -right-24 w-80 h-80 bg-indigo-500/15 dark:bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-amber-500/10 dark:bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-
-          {/* HEADER & FILTER TABS */}
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* SECTION HEADER & FILTER TABS */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-extrabold bg-[#312E81]/10 dark:bg-indigo-500/15 text-[#312E81] dark:text-indigo-300 border border-[#312E81]/20 dark:border-indigo-500/30 mb-2">
-                <Store size={13} className="text-[#312E81] dark:text-indigo-400" />
-                <span>Verified Campus Vendors</span>
+              <div className="flex items-center gap-1.5">
+                <Store size={18} className="text-[#312E81] dark:text-indigo-400 shrink-0" />
+                <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100">
+                  Campus Vendor Profiles
+                </h2>
               </div>
-              <h2 className="font-heading font-extrabold text-xl md:text-2xl text-[#18181B] dark:text-zinc-100 tracking-tight">
-                Campus Vendor Profiles
-              </h2>
               <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body font-normal mt-0.5">
-                Connect directly with student merchants, campus kitchens & trusted service providers
+                Verified student creators, campus kitchens & delivery plugs
               </p>
             </div>
 
-            {/* CATEGORY FILTER TABS */}
+            {/* CATEGORY FILTER TABS (NO GRADIENTS) */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none">
               <button
                 type="button"
                 onClick={() => setSelectedVendorTab("all")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap shadow-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   selectedVendorTab === "all"
-                    ? "bg-[#312E81] text-white shadow-indigo-500/25"
-                    : "backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-700/80 hover:border-indigo-400 dark:hover:border-indigo-400"
+                    ? "bg-[#312E81] text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-slate-300"
                 }`}
               >
                 All Vendors {stores.length > 0 && `(${stores.length})`}
@@ -853,47 +848,47 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
               <button
                 type="button"
                 onClick={() => setSelectedVendorTab("open")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shadow-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   selectedVendorTab === "open"
-                    ? "bg-emerald-600 text-white shadow-emerald-500/25"
-                    : "backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-700/80 hover:border-emerald-400 dark:hover:border-emerald-400"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-emerald-400"
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 <span>Open Now</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedVendorTab("food")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shadow-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   selectedVendorTab === "food"
-                    ? "bg-amber-500 text-slate-950 shadow-amber-500/25"
-                    : "backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-700/80 hover:border-amber-400 dark:hover:border-amber-400"
+                    ? "bg-amber-500 text-slate-950 shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-amber-400"
                 }`}
               >
-                <span>🍱 Food & Kitchens</span>
+                <span>🍱 Food</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedVendorTab("fashion")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shadow-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   selectedVendorTab === "fashion"
-                    ? "bg-pink-600 text-white shadow-pink-500/25"
-                    : "backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-700/80 hover:border-pink-400 dark:hover:border-pink-400"
+                    ? "bg-pink-600 text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-pink-400"
                 }`}
               >
-                <span>👔 Fashion & Beauty</span>
+                <span>👔 Fashion</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedVendorTab("services")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shadow-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   selectedVendorTab === "services"
-                    ? "bg-indigo-600 text-white shadow-indigo-500/25"
-                    : "backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-700/80 hover:border-indigo-400 dark:hover:border-indigo-400"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 hover:border-indigo-400"
                 }`}
               >
                 <span>⚡ Services</span>
@@ -901,138 +896,118 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             </div>
           </div>
 
-          {/* VENDOR PROFILE QUICK TABS BAR (DIRECT PROFILE LINKS) */}
+          {/* QUICK VENDOR TABS STRIP (DIRECT PROFILE LINKS) */}
           {filteredStores.length > 0 && (
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                  Quick Vendor Tabs ({filteredStores.length})
-                </span>
-                <span className="text-[10px] text-slate-400 dark:text-zinc-500 hidden sm:inline">
-                  Click any tab to view vendor storefront
-                </span>
-              </div>
-
-              <div className="relative">
-                {vendorsSwipe.canScrollLeft && (
-                  <button
-                    type="button"
-                    onClick={vendorsSwipe.scrollLeft}
-                    aria-label="Scroll vendors left"
-                    className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                )}
-
-                {vendorsSwipe.canScrollRight && (
-                  <button
-                    type="button"
-                    onClick={vendorsSwipe.scrollRight}
-                    aria-label="Scroll vendors right"
-                    className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-md border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                )}
-
-                <div
-                  ref={vendorsSwipe.containerRef}
-                  {...vendorsSwipe.handlers}
-                  className={`flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar select-none ${
-                    vendorsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
-                  }`}
+            <div className="relative">
+              {vendorsSwipe.canScrollLeft && (
+                <button
+                  type="button"
+                  onClick={vendorsSwipe.scrollLeft}
+                  aria-label="Scroll vendors left"
+                  className="hidden md:flex absolute -left-2.5 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-xs border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 >
-                  {filteredStores.map((st) => {
-                    const isOpen = Boolean(st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen);
-                    return (
-                      <Link
-                        key={`quick-tab-${st.id}`}
-                        href={`/vendor/${st.id}`}
-                        prefetch={true}
-                        draggable={false}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md bg-white/80 dark:bg-zinc-800/70 border border-slate-200/80 dark:border-zinc-700/80 hover:bg-white dark:hover:bg-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md transition-all text-xs font-heading font-bold text-slate-800 dark:text-zinc-200 shrink-0 shadow-xs group cursor-pointer"
-                      >
-                        <span className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 bg-slate-200 dark:bg-zinc-700 border border-slate-300 dark:border-zinc-600">
-                          {st.logo ? (
-                            <Image
-                              src={getSafeImageUrl(st.logo)}
-                              alt={st.name || "Vendor"}
-                              fill
-                              sizes="20px"
-                              className="object-cover"
-                              unoptimized={isUnoptimizedImage(st.logo)}
-                            />
-                          ) : (
-                            <span className="w-full h-full flex items-center justify-center text-[10px] font-black text-indigo-700 dark:text-indigo-300">
-                              {(st.name || "C").charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </span>
-                        <span className="truncate max-w-[130px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                          {st.name}
-                        </span>
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${
-                            isOpen ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
-                          }`}
-                        />
-                        <ArrowRight
-                          size={11}
-                          className="text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all shrink-0"
-                        />
-                      </Link>
-                    );
-                  })}
-                </div>
+                  <ChevronLeft size={14} />
+                </button>
+              )}
+
+              {vendorsSwipe.canScrollRight && (
+                <button
+                  type="button"
+                  onClick={vendorsSwipe.scrollRight}
+                  aria-label="Scroll vendors right"
+                  className="hidden md:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-white dark:bg-zinc-800 text-[#312E81] dark:text-zinc-200 shadow-xs border border-slate-200 dark:border-zinc-700 items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              )}
+
+              <div
+                ref={vendorsSwipe.containerRef}
+                {...vendorsSwipe.handlers}
+                className={`flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar select-none ${
+                  vendorsSwipe.isDragging ? "cursor-grabbing" : "md:cursor-grab"
+                }`}
+              >
+                {filteredStores.map((st) => {
+                  const isOpen = Boolean(st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen);
+                  return (
+                    <Link
+                      key={`quick-tab-${st.id}`}
+                      href={`/vendor/${st.id}`}
+                      prefetch={true}
+                      draggable={false}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:border-[#312E81] dark:hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-[11px] font-heading font-bold text-slate-800 dark:text-zinc-200 shrink-0 shadow-2xs group cursor-pointer"
+                    >
+                      <span className="w-4 h-4 rounded-full overflow-hidden relative shrink-0 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
+                        {st.logo ? (
+                          <Image
+                            src={getSafeImageUrl(st.logo)}
+                            alt={st.name || "Vendor"}
+                            fill
+                            sizes="16px"
+                            className="object-cover"
+                            unoptimized={isUnoptimizedImage(st.logo)}
+                          />
+                        ) : (
+                          <span className="w-full h-full flex items-center justify-center text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+                            {(st.name || "C").charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </span>
+                      <span className="truncate max-w-[120px] group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors">
+                        {st.name}
+                      </span>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          isOpen ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
+                        }`}
+                      />
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* VENDOR PROFILE GLASSMORPHISM CARDS GRID */}
-          <div className="relative z-10">
+          {/* VENDOR CARDS GRID (COMPACT, NO GRADIENTS) */}
+          <div>
             {stores.length === 0 ? (
               // SKELETON LOADING STATE
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1, 2, 3].map((idx) => (
                   <div
                     key={idx}
-                    className="rounded-2xl backdrop-blur-xl bg-white/40 dark:bg-zinc-900/40 border border-white/50 dark:border-white/10 p-5 shadow-sm animate-pulse space-y-4"
+                    className="rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-3.5 shadow-xs animate-pulse space-y-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-zinc-800" />
-                      <div className="w-20 h-6 rounded-full bg-slate-200 dark:bg-zinc-800" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-zinc-800 shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="w-28 h-4 rounded-md bg-slate-200 dark:bg-zinc-800" />
+                        <div className="w-20 h-3 rounded-md bg-slate-200 dark:bg-zinc-800" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="w-36 h-5 rounded-md bg-slate-200 dark:bg-zinc-800" />
-                      <div className="w-24 h-4 rounded-md bg-slate-200 dark:bg-zinc-800" />
-                      <div className="w-full h-8 rounded-md bg-slate-200/60 dark:bg-zinc-800/60" />
-                    </div>
-                    <div className="w-full h-10 rounded-xl bg-slate-200 dark:bg-zinc-800" />
+                    <div className="w-full h-3 rounded-md bg-slate-100 dark:bg-zinc-800/60" />
                   </div>
                 ))}
               </div>
             ) : filteredStores.length === 0 ? (
               // EMPTY CATEGORY STATE
-              <div className="text-center py-10 px-4 backdrop-blur-md bg-white/50 dark:bg-zinc-900/40 rounded-2xl border border-white/60 dark:border-white/10 shadow-sm">
-                <Store size={36} className="mx-auto text-slate-400 dark:text-zinc-500 mb-2" />
+              <div className="text-center py-8 px-4 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs">
+                <Store size={32} className="mx-auto text-slate-400 dark:text-zinc-500 mb-1.5" />
                 <p className="text-sm font-heading font-extrabold text-slate-800 dark:text-zinc-200">
                   No vendors found in this category
-                </p>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
-                  Switch to "All Vendors" to explore all campus stores and services.
                 </p>
                 <button
                   type="button"
                   onClick={() => setSelectedVendorTab("all")}
-                  className="mt-4 px-5 py-2 rounded-full bg-[#312E81] text-white text-xs font-heading font-extrabold shadow-sm hover:bg-indigo-700 transition-colors cursor-pointer"
+                  className="mt-3 px-4 py-1.5 rounded-full bg-[#312E81] text-white text-xs font-heading font-extrabold shadow-xs hover:bg-indigo-700 transition-colors cursor-pointer"
                 >
                   Show All Vendors
                 </button>
               </div>
             ) : (
-              // GRID OF VENDOR PROFILE CARDS
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              // COMPACT VENDOR CARDS
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredStores.slice(0, visibleVendorCount).map((st) => {
                   const isOpen = Boolean(st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen);
                   const storeRating = st.rating ? Number(st.rating).toFixed(1) : "4.9";
@@ -1044,91 +1019,83 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                       key={`vendor-card-${st.id}`}
                       href={`/vendor/${st.id}`}
                       prefetch={true}
-                      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl backdrop-blur-xl bg-white/85 dark:bg-zinc-900/75 border border-white/80 dark:border-zinc-800/80 p-5 shadow-sm hover:shadow-xl hover:border-indigo-400/60 dark:hover:border-indigo-500/60 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                      className="group flex flex-col justify-between bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800 rounded-xl p-3.5 shadow-2xs hover:border-[#312E81] dark:hover:border-indigo-500 hover:shadow-sm transition-all duration-200 cursor-pointer"
                     >
-                      {/* SUBTLE GRADIENT CARD SHEEN */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-                      <div className="relative z-10 space-y-3.5">
-                        {/* TOP ROW: STORE LOGO & OPEN STATUS */}
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden relative shrink-0 border border-slate-200/80 dark:border-zinc-700/80 bg-slate-100 dark:bg-zinc-800 shadow-xs group-hover:scale-105 transition-transform duration-300">
+                      <div>
+                        {/* TOP ROW: STORE LOGO + INFO + OPEN STATUS */}
+                        <div className="flex items-start gap-3">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden relative shrink-0 border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800">
                             {st.logo ? (
                               <Image
                                 src={getSafeImageUrl(st.logo)}
                                 alt={st.name || "Vendor"}
                                 fill
-                                sizes="56px"
-                                className="object-cover"
+                                sizes="48px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-200"
                                 unoptimized={isUnoptimizedImage(st.logo)}
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-[#312E81] text-white font-heading font-black text-lg">
+                              <div className="w-full h-full flex items-center justify-center bg-[#312E81] text-white font-heading font-bold text-sm">
                                 {(st.name || "C").charAt(0).toUpperCase()}
                               </div>
                             )}
                           </div>
 
-                          {/* LIVE STATUS PILL */}
-                          {isOpen ? (
-                            <span className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-heading font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
-                              <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1.5">
+                              <h3 className="font-heading font-extrabold text-sm text-[#18181B] dark:text-zinc-100 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors truncate">
+                                {st.name}
+                              </h3>
+                              {isOpen ? (
+                                <span className="shrink-0 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-heading font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  <span>Open</span>
+                                </span>
+                              ) : (
+                                <span className="shrink-0 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                                  Closed
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <ShieldCheck size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                              <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 truncate capitalize">
+                                {storeCategory}
                               </span>
-                              <span>Open Now</span>
-                            </span>
-                          ) : (
-                            <span className="bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 text-[10px] font-heading font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-zinc-500" />
-                              <span>Closed</span>
-                            </span>
-                          )}
+                            </div>
+                          </div>
                         </div>
 
-                        {/* STORE TITLE & BADGES */}
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h3 className="font-heading font-extrabold text-base text-[#18181B] dark:text-zinc-100 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors line-clamp-1">
-                              {st.name}
-                            </h3>
-                            <ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-                          </div>
+                        {/* STORE DESCRIPTION */}
+                        {st.description && (
+                          <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body line-clamp-1 mt-2 leading-relaxed">
+                            {st.description}
+                          </p>
+                        )}
+                      </div>
 
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md capitalize">
-                              {storeCategory}
-                            </span>
-                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
-                              <span>{storeRating}</span>
-                            </span>
-                          </div>
-
-                          {st.description && (
-                            <p className="text-xs text-[#71717A] dark:text-zinc-400 font-body line-clamp-2 mt-2 leading-relaxed">
-                              {st.description}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* STATS ROW */}
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800/80 text-[11px] text-slate-500 dark:text-zinc-400 font-body">
-                          <span className="flex items-center gap-1">
-                            <Zap size={12} className="text-amber-500" />
-                            <span>{st.estimatedDelivery || "15-25 mins"}</span>
+                      {/* BOTTOM STATS & ACTION ROW */}
+                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 text-[11px]">
+                        <div className="flex items-center gap-2.5 text-slate-500 dark:text-zinc-400 font-body">
+                          <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-zinc-200">
+                            <Star size={11} className="fill-amber-400 text-amber-400 shrink-0" />
+                            <span>{storeRating}</span>
                           </span>
                           <span className="flex items-center gap-1">
-                            <Package size={12} className="text-indigo-500" />
+                            <Zap size={11} className="text-amber-500 shrink-0" />
+                            <span>{st.estimatedDelivery || "15-25m"}</span>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Package size={11} className="text-slate-400 shrink-0" />
                             <span>{productCount} items</span>
                           </span>
                         </div>
-                      </div>
 
-                      {/* CALL TO ACTION BUTTON / TAB LINK */}
-                      <div className="relative z-10 mt-4 w-full py-2.5 px-4 rounded-xl backdrop-blur-md bg-[#312E81]/5 dark:bg-white/5 border border-[#312E81]/15 dark:border-white/10 text-[#312E81] dark:text-indigo-300 font-heading font-extrabold text-xs flex items-center justify-between group-hover:bg-[#312E81] group-hover:text-white dark:group-hover:bg-indigo-600 dark:group-hover:text-white transition-all shadow-xs">
-                        <span>View Vendor Profile</span>
-                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        <span className="font-heading font-bold text-xs text-[#312E81] dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5 shrink-0">
+                          <span>Visit</span>
+                          <ArrowRight size={11} />
+                        </span>
                       </div>
                     </Link>
                   );
@@ -1139,28 +1106,27 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
           {/* BOTTOM PAGINATION: VIEW MORE BUTTON */}
           {filteredStores.length > visibleVendorCount ? (
-            <div className="relative z-10 flex flex-col items-center gap-2 pt-3">
+            <div className="flex flex-col items-center gap-1.5 pt-1">
               <button
                 type="button"
                 onClick={() => setVisibleVendorCount((prev) => prev + 9)}
-                className="px-7 py-2.5 rounded-full backdrop-blur-md bg-white/90 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer group active:scale-95"
+                className="px-5 py-2 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer group active:scale-95"
               >
                 <span>View More</span>
-                <ChevronDown size={14} className="group-hover:translate-y-0.5 transition-transform" />
+                <ChevronDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
               </button>
               <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-body">
                 Showing {Math.min(visibleVendorCount, filteredStores.length)} of {filteredStores.length} vendors
               </span>
             </div>
           ) : filteredStores.length > 9 ? (
-            <div className="relative z-10 flex flex-col items-center gap-2 pt-3">
-              <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-body">
-                Showing all {filteredStores.length} vendors
-              </span>
+            <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-slate-400 dark:text-zinc-500 font-body">
+              <span>Showing all {filteredStores.length} vendors</span>
+              <span>•</span>
               <button
                 type="button"
                 onClick={() => setVisibleVendorCount(9)}
-                className="text-[11px] font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline cursor-pointer"
+                className="font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline cursor-pointer"
               >
                 Show Less
               </button>
