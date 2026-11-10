@@ -168,7 +168,7 @@ const readHomepageData = unstable_cache(
           updatedAt: true,
           _count: { select: { products: true, orders: true } },
         },
-        take: 25,
+        take: 100,
         orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
       }),
       prisma.category.findMany({

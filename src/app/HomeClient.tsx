@@ -38,7 +38,8 @@ import {
   Car,
   SprayCan,
   Palette,
-  Package
+  Package,
+  ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -216,6 +217,12 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "open" | "fast" | "top">("all");
   const [selectedVendorTab, setSelectedVendorTab] = useState<"all" | "open" | "food" | "fashion" | "services">("all");
+  const [visibleVendorCount, setVisibleVendorCount] = useState<number>(9);
+
+  // Reset pagination when user switches vendor category tabs
+  useEffect(() => {
+    setVisibleVendorCount(9);
+  }, [selectedVendorTab]);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
   // SWIPE SCROLL HOOKS FOR BIG SCREENS
@@ -1026,7 +1033,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             ) : (
               // GRID OF VENDOR PROFILE CARDS
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                {filteredStores.slice(0, 9).map((st) => {
+                {filteredStores.slice(0, visibleVendorCount).map((st) => {
                   const isOpen = Boolean(st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen);
                   const storeRating = st.rating ? Number(st.rating).toFixed(1) : "4.9";
                   const storeCategory = st.category || (st.isService ? "Campus Services" : "Campus Kitchen");
@@ -1130,18 +1137,35 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             )}
           </div>
 
-          {/* BOTTOM EXPLORE LINK */}
-          {stores.length > 9 && (
-            <div className="relative z-10 flex justify-center pt-2">
-              <Link
-                href="/search"
-                className="px-6 py-2.5 rounded-full backdrop-blur-md bg-white/80 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-2 group"
+          {/* BOTTOM PAGINATION: VIEW MORE BUTTON */}
+          {filteredStores.length > visibleVendorCount ? (
+            <div className="relative z-10 flex flex-col items-center gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setVisibleVendorCount((prev) => prev + 9)}
+                className="px-7 py-2.5 rounded-full backdrop-blur-md bg-white/90 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer group active:scale-95"
               >
-                <span>Browse All {stores.length} Campus Stores & Services</span>
-                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+                <span>View More</span>
+                <ChevronDown size={14} className="group-hover:translate-y-0.5 transition-transform" />
+              </button>
+              <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-body">
+                Showing {Math.min(visibleVendorCount, filteredStores.length)} of {filteredStores.length} vendors
+              </span>
             </div>
-          )}
+          ) : filteredStores.length > 9 ? (
+            <div className="relative z-10 flex flex-col items-center gap-2 pt-3">
+              <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-body">
+                Showing all {filteredStores.length} vendors
+              </span>
+              <button
+                type="button"
+                onClick={() => setVisibleVendorCount(9)}
+                className="text-[11px] font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline cursor-pointer"
+              >
+                Show Less
+              </button>
+            </div>
+          ) : null}
         </motion.section>
 
       </div>
