@@ -305,11 +305,12 @@ export default function VendorDashboardPage() {
         uploadImageToCloud(compressed, "lightson_marketplace/stores")
           .then((cloudUrl) => {
             setStoreLogo(cloudUrl);
-            showToast("✓ Store logo ready! Click 'Save' to apply changes.");
+            showToast("✓ Store logo uploaded to cloud! Click 'Save' to apply changes.");
           })
           .catch((err) => {
-            console.warn("Logo cloud upload fallback:", err);
-            showToast("✓ Store logo selected! Click 'Save' to apply changes.");
+            console.error("Logo cloud upload error:", err);
+            setStoreLogo(storeData?.logo || "");
+            showToast("⚠️ Could not upload logo to cloud storage. Please try again.");
           });
       } catch (err) {
         console.error("Error compressing logo:", err);
@@ -334,11 +335,12 @@ export default function VendorDashboardPage() {
         uploadImageToCloud(compressed, "lightson_marketplace/stores")
           .then((cloudUrl) => {
             setStoreCoverImage(cloudUrl);
-            showToast("✓ Cover banner ready! Click 'Save' to apply changes.");
+            showToast("✓ Cover banner uploaded to cloud! Click 'Save' to apply changes.");
           })
           .catch((err) => {
-            console.warn("Cover cloud upload fallback:", err);
-            showToast("✓ Cover banner selected! Click 'Save' to apply changes.");
+            console.error("Cover cloud upload error:", err);
+            setStoreCoverImage(storeData?.coverImage || "");
+            showToast("⚠️ Could not upload banner to cloud storage. Please try again.");
           });
       } catch (err) {
         console.error("Error compressing cover:", err);
@@ -783,8 +785,10 @@ export default function VendorDashboardPage() {
       if (storeLogo && storeLogo.startsWith("data:image/")) {
         try {
           finalLogo = await uploadImageToCloud(storeLogo, "lightson_marketplace/stores");
-        } catch (e) {
-          console.warn("Logo upload fallback:", e);
+        } catch (e: any) {
+          showToast("⚠️ Could not upload store logo to cloud storage. Please try again.");
+          setIsSavingProfile(false);
+          return;
         }
       }
 
@@ -792,8 +796,10 @@ export default function VendorDashboardPage() {
       if (storeCoverImage && storeCoverImage.startsWith("data:image/")) {
         try {
           finalCover = await uploadImageToCloud(storeCoverImage, "lightson_marketplace/stores");
-        } catch (e) {
-          console.warn("Cover upload fallback:", e);
+        } catch (e: any) {
+          showToast("⚠️ Could not upload cover banner to cloud storage. Please try again.");
+          setIsSavingProfile(false);
+          return;
         }
       }
 

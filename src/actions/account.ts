@@ -171,9 +171,10 @@ export async function updateUserProfileDb(
     let finalImageUrl = data.image;
     if (data.image && data.image.startsWith("data:image/")) {
       const uploadRes = await uploadToCloudinary(data.image, "lightson_marketplace/avatars");
-      if (uploadRes.success && uploadRes.url) {
-        finalImageUrl = uploadRes.url;
+      if (!uploadRes.success || !uploadRes.url) {
+        return { success: false, error: "Failed to upload profile photo to cloud storage: " + (uploadRes.error || "Upload error") };
       }
+      finalImageUrl = uploadRes.url;
     }
 
     const stringifiedLocations = data.savedLocations

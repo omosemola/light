@@ -193,8 +193,10 @@ export default function VendorRegistrationPage() {
       if (logoUrl && logoUrl.startsWith("data:image/")) {
         try {
           finalLogo = await uploadImageToCloud(logoUrl, "lightson_marketplace/stores");
-        } catch (e) {
-          console.warn("Logo cloud upload fallback:", e);
+        } catch (e: any) {
+          setErrorMessage("Failed to upload store logo to cloud storage. Please try another image.");
+          setIsSubmitting(false);
+          return;
         }
       }
 
@@ -202,8 +204,10 @@ export default function VendorRegistrationPage() {
       if (coverImageUrl && coverImageUrl.startsWith("data:image/")) {
         try {
           finalCover = await uploadImageToCloud(coverImageUrl, "lightson_marketplace/stores");
-        } catch (e) {
-          console.warn("Cover cloud upload fallback:", e);
+        } catch (e: any) {
+          setErrorMessage("Failed to upload cover banner to cloud storage. Please try another image.");
+          setIsSubmitting(false);
+          return;
         }
       }
 

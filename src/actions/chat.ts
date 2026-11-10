@@ -61,9 +61,10 @@ export async function saveChatMessage(input: {
     let finalChatImage = input.image || null;
     if (input.image && input.image.startsWith("data:image/")) {
       const uploadRes = await uploadToCloudinary(input.image, "lightson_marketplace/chat");
-      if (uploadRes.success && uploadRes.url) {
-        finalChatImage = uploadRes.url;
+      if (!uploadRes.success || !uploadRes.url) {
+        return { success: false, error: "Failed to upload chat image to Cloudinary: " + (uploadRes.error || "Upload error") };
       }
+      finalChatImage = uploadRes.url;
     }
 
     // Save message to PostgreSQL Database

@@ -222,13 +222,16 @@ function compressAvatarImage(file: File): Promise<string> {
         setEditAvatar(compressed);
         updateProfile({ avatar: compressed });
 
-        let finalAvatarUrl = compressed;
+        let finalAvatarUrl = "";
         try {
           finalAvatarUrl = await uploadImageToCloud(compressed, "lightson_marketplace/avatars");
           setEditAvatar(finalAvatarUrl);
           updateProfile({ avatar: finalAvatarUrl });
         } catch (uploadErr) {
-          console.warn("Avatar cloud upload fallback:", uploadErr);
+          console.error("Avatar cloud upload error:", uploadErr);
+          setToastMessage("⚠️ Failed to upload image to cloud storage. Please try again.");
+          setTimeout(() => setToastMessage(""), 4000);
+          return;
         }
 
         const targetEmail = profile.email || "visitor@light.app";

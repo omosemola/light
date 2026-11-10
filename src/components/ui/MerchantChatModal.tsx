@@ -224,7 +224,10 @@ export function MerchantChatModal({
         try {
           finalChatImg = await uploadImageToCloud(imgToSend, "lightson_marketplace/chat");
         } catch (e) {
-          console.warn("Chat image cloud upload fallback:", e);
+          console.error("Chat image cloud upload error:", e);
+          setIsSending(false);
+          alert("Could not upload chat image to cloud storage. Please try again.");
+          return;
         }
       }
 
