@@ -179,6 +179,7 @@ export default function VendorDashboardPage() {
   const [productName, setProductName] = useState("");
   const [productPrice, setProductPrice] = useState("");
   const [productImages, setProductImages] = useState<string[]>([]);
+  const [photoLabels, setPhotoLabels] = useState<string[]>([]);
   const [productDesc, setProductDesc] = useState("");
   const [productIngredients, setProductIngredients] = useState("");
   const [productCategory, setProductCategory] = useState("");
@@ -288,6 +289,7 @@ export default function VendorDashboardPage() {
 
   const handleRemovePhoto = (index: number) => {
     setProductImages((prev) => prev.filter((_, i) => i !== index));
+    setPhotoLabels((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -597,6 +599,7 @@ export default function VendorDashboardPage() {
     setProductDesc("");
     setProductIngredients("");
     setProductImages([]);
+    setPhotoLabels([]);
     setProductCategory("");
     setVariations([]);
     setAddOns([]);
@@ -625,6 +628,7 @@ export default function VendorDashboardPage() {
     setProductIngredients(structured.ingredients ? structured.ingredients.join(", ") : "");
     setVariations(structured.sizes || []);
     setAddOns(structured.addons || []);
+    setPhotoLabels(structured.photoLabels || []);
 
     const hasCustomDelivery = Boolean(
       (prod.estimatedDelivery && prod.estimatedDelivery !== storeData?.estimatedDelivery) ||
@@ -674,6 +678,7 @@ export default function VendorDashboardPage() {
         ingredients: ingredientsList,
         sizes: variations.filter((v) => v.name.trim()),
         addons: addOns.filter((a) => a.name.trim()),
+        photoLabels: photoLabels.slice(0, productImages.length),
       });
 
       // 3. Resolve & Encode images directly to Cloudinary
@@ -1641,8 +1646,13 @@ export default function VendorDashboardPage() {
                         </div>
                       )}
                       {order.deliveryInstructions && (
-                        <div className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-xl mt-1 border border-amber-200 dark:border-amber-900">
-                          <strong>Note:</strong> "{order.deliveryInstructions}"
+                        <div className="text-[11px] text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/60 p-2.5 rounded-xl mt-1.5 border border-amber-200 dark:border-amber-900/60 space-y-1">
+                          <div className="font-heading font-extrabold text-[10px] uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                            <span>Customer Choices & Delivery Instructions:</span>
+                          </div>
+                          <p className="font-semibold whitespace-pre-wrap">
+                            {order.deliveryInstructions}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -3139,36 +3149,52 @@ export default function VendorDashboardPage() {
 
                   {/* PHOTOS PREVIEW & DELETION GRID */}
                   {productImages.length > 0 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-1">
-                      {productImages.map((img, idx) => (
-                        <div
-                          key={idx}
-                          className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-700 group shadow-xs bg-slate-100 dark:bg-zinc-800"
-                        >
-                          <img
-                            src={img}
-                            alt={`Product photo ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
+                        <span>Label each photo (e.g. Gold, Vanilla, Blue) so students can select their exact choice:</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                        {productImages.map((img, idx) => (
+                          <div key={idx} className="flex flex-col gap-1 p-1.5 rounded-xl bg-slate-50 dark:bg-zinc-850 border border-slate-200 dark:border-zinc-800">
+                            <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-zinc-700 group shadow-xs bg-slate-100 dark:bg-zinc-800">
+                              <img
+                                src={img}
+                                alt={`Product photo ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
 
-                          {/* COVER BADGE ON 1ST PHOTO */}
-                          {idx === 0 && (
-                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#312E81] text-white font-heading font-extrabold text-[9px] shadow-sm">
-                              Cover
+                              {/* COVER BADGE ON 1ST PHOTO */}
+                              {idx === 0 && (
+                                <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-[#312E81] text-white font-heading font-extrabold text-[8px] shadow-sm">
+                                  Cover
+                                </div>
+                              )}
+
+                              {/* DELETE PHOTO BUTTON */}
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(idx)}
+                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-md active:scale-90 transition cursor-pointer"
+                                title="Delete this photo"
+                              >
+                                <Trash2 size={10} />
+                              </button>
                             </div>
-                          )}
 
-                          {/* DELETE PHOTO BUTTON */}
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePhoto(idx)}
-                            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-md active:scale-90 transition cursor-pointer"
-                            title="Delete this photo"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      ))}
+                            <input
+                              type="text"
+                              value={photoLabels[idx] || ""}
+                              onChange={(e) => {
+                                const next = [...photoLabels];
+                                next[idx] = e.target.value;
+                                setPhotoLabels(next);
+                              }}
+                              placeholder={`Option ${idx + 1} (e.g. Gold)`}
+                              className="w-full h-7 px-2 text-[10px] rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

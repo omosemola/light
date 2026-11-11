@@ -137,8 +137,13 @@ export default function CartPage() {
                       </h3>
                       
                       {/* CUSTOMIZATION PILLS */}
-                      {(item.selectedSize || (item.selectedAddOns && item.selectedAddOns.length > 0) || item.customNotes) && (
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-zinc-400 space-y-0.5 mt-1">
+                      {(item.selectedStyle || item.selectedSize || (item.selectedAddOns && item.selectedAddOns.length > 0) || item.customNotes) && (
+                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-zinc-400 space-y-1 mt-1">
+                          {item.selectedStyle && (
+                            <span className="inline-flex items-center gap-1 mr-2 font-bold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900">
+                              Style: {item.selectedStyle.name}
+                            </span>
+                          )}
                           {item.selectedSize && (
                             <span className="inline-block mr-2 font-semibold text-indigo-600 dark:text-indigo-400">
                               Portion: {item.selectedSize.name}

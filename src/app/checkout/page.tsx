@@ -235,6 +235,7 @@ export default function CheckoutPage() {
     const customizationSummary = items
       .map((i) => {
         const parts = [];
+        if (i.selectedStyle) parts.push(`Style: ${i.selectedStyle.name}`);
         if (i.selectedSize) parts.push(`Size: ${i.selectedSize.name}`);
         if (i.selectedAddOns && i.selectedAddOns.length > 0) {
           parts.push(`Add-ons: ${i.selectedAddOns.map((a) => a.name).join(", ")}`);
@@ -867,6 +868,11 @@ export default function CheckoutPage() {
                       </span>
                       <div className="text-[#71717A] dark:text-zinc-400 text-[11px] space-y-0.5">
                         <span>Qty: {item.quantity} × ₦{item.price.toLocaleString()}</span>
+                        {item.selectedStyle && (
+                          <span className="block text-indigo-700 dark:text-indigo-300 font-bold">
+                            Style: {item.selectedStyle.name}
+                          </span>
+                        )}
                         {item.selectedSize && (
                           <span className="block text-indigo-600 dark:text-indigo-400 font-medium">
                             Size: {item.selectedSize.name}

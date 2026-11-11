@@ -42,6 +42,7 @@ import {
   parseProductImages, 
   getSafeImageUrl,
   getOptimizedCloudinaryUrl,
+  getPhotoLabel,
   VariationOption, 
   AddOnOption 
 } from "@/lib/productOptions";
@@ -288,13 +289,20 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
   const [newComment, setNewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [customNotes, setCustomNotes] = useState("");
 
   const { items: cartItems, addItem: addToCart, confirmAndReplaceCart } = useCartStore();
 
   const handleAddToCart = () => {
+    const selectedStyleLabel = productImages.length > 1
+      ? getPhotoLabel(activeImageIdx, structuredData.photoLabels)
+      : undefined;
+    const selectedImg = getSafeImageUrl(productImages[activeImageIdx] || productImages[0] || product.image);
+
     const customizedName = [
       product.name,
-      selectedSize ? `(${selectedSize.name})` : null,
+      selectedStyleLabel ? `(${selectedStyleLabel})` : null,
+      selectedSize ? `[${selectedSize.name}]` : null,
       selectedAddOns.length > 0 ? `+ ${selectedAddOns.map((a) => a.name).join(", ")}` : null,
     ]
       .filter(Boolean)
@@ -305,7 +313,7 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       slug: product.slug || slug,
       name: customizedName,
       price: unitPrice,
-      image: getSafeImageUrl(productImages[0] || product.image),
+      image: selectedImg,
       vendorId: product.vendorId || "vendor",
       vendorName: product.vendorName || "Campus Merchant",
       vendorDeliveryFee: product.deliveryFee !== undefined ? product.deliveryFee : 500,
@@ -314,6 +322,12 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
       itemEstimatedDelivery: product.prepTime || null,
       selectedSize: selectedSize || undefined,
       selectedAddOns: selectedAddOns.length > 0 ? selectedAddOns : undefined,
+      selectedStyle: selectedStyleLabel ? {
+        name: selectedStyleLabel,
+        image: selectedImg,
+        index: activeImageIdx,
+      } : undefined,
+      customNotes: customNotes.trim() || undefined,
     };
 
     const hasConflict = cartItems.length > 0 && cartItems.some((item) => item.vendorId !== cartItem.vendorId);
@@ -700,6 +714,73 @@ export default function ProductDetailClient({ initialProduct, slug }: ProductDet
               </div>
             </div>
           )}
+
+          {/* STYLE / COLOR / VARIANT SELECTOR */}
+          {productImages.length > 1 && (
+            <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-heading font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-[#312E81] dark:text-indigo-400" />
+                  Select Style / Option ({productImages.length})
+                </span>
+                <span className="text-[11px] font-bold text-[#312E81] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-900/60">
+                  Chosen: {getPhotoLabel(activeImageIdx, structuredData.photoLabels)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                {productImages.map((img, idx) => {
+                  const isSelected = activeImageIdx === idx;
+                  const label = getPhotoLabel(idx, structuredData.photoLabels);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveImageIdx(idx)}
+                      className={`relative p-1.5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-1.5 text-center group ${
+                        isSelected
+                          ? "border-[#312E81] dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/10"
+                          : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
+                      }`}
+                    >
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800">
+                        <img
+                          src={img}
+                          alt={label}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#312E81] dark:bg-indigo-500 text-white flex items-center justify-center shadow-xs">
+                            <Check size={10} strokeWidth={3} />
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-[10px] font-bold leading-tight truncate max-w-full px-0.5 ${
+                        isSelected ? "text-[#312E81] dark:text-indigo-300" : "text-slate-600 dark:text-zinc-400"
+                      }`}>
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* SPECIFIC ITEM NOTE / PREFERENCE */}
+          <div className="space-y-1.5 pt-3 border-t border-slate-100 dark:border-zinc-800">
+            <label className="text-[11px] font-heading font-extrabold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Edit3 size={13} className="text-slate-400" />
+              Specific Request / Scent / Color Note (Optional)
+            </label>
+            <input
+              type="text"
+              value={customNotes}
+              onChange={(e) => setCustomNotes(e.target.value)}
+              placeholder={productImages.length > 1 ? "e.g. 'The silver finish in photo 2' or scent flavor..." : "Add specific notes for the vendor..."}
+              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900 text-xs text-[#18181B] dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
 
           {/* CLEAN, MINIMALIST ADD TO CART ACTION BAR */}
           <div className="pt-5 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-3">

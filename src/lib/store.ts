@@ -17,6 +17,7 @@ export interface CartItem {
   itemEstimatedDelivery?: string | null;
   selectedSize?: { name: string; price: number };
   selectedAddOns?: Array<{ name: string; price: number }>;
+  selectedStyle?: { name: string; image: string; index?: number };
   customNotes?: string;
 }
 
@@ -49,7 +50,8 @@ function generateCartKey(item: Omit<CartItem, "quantity">): string {
   const addOnsKey = item.selectedAddOns && item.selectedAddOns.length > 0 
     ? item.selectedAddOns.map(a => a.name).sort().join(",") 
     : "none";
-  return `${item.id}-${sizeKey}-${addOnsKey}`;
+  const styleKey = item.selectedStyle ? (item.selectedStyle.name || `style-${item.selectedStyle.index}`) : (item.image || "default");
+  return `${item.id}-${sizeKey}-${addOnsKey}-${styleKey}`;
 }
 
 export const useCartStore = create<CartState>()(

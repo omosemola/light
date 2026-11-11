@@ -13,6 +13,7 @@ export interface ProductStructuredData {
   ingredients: string[];
   sizes: VariationOption[];
   addons: AddOnOption[];
+  photoLabels?: string[];
 }
 
 export const DEFAULT_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80";
@@ -160,12 +161,27 @@ export function encodeProductDescription(data: ProductStructuredData): string {
   if (cleanIngredients.length > 0) metadata.ingredients = cleanIngredients;
   if (cleanSizes.length > 0) metadata.sizes = cleanSizes;
   if (cleanAddons.length > 0) metadata.addons = cleanAddons;
+  if (data.photoLabels && data.photoLabels.length > 0) {
+    const cleanLabels = data.photoLabels.map((l) => (l || "").trim());
+    if (cleanLabels.some(Boolean)) metadata.photoLabels = cleanLabels;
+  }
 
   if (Object.keys(metadata).length === 0) {
     return cleanDesc;
   }
 
   return `${cleanDesc}\n\n[OPTIONS: ${JSON.stringify(metadata)}]`.trim();
+}
+
+/**
+ * Returns a user-friendly label for a specific product photo index.
+ * e.g., if photoLabels has "Vanilla", returns "Vanilla". Otherwise returns "Option 1", "Option 2", etc.
+ */
+export function getPhotoLabel(index: number, photoLabels?: string[]): string {
+  if (photoLabels && photoLabels[index] && photoLabels[index].trim()) {
+    return photoLabels[index].trim();
+  }
+  return `Option ${index + 1}`;
 }
 
 /**
@@ -179,6 +195,7 @@ export function parseProductDescription(rawDescription?: string | null): Product
       ingredients: [],
       sizes: [],
       addons: [],
+      photoLabels: [],
     };
   }
 
@@ -208,11 +225,16 @@ export function parseProductDescription(rawDescription?: string | null): Product
           })).filter((a: AddOnOption) => a.name.length > 0)
         : [];
 
+      const photoLabels: string[] = Array.isArray(parsed.photoLabels)
+        ? parsed.photoLabels.map((l: any) => String(l || "").trim())
+        : [];
+
       return {
         description: cleanDesc,
         ingredients,
         sizes,
         addons,
+        photoLabels,
       };
     } catch {
       // Fall through to plain text
@@ -224,5 +246,6 @@ export function parseProductDescription(rawDescription?: string | null): Product
     ingredients: [],
     sizes: [],
     addons: [],
+    photoLabels: [],
   };
 }
