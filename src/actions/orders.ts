@@ -142,7 +142,7 @@ export async function createLiveOrder(input: CreateOrderInput) {
 
     const finalServiceFee = input.serviceFee !== undefined
       ? input.serviceFee
-      : 50.0;
+      : 0.0;
 
     const order = await prisma.order.create({
       data: {

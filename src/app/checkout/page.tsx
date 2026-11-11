@@ -194,8 +194,8 @@ export default function CheckoutPage() {
   const subtotal = typeof getTotal === "function" ? getTotal() : 0;
   const deliveryFee = typeof getDeliveryFee === "function" ? getDeliveryFee() : (vendorDeliveryFee ?? 500);
   const effectiveDeliveryTime = typeof getEstimatedDelivery === "function" ? getEstimatedDelivery() : (vendorEstimatedDelivery || "20-35 mins");
-  const platformFee = 50;
-  const total = subtotal + deliveryFee + platformFee;
+  const platformFee = 0;
+  const total = subtotal + deliveryFee;
 
   if (!isMounted || items.length === 0) {
     return null;
@@ -205,6 +205,11 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (!houseName.trim() || !streetLocation.trim()) {
       alert("Please provide both your House/Hostel Name and Location or Street.");
+      return;
+    }
+
+    if (paymentMethod === "paystack") {
+      alert("Paystack online checkout is coming soon! Please use Direct Bank Transfer to place your order.");
       return;
     }
 
@@ -243,7 +248,7 @@ export default function CheckoutPage() {
     let paymentRef = `TRANSFER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     let methodDisplay = "Direct Bank Transfer";
 
-    if (paymentMethod === "paystack") {
+    if ((paymentMethod as string) === "paystack") {
       paymentRef = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       methodDisplay = "Paystack (Card/Transfer)";
     }
@@ -568,8 +573,8 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900">
-                    Card / USSD
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black shadow-xs">
+                    Coming Soon
                   </span>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                     paymentMethod === "paystack"
@@ -586,7 +591,7 @@ export default function CheckoutPage() {
                   Paystack Online
                 </span>
                 <span className="text-[11px] font-body text-slate-500 dark:text-zinc-400 block mt-1 leading-snug">
-                  Automated card, bank transfer, Apple Pay, or USSD gateway
+                  Automated card, bank transfer, and USSD gateway (Coming Soon)
                 </span>
               </div>
 
@@ -902,13 +907,6 @@ export default function CheckoutPage() {
                 {deliveryFee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${deliveryFee.toLocaleString()}`}
               </span>
             </div>
-            <div className="flex justify-between text-[#71717A] dark:text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <span>Platform Service Charge</span>
-                <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded font-bold">Fixed</span>
-              </span>
-              <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{platformFee.toLocaleString()}</span>
-            </div>
           </div>
         </motion.section>
 
@@ -932,11 +930,16 @@ export default function CheckoutPage() {
                   <Loader2 size={16} className="animate-spin text-white shrink-0" />
                   <span className="truncate">Processing...</span>
                 </>
+              ) : paymentMethod === "paystack" ? (
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <span>Proceed to Pay</span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] bg-amber-400 text-slate-950 font-black uppercase tracking-wider shrink-0 shadow-xs">
+                    Coming Soon
+                  </span>
+                </div>
               ) : (
                 <span className="truncate whitespace-normal text-center leading-tight">
-                  {paymentMethod === "transfer" 
-                    ? "Transferred • Place Order" 
-                    : "Pay with Paystack"}
+                  Transferred • Place Order
                 </span>
               )}
             </button>

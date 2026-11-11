@@ -237,13 +237,13 @@ export const useCartStore = create<CartState>()(
       },
 
       getPlatformFee: () => {
-        return 50;
+        return 0;
       },
 
       getGrandTotal: () => {
         const subtotal = get().getTotal();
         const fee = get().getDeliveryFee();
-        return subtotal + fee + 50;
+        return subtotal + fee;
       },
 
       getItemCount: () => {

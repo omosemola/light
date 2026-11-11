@@ -31,8 +31,7 @@ export default function CartPage() {
   const subtotal = typeof getTotal === "function" ? getTotal() : 0;
   const deliveryFee = typeof getDeliveryFee === "function" ? getDeliveryFee() : (vendorDeliveryFee ?? 500);
   const effectiveDeliveryTime = typeof getEstimatedDelivery === "function" ? getEstimatedDelivery() : (vendorEstimatedDelivery || "20-35 mins");
-  const platformFee = 50;
-  const total = subtotal + deliveryFee + platformFee;
+  const total = subtotal + deliveryFee;
 
   if (!isMounted) {
     return (
@@ -237,13 +236,6 @@ export default function CartPage() {
             <span className="font-semibold text-[#18181B] dark:text-zinc-200">
               {deliveryFee === 0 ? <strong className="text-emerald-600 dark:text-emerald-400 font-black">FREE</strong> : `₦${deliveryFee.toLocaleString()}`}
             </span>
-          </div>
-          <div className="flex justify-between text-[#71717A] dark:text-zinc-400 font-normal">
-            <span className="flex items-center gap-1.5">
-              <span>Platform Service Charge</span>
-              <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded font-bold">Fixed</span>
-            </span>
-            <span className="font-semibold text-[#18181B] dark:text-zinc-200">₦{platformFee.toLocaleString()}</span>
           </div>
         </div>
       </div>
