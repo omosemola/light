@@ -139,7 +139,7 @@ export default function SearchClient({
     return found ? found.name : initialCategory;
   });
   const [selectedVendor, setSelectedVendor] = useState("All Vendors");
-  const [maxPrice, setMaxPrice] = useState<number>(100000);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [maxPrepTime, setMaxPrepTime] = useState<string>("All");
   const [sortBy, setSortBy] = useState<string>("relevance");
@@ -323,8 +323,8 @@ export default function SearchClient({
         continue;
       }
 
-      // Max price filter
-      if ((product.price || 0) > maxPrice) continue;
+      // Max price filter (only applied when user sets a price constraint)
+      if (maxPrice !== null && (product.price || 0) > maxPrice) continue;
 
       // Stock filter
       if (inStockOnly && product.isAvailable === false) continue;
@@ -420,7 +420,7 @@ export default function SearchClient({
   const activeFiltersCount =
     (selectedCategory !== "All" ? 1 : 0) +
     (selectedVendor !== "All Vendors" ? 1 : 0) +
-    (maxPrice < 100000 ? 1 : 0) +
+    (maxPrice !== null ? 1 : 0) +
     (inStockOnly ? 1 : 0) +
     (maxPrepTime !== "All" ? 1 : 0) +
     (sortBy !== "relevance" ? 1 : 0);
@@ -441,7 +441,7 @@ export default function SearchClient({
   const handleResetFilters = () => {
     setSelectedCategory("All");
     setSelectedVendor("All Vendors");
-    setMaxPrice(100000);
+    setMaxPrice(null);
     setInStockOnly(false);
     setMaxPrepTime("All");
     setSortBy("relevance");
@@ -982,7 +982,7 @@ export default function SearchClient({
                     </motion.span>
                   )}
 
-                  {maxPrice < 100000 && (
+                  {maxPrice !== null && (
                     <motion.span
                       layout
                       initial={{ scale: 0.85, opacity: 0 }}
@@ -993,7 +993,7 @@ export default function SearchClient({
                       <X
                         size={12}
                         className="cursor-pointer hover:text-rose-500 transition-colors"
-                        onClick={() => setMaxPrice(100000)}
+                        onClick={() => setMaxPrice(null)}
                       />
                     </motion.span>
                   )}
@@ -1258,21 +1258,48 @@ export default function SearchClient({
                 Max Price
               </label>
               <span className="font-body font-extrabold text-[#312E81] dark:text-indigo-400">
-                ₦{maxPrice.toLocaleString()}
+                {maxPrice === null ? "Any Price (No Limit)" : `Under ₦${maxPrice.toLocaleString()}`}
               </span>
             </div>
             <input
               type="range"
-              min="500"
-              max="50000"
-              step="500"
-              value={maxPrice > 50000 ? 50000 : maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              min="1000"
+              max="2000000"
+              step="5000"
+              value={maxPrice === null ? 2000000 : maxPrice}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setMaxPrice(val >= 2000000 ? null : val);
+              }}
               className="w-full accent-[#312E81] dark:accent-indigo-500 cursor-pointer"
             />
             <div className="flex justify-between text-[11px] text-[#71717A] dark:text-zinc-400 font-semibold">
-              <span>₦500</span>
-              <span>₦50,000+</span>
+              <span>₦1,000</span>
+              <span>₦2,000,000+ (Any)</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {[
+                { label: "Any Price", val: null },
+                { label: "< ₦10k", val: 10000 },
+                { label: "< ₦25k", val: 25000 },
+                { label: "< ₦50k", val: 50000 },
+                { label: "< ₦100k", val: 100000 },
+                { label: "< ₦500k", val: 500000 },
+                { label: "< ₦1M", val: 1000000 },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => setMaxPrice(preset.val)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-heading font-extrabold transition cursor-pointer border ${
+                    maxPrice === preset.val
+                      ? "bg-[#312E81] text-white border-indigo-600 shadow-xs"
+                      : "bg-slate-50 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:border-slate-400"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
           </div>
 

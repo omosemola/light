@@ -447,3 +447,4 @@ export function getCategoryDisplayName(slugOrIdOrName?: string | null): string {
   const cat = getMajorCategoryBySlug(slugOrIdOrName);
   return cat ? cat.name : slugOrIdOrName.trim();
 }
+
