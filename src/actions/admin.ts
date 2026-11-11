@@ -9,6 +9,11 @@ import { sendOrderDeliverySMS } from "@/lib/sms";
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { formatCloudinaryUrl, getOptimizedCloudinaryUrl } from "@/lib/productOptions";
+import {
+  getCategoryAliases,
+  getMajorCategoryBySlug,
+  normalizeCategorySlug,
+} from "@/lib/categories";
 
 /**
  * Fast Overview Metrics: Loads all dashboard counts, aggregates, and categories in parallel.
@@ -130,8 +135,11 @@ export async function getAdminProductsPaginated(params: {
     const where: any = {};
 
     if (params.categoryId && params.categoryId !== "ALL") {
+      const aliases = getCategoryAliases(params.categoryId);
       where.OR = [
-        { categoryId: params.categoryId },
+        { categoryId: { in: aliases } },
+        { category: { id: { in: aliases } } },
+        { category: { name: { in: aliases, mode: "insensitive" } } },
         { category: { name: { equals: params.categoryId, mode: "insensitive" } } },
       ];
     }
@@ -373,7 +381,15 @@ export async function getAdminStoresPaginated(params: {
     const where: any = {};
 
     if (params.category && params.category !== "ALL") {
-      where.category = { equals: params.category, mode: "insensitive" };
+      const cat = getMajorCategoryBySlug(params.category);
+      if (cat && cat.storeCategoryNames.length > 0) {
+        where.OR = [
+          { category: { equals: params.category, mode: "insensitive" } },
+          { category: { in: cat.storeCategoryNames } },
+        ];
+      } else {
+        where.category = { equals: params.category, mode: "insensitive" };
+      }
     }
 
     if (params.isVerified === "VERIFIED") {
@@ -728,26 +744,29 @@ export async function updateProductCategoryAdmin(productId: string, categoryIdOr
     }
 
     const cleanCat = categoryIdOrName.trim();
+    const majorCat = getMajorCategoryBySlug(cleanCat);
+    const canonicalId = majorCat ? majorCat.id : normalizeCategorySlug(cleanCat);
+    const canonicalName = majorCat ? majorCat.name : cleanCat;
+    const aliases = majorCat ? majorCat.dbAliases : [cleanCat];
 
     // 1. Find or create the category in the database
     let category = await prisma.category.findFirst({
       where: {
         OR: [
+          { id: canonicalId },
           { id: cleanCat },
+          { id: { in: aliases } },
+          { name: { equals: canonicalName, mode: "insensitive" } },
           { name: { equals: cleanCat, mode: "insensitive" } },
         ],
       },
     });
 
     if (!category) {
-      const slug = cleanCat
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
       category = await prisma.category.create({
         data: {
-          id: slug || `cat-${Date.now()}`,
-          name: cleanCat,
+          id: canonicalId || `cat-${Date.now()}`,
+          name: canonicalName,
         },
       });
     }

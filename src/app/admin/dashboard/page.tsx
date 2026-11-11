@@ -61,6 +61,11 @@ import {
 import { TicketStatus, Role } from "@prisma/client";
 import { getSafeImageUrl } from "@/lib/productOptions";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+import {
+  MAJOR_CATEGORIES,
+  STORE_CATEGORY_OPTIONS,
+  ADMIN_PRODUCT_CATEGORY_OPTIONS,
+} from "@/lib/categories";
 
 function PaginationControls({
   page,
@@ -211,36 +216,8 @@ export default function AdminDashboardPage() {
 
   // Standard marketplace categories
   const STANDARD_CATEGORIES = useMemo(() => [
-    "Campus Food & Meals",
-    "Cafeteria & Snacks Combos",
-    "Provisions & Hostel Groceries",
-    "Tech, Gadgets & Accessories",
-    "Fashion, Wears & Campus Merch",
-    "Automobiles, Cars & Bikes",
-    "Fragrances, Perfumes & Roll-ons",
-    "Interior Decorations & Asthetics",
-    "Stationery, Books & Study Items",
-    "Beauty, Skincare & Personal Care",
-    "Jewelries",
-    "Care",
-    "Pastries",
-    "Wears",
-    "Accessories",
-    "Drinks",
-    "Electronics",
-    "Food",
-    "Gadgets",
-    "Groceries",
-    "Services: Laundry & Dry Cleaning",
-    "Services: Medicals & Pharmacy",
-    "Services: Printing, Binding & Graphic Design",
-    "Services: Hair Styling, Barbing & Grooming",
-    "Services: Tech, Laptop & Phone Repair",
-    "Services: Room Cleaning, Fumigation & Errands",
-    "Services: Tailoring & Fashion Alterations",
-    "Services: Tutorials & Academic Coaching",
-    "Services: Photography & Video Media",
-    "Services: Other Campus Services",
+    ...MAJOR_CATEGORIES.map((c) => c.name),
+    ...STORE_CATEGORY_OPTIONS,
   ], []);
 
   const getStoreDisplayCategory = (st: any): string => {
@@ -1042,24 +1019,29 @@ export default function AdminDashboardPage() {
                 >
                   All Products ({metrics?.totalProducts || 0})
                 </button>
-                {allAvailableCategories.slice(0, 10).map((catName) => (
+                {MAJOR_CATEGORIES.map((cat) => (
                   <button
-                    key={catName}
+                    key={cat.id}
                     type="button"
                     onClick={() => {
-                      const nextFilter = productCategoryFilter.toLowerCase() === catName.toLowerCase() ? "ALL" : catName;
+                      const nextFilter =
+                        productCategoryFilter.toLowerCase() === cat.id.toLowerCase() ||
+                        productCategoryFilter.toLowerCase() === cat.name.toLowerCase()
+                          ? "ALL"
+                          : cat.id;
                       setProductCategoryFilter(nextFilter);
                       fetchSection("products", 1, searchQuery, nextFilter);
                     }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold transition shrink-0 cursor-pointer border flex items-center gap-1.5 ${
-                      productCategoryFilter.toLowerCase() === catName.toLowerCase()
+                      productCategoryFilter.toLowerCase() === cat.id.toLowerCase() ||
+                      productCategoryFilter.toLowerCase() === cat.name.toLowerCase()
                         ? "bg-[#312E81] text-white border-indigo-600 shadow-xs"
                         : isDark
                         ? "bg-zinc-950 text-zinc-400 border-zinc-800 hover:bg-zinc-800"
                         : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    <span>{catName}</span>
+                    <span>{cat.shortName || cat.name}</span>
                   </button>
                 ))}
               </div>
@@ -2475,20 +2457,21 @@ export default function AdminDashboardPage() {
                     Select Quick Category:
                   </span>
                   <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                    {allAvailableCategories.slice(0, 15).map((catName) => (
+                    {MAJOR_CATEGORIES.map((cat) => (
                       <button
-                        key={catName}
+                        key={cat.id}
                         type="button"
-                        onClick={() => setCustomCategoryName(catName)}
+                        onClick={() => setCustomCategoryName(cat.name)}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition border cursor-pointer ${
-                          customCategoryName.toLowerCase() === catName.toLowerCase()
+                          customCategoryName.toLowerCase() === cat.name.toLowerCase() ||
+                          customCategoryName.toLowerCase() === cat.id.toLowerCase()
                             ? "bg-[#312E81] text-white border-indigo-600"
                             : isDark
                             ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
                             : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
-                        {catName}
+                        {cat.name}
                       </button>
                     ))}
                   </div>
@@ -2586,7 +2569,7 @@ export default function AdminDashboardPage() {
                     Select Quick Category:
                   </span>
                   <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-                    {allAvailableCategories.map((catName) => (
+                    {STORE_CATEGORY_OPTIONS.map((catName) => (
                       <button
                         key={catName}
                         type="button"

@@ -34,32 +34,9 @@ import { registerVendorStore } from "@/actions/vendor";
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { useUserStore } from "@/lib/userStore";
 import { validateOnboardingStep } from "@/lib/machines/vendorOnboardingMachine";
+import { STORE_CATEGORY_OPTIONS } from "@/lib/categories";
 
-const CAMPUS_CATEGORIES = [
-  // SERVICES CATEGORIES (Service Profile & Live Availability)
-  "Services: Laundry & Dry Cleaning",
-  "Services: Medicals & Pharmacy",
-  "Services: Printing, Binding & Graphic Design",
-  "Services: Hair Styling, Barbing & Grooming",
-  "Services: Tech, Laptop & Phone Repair",
-  "Services: Room Cleaning, Fumigation & Errands",
-  "Services: Tailoring & Fashion Alterations",
-  "Services: Tutorials & Academic Coaching",
-  "Services: Photography & Video Media",
-  "Services: Other Campus Services",
-
-  // PRODUCT / RETAIL CATEGORIES (Products & Cart)
-  "Campus Food & Meals",
-  "Cafeteria & Snacks Combos",
-  "Provisions & Hostel Groceries",
-  "Tech, Gadgets & Accessories",
-  "Fashion, Wears & Campus Merch",
-  "Automobiles, Cars & Bikes",
-  "Fragrances, Perfumes & Roll-ons",
-  "Interior Decorations & Asthetics",
-  "Stationery, Books & Study Items",
-  "Beauty, Skincare & Personal Care",
-];
+const CAMPUS_CATEGORIES = STORE_CATEGORY_OPTIONS;
 
 const NIGERIAN_BANKS = [
   "Access Bank",

@@ -7,6 +7,11 @@ import { parseProductImages, formatCloudinaryUrl } from "@/lib/productOptions";
 import { slugify } from "@/lib/slugify";
 import { parseSearchQuery } from "@/lib/searchEngine";
 import {
+  normalizeCategorySlug,
+  getCategoryAliases,
+  getMajorCategoryBySlug,
+} from "@/lib/categories";
+import {
   optimizeProductImageField,
   optimizeSingleImage,
   shapeProductImages,
@@ -572,9 +577,11 @@ function formatCategoryProduct(p: any) {
   };
 }
 
-async function readCategoryProducts(normalized: string) {
+async function readCategoryProducts(normalizedInput: string) {
+  const canonicalSlug = normalizeCategorySlug(normalizedInput);
+
   // SERVICES umbrella category: aggregates registered service personnel and availability
-  if (normalized === "services") {
+  if (canonicalSlug === "services") {
     const serviceStores = await readServiceStores();
     return { success: true as const, products: [] as any[], serviceStores };
   }
@@ -584,36 +591,34 @@ async function readCategoryProducts(normalized: string) {
     category: { select: { id: true, name: true } },
   };
 
-  const category = await prisma.category.findFirst({
-    where: {
-      OR: [
-        { id: normalized },
-        { name: { equals: normalized, mode: "insensitive" } },
-      ],
-    },
-    include: {
-      products: {
-        where: { isAvailable: true },
-        include: categoryProductInclude,
-      },
-    },
-  });
+  const aliases = getCategoryAliases(canonicalSlug);
+  const majorCat = getMajorCategoryBySlug(canonicalSlug);
+  const searchStems = majorCat?.searchStems || [canonicalSlug];
 
-  if (!category) {
-    // Fallback: search products where category relation name contains slug
-    const products = await prisma.product.findMany({
-      where: {
-        isAvailable: true,
-        category: {
-          name: { contains: normalized, mode: "insensitive" },
-        },
-      },
-      include: categoryProductInclude,
+  const orConditions: any[] = [
+    { categoryId: { in: aliases } },
+    { category: { id: { in: aliases } } },
+    { category: { name: { in: aliases, mode: "insensitive" } } },
+  ];
+
+  // Include top search stems for broad recall
+  for (const stem of searchStems.slice(0, 4)) {
+    orConditions.push({
+      category: { name: { contains: stem, mode: "insensitive" } },
     });
-    return { success: true as const, products: products.map(formatCategoryProduct) };
   }
 
-  return { success: true as const, products: category.products.map(formatCategoryProduct) };
+  const products = await prisma.product.findMany({
+    where: {
+      isAvailable: true,
+      OR: orConditions,
+    },
+    include: categoryProductInclude,
+    orderBy: { createdAt: "desc" },
+    take: 120,
+  });
+
+  return { success: true as const, products: products.map(formatCategoryProduct) };
 }
 
 export async function getLiveCategoryProducts(categorySlug: string) {

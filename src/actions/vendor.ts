@@ -20,6 +20,10 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { productCreationSchema, productUpdateSchema, vendorStoreRegistrationSchema, storeScheduleSchema } from "@/lib/validations";
 import { canTransitionOrder } from "@/lib/machines/orderMachine";
+import {
+  getMajorCategoryBySlug,
+  normalizeCategorySlug,
+} from "@/lib/categories";
 
 async function ensureCloudinaryImageUrl(
   imageStr: string | undefined,
@@ -351,14 +355,32 @@ export async function createVendorProduct(data: {
     let validCategoryId: string | null = null;
     if (data.categoryId && data.categoryId.trim().length > 0) {
       const cleanCatId = data.categoryId.trim();
-      const categoryExists = await prisma.category.findFirst({
+      const majorCat = getMajorCategoryBySlug(cleanCatId);
+      const canonicalId = majorCat ? majorCat.id : normalizeCategorySlug(cleanCatId);
+      const canonicalName = majorCat ? majorCat.name : cleanCatId;
+      const aliases = majorCat ? majorCat.dbAliases : [cleanCatId];
+
+      let categoryExists = await prisma.category.findFirst({
         where: {
           OR: [
+            { id: canonicalId },
             { id: cleanCatId },
+            { id: { in: aliases } },
+            { name: { equals: canonicalName, mode: "insensitive" } },
             { name: { equals: cleanCatId, mode: "insensitive" } },
           ],
         },
       });
+
+      if (!categoryExists && majorCat) {
+        categoryExists = await prisma.category.create({
+          data: {
+            id: canonicalId,
+            name: canonicalName,
+          },
+        });
+      }
+
       if (categoryExists) {
         validCategoryId = categoryExists.id;
       }
@@ -457,14 +479,32 @@ export async function updateVendorProduct(data: {
     let categoryIdToSet: string | null | undefined = undefined;
     if (data.categoryId && data.categoryId.trim().length > 0) {
       const cleanCatId = data.categoryId.trim();
-      const categoryExists = await prisma.category.findFirst({
+      const majorCat = getMajorCategoryBySlug(cleanCatId);
+      const canonicalId = majorCat ? majorCat.id : normalizeCategorySlug(cleanCatId);
+      const canonicalName = majorCat ? majorCat.name : cleanCatId;
+      const aliases = majorCat ? majorCat.dbAliases : [cleanCatId];
+
+      let categoryExists = await prisma.category.findFirst({
         where: {
           OR: [
+            { id: canonicalId },
             { id: cleanCatId },
+            { id: { in: aliases } },
+            { name: { equals: canonicalName, mode: "insensitive" } },
             { name: { equals: cleanCatId, mode: "insensitive" } },
           ],
         },
       });
+
+      if (!categoryExists && majorCat) {
+        categoryExists = await prisma.category.create({
+          data: {
+            id: canonicalId,
+            name: canonicalName,
+          },
+        });
+      }
+
       if (categoryExists) {
         categoryIdToSet = categoryExists.id;
       }

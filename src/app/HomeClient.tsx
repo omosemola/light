@@ -57,6 +57,7 @@ import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/Produ
 import { getSafeImageUrl, isUnoptimizedImage } from "@/lib/productOptions";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
 import { useAuthMachine } from "@/lib/machines/authMachine";
+import { MAJOR_CATEGORIES } from "@/lib/categories";
 
 const PROMO_SLIDES = [
   {
@@ -85,120 +86,7 @@ const PROMO_SLIDES = [
   }
 ];
 
-const CATEGORIES = [
-  { 
-    name: "Food", 
-    slug: "food", 
-    icon: Utensils,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Hot Meals"
-  },
-  { 
-    name: "Snacks", 
-    slug: "snacks", 
-    icon: Cookie,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Quick Bites"
-  },
-  { 
-    name: "Groceries", 
-    slug: "groceries", 
-    icon: ShoppingBag,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Daily Dorm"
-  },
-  { 
-    name: "Pastries", 
-    slug: "pastries", 
-    icon: Cake,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Fresh Bakery"
-  },
-  { 
-    name: "Services", 
-    slug: "services", 
-    icon: Briefcase,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Meds & Laundry"
-  },
-  { 
-    name: "Stationery", 
-    slug: "stationery", 
-    icon: BookOpen,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Study & Exam"
-  },
-  { 
-    name: "Care", 
-    slug: "care", 
-    icon: HeartPulse,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Personal Care"
-  },
-  { 
-    name: "Sports", 
-    slug: "sports", 
-    icon: Dumbbell,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Fitness"
-  },
-  { 
-    name: "Wears", 
-    slug: "wears", 
-    icon: Shirt,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Campus Style"
-  },
-  { 
-    name: "Jewelries", 
-    slug: "jewelries", 
-    icon: Gem,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Ice & Bling"
-  },
-  { 
-    name: "Gadgets", 
-    slug: "gadgets", 
-    icon: Smartphone,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Tech Gadgets"
-  },
-  { 
-    name: "Accessories", 
-    slug: "accessories", 
-    icon: Headphones,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Audio & More"
-  },
-  { 
-    name: "Automobile", 
-    slug: "automobile", 
-    icon: Car,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Cars & Bikes"
-  },
-  { 
-    name: "Fragrances", 
-    slug: "fragrances", 
-    icon: SprayCan,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Perfumes & Oils"
-  },
-  { 
-    name: "Decorations", 
-    slug: "decorations", 
-    icon: Palette,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Room & Asthetics"
-  },
-  { 
-    name: "Electronics", 
-    slug: "electronics", 
-    icon: Tv,
-    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
-    badge: "Appliances"
-  },
-];
+const CATEGORIES = MAJOR_CATEGORIES;
 
 interface HomeClientProps {
   initialProducts?: any[];
@@ -694,7 +582,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                       <IconComponent size={28} className={`${cat.iconColor} transition-colors drop-shadow-xs`} />
                     </div>
                     <span className="text-xs font-heading font-extrabold text-[#18181B] dark:text-zinc-200 group-hover:text-[#312E81] dark:group-hover:text-indigo-400 transition-colors text-center pointer-events-none">
-                      {cat.name}
+                      {cat.shortName || cat.name}
                     </span>
                     <span className="text-[9px] font-semibold text-slate-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap text-center pointer-events-none">
                       {cat.badge}

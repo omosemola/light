@@ -51,6 +51,7 @@ import {
   scoreStore,
   matchesCategoryPill,
 } from "@/lib/searchEngine";
+import { MAJOR_CATEGORIES, normalizeCategorySlug } from "@/lib/categories";
 
 interface Product {
   id: string;
@@ -75,31 +76,27 @@ interface Product {
 }
 
 const CATEGORY_CONFIG = [
-  { name: "All", icon: Compass },
-  { name: "Services", icon: Briefcase },
-  { name: "Food", icon: Utensils },
-  { name: "Pastries", icon: Cake },
-  { name: "Snacks", icon: Cookie },
-  { name: "Drinks", icon: Coffee },
-  { name: "Groceries", icon: ShoppingBag },
-  { name: "Fashion", icon: Shirt },
-  { name: "Fragrances", icon: SprayCan },
-  { name: "Automobile", icon: Car },
-  { name: "Decorations", icon: Palette },
-  { name: "Tech & Gadgets", icon: Smartphone },
+  { name: "All", slug: "all", icon: Compass },
+  ...MAJOR_CATEGORIES.map((c) => ({
+    name: c.shortName,
+    slug: c.slug,
+    icon: c.icon,
+  })),
 ];
 
 const CATEGORY_OPTIONS = CATEGORY_CONFIG.map((c) => c.name);
 
 const POPULAR_SUGGESTIONS = [
-  "Services",
-  "Small Chops",
+  "Food",
   "Pastries",
   "Snacks",
   "Drinks",
-  "Meals",
+  "Fashion",
+  "Jewelries",
   "Perfumes",
+  "Beauty",
   "Gadgets",
+  "Services",
 ];
 
 interface SearchClientProps {
@@ -135,10 +132,11 @@ export default function SearchClient({
 
   const [selectedCategory, setSelectedCategory] = useState(() => {
     if (!initialCategory || initialCategory.toLowerCase() === "all") return "All";
-    const found = CATEGORY_OPTIONS.find(
-      (c) => c.toLowerCase() === initialCategory.toLowerCase()
+    const canonical = normalizeCategorySlug(initialCategory);
+    const found = CATEGORY_CONFIG.find(
+      (c) => c.slug === canonical || c.name.toLowerCase() === initialCategory.toLowerCase()
     );
-    return found || initialCategory;
+    return found ? found.name : initialCategory;
   });
   const [selectedVendor, setSelectedVendor] = useState("All Vendors");
   const [maxPrice, setMaxPrice] = useState<number>(100000);
@@ -315,7 +313,7 @@ export default function SearchClient({
       // Category filter (uses robust pill matching with aliases & excludes)
       const matchesCategory = matchesCategoryPill(
         selectedCategory,
-        product.category,
+        product.categoryId || product.category,
         product.storeCategory
       );
       if (!matchesCategory) continue;

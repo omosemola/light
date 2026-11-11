@@ -1,3 +1,9 @@
+import {
+  normalizeCategorySlug,
+  getCategoryAliases,
+  getMajorCategoryBySlug,
+} from "./categories";
+
 /**
  * Shared marketplace search engine.
  *
@@ -375,22 +381,32 @@ export function scoreStore(store: ScorableStore, parsed: ParsedQuery): number {
 
 /** Stems used by the search page category pills (matched against product/store category text). */
 const CATEGORY_PILL_STEMS: Record<string, string[]> = {
-  services: ["service", "medic", "pharm", "health", "drug", "laundr", "wash", "clean", "errand"],
-  food: ["food", "meal", "cafeteria", "kitchen", "pastr", "snack", "bakery"],
-  pastries: ["pastr", "bakery", "bread", "cake", "confection"],
-  snacks: ["snack", "pastr", "chops"],
-  drinks: ["drink", "juice", "beverage", "zobo", "smoothie", "shake"],
-  groceries: ["grocer", "provision", "foodstuff"],
-  fashion: ["wear", "fashion", "cloth", "merch", "accessor", "jewel", "apparel"],
-  fragrances: ["fragran", "perfum", "scent", "cologn", "deodor", "body spray"],
-  automobile: ["automobile", "auto", "car", "bike", "bicycl", "motor", "vehicl"],
-  decorations: ["decor", "interior", "asthetic", "aesthetic"],
-  "tech & gadgets": ["gadget", "electr", "tech", "phone"],
+  services: ["service", "medic", "pharm", "health", "drug", "laundr", "wash", "clean", "errand", "barb", "hair", "repair", "print", "tailor", "tutor", "photo"],
+  food: ["food", "meal", "cafeteria", "kitchen", "cook", "dish", "rice", "swallow", "shawarma", "lunch", "dinner", "breakfast"],
+  pastries: ["pastr", "bakery", "bread", "cake", "confection", "pie", "donut", "doughnut", "puff", "roll"],
+  snacks: ["snack", "chop", "chips", "popcorn", "cookie", "biscuit", "nuts", "sweet", "treat", "munch"],
+  drinks: ["drink", "juice", "beverage", "zobo", "smoothie", "shake", "soda", "water", "yoghurt", "yogurt", "coffee", "tea", "boba", "malt"],
+  groceries: ["grocer", "provision", "foodstuff", "noodle", "indomie", "milk", "cereal", "milo", "sugar", "biscuit", "dorm essential"],
+  wears: ["wear", "fashion", "cloth", "merch", "apparel", "hoodie", "shirt", "pant", "jean", "t-shirt", "tee", "cap", "jacket", "dress", "thrift"],
+  fashion: ["wear", "fashion", "cloth", "merch", "apparel", "hoodie", "shirt", "pant", "jean", "t-shirt", "tee", "cap", "jacket", "dress", "thrift"],
+  jewelries: ["jewel", "jewelry", "jewellery", "chain", "ring", "bracelet", "watch", "wristwatch", "pendant", "necklace", "earring", "anklet", "bling", "ice", "sunglass"],
+  fragrances: ["fragran", "perfum", "scent", "cologn", "oud", "spray", "mist", "rollon", "roll-on", "deodor", "attar", "oil"],
+  care: ["care", "beauty", "skin", "skincare", "lotion", "cream", "soap", "hair", "haircare", "cosmetic", "makeup", "serum", "lip", "body wash", "hygiene"],
+  "beauty & care": ["care", "beauty", "skin", "skincare", "lotion", "cream", "soap", "hair", "haircare", "cosmetic", "makeup", "serum", "lip", "body wash", "hygiene"],
+  gadgets: ["gadget", "tech", "phone", "charger", "powerbank", "earbud", "earpiece", "headphone", "cable", "laptop", "usb", "screen guard", "case", "bluetooth", "speaker", "electronic"],
+  "tech & gadgets": ["gadget", "tech", "phone", "charger", "powerbank", "earbud", "earpiece", "headphone", "cable", "laptop", "usb", "screen guard", "case", "bluetooth", "speaker", "electronic"],
+  stationery: ["stationery", "book", "note", "notepad", "pen", "pencil", "calculator", "exam", "ruler", "folder", "highlighter", "study", "jotter"],
+  sports: ["sport", "fitness", "gym", "jersey", "workout", "dumbbell", "boot", "sneaker", "ball", "skipping", "resistance", "athlet"],
+  decorations: ["decor", "interior", "asthetic", "aesthetic", "light", "fairy light", "frame", "wall", "poster", "plush", "pillow", "rug", "curtain"],
+  automobile: ["automobile", "auto", "car", "bike", "bicycle", "motorbike", "power bike", "scooter", "ride", "helmet", "tyre"],
 };
 
 /** Stems that disqualify a category from a pill (e.g. "Gadgets & Accessories" is not Fashion). */
 const CATEGORY_PILL_EXCLUDES: Record<string, string[]> = {
-  fashion: ["gadget", "electr", "phone"],
+  fashion: ["gadget", "electr", "phone", "jewel", "chain", "ring", "bracelet", "perfum", "fragran"],
+  wears: ["gadget", "electr", "phone", "jewel", "chain", "ring", "bracelet", "perfum", "fragran"],
+  food: ["snack", "pastr", "cake", "pie"],
+  jewelries: ["phone", "gadget", "hoodie", "shirt", "pant"],
 };
 
 /**
@@ -405,15 +421,40 @@ export function matchesCategoryPill(
   const selected = selectedCategory.toLowerCase().trim();
   if (selected === "all") return true;
 
+  const canonicalSlug = normalizeCategorySlug(selectedCategory);
+  const aliases = getCategoryAliases(canonicalSlug).map((a) => a.toLowerCase());
+
+  // 1. Direct ID / alias match on productCategory
+  if (productCategory) {
+    const prodClean = productCategory.toLowerCase().trim();
+    const prodSlug = normalizeCategorySlug(prodClean);
+    if (prodSlug === canonicalSlug || aliases.includes(prodClean)) {
+      return true;
+    }
+  }
+
+  // 2. Direct ID / alias match on storeCategory (fallback if product has no specific category)
+  if (!productCategory && storeCategory) {
+    const storeClean = storeCategory.toLowerCase().trim();
+    const storeSlug = normalizeCategorySlug(storeClean);
+    if (storeSlug === canonicalSlug || aliases.includes(storeClean)) {
+      return true;
+    }
+  }
+
+  // 3. Keyword / stem matching
   const texts = [productCategory, storeCategory].filter(
     (t): t is string => typeof t === "string" && t.trim().length > 0
   );
   if (texts.length === 0) return false;
 
-  const stems = CATEGORY_PILL_STEMS[selected] || [selected];
-  // Only fall back to the store's category when the product itself has no category.
+  const stems =
+    CATEGORY_PILL_STEMS[canonicalSlug] ||
+    CATEGORY_PILL_STEMS[selected] ||
+    [selected];
   const candidates = productCategory && productCategory.trim() ? [productCategory] : texts;
-  const excludes = CATEGORY_PILL_EXCLUDES[selected] || [];
+  const excludes = CATEGORY_PILL_EXCLUDES[canonicalSlug] || CATEGORY_PILL_EXCLUDES[selected] || [];
+
   return candidates.some(
     (text) =>
       stems.some((stem) => textHasStem(text, stem)) &&

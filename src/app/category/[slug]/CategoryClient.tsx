@@ -45,6 +45,7 @@ import { parseProductImages } from "@/lib/productOptions";
 import { MerchantChatModal, MerchantChatVendor } from "@/components/ui/MerchantChatModal";
 import { getServicePersonnel } from "@/actions/marketplace";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+import { getMajorCategoryBySlug, normalizeCategorySlug } from "@/lib/categories";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -97,7 +98,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Accessories"],
   },
   care: {
-    name: "Personal Care",
+    name: "Beauty & Personal Care",
     Icon: HeartPulse,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
@@ -113,7 +114,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     subcategories: ["All", "Football & Boots", "Gym Gear", "Jerseys"],
   },
   wears: {
-    name: "Fashion & Wears",
+    name: "Fashion & Campus Wears",
     Icon: Shirt,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80",
@@ -121,7 +122,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     subcategories: ["All", "Hoodies & Jackets", "T-Shirts", "Sneakers"],
   },
   jewelries: {
-    name: "Jewelries & Ice",
+    name: "Jewelries & Accessories",
     Icon: Gem,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=80",
@@ -278,12 +279,15 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
   const router = useRouter();
   const subcategoriesSwipe = useSwipeScroll<HTMLDivElement>();
 
-  const category = CATEGORY_DATA[slug] || {
-    name: slug.charAt(0).toUpperCase() + slug.slice(1),
-    Icon: Utensils,
+  const majorCat = getMajorCategoryBySlug(slug);
+  const canonicalSlug = majorCat ? majorCat.slug : slug.toLowerCase();
+
+  const category = CATEGORY_DATA[canonicalSlug] || CATEGORY_DATA[slug] || {
+    name: majorCat ? majorCat.name : slug.charAt(0).toUpperCase() + slug.slice(1),
+    Icon: majorCat ? majorCat.icon : Utensils,
     bg: "bg-[#1E1B4B]",
-    heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-    description: "Explore all products in this category on campus.",
+    heroImage: majorCat ? majorCat.heroImage : "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+    description: majorCat ? majorCat.description : "Explore all products in this category on campus.",
     subcategories: ["All"],
   };
 

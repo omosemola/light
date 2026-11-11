@@ -72,6 +72,11 @@ import {
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { OrderStatus } from "@prisma/client";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+import {
+  STORE_CATEGORY_OPTIONS,
+  PRODUCT_CATEGORY_OPTIONS,
+  normalizeCategorySlug,
+} from "@/lib/categories";
 import { resolveStoreAvailability } from "@/lib/machines/storeAvailabilityMachine";
 import { 
   parseProductDescription, 
@@ -126,30 +131,6 @@ const CAMPUS_SERVICE_SUBCATEGORIES = [
   "Academic Tutorials & Project Assistance",
   "Photography & Video Coverage",
   "Catering & Event Baking",
-];
-
-const STORE_CATEGORY_OPTIONS = [
-  "Campus Food & Meals",
-  "Cafeteria & Snacks Combos",
-  "Provisions & Hostel Groceries",
-  "Tech, Gadgets & Accessories",
-  "Fashion, Wears & Campus Merch",
-  "Automobiles, Cars & Bikes",
-  "Fragrances, Perfumes & Roll-ons",
-  "Interior Decorations & Asthetics",
-  "Stationery, Books & Study Items",
-  "Beauty, Skincare & Personal Care",
-  "Sports, Fitness & Gym Equipment",
-  "Services: Laundry & Dry Cleaning",
-  "Services: Medicals & Pharmacy",
-  "Services: Printing, Binding & Graphic Design",
-  "Services: Hair Styling, Barbing & Grooming",
-  "Services: Tech, Laptop & Phone Repair",
-  "Services: Room Cleaning, Fumigation & Errands",
-  "Services: Tailoring & Fashion Alterations",
-  "Services: Tutorials & Academic Coaching",
-  "Services: Photography & Video Media",
-  "Services: Other Campus Services",
 ];
 
 export default function VendorDashboardPage() {
@@ -618,7 +599,10 @@ export default function VendorDashboardPage() {
     setEditingProductId(prod.id);
     setProductName(prod.name || "");
     setProductPrice(prod.price !== undefined && prod.price !== null ? String(prod.price) : "");
-    setProductCategory(prod.categoryId || (prod.category?.id || prod.category?.name?.toLowerCase()) || "");
+    const initialCat = normalizeCategorySlug(
+      prod.categoryId || (prod.category?.id || prod.category?.name?.toLowerCase()) || ""
+    );
+    setProductCategory(initialCat || prod.categoryId || "");
 
     const images = parseProductImages(prod.image);
     setProductImages(images);
@@ -3092,29 +3076,16 @@ export default function VendorDashboardPage() {
                     <select
                       value={productCategory}
                       onChange={(e) => setProductCategory(e.target.value)}
-                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
                     >
                       <option value="">Select Category (Default: General)</option>
-                      <option value="services">Services (Campus Services & Errands)</option>
-                      <option value="medical">Services: Medicals & Pharmacy</option>
-                      <option value="laundry">Services: Laundry & Dry Cleaning</option>
-                      <option value="food">Food & Meals</option>
-                      <option value="snacks">Snacks & Treats</option>
-                      <option value="drinks">Drinks & Smoothies</option>
-                      <option value="groceries">Groceries & Provisions</option>
-                      <option value="pastries">Pastries & Bakery</option>
-                      <option value="stationery">Stationery & Books</option>
-                      <option value="care">Personal Care</option>
-                      <option value="sports">Sports & Fitness</option>
-                      <option value="wears">Fashion & Wears</option>
-                      <option value="jewelries">Jewelries & Accessories</option>
-                      <option value="automobile">Automobile (Cars, Bikes, Bicycles)</option>
-                      <option value="fragrances">Fragrances (Perfumes, Roll-ons, Body Mists)</option>
-                      <option value="decorations">Interior Decorations & Asthetics (Decor, Lighting, Art)</option>
-                      <option value="gadgets">Tech & Gadgets</option>
-                      <option value="electronics">Electronics & Appliances</option>
+                      {PRODUCT_CATEGORY_OPTIONS.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
