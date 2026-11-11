@@ -434,6 +434,7 @@ export async function createVendorProduct(data: {
 
     await clearMarketplaceCache({ storeId: data.storeId });
     revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath(`/product/${product.slug || product.id}`);
@@ -603,6 +604,7 @@ export async function updateVendorProduct(data: {
 
     await clearMarketplaceCache({ productId: data.productId, storeId: existing.storeId });
     revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath(`/product/${product.slug || product.id}`);
@@ -635,6 +637,7 @@ export async function deleteVendorProduct(productId: string) {
 
     await clearMarketplaceCache({ productId, storeId: existing?.storeId });
     revalidatePath("/vendor/dashboard");
+    revalidatePath("/admin/dashboard");
     revalidatePath("/");
     revalidatePath("/search");
     if (existing?.storeId) {
