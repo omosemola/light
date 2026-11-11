@@ -45,6 +45,12 @@ import { getLiveSearchCatalog, searchLiveCatalog } from "@/actions/marketplace";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { getSafeImageUrl, isUnoptimizedImage } from "@/lib/productOptions";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
+import {
+  parseSearchQuery,
+  scoreProduct,
+  scoreStore,
+  matchesCategoryPill,
+} from "@/lib/searchEngine";
 
 interface Product {
   id: string;
@@ -62,6 +68,8 @@ interface Product {
   prepTime?: string;
   isAvailable?: boolean;
   category?: string;
+  categoryId?: string | null;
+  storeCategory?: string;
   rating?: number;
   reviewsCount?: number;
 }
@@ -97,11 +105,15 @@ const POPULAR_SUGGESTIONS = [
 interface SearchClientProps {
   initialCatalog?: any[];
   initialStores?: any[];
+  initialQuery?: string;
+  initialCategory?: string;
 }
 
 export default function SearchClient({
   initialCatalog = [],
   initialStores = [],
+  initialQuery = "",
+  initialCategory = "All",
 }: SearchClientProps) {
   const router = useRouter();
   const storesSwipe = useSwipeScroll<HTMLDivElement>();
@@ -113,7 +125,7 @@ export default function SearchClient({
   const [shuffleSpinCount, setShuffleSpinCount] = useState<number>(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [masterCatalog, setMasterCatalog] = useState<Product[]>(() =>
     initialCatalog.map(mapProduct)
   );
@@ -121,13 +133,34 @@ export default function SearchClient({
   const [stores, setStores] = useState<any[]>(initialStores);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (!initialCategory || initialCategory.toLowerCase() === "all") return "All";
+    const found = CATEGORY_OPTIONS.find(
+      (c) => c.toLowerCase() === initialCategory.toLowerCase()
+    );
+    return found || initialCategory;
+  });
   const [selectedVendor, setSelectedVendor] = useState("All Vendors");
   const [maxPrice, setMaxPrice] = useState<number>(100000);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [maxPrepTime, setMaxPrepTime] = useState<string>("All");
   const [sortBy, setSortBy] = useState<string>("relevance");
   const [visibleCount, setVisibleCount] = useState<number>(24);
+
+  // Keep browser URL search params in sync (shallow update via replaceState)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (query.trim()) params.set("q", query.trim());
+    else params.delete("q");
+
+    if (selectedCategory && selectedCategory !== "All") params.set("category", selectedCategory);
+    else params.delete("category");
+
+    const qs = params.toString();
+    const nextUrl = qs ? `/search?${qs}` : "/search";
+    window.history.replaceState(null, "", nextUrl);
+  }, [query, selectedCategory]);
 
   // Reset pagination when search/filter criteria change
   useEffect(() => {
@@ -158,6 +191,8 @@ export default function SearchClient({
       prepTime: p.prepTime || p.vendorPrepTime || "15-20 mins",
       isAvailable: p.isAvailable !== false,
       category: typeof p.category === "string" ? p.category : p.category?.name || "Pastries",
+      categoryId: p.categoryId || p.category?.id || null,
+      storeCategory: p.storeCategory || p.store?.category || "",
       reviewsCount: p.reviewsCount || 0,
     };
   }
@@ -248,150 +283,10 @@ export default function SearchClient({
     };
   }, [query]);
 
-  function isCategoryMatch(productCat: string, selectedCat: string): boolean {
-    if (selectedCat === "All") return true;
-    const p = (productCat || "").toLowerCase().trim();
-    const s = selectedCat.toLowerCase().trim();
-    if (p === s || p.includes(s) || s.includes(p)) return true;
-
-    // Campus smart category aliases
-    if (
-      s === "services" &&
-      (p.includes("service") ||
-        p.includes("medic") ||
-        p.includes("pharmacy") ||
-        p.includes("health") ||
-        p.includes("drug") ||
-        p.includes("laundr") ||
-        p.includes("wash") ||
-        p.includes("dry clean") ||
-        p.includes("clean") ||
-        p.includes("iron") ||
-        p.includes("errand"))
-    )
-      return true;
-    if (
-      s === "medical" &&
-      (p.includes("medic") ||
-        p.includes("pharm") ||
-        p.includes("health") ||
-        p.includes("drug") ||
-        p.includes("clinic"))
-    )
-      return true;
-    if (
-      s === "laundry" &&
-      (p.includes("laundr") ||
-        p.includes("wash") ||
-        p.includes("dry clean") ||
-        p.includes("iron") ||
-        p.includes("clean"))
-    )
-      return true;
-    if (
-      s === "food" &&
-      (p.includes("pastr") ||
-        p.includes("snack") ||
-        p.includes("meal") ||
-        p.includes("food") ||
-        p.includes("bakery"))
-    )
-      return true;
-    if (
-      s === "pastries" &&
-      (p.includes("pastr") ||
-        p.includes("snack") ||
-        p.includes("bakery") ||
-        p.includes("bread") ||
-        p.includes("roll"))
-    )
-      return true;
-    if (
-      s === "snacks" &&
-      (p.includes("snack") ||
-        p.includes("pastr") ||
-        p.includes("pie") ||
-        p.includes("roll") ||
-        p.includes("chops"))
-    )
-      return true;
-    if (
-      s === "drinks" &&
-      (p.includes("drink") ||
-        p.includes("juice") ||
-        p.includes("beverage") ||
-        p.includes("zobo") ||
-        p.includes("shake") ||
-        p.includes("cooler"))
-    )
-      return true;
-    if (
-      (s === "fashion" || s === "wears") &&
-      (p.includes("wear") ||
-        p.includes("cloth") ||
-        p.includes("hoodie") ||
-        p.includes("shirt") ||
-        p.includes("pant") ||
-        p.includes("accessor") ||
-        p.includes("bag"))
-    )
-      return true;
-    if (
-      (s === "automobile" || s === "cars" || s === "bikes") &&
-      (p.includes("car") ||
-        p.includes("bike") ||
-        p.includes("bicycl") ||
-        p.includes("auto") ||
-        p.includes("motor") ||
-        p.includes("ride") ||
-        p.includes("vehicl"))
-    )
-      return true;
-    if (
-      (s === "fragrances" || s === "perfumes") &&
-      (p.includes("fragran") ||
-        p.includes("perfum") ||
-        p.includes("roll on") ||
-        p.includes("roll-on") ||
-        p.includes("scent") ||
-        p.includes("cologn") ||
-        p.includes("deodor") ||
-        p.includes("mist") ||
-        p.includes("body spray") ||
-        p.includes("oil"))
-    )
-      return true;
-    if (
-      (s === "decorations" ||
-        s.includes("decor") ||
-        s.includes("interior") ||
-        s.includes("asthetic") ||
-        s.includes("aesthetic")) &&
-      (p.includes("decor") ||
-        p.includes("interior") ||
-        p.includes("asthetic") ||
-        p.includes("aesthetic") ||
-        p.includes("art") ||
-        p.includes("frame") ||
-        p.includes("light") ||
-        p.includes("led") ||
-        p.includes("lamp") ||
-        p.includes("poster") ||
-        p.includes("cushion") ||
-        p.includes("rug") ||
-        p.includes("vase") ||
-        p.includes("plant") ||
-        p.includes("mirror") ||
-        p.includes("clock"))
-    )
-      return true;
-    if (
-      s === "tech & gadgets" &&
-      (p.includes("gadget") || p.includes("electr") || p.includes("tech") || p.includes("phone"))
-    )
-      return true;
-    return false;
-  }
+  // Parsed tokens + synonyms for real-time relevance scoring
+  const parsedQuery = useMemo(() => {
+    return parseSearchQuery(query);
+  }, [query]);
 
   // Combine client-side instant search on masterCatalog with server results
   const baseProducts = useMemo(() => {
@@ -409,56 +304,83 @@ export default function SearchClient({
     return merged;
   }, [masterCatalog, serverSearchResults, query]);
 
-  // Comprehensive Filter & Sorting Logic
+  // Comprehensive Filter & Relevance Ranking Logic
   const filteredProducts = useMemo(() => {
-    const list = baseProducts.filter((product) => {
-      const q = query.toLowerCase().trim();
-      const name = (product.name || "").toLowerCase();
-      const vendor = (product.vendorName || "").toLowerCase();
-      const cat = (product.category || "").toLowerCase();
-      const desc = (product.description || "").toLowerCase();
+    const hasQuery = parsedQuery.tokens.length > 0;
 
-      // Multi-word matching
-      let matchesQuery = true;
-      if (q) {
-        const tokens = q.split(/\s+/).filter(Boolean);
-        matchesQuery = tokens.every(
-          (t) => name.includes(t) || vendor.includes(t) || cat.includes(t) || desc.includes(t)
-        );
-      }
+    // 1. Filter products by category, vendor, price, stock, prep time and query score
+    const scoredList: { product: Product; score: number }[] = [];
 
-      const matchesCategory = isCategoryMatch(product.category || "", selectedCategory);
-      const matchesVendor =
-        selectedVendor === "All Vendors" || (product.vendorName || "") === selectedVendor;
-      const matchesPrice = (product.price || 0) <= maxPrice;
-      const matchesStock = !inStockOnly || product.isAvailable !== false;
-
-      let matchesPrep = true;
-      const prepStr = product.prepTime || product.vendorPrepTime || "";
-      if (maxPrepTime === "15") {
-        matchesPrep = prepStr.includes("5") || prepStr.includes("10") || prepStr.includes("15");
-      }
-
-      return (
-        matchesQuery &&
-        matchesCategory &&
-        matchesVendor &&
-        matchesPrice &&
-        matchesStock &&
-        matchesPrep
+    for (const product of baseProducts) {
+      // Category filter (uses robust pill matching with aliases & excludes)
+      const matchesCategory = matchesCategoryPill(
+        selectedCategory,
+        product.category,
+        product.storeCategory
       );
-    });
+      if (!matchesCategory) continue;
 
-    if (sortBy === "price_low") return [...list].sort((a, b) => (a.price || 0) - (b.price || 0));
-    if (sortBy === "price_high") return [...list].sort((a, b) => (b.price || 0) - (a.price || 0));
-    if (sortBy === "rating") return [...list].sort((a, b) => (b.rating || 4.9) - (a.rating || 4.9));
+      // Vendor filter
+      if (selectedVendor !== "All Vendors" && (product.vendorName || "") !== selectedVendor) {
+        continue;
+      }
 
-    // Explore Catalog: Randomize on every refresh just as Featured Products on HomePage
-    if (!isMounted || randomSeed === 0) {
-      return list;
+      // Max price filter
+      if ((product.price || 0) > maxPrice) continue;
+
+      // Stock filter
+      if (inStockOnly && product.isAvailable === false) continue;
+
+      // Prep time filter
+      if (maxPrepTime === "15") {
+        const prepStr = product.prepTime || product.vendorPrepTime || "";
+        const matchesPrep = prepStr.includes("5") || prepStr.includes("10") || prepStr.includes("15");
+        if (!matchesPrep) continue;
+      }
+
+      // Query scoring
+      if (hasQuery) {
+        const score = scoreProduct(product, parsedQuery);
+        if (score <= 0) continue;
+        scoredList.push({ product, score });
+      } else {
+        scoredList.push({ product, score: 0 });
+      }
     }
 
-    const shuffled = [...list];
+    // 2. Sort results
+    if (sortBy === "price_low") {
+      return [...scoredList].sort((a, b) => (a.product.price || 0) - (b.product.price || 0)).map((x) => x.product);
+    }
+    if (sortBy === "price_high") {
+      return [...scoredList].sort((a, b) => (b.product.price || 0) - (a.product.price || 0)).map((x) => x.product);
+    }
+    if (sortBy === "rating") {
+      return [...scoredList].sort((a, b) => (b.product.rating || 4.9) - (a.product.rating || 4.9)).map((x) => x.product);
+    }
+
+    // Default: "relevance"
+    if (hasQuery) {
+      // High score first! Exact title match > title word > vendor > description
+      return [...scoredList]
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return (b.product.rating || 4.9) - (a.product.rating || 4.9);
+        })
+        .map((x) => x.product);
+    }
+
+    // If no query and user picked a category, keep deterministic order
+    if (selectedCategory !== "All") {
+      return scoredList.map((x) => x.product);
+    }
+
+    // Explore Catalog (no query, "All" category): randomize on mount or manual shuffle
+    if (!isMounted || randomSeed === 0) {
+      return scoredList.map((x) => x.product);
+    }
+
+    const shuffled = scoredList.map((x) => x.product);
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -466,7 +388,7 @@ export default function SearchClient({
     return shuffled;
   }, [
     baseProducts,
-    query,
+    parsedQuery,
     selectedCategory,
     selectedVendor,
     maxPrice,
@@ -482,17 +404,19 @@ export default function SearchClient({
     return filteredProducts.slice(0, visibleCount);
   }, [filteredProducts, visibleCount]);
 
-  // Filter stores when user types a search query
+  // Filter stores when user types a search query using relevance scoring
   const displayedStores = useMemo(() => {
     if (!query.trim()) return stores;
-    const q = query.toLowerCase().trim();
-    const matched = stores.filter(
-      (s) =>
-        (s.name || "").toLowerCase().includes(q) ||
-        (s.description || "").toLowerCase().includes(q) ||
-        (s.category || "").toLowerCase().includes(q)
-    );
-    return matched.length > 0 ? matched : stores;
+    const parsed = parseSearchQuery(query);
+    if (parsed.tokens.length === 0) return stores;
+
+    const scored = stores
+      .map((s) => ({ store: s, score: scoreStore(s, parsed) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.store);
+
+    return scored; // Returns ONLY matching stores (if 0 match, returns empty array, NOT all stores!)
   }, [stores, query]);
 
   const activeFiltersCount =

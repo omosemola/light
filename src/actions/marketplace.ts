@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { computeIsStoreOpen } from "@/lib/storeSchedule";
 import { parseProductImages, formatCloudinaryUrl } from "@/lib/productOptions";
 import { slugify } from "@/lib/slugify";
+import { parseSearchQuery } from "@/lib/searchEngine";
 import {
   optimizeProductImageField,
   optimizeSingleImage,
@@ -120,6 +121,10 @@ function formatListProduct(p: any, defaultRating: number) {
     estimatedDelivery: p.estimatedDelivery || null,
     deliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : null,
     category: p.category?.name || "Pastries",
+    // Search metadata: real category (no fallback) + store category for uncategorised products.
+    categoryId: p.categoryId || null,
+    categoryName: p.category?.name || "",
+    storeCategory: p.store?.category || "",
   };
 }
 
@@ -127,6 +132,7 @@ function formatListProduct(p: any, defaultRating: number) {
 const LIST_STORE_SELECT = {
   id: true,
   name: true,
+  category: true,
   isOpen: true,
   openingTime: true,
   closingTime: true,
@@ -266,7 +272,7 @@ const readSearchCatalogData = unstable_cache(
       })),
     };
   },
-  ["marketplace-search-catalog-v1"],
+  ["marketplace-search-catalog-v2"],
   { tags: [TAG_ALL, TAG_PRODUCTS, TAG_STORES, TAG_CATEGORIES], revalidate: CACHE_TTL_SECONDS }
 );
 
@@ -633,56 +639,43 @@ export async function searchLiveCatalog(query: string) {
       return { success: true, products: [], stores: [] };
     }
 
-    const cleanQuery = query.trim().toLowerCase().slice(0, 100);
-    const tokens = cleanQuery.split(/\s+/).filter((w) => w.length > 0);
-
-    // Build flexible multi-term OR conditions
-    const productOrConditions: any[] = [
-      { name: { contains: cleanQuery, mode: "insensitive" } },
-      { description: { contains: cleanQuery, mode: "insensitive" } },
-      { category: { name: { contains: cleanQuery, mode: "insensitive" } } },
-      { category: { id: { contains: cleanQuery, mode: "insensitive" } } },
-      { store: { name: { contains: cleanQuery, mode: "insensitive" } } },
-    ];
-
-    for (const token of tokens) {
-      if (token !== cleanQuery) {
-        productOrConditions.push(
-          { name: { contains: token, mode: "insensitive" } },
-          { description: { contains: token, mode: "insensitive" } },
-          { category: { name: { contains: token, mode: "insensitive" } } },
-          { category: { id: { contains: token, mode: "insensitive" } } },
-          { store: { name: { contains: token, mode: "insensitive" } } }
-        );
-      }
+    // Shared tokenizer + synonyms (same rules the client uses to rank results).
+    const parsed = parseSearchQuery(query.slice(0, 100));
+    if (parsed.tokens.length === 0) {
+      return { success: true, products: [], stores: [] };
     }
 
-    // Synonym mapping: e.g. "food" -> include food, pastries, snacks, meals
-    if (cleanQuery.includes("food") || cleanQuery.includes("meal") || cleanQuery.includes("eat") || cleanQuery.includes("chop")) {
+    const terms = Array.from(new Set([parsed.phrase, ...parsed.tokens])).filter(Boolean);
+
+    // Broad recall: any term in title, description, category, vendor name or vendor category.
+    // Precise ranking happens on the client with `scoreProduct`.
+    const productOrConditions: any[] = [];
+    for (const term of terms) {
       productOrConditions.push(
-        { categoryId: "food" },
-        { categoryId: "pastries" },
-        { categoryId: "snacks" }
+        { name: { contains: term, mode: "insensitive" } },
+        { description: { contains: term, mode: "insensitive" } },
+        { category: { name: { contains: term, mode: "insensitive" } } },
+        { store: { name: { contains: term, mode: "insensitive" } } },
+        { store: { category: { contains: term, mode: "insensitive" } } }
       );
     }
-    if (cleanQuery.includes("drink") || cleanQuery.includes("beverage") || cleanQuery.includes("juice") || cleanQuery.includes("water") || cleanQuery.includes("zobo")) {
-      productOrConditions.push({ categoryId: "drinks" });
-    }
-    if (cleanQuery.includes("cloth") || cleanQuery.includes("wear") || cleanQuery.includes("fashion") || cleanQuery.includes("hoodie") || cleanQuery.includes("shirt")) {
-      productOrConditions.push({ categoryId: "wears" }, { categoryId: "accessories" });
+
+    // Synonyms: e.g. "perfume" → Fragrances, "meals" → Food / Campus Food & Meals.
+    if (parsed.synonymCategoryIds.length > 0) {
+      productOrConditions.push({ categoryId: { in: parsed.synonymCategoryIds } });
     }
 
-    const storeOrConditions: any[] = [
-      { name: { contains: cleanQuery, mode: "insensitive" } },
-      { description: { contains: cleanQuery, mode: "insensitive" } },
-    ];
-    for (const token of tokens) {
-      if (token !== cleanQuery) {
-        storeOrConditions.push(
-          { name: { contains: token, mode: "insensitive" } },
-          { description: { contains: token, mode: "insensitive" } }
-        );
-      }
+    const storeOrConditions: any[] = [];
+    for (const term of terms) {
+      storeOrConditions.push(
+        { name: { contains: term, mode: "insensitive" } },
+        { description: { contains: term, mode: "insensitive" } },
+        { category: { contains: term, mode: "insensitive" } },
+        { serviceSubcategory: { contains: term, mode: "insensitive" } }
+      );
+    }
+    for (const keyword of parsed.synonymCategoryKeywords) {
+      storeOrConditions.push({ category: { contains: keyword, mode: "insensitive" } });
     }
 
     const [products, stores] = await Promise.all([
@@ -692,9 +685,10 @@ export async function searchLiveCatalog(query: string) {
         },
         include: {
           store: { select: LIST_STORE_SELECT },
-          category: true,
+          category: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: "desc" },
+        take: 300,
       }),
       prisma.store.findMany({
         where: {
