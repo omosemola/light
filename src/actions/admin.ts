@@ -14,6 +14,16 @@ import {
   getMajorCategoryBySlug,
   normalizeCategorySlug,
 } from "@/lib/categories";
+import { getAdminSession, setAdminSessionCookie, clearAdminSessionCookie } from "@/lib/session";
+import crypto from "crypto";
+
+async function verifyAdminAuth() {
+  const session = await getAdminSession();
+  if (!session.isAuthenticated) {
+    return { authorized: false as const, error: "Unauthorized. Admin session required." };
+  }
+  return { authorized: true as const, email: session.email, userId: session.userId };
+}
 
 /**
  * Fast Overview Metrics: Loads all dashboard counts, aggregates, and categories in parallel.
@@ -734,9 +744,9 @@ export async function getAdminDashboardData() {
 
 export async function updateProductCategoryAdmin(productId: string, categoryIdOrName: string) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") {
-      return { success: false, error: "Unauthorized. Admin session required." };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) {
+      return { success: false, error: auth.error };
     }
 
     if (!productId || !categoryIdOrName || !categoryIdOrName.trim()) {
@@ -802,9 +812,9 @@ export async function updateProductCategoryAdmin(productId: string, categoryIdOr
 
 export async function updateStoreCategoryAdmin(storeId: string, categoryName: string) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") {
-      return { success: false, error: "Unauthorized. Admin session required." };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) {
+      return { success: false, error: auth.error };
     }
 
     if (!storeId || !categoryName || !categoryName.trim()) {
@@ -910,8 +920,8 @@ export async function updateStoreCategoryAdmin(storeId: string, categoryName: st
 
 export async function updateOrderStatusAdmin(orderId: string, status: any) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const validStatus = status as OrderStatus;
 
@@ -995,8 +1005,8 @@ export async function updateOrderStatusAdmin(orderId: string, status: any) {
 
 export async function deleteOrderAdmin(orderId: string) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -1047,8 +1057,8 @@ export async function deleteOrderAdmin(orderId: string) {
 
 export async function deleteAllOrdersAdmin() {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     await prisma.$transaction(async (tx) => {
       // 1. Detach all tickets
@@ -1086,8 +1096,8 @@ export async function deleteAllOrdersAdmin() {
 
 export async function toggleProductAvailabilityAdmin(productId: string, isAvailable: boolean) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const updated = await prisma.product.update({
       where: { id: productId },
@@ -1107,8 +1117,8 @@ export async function toggleProductAvailabilityAdmin(productId: string, isAvaila
 
 export async function updateSupportTicketStatus(ticketId: string, status: TicketStatus) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const updatedTicket = await prisma.supportTicket.update({
       where: { id: ticketId },
@@ -1125,8 +1135,8 @@ export async function updateSupportTicketStatus(ticketId: string, status: Ticket
 
 export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
@@ -1176,8 +1186,8 @@ export async function verifyStoreAdmin(storeId: string, isVerified: boolean) {
 
 export async function toggleStoreStatusAdmin(storeId: string, isOpen: boolean) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
@@ -1197,8 +1207,8 @@ export async function toggleStoreStatusAdmin(storeId: string, isOpen: boolean) {
 
 export async function deleteStoreAdmin(storeId: string) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     await prisma.$transaction(async (tx) => {
       await tx.chatMessage.deleteMany({
@@ -1233,8 +1243,8 @@ export async function deleteStoreAdmin(storeId: string) {
 
 export async function updateUserRole(userId: string, role: Role) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -1250,8 +1260,8 @@ export async function updateUserRole(userId: string, role: Role) {
 
 export async function deleteUserAccount(userId: string) {
   try {
-    const cookieStore = await cookies();
-    if (cookieStore.get("lightson_admin_session")?.value !== "authenticated_admin") return { success: false, error: "Unauthorized" };
+    const auth = await verifyAdminAuth();
+    if (!auth.authorized) return { success: false, error: auth.error };
 
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
@@ -1320,17 +1330,33 @@ export async function deleteUserAccount(userId: string) {
 
 export async function authenticateAdmin(email: string, pass: string) {
   try {
-    const rateLimitKey = `admin_login_${email.trim().toLowerCase()}`;
+    const rateLimitKey = `admin_login_${email?.trim().toLowerCase()}`;
     const rateLimit = await checkRateLimit(rateLimitKey);
     if (!rateLimit.success) return { success: false, error: rateLimit.error };
 
     const validEmail = (process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com").trim().toLowerCase();
-    const validPassword = process.env.ADMIN_PASSWORD || "AdminMaster2026!";
+    const validPassword = process.env.ADMIN_PASSWORD;
+
+    if (!validPassword) {
+      console.error("ADMIN_PASSWORD environment variable is not configured!");
+      return { success: false, error: "Admin authentication is temporarily misconfigured on server." };
+    }
 
     const cleanInputEmail = email?.trim().toLowerCase();
     const cleanInputPass = pass?.trim();
 
-    if (cleanInputEmail === validEmail && cleanInputPass === validPassword) {
+    // Constant-time comparison to prevent timing attacks
+    const emailMatches = cleanInputEmail === validEmail;
+    let passwordMatches = false;
+    try {
+      const a = Buffer.from(cleanInputPass || "");
+      const b = Buffer.from(validPassword);
+      passwordMatches = a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+      passwordMatches = false;
+    }
+
+    if (emailMatches && passwordMatches) {
       let adminUser = await prisma.user.findUnique({
         where: { email: validEmail },
       });
@@ -1350,15 +1376,8 @@ export async function authenticateAdmin(email: string, pass: string) {
         });
       }
 
-      // SET SECURE ADMIN SESSION COOKIE
-      const cookieStore = await cookies();
-      cookieStore.set("lightson_admin_session", "authenticated_admin", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: "/",
-        sameSite: "strict",
-      });
+      // SET CRYPTOGRAPHICALLY SIGNED ADMIN SESSION COOKIE
+      await setAdminSessionCookie(validEmail, adminUser.id);
 
       return {
         success: true,
@@ -1386,14 +1405,12 @@ export async function authenticateAdmin(email: string, pass: string) {
 
 export async function checkAdminSession() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("lightson_admin_session")?.value;
-    if (token === "authenticated_admin") {
-      const validEmail = (process.env.ADMIN_EMAIL || "lightmarketplace01@gmail.com").trim().toLowerCase();
+    const session = await getAdminSession();
+    if (session.isAuthenticated && session.email) {
       return {
         isAuthenticated: true,
         user: {
-          email: validEmail,
+          email: session.email,
           name: "Platform Super Admin",
           role: "ADMIN",
         },
@@ -1407,8 +1424,7 @@ export async function checkAdminSession() {
 
 export async function logoutAdmin() {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete("lightson_admin_session");
+    await clearAdminSessionCookie();
     return { success: true };
   } catch {
     return { success: true };

@@ -382,11 +382,11 @@ export default function AdminDashboardPage() {
             sessionStorage.setItem("lightson_admin_auth", "true");
           }
         } else {
-          const hasAdminFlag = typeof window !== "undefined" && sessionStorage.getItem("lightson_admin_auth") === "true";
-          if (!hasAdminFlag) {
-            window.location.href = "/admin/login";
-            return;
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("lightson_admin_auth");
           }
+          window.location.href = "/admin/login";
+          return;
         }
       } catch (err) {
         console.error("Admin verification error:", err);

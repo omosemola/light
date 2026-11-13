@@ -24,6 +24,7 @@ import {
   getMajorCategoryBySlug,
   normalizeCategorySlug,
 } from "@/lib/categories";
+import { getVendorSession, setVendorSessionCookie, clearVendorSessionCookie } from "@/lib/session";
 
 async function ensureCloudinaryImageUrl(
   imageStr: string | undefined,
@@ -72,10 +73,16 @@ async function ensureCloudinaryImageUrl(
 
 export async function getVendorDashboardData(vendorUserId?: string) {
   try {
-    const cookieStore = await cookies();
-    const sessionUserId = cookieStore.get("lightson_vendor_session")?.value;
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
+    const session = await getVendorSession();
+    if (!vendorUserId && !session.isAuthenticated) {
+      return { 
+        success: false, 
+        error: "No active merchant session found. Please log in to your vendor account." 
+      };
+    }
 
+    const sessionUserId = session.userId;
+    const sessionStoreId = session.storeId;
     const targetUserId = vendorUserId || sessionUserId;
 
     const storeInclude = {
@@ -114,7 +121,14 @@ export async function getVendorDashboardData(vendorUserId?: string) {
 
     let store = null;
 
-    if (targetUserId) {
+    if (sessionStoreId) {
+      store = await prisma.store.findUnique({
+        where: { id: sessionStoreId },
+        include: storeInclude,
+      });
+    }
+
+    if (!store && targetUserId) {
       store = await prisma.store.findFirst({
         where: {
           OR: [
@@ -127,24 +141,10 @@ export async function getVendorDashboardData(vendorUserId?: string) {
       });
     }
 
-    if (!store && sessionStoreId) {
-      store = await prisma.store.findUnique({
-        where: { id: sessionStoreId },
-        include: storeInclude,
-      });
-    }
-
-    if (!store) {
-      // Auto-fallback to first registered store if single store environment
-      store = await prisma.store.findFirst({
-        include: storeInclude,
-      });
-    }
-
     if (!store) {
       return { 
         success: false, 
-        error: "No active merchant session found. Please log in to your vendor account." 
+        error: "No store found matching your merchant credentials. Please log in." 
       };
     }
 
@@ -179,9 +179,9 @@ export async function getVendorDashboardData(vendorUserId?: string) {
 
 export async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
   try {
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || !session.storeId) return { success: false, error: "Unauthorized. Vendor session required." };
+    const sessionStoreId = session.storeId;
 
     const orderToUpdate = await prisma.order.findUnique({ where: { id: orderId } });
     if (!orderToUpdate || orderToUpdate.storeId !== sessionStoreId) {
@@ -272,9 +272,8 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
 
 export async function toggleStoreOpenStatus(storeId: string, isOpen: boolean) {
   try {
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId || sessionStoreId !== storeId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || session.storeId !== storeId) return { success: false, error: "Unauthorized" };
 
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
@@ -293,9 +292,9 @@ export async function toggleStoreOpenStatus(storeId: string, isOpen: boolean) {
 
 export async function toggleProductAvailability(productId: string, isAvailable: boolean) {
   try {
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || !session.storeId) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = session.storeId;
 
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product || product.storeId !== sessionStoreId) {
@@ -329,9 +328,8 @@ export async function createVendorProduct(data: {
 }) {
   try {
     productCreationSchema.parse(data);
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId || sessionStoreId !== data.storeId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || session.storeId !== data.storeId) return { success: false, error: "Unauthorized" };
 
     const storeRecord = await prisma.store.findUnique({
       where: { id: data.storeId },
@@ -461,9 +459,9 @@ export async function updateVendorProduct(data: {
 }) {
   try {
     productUpdateSchema.parse(data);
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || !session.storeId) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = session.storeId;
 
     if (!data.productId) {
       return { success: false, error: "Missing product ID" };
@@ -526,8 +524,7 @@ export async function updateVendorProduct(data: {
 
     if (!existing) {
       // If product record wasn't in DB yet, find current vendor store and insert it
-      const cookieStore = await cookies();
-      const storeId = data.storeId || cookieStore.get("lightson_vendor_store_id")?.value;
+      const storeId = sessionStoreId;
       if (storeId) {
         const productSlug = await generateUniqueProductSlug(prisma, data.name.trim());
         const created = await prisma.product.create({
@@ -619,9 +616,9 @@ export async function updateVendorProduct(data: {
 
 export async function deleteVendorProduct(productId: string) {
   try {
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || !session.storeId) return { success: false, error: "Unauthorized" };
+    const sessionStoreId = session.storeId;
 
     const existing = await prisma.product.findUnique({
       where: { id: productId },
@@ -773,22 +770,8 @@ export async function registerVendorStore(data: {
       logoUrl: finalLogo,
     }).catch((e) => console.error("Failed to send admin vendor alert email:", e));
 
-    // 5. Establish secure merchant session cookies
-    const cookieStore = await cookies();
-    cookieStore.set("lightson_vendor_session", user.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-      sameSite: "strict",
-    });
-    cookieStore.set("lightson_vendor_store_id", store.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-      sameSite: "strict",
-    });
+    // 5. Establish cryptographically signed merchant session cookies
+    await setVendorSessionCookie(user.id, store.id);
 
     await clearMarketplaceCache();
     revalidatePath("/admin/dashboard");
@@ -917,22 +900,8 @@ export async function authenticateVendor(email: string, password?: string) {
       });
     }
 
-    // Set secure merchant session cookies
-    const cookieStore = await cookies();
-    cookieStore.set("lightson_vendor_session", user.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-      sameSite: "strict",
-    });
-    cookieStore.set("lightson_vendor_store_id", targetStore.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-      sameSite: "strict",
-    });
+    // Set cryptographically signed merchant session cookies
+    await setVendorSessionCookie(user.id, targetStore.id);
 
     return { 
       success: true, 
@@ -951,9 +920,7 @@ export async function authenticateVendor(email: string, password?: string) {
 
 export async function logoutVendor() {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete("lightson_vendor_session");
-    cookieStore.delete("lightson_vendor_store_id");
+    await clearVendorSessionCookie();
     return { success: true };
   } catch {
     return { success: true };
@@ -971,9 +938,8 @@ export async function updateStoreSchedule(data: {
 }) {
   try {
     storeScheduleSchema.parse(data);
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId || sessionStoreId !== data.storeId) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || session.storeId !== data.storeId) return { success: false, error: "Unauthorized" };
 
     const updatedStore = await prisma.store.update({
       where: { id: data.storeId },
@@ -1022,8 +988,8 @@ export async function updateVendorProfile(data: {
   startingPrice?: number;
 }) {
   try {
-    const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) return { success: false, error: "Unauthorized" };
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || session.storeId !== data.storeId) return { success: false, error: "Unauthorized" };
 
     const finalLogo = data.logo !== undefined ? await ensureCloudinaryImageUrl(data.logo, "lightson_marketplace/stores") : undefined;
     const finalCover = data.coverImage !== undefined ? await ensureCloudinaryImageUrl(data.coverImage, "lightson_marketplace/stores") : undefined;
@@ -1098,9 +1064,8 @@ export async function updateServiceAvailability(data: {
   isOpen?: boolean;
 }) {
   try {
-    const cookieStore = await cookies();
-    const sessionStoreId = cookieStore.get("lightson_vendor_store_id")?.value;
-    if (!sessionStoreId || sessionStoreId !== data.storeId) {
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || session.storeId !== data.storeId) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1136,8 +1101,8 @@ export async function updateVendorBankDetails(data: {
   accountName: string;
 }) {
   try {
-    const cookieStore = await cookies();
-    if (!cookieStore.get("lightson_vendor_session")?.value) {
+    const session = await getVendorSession();
+    if (!session.isAuthenticated || session.storeId !== data.storeId) {
       return { success: false, error: "Unauthorized vendor action" };
     }
 

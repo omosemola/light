@@ -73,19 +73,19 @@ export async function createLiveOrder(input: CreateOrderInput) {
     }
 
     if (!userId) {
-      // Fallback to first student user or demo user
-      const firstUser = await prisma.user.findFirst();
-      if (firstUser) {
-        userId = firstUser.id;
-      } else {
-        const fallbackUser = await prisma.user.create({
-          data: {
-            email: "student@campuslightson.com",
-            name: "Campus Student",
-          },
-        });
-        userId = fallbackUser.id;
-      }
+      // Create a dedicated guest student record rather than attaching to a random existing user
+      const guestEmail = input.userPhone 
+        ? `student_${input.userPhone.replace(/\D/g, "")}@campuslightson.com`
+        : `guest_${Date.now()}_${Math.floor(Math.random() * 10000)}@guest.lightsonmarketplace.com`;
+
+      const guestUser = await prisma.user.create({
+        data: {
+          email: guestEmail,
+          name: input.userName || "Campus Student",
+          phone: input.userPhone || null,
+        },
+      });
+      userId = guestUser.id;
     }
 
     // 2. Resolve Store with 100% precision
