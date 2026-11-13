@@ -175,11 +175,40 @@ export function MerchantChatModal({
       setIsLoadingHistory(true);
       fetchLiveMessages();
 
-      const pollInterval = setInterval(() => {
-        fetchLiveMessages();
-      }, 3500);
+      let intervalId: NodeJS.Timeout | null = null;
 
-      return () => clearInterval(pollInterval);
+      const startPolling = () => {
+        if (intervalId) clearInterval(intervalId);
+        // Only poll when tab is visible; pause when tab is minimized/screen locked
+        if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+          return;
+        }
+        intervalId = setInterval(() => {
+          fetchLiveMessages();
+        }, 7000); // 7s interval (down from 3.5s to conserve serverless quota)
+      };
+
+      startPolling();
+
+      const handleVisibilityChange = () => {
+        if (typeof document !== "undefined" && document.visibilityState === "visible") {
+          fetchLiveMessages(); // Instant message fetch on tab focus
+          startPolling();
+        } else {
+          if (intervalId) clearInterval(intervalId);
+        }
+      };
+
+      if (typeof document !== "undefined") {
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+      }
+
+      return () => {
+        if (intervalId) clearInterval(intervalId);
+        if (typeof document !== "undefined") {
+          document.removeEventListener("visibilitychange", handleVisibilityChange);
+        }
+      };
     }
   }, [isOpen, fetchLiveMessages]);
 

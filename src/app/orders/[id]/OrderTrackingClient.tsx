@@ -159,11 +159,48 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
     if (!initialOrder) {
       fetchLiveOrder();
     }
-    const interval = setInterval(() => {
-      fetchLiveOrder();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [id, initialOrder]);
+
+    // Stop polling completely if order has reached a terminal status (DELIVERED / CANCELLED)
+    const currentStatus = dbOrder?.status;
+    if (currentStatus === "DELIVERED" || currentStatus === "CANCELLED") {
+      return;
+    }
+
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (intervalId) clearInterval(intervalId);
+      // Only poll when tab is visible; pause when minimized or screen is locked
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      intervalId = setInterval(() => {
+        fetchLiveOrder();
+      }, 25000); // 25s interval (down from 5s to conserve serverless quota)
+    };
+
+    startPolling();
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchLiveOrder(); // Instant fresh status the moment student views tab
+        startPolling();
+      } else {
+        if (intervalId) clearInterval(intervalId);
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
+  }, [id, initialOrder, dbOrder?.status]);
 
   const order: OrderDetail = formatDbOrder(dbOrder, fallbackOrder);
 

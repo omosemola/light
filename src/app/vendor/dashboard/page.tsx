@@ -459,10 +459,37 @@ export default function VendorDashboardPage() {
 
   useEffect(() => {
     fetchDashboard(false);
-    const interval = setInterval(() => {
-      fetchDashboard(true);
-    }, 12000);
-    return () => clearInterval(interval);
+
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (intervalId) clearInterval(intervalId);
+      // Poll every 30s when visible; throttle to 90s when backgrounded to conserve serverless quota
+      const intervalMs = typeof document !== "undefined" && document.visibilityState === "visible" ? 30000 : 90000;
+      intervalId = setInterval(() => {
+        fetchDashboard(true);
+      }, intervalMs);
+    };
+
+    startPolling();
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchDashboard(true); // Instant fresh fetch the second vendor views tab
+      }
+      startPolling();
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, [isAlarmMuted]);
 
   const handleToggleStore = async () => {
