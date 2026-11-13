@@ -39,7 +39,6 @@ import {
   SprayCan,
   Palette,
   Package,
-  ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -105,11 +104,15 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "open" | "fast" | "top">("all");
   const [selectedVendorTab, setSelectedVendorTab] = useState<"all" | "open" | "food" | "fashion" | "services">("all");
-  const [visibleVendorCount, setVisibleVendorCount] = useState<number>(9);
+  
+  // VENDOR PAGINATION STATE (9 vendors per page)
+  const VENDORS_PER_PAGE = 9;
+  const [vendorPage, setVendorPage] = useState<number>(1);
+  const vendorSectionRef = useRef<HTMLElement>(null);
 
   // Reset pagination when user switches vendor category tabs
   useEffect(() => {
-    setVisibleVendorCount(9);
+    setVendorPage(1);
   }, [selectedVendorTab]);
   const [customizerProduct, setCustomizerProduct] = useState<CustomizerProduct | null>(null);
 
@@ -292,6 +295,38 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
       return true;
     });
   }, [stores, selectedVendorTab]);
+
+  const totalVendorPages = Math.max(1, Math.ceil(filteredStores.length / VENDORS_PER_PAGE));
+
+  // Clamp vendorPage if filtered list shrinks
+  useEffect(() => {
+    if (vendorPage > totalVendorPages) {
+      setVendorPage(1);
+    }
+  }, [vendorPage, totalVendorPages]);
+
+  const currentVendors = useMemo(() => {
+    const start = (vendorPage - 1) * VENDORS_PER_PAGE;
+    return filteredStores.slice(start, start + VENDORS_PER_PAGE);
+  }, [filteredStores, vendorPage]);
+
+  const handleVendorPageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalVendorPages) return;
+    setVendorPage(newPage);
+    if (vendorSectionRef.current) {
+      const rect = vendorSectionRef.current.getBoundingClientRect();
+      if (rect.top < 0) {
+        vendorSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
+  const getVisiblePages = (current: number, total: number): (number | string)[] => {
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 3) return [1, 2, 3, 4, "...", total];
+    if (current >= total - 2) return [1, "...", total - 3, total - 2, total - 1, total];
+    return [1, "...", current - 1, current, current + 1, "...", total];
+  };
 
   const handleOpenCustomizer = (productId: string) => {
     const product = products.find((p) => p.id === productId);
@@ -691,7 +726,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                 href="/search"
                 className="px-6 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-2 group"
               >
-                <span>Explore All Marketplace Products ({products.length} Items)</span>
+                <span>Explore All Marketplace Products</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -700,6 +735,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
         {/* CAMPUS VENDOR PROFILES (CLEAN, COMPACT, NO GRADIENTS) */}
         <motion.section
+          ref={vendorSectionRef}
           initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
@@ -896,7 +932,7 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             ) : (
               // COMPACT VENDOR CARDS
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filteredStores.slice(0, visibleVendorCount).map((st) => {
+                {currentVendors.map((st) => {
                   const isOpen = Boolean(st.isCurrentlyOpen !== undefined ? st.isCurrentlyOpen : st.isOpen);
                   const storeRating = st.rating ? Number(st.rating).toFixed(1) : "4.9";
                   const storeCategory = st.category || (st.isService ? "Campus Services" : "Campus Kitchen");
@@ -992,34 +1028,85 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
             )}
           </div>
 
-          {/* BOTTOM PAGINATION: VIEW MORE BUTTON */}
-          {filteredStores.length > visibleVendorCount ? (
-            <div className="flex flex-col items-center gap-1.5 pt-1">
-              <button
-                type="button"
-                onClick={() => setVisibleVendorCount((prev) => prev + 9)}
-                className="px-5 py-2 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:text-white hover:bg-[#312E81] dark:hover:bg-indigo-600 font-heading font-extrabold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer group active:scale-95"
-              >
-                <span>View More</span>
-                <ChevronDown size={13} className="group-hover:translate-y-0.5 transition-transform" />
-              </button>
-              <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-body">
-                Showing {Math.min(visibleVendorCount, filteredStores.length)} of {filteredStores.length} vendors
+          {/* BOTTOM PAGINATION: PAGE-BASED NAVIGATION */}
+          {totalVendorPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 select-none">
+              {/* STATUS INDICATOR */}
+              <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-body order-2 sm:order-1 text-center sm:text-left">
+                Showing vendors{" "}
+                <strong className="text-slate-800 dark:text-zinc-200">
+                  {(vendorPage - 1) * VENDORS_PER_PAGE + 1}–{Math.min(vendorPage * VENDORS_PER_PAGE, filteredStores.length)}
+                </strong>{" "}
+                of <strong className="text-slate-800 dark:text-zinc-200">{filteredStores.length}</strong> (Page {vendorPage} of {totalVendorPages})
               </span>
+
+              {/* PAGINATION CONTROLS */}
+              <div className="flex items-center gap-1.5 order-1 sm:order-2">
+                <button
+                  type="button"
+                  onClick={() => handleVendorPageChange(vendorPage - 1)}
+                  disabled={vendorPage === 1}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all border ${
+                    vendorPage === 1
+                      ? "opacity-35 cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-transparent"
+                      : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:bg-[#312E81] hover:text-white dark:hover:bg-indigo-600 shadow-2xs active:scale-95 cursor-pointer"
+                  }`}
+                  aria-label="Previous vendor page"
+                >
+                  <ChevronLeft size={14} />
+                  <span>Prev</span>
+                </button>
+
+                {/* NUMBERED PAGE PILLS */}
+                <div className="flex items-center gap-1">
+                  {getVisiblePages(vendorPage, totalVendorPages).map((p, idx) => {
+                    if (p === "...") {
+                      return (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="w-6 text-center text-xs text-slate-400 dark:text-zinc-500 select-none"
+                        >
+                          …
+                        </span>
+                      );
+                    }
+                    const pageNum = Number(p);
+                    const isActive = vendorPage === pageNum;
+                    return (
+                      <button
+                        key={`vendor-page-${pageNum}`}
+                        type="button"
+                        onClick={() => handleVendorPageChange(pageNum)}
+                        className={`w-7 h-7 rounded-full text-xs font-heading font-extrabold transition-all cursor-pointer flex items-center justify-center ${
+                          isActive
+                            ? "bg-[#312E81] dark:bg-indigo-600 text-white shadow-xs scale-105"
+                            : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:border-[#312E81] hover:text-[#312E81] dark:hover:border-indigo-400 dark:hover:text-indigo-300"
+                        }`}
+                        aria-label={`Page ${pageNum}`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleVendorPageChange(vendorPage + 1)}
+                  disabled={vendorPage === totalVendorPages}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-heading font-extrabold transition-all border ${
+                    vendorPage === totalVendorPages
+                      ? "opacity-35 cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 border-transparent"
+                      : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-[#312E81] dark:text-indigo-300 hover:bg-[#312E81] hover:text-white dark:hover:bg-indigo-600 shadow-2xs active:scale-95 cursor-pointer"
+                  }`}
+                  aria-label="Next vendor page"
+                >
+                  <span>Next</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
             </div>
-          ) : filteredStores.length > 9 ? (
-            <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-slate-400 dark:text-zinc-500 font-body">
-              <span>Showing all {filteredStores.length} vendors</span>
-              <span>•</span>
-              <button
-                type="button"
-                onClick={() => setVisibleVendorCount(9)}
-                className="font-heading font-bold text-[#312E81] dark:text-indigo-400 hover:underline cursor-pointer"
-              >
-                Show Less
-              </button>
-            </div>
-          ) : null}
+          )}
         </motion.section>
 
       </div>
