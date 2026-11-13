@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { 
@@ -36,9 +36,27 @@ export interface CreateOrderInput {
 
 export async function createLiveOrder(input: CreateOrderInput) {
   try {
-    // 1. Resolve User
-    let userId = input.userId;
-    if (!userId && input.userEmail) {
+    // 1. Resolve User (Strict Isolation: Never attach to random existing accounts)
+    let userId: string | null = null;
+
+    // A. If an explicit userId was supplied, verify it exists
+    if (input.userId) {
+      const existingById = await prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+      if (existingById) {
+        userId = existingById.id;
+        if (input.userPhone && !existingById.phone) {
+          await prisma.user.update({
+            where: { id: existingById.id },
+            data: { phone: input.userPhone.trim() },
+          }).catch(() => {});
+        }
+      }
+    }
+
+    // B. Resolve by Email if provided
+    if (!userId && input.userEmail && input.userEmail.trim()) {
       const cleanEmail = input.userEmail.trim().toLowerCase();
       const existingUser = await prisma.user.findFirst({
         where: { email: { equals: cleanEmail, mode: "insensitive" } },
@@ -49,40 +67,85 @@ export async function createLiveOrder(input: CreateOrderInput) {
         if (input.userPhone && !existingUser.phone) {
           await prisma.user.update({
             where: { id: existingUser.id },
-            data: { phone: input.userPhone },
+            data: { phone: input.userPhone.trim() },
           }).catch(() => {});
         }
       } else {
-        const newUser = await prisma.user.create({
-          data: {
-            email: cleanEmail,
-            name: input.userName || "Campus Student",
-            phone: input.userPhone,
-          },
-        });
-        userId = newUser.id;
+        try {
+          const newUser = await prisma.user.create({
+            data: {
+              email: cleanEmail,
+              name: input.userName?.trim() || "Campus Student",
+              phone: input.userPhone?.trim() || null,
+              role: Role.STUDENT,
+            },
+          });
+          userId = newUser.id;
 
-        notifyAdminNewStudent({
-          name: newUser.name || input.userName || "Campus Student",
-          email: newUser.email,
-          phone: newUser.phone || input.userPhone || null,
-          hostel: input.deliveryLocation || null,
-          source: "First-Time Checkout Order",
-        }).catch((e) => console.error("Admin student alert failed:", e));
+          notifyAdminNewStudent({
+            name: newUser.name || input.userName || "Campus Student",
+            email: newUser.email,
+            phone: newUser.phone || input.userPhone || null,
+            hostel: input.deliveryLocation || null,
+            source: "First-Time Checkout Order",
+          }).catch((e) => console.error("Admin student alert failed:", e));
+        } catch {
+          // If race condition on email unique constraint, re-fetch
+          const fallbackByEmail = await prisma.user.findFirst({
+            where: { email: { equals: cleanEmail, mode: "insensitive" } },
+          });
+          if (fallbackByEmail) userId = fallbackByEmail.id;
+        }
       }
     }
 
-    if (!userId) {
-      // Create a dedicated guest student record rather than attaching to a random existing user
-      const guestEmail = input.userPhone 
-        ? `student_${input.userPhone.replace(/\D/g, "")}@campuslightson.com`
-        : `guest_${Date.now()}_${Math.floor(Math.random() * 10000)}@guest.lightsonmarketplace.com`;
+    // C. Resolve by Phone if no email was supplied
+    if (!userId && input.userPhone && input.userPhone.trim()) {
+      const rawPhone = input.userPhone.trim();
+      const cleanDigits = rawPhone.replace(/\D/g, "");
+      const phoneCandidateEmail = `student_${cleanDigits}@campuslightson.com`;
 
+      const existingByPhone = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { phone: rawPhone },
+            { phone: cleanDigits },
+            { email: phoneCandidateEmail },
+          ],
+        },
+      });
+
+      if (existingByPhone) {
+        userId = existingByPhone.id;
+      } else {
+        try {
+          const newPhoneUser = await prisma.user.create({
+            data: {
+              email: phoneCandidateEmail,
+              name: input.userName?.trim() || "Campus Student",
+              phone: rawPhone,
+              role: Role.STUDENT,
+            },
+          });
+          userId = newPhoneUser.id;
+        } catch {
+          const fallbackPhoneUser = await prisma.user.findFirst({
+            where: { email: phoneCandidateEmail },
+          });
+          if (fallbackPhoneUser) userId = fallbackPhoneUser.id;
+        }
+      }
+    }
+
+    // D. Anonymous Guest Fallback (Dedicated isolated guest record)
+    if (!userId) {
+      const uniqueGuestEmail = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}@guest.lightsonmarketplace.com`;
       const guestUser = await prisma.user.create({
         data: {
-          email: guestEmail,
-          name: input.userName || "Campus Student",
-          phone: input.userPhone || null,
+          email: uniqueGuestEmail,
+          name: input.userName?.trim() || "Campus Guest",
+          phone: input.userPhone?.trim() || null,
+          role: Role.STUDENT,
         },
       });
       userId = guestUser.id;
@@ -121,18 +184,12 @@ export async function createLiveOrder(input: CreateOrderInput) {
       }
     }
 
-    // C. Fallback only if no product in database exists
-    if (!resolvedStore) {
-      resolvedStore = await prisma.store.findFirst({
-        include: { user: true },
-      });
-      if (resolvedStore) {
-        storeId = resolvedStore.id;
-      }
-    }
-
-    if (!storeId) {
-      return { success: false, error: "No store found to assign order" };
+    // C. If still no store could be resolved, fail cleanly rather than assigning to a random vendor
+    if (!resolvedStore || !storeId) {
+      return { 
+        success: false, 
+        error: "The store for these items could not be found or is no longer active. Please refresh your cart or contact support." 
+      };
     }
 
     // 3. Create Order & OrderItems in Database

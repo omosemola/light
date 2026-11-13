@@ -239,3 +239,4 @@ export async function clearVendorSessionCookie() {
   cookieStore.delete(VENDOR_SESSION_COOKIE);
   cookieStore.delete(VENDOR_STORE_COOKIE);
 }
+

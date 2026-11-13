@@ -267,8 +267,10 @@ export default function CheckoutPage() {
       .join(" - ");
 
     const targetStoreId = vendorId || items[0]?.vendorId;
+    const activeUserId = (session?.user as any)?.id || undefined;
 
     const res = await createLiveOrder({
+      userId: activeUserId,
       userEmail: finalEmail,
       userName: profile.name,
       userPhone: phone.trim() || profile.phone,
@@ -287,23 +289,24 @@ export default function CheckoutPage() {
       })),
     });
 
+    if (!res.success || !res.order) {
+      setIsProcessing(false);
+      alert(res.error || "Unable to place order. Please try again or contact support.");
+      return;
+    }
+
     clearCart();
 
-    const orderId = res.success && res.order ? res.order.id : `ORD-${Date.now().toString().slice(-4)}`;
     addNotification({
       userEmail: profile.email || effectiveEmail || "student@campuslightson.com",
       title: "Order Placed Successfully! 🛍️",
       desc: `Your order for ₦${total.toLocaleString()} (${items.length} item${items.length === 1 ? "" : "s"}) has been sent to the store.`,
       type: "order",
       time: "Just now",
-      link: res.success && res.order ? `/orders/${res.order.id}` : "/orders",
+      link: `/orders/${res.order.id}`,
     });
 
-    if (res.success && res.order) {
-      router.push(`/orders/${res.order.id}?success=true`);
-    } else {
-      router.push("/orders?success=true");
-    }
+    router.push(`/orders/${res.order.id}?success=true`);
   };
 
   return (
