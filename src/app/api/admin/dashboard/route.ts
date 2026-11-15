@@ -48,11 +48,20 @@ export async function GET(req: NextRequest) {
         storeId: searchParams.get("storeId") || "ALL",
       });
     } else if (section === "stores") {
+      const isVerifiedParam = searchParams.get("isVerified");
+      let resolvedVerification: "ALL" | "VERIFIED" | "UNVERIFIED" = "ALL";
+      if (isVerifiedParam === "VERIFIED" || filter === "VERIFIED") {
+        resolvedVerification = "VERIFIED";
+      } else if (isVerifiedParam === "UNVERIFIED" || filter === "UNVERIFIED") {
+        resolvedVerification = "UNVERIFIED";
+      }
+
       data = await getAdminStoresPaginated({
         page,
         limit,
         search,
-        category: filter !== "ALL" ? filter : undefined,
+        category: searchParams.get("category") || (filter !== "ALL" && filter !== "VERIFIED" && filter !== "UNVERIFIED" ? filter : undefined),
+        isVerified: resolvedVerification,
       });
     } else if (section === "users") {
       data = await getAdminUsersPaginated({

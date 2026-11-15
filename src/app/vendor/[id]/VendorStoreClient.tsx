@@ -46,7 +46,7 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
   const { profile } = useUserStore();
 
   const formatStoreData = (dbStore: any) => {
-    if (!dbStore) return null;
+    if (!dbStore || !dbStore.isVerified) return null;
     const avatarImg = dbStore.logo || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80";
     const coverImg = dbStore.coverImage || avatarImg;
     const hasCustomCover = Boolean(dbStore.coverImage && dbStore.coverImage !== dbStore.logo);

@@ -53,6 +53,9 @@ export async function getAdminOverviewMetrics() {
     const [
       totalUsers,
       totalStores,
+      verifiedStoresCount,
+      unverifiedStoresCount,
+      openStoresCount,
       totalOrders,
       totalProducts,
       gmvAggregate,
@@ -61,6 +64,9 @@ export async function getAdminOverviewMetrics() {
     ] = await Promise.all([
       prisma.user.count(),
       prisma.store.count(),
+      prisma.store.count({ where: { isVerified: true } }),
+      prisma.store.count({ where: { isVerified: false } }),
+      prisma.store.count({ where: { isOpen: true } }),
       prisma.order.count(),
       prisma.product.count(),
       prisma.order.aggregate({
@@ -88,6 +94,9 @@ export async function getAdminOverviewMetrics() {
       metrics: {
         totalUsers,
         totalStores,
+        verifiedStoresCount,
+        unverifiedStoresCount,
+        openStoresCount,
         totalOrders,
         totalProducts,
         totalGMV,
@@ -422,7 +431,7 @@ export async function getAdminStoresPaginated(params: {
       ];
     }
 
-    const [stores, totalCount] = await Promise.all([
+    const [stores, totalCount, verifiedCount, unverifiedCount, openCount] = await Promise.all([
       prisma.store.findMany({
         where,
         select: {
@@ -450,6 +459,9 @@ export async function getAdminStoresPaginated(params: {
         take: limit,
       }),
       prisma.store.count({ where }),
+      prisma.store.count({ where: { isVerified: true } }),
+      prisma.store.count({ where: { isVerified: false } }),
+      prisma.store.count({ where: { isOpen: true } }),
     ]);
 
     const formatted = stores.map((s) => ({
@@ -464,6 +476,9 @@ export async function getAdminStoresPaginated(params: {
     return {
       success: true,
       stores: formatted,
+      verifiedCount,
+      unverifiedCount,
+      openCount,
       pagination: {
         page,
         limit,

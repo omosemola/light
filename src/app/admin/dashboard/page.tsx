@@ -140,6 +140,9 @@ export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState({
     totalUsers: 0,
     totalStores: 0,
+    verifiedStoresCount: 0,
+    unverifiedStoresCount: 0,
+    openStoresCount: 0,
     totalOrders: 0,
     totalProducts: 0,
     totalGMV: 0,
@@ -161,6 +164,7 @@ export default function AdminDashboardPage() {
 
   const [stores, setStores] = useState<any[]>([]);
   const [storesPagination, setStoresPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
+  const [storeVerificationFilter, setStoreVerificationFilter] = useState<"ALL" | "VERIFIED" | "UNVERIFIED">("ALL");
 
   const [users, setUsers] = useState<any[]>([]);
   const [usersPagination, setUsersPagination] = useState({ page: 1, limit: 25, totalCount: 0, totalPages: 1 });
@@ -301,7 +305,13 @@ export default function AdminDashboardPage() {
       if (filter && filter !== "ALL") {
         if (section === "products") params.set("categoryId", filter);
         else if (section === "orders") params.set("filter", filter);
-        else if (section === "stores") params.set("category", filter);
+        else if (section === "stores") {
+          if (filter === "VERIFIED" || filter === "UNVERIFIED") {
+            params.set("isVerified", filter);
+          } else {
+            params.set("category", filter);
+          }
+        }
         else if (section === "tickets") params.set("filter", filter);
       }
 
@@ -325,7 +335,9 @@ export default function AdminDashboardPage() {
         } else if (section === "orders") {
           data = await getAdminOrdersPaginated({ page, limit: 25, search, status: filter !== "ALL" ? filter : undefined });
         } else if (section === "stores") {
-          data = await getAdminStoresPaginated({ page, limit: 25, search, category: filter !== "ALL" ? filter : undefined });
+          const isVerifiedArg = (filter === "VERIFIED" || filter === "UNVERIFIED") ? filter : undefined;
+          const categoryArg = (filter !== "ALL" && filter !== "VERIFIED" && filter !== "UNVERIFIED") ? filter : undefined;
+          data = await getAdminStoresPaginated({ page, limit: 25, search, category: categoryArg, isVerified: isVerifiedArg });
         } else if (section === "tickets") {
           data = await getAdminTicketsPaginated({ page, limit: 25, status: filter !== "ALL" ? (filter as any) : "ALL" });
         } else if (section === "users") {
@@ -347,6 +359,14 @@ export default function AdminDashboardPage() {
         } else if (section === "stores") {
           setStores(data.stores || []);
           if (data.pagination) setStoresPagination(data.pagination);
+          if (data.verifiedCount !== undefined && data.unverifiedCount !== undefined) {
+            setMetrics((prev) => ({
+              ...prev,
+              verifiedStoresCount: data.verifiedCount,
+              unverifiedStoresCount: data.unverifiedCount,
+              openStoresCount: data.openCount ?? prev.openStoresCount,
+            }));
+          }
         } else if (section === "tickets") {
           setTickets(data.tickets || []);
           if (data.pagination) setTicketsPagination(data.pagination);
@@ -366,8 +386,9 @@ export default function AdminDashboardPage() {
   const getActiveFilterForTab = useCallback((tab: string) => {
     if (tab === "products") return productCategoryFilter;
     if (tab === "orders") return orderStatusFilter;
+    if (tab === "stores") return storeVerificationFilter;
     return "ALL";
-  }, [productCategoryFilter, orderStatusFilter]);
+  }, [productCategoryFilter, orderStatusFilter, storeVerificationFilter]);
 
   // Initial Auth & Mount Load
   useEffect(() => {
@@ -568,6 +589,14 @@ export default function AdminDashboardPage() {
       setStores((prev) =>
         prev.map((s) => (s.id === storeId ? { ...s, isVerified, isOpen: isVerified } : s))
       );
+      setMetrics((prev) => ({
+        ...prev,
+        verifiedStoresCount: isVerified ? prev.verifiedStoresCount + 1 : Math.max(0, prev.verifiedStoresCount - 1),
+        unverifiedStoresCount: isVerified ? Math.max(0, prev.unverifiedStoresCount - 1) : prev.unverifiedStoresCount + 1,
+      }));
+      if (storeVerificationFilter !== "ALL") {
+        fetchSection("stores", storesPagination.page, searchQuery, storeVerificationFilter);
+      }
       showToast(isVerified ? "Store verified & approved live! 🎉" : "Store verification revoked.");
     } else {
       showToast(res.error || "Failed to update store verification");
@@ -605,7 +634,7 @@ export default function AdminDashboardPage() {
       const res = await updateStoreCategoryAdmin(storeId, trimmedCat);
       if (res.success) {
         showToast(`✓ Vendor category updated to "${trimmedCat}"!`);
-        fetchSection("stores", storesPagination.page, searchQuery);
+        fetchSection("stores", storesPagination.page, searchQuery, storeVerificationFilter);
       } else {
         showToast(res?.error || "Failed to update store category");
       }
@@ -1541,30 +1570,163 @@ export default function AdminDashboardPage() {
         {/* STORES TAB */}
         {activeTab === "stores" && (
           <div className="space-y-4">
-            {/* STORES METRIC CARDS */}
+            {/* STORES METRIC CARDS (INTERACTIVE ONE-CLICK FILTERS) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
-                <span className="text-[10px] font-heading font-extrabold uppercase text-slate-400">Total Stores</span>
-                <div className="text-xl font-heading font-black mt-1">{metrics?.totalStores || 0}</div>
-              </div>
-              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
-                <span className="text-[10px] font-heading font-extrabold uppercase text-emerald-400">Verified & Active</span>
-                <div className="text-xl font-heading font-black text-emerald-500 mt-1">
-                  {stores.filter((s) => s.isVerified).length}
+              <button
+                type="button"
+                onClick={() => {
+                  setStoreVerificationFilter("ALL");
+                  fetchSection("stores", 1, searchQuery, "ALL");
+                }}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  storeVerificationFilter === "ALL"
+                    ? isDark
+                      ? "bg-zinc-800 border-indigo-500 ring-2 ring-indigo-500/30"
+                      : "bg-indigo-50/60 border-[#312E81] ring-2 ring-indigo-500/20 shadow-sm"
+                    : isDark
+                      ? "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
+                      : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-heading font-extrabold uppercase text-slate-400">Total Stores</span>
+                  {storeVerificationFilter === "ALL" && (
+                    <span className="w-2 h-2 rounded-full bg-[#312E81] dark:bg-indigo-400 animate-pulse" />
+                  )}
                 </div>
-              </div>
-              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
-                <span className="text-[10px] font-heading font-extrabold uppercase text-amber-400">Pending Review</span>
-                <div className="text-xl font-heading font-black text-amber-500 mt-1">
-                  {stores.filter((s) => !s.isVerified).length}
+                <div className="text-xl font-heading font-black mt-1 text-slate-900 dark:text-white">
+                  {metrics?.totalStores || 0}
                 </div>
-              </div>
-              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200"}`}>
-                <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400">Open Stores</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">All registered vendors</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStoreVerificationFilter("VERIFIED");
+                  fetchSection("stores", 1, searchQuery, "VERIFIED");
+                }}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  storeVerificationFilter === "VERIFIED"
+                    ? isDark
+                      ? "bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30"
+                      : "bg-emerald-50/80 border-emerald-600 ring-2 ring-emerald-500/20 shadow-sm"
+                    : isDark
+                      ? "bg-zinc-900 border-zinc-800 hover:border-emerald-800/60"
+                      : "bg-white border-slate-200 hover:border-emerald-300 shadow-sm"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-heading font-extrabold uppercase text-emerald-500 dark:text-emerald-400 font-bold">
+                    Verified Vendors
+                  </span>
+                  {storeVerificationFilter === "VERIFIED" && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  )}
+                </div>
+                <div className="text-xl font-heading font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                  {metrics?.verifiedStoresCount ?? stores.filter((s) => s.isVerified).length}
+                </div>
+                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 mt-1 block">
+                  {storeVerificationFilter === "VERIFIED" ? "✓ Filter Active" : "Click to view verified"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStoreVerificationFilter("UNVERIFIED");
+                  fetchSection("stores", 1, searchQuery, "UNVERIFIED");
+                }}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  storeVerificationFilter === "UNVERIFIED"
+                    ? isDark
+                      ? "bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/30"
+                      : "bg-amber-50/80 border-amber-600 ring-2 ring-amber-500/20 shadow-sm"
+                    : isDark
+                      ? "bg-zinc-900 border-zinc-800 hover:border-amber-800/60"
+                      : "bg-white border-slate-200 hover:border-amber-300 shadow-sm"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-heading font-extrabold uppercase text-amber-500 dark:text-amber-400 font-bold">
+                    Pending Review
+                  </span>
+                  {storeVerificationFilter === "UNVERIFIED" && (
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  )}
+                </div>
+                <div className="text-xl font-heading font-black text-amber-600 dark:text-amber-400 mt-1">
+                  {metrics?.unverifiedStoresCount ?? stores.filter((s) => !s.isVerified).length}
+                </div>
+                <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 mt-1 block">
+                  {storeVerificationFilter === "UNVERIFIED" ? "✓ Filter Active" : "Click to view pending"}
+                </span>
+              </button>
+
+              <div className={`p-4 rounded-2xl border ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                <span className="text-[10px] font-heading font-extrabold uppercase text-indigo-400 font-bold">Open Stores</span>
                 <div className="text-xl font-heading font-black text-indigo-500 mt-1">
-                  {stores.filter((s) => s.isOpen !== false).length}
+                  {metrics?.openStoresCount ?? stores.filter((s) => s.isOpen !== false).length}
                 </div>
+                <span className="text-[10px] text-slate-400 mt-1 block">Currently accepting orders</span>
               </div>
+            </div>
+
+            {/* STORES QUICK FILTER PILLS */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setStoreVerificationFilter("ALL");
+                  fetchSection("stores", 1, searchQuery, "ALL");
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer ${
+                  storeVerificationFilter === "ALL"
+                    ? "bg-[#312E81] text-white shadow-sm"
+                    : isDark
+                      ? "bg-zinc-800/80 text-zinc-400 hover:text-white"
+                      : "bg-slate-100 text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                All Vendors ({metrics?.totalStores || 0})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStoreVerificationFilter("VERIFIED");
+                  fetchSection("stores", 1, searchQuery, "VERIFIED");
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  storeVerificationFilter === "VERIFIED"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : isDark
+                      ? "bg-zinc-800/80 text-emerald-400 hover:bg-emerald-950/40"
+                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                }`}
+              >
+                <CheckCircle2 size={13} />
+                <span>Verified ({metrics?.verifiedStoresCount ?? 0})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStoreVerificationFilter("UNVERIFIED");
+                  fetchSection("stores", 1, searchQuery, "UNVERIFIED");
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  storeVerificationFilter === "UNVERIFIED"
+                    ? "bg-amber-600 text-white shadow-sm"
+                    : isDark
+                      ? "bg-zinc-800/80 text-amber-400 hover:bg-amber-950/40"
+                      : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                }`}
+              >
+                <Clock size={13} />
+                <span>Pending Review ({metrics?.unverifiedStoresCount ?? 0})</span>
+              </button>
             </div>
 
             {/* STORES TABLE */}
@@ -1775,7 +1937,11 @@ export default function AdminDashboardPage() {
                     ) : (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-zinc-400">
-                          No stores matching your search query.
+                          {storeVerificationFilter === "VERIFIED"
+                            ? "No verified stores found matching your search query."
+                            : storeVerificationFilter === "UNVERIFIED"
+                              ? "No stores currently pending review."
+                              : "No stores matching your search query."}
                         </td>
                       </tr>
                     )}
@@ -1789,7 +1955,7 @@ export default function AdminDashboardPage() {
                 totalPages={storesPagination.totalPages}
                 totalCount={storesPagination.totalCount}
                 limit={storesPagination.limit}
-                onPageChange={(p) => fetchSection("stores", p, searchQuery)}
+                onPageChange={(p) => fetchSection("stores", p, searchQuery, storeVerificationFilter)}
                 isDark={isDark}
                 loading={tabLoading}
               />

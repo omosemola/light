@@ -1148,6 +1148,7 @@ export async function getStoreBankDetails(identifier: string) {
       bankName: true,
       accountNumber: true,
       accountName: true,
+      isVerified: true,
       user: {
         select: {
           name: true,
@@ -1214,8 +1215,8 @@ export async function getStoreBankDetails(identifier: string) {
       }
     }
 
-    if (!store) {
-      return { success: false, bankDetails: null };
+    if (!store || !store.isVerified) {
+      return { success: false, bankDetails: null, error: "Store is awaiting verification" };
     }
 
     let resolvedAccountNumber = store.accountNumber ? store.accountNumber.trim() : "";

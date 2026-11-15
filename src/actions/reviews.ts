@@ -58,14 +58,11 @@ export async function submitStudentReview(input: {
       }
     }
 
-    // 2. Validate store existence (or assign to first available store if storeId is missing/mock)
+    // 2. Validate store existence and verification status
     let targetStoreId = input.storeId;
     let storeExists = await prisma.store.findUnique({ where: { id: targetStoreId } });
-    if (!storeExists) {
-      const firstStore = await prisma.store.findFirst();
-      if (firstStore) {
-        targetStoreId = firstStore.id;
-      }
+    if (!storeExists || !storeExists.isVerified) {
+      return { success: false, error: "Store not found or awaiting verification" };
     }
 
     const ratingVal = Math.min(5, Math.max(1, Math.round(input.rating)));

@@ -184,11 +184,11 @@ export async function createLiveOrder(input: CreateOrderInput) {
       }
     }
 
-    // C. If still no store could be resolved, fail cleanly rather than assigning to a random vendor
-    if (!resolvedStore || !storeId) {
+    // C. If still no store could be resolved or store is not verified, fail cleanly rather than assigning to a random vendor
+    if (!resolvedStore || !storeId || !resolvedStore.isVerified) {
       return { 
         success: false, 
-        error: "The store for these items could not be found or is no longer active. Please refresh your cart or contact support." 
+        error: "The store for these items is currently awaiting verification and cannot accept orders yet. Please refresh your cart or contact support." 
       };
     }
 

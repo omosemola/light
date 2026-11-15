@@ -41,6 +41,7 @@ export async function getUserFavorites(userEmail?: string) {
             where: {
               id: { in: user.favoriteProductIds },
               isAvailable: true,
+              store: { isVerified: true },
             },
             include: {
               store: true,
@@ -52,6 +53,7 @@ export async function getUserFavorites(userEmail?: string) {
         ? prisma.store.findMany({
             where: {
               id: { in: user.favoriteStoreIds },
+              isVerified: true,
             },
             include: {
               products: {

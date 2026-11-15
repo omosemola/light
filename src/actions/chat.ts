@@ -67,6 +67,15 @@ export async function saveChatMessage(input: {
       finalChatImage = uploadRes.url;
     }
 
+    // Validate store existence and verification status
+    const targetStore = await prisma.store.findUnique({
+      where: { id: input.storeId },
+      include: { user: true },
+    });
+    if (!targetStore || !targetStore.isVerified) {
+      return { success: false, error: "Store not found or awaiting verification" };
+    }
+
     // Save message to PostgreSQL Database
     const message = await prisma.chatMessage.create({
       data: {
@@ -85,10 +94,7 @@ export async function saveChatMessage(input: {
     // Send email notification in the background
     try {
       if (input.senderType === "STUDENT") {
-        const store = await prisma.store.findUnique({
-          where: { id: input.storeId },
-          include: { user: true },
-        });
+        const store = targetStore;
 
         const vendorEmail = store?.user?.email || "vendor@campuslightson.com";
         const emailHtml = generateChatMessageEmailForVendor({

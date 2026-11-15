@@ -151,7 +151,10 @@ const readHomepageData = unstable_cache(
   async () => {
     const [products, stores, categories] = await Promise.all([
       prisma.product.findMany({
-        where: { isAvailable: true },
+        where: { 
+          isAvailable: true,
+          store: { isVerified: true },
+        },
         include: {
           store: { select: LIST_STORE_SELECT },
           category: { select: { id: true, name: true } },
@@ -160,6 +163,7 @@ const readHomepageData = unstable_cache(
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
+        where: { isVerified: true },
         select: {
           id: true,
           name: true,
@@ -227,7 +231,10 @@ const readSearchCatalogData = unstable_cache(
   async () => {
     const [products, stores, categories] = await Promise.all([
       prisma.product.findMany({
-        where: { isAvailable: true },
+        where: { 
+          isAvailable: true,
+          store: { isVerified: true },
+        },
         include: {
           store: { select: LIST_STORE_SELECT },
           category: { select: { id: true, name: true } },
@@ -235,6 +242,7 @@ const readSearchCatalogData = unstable_cache(
         orderBy: { createdAt: "desc" },
       }),
       prisma.store.findMany({
+        where: { isVerified: true },
         select: {
           id: true,
           name: true,
@@ -328,7 +336,7 @@ async function readStoreById(storeId: string) {
     },
   });
 
-  if (!store) throw notFoundError("Store not found");
+  if (!store || !store.isVerified) throw notFoundError("Store not found or awaiting verification");
 
   return {
     success: true as const,
@@ -439,7 +447,7 @@ async function readProductBySlugOrId(raw: string, cleanSlug: string) {
   }
 
   // Throwing (instead of returning a failure object) guarantees "not found" is never cached.
-  if (!product) throw notFoundError("Product not found");
+  if (!product || !product.store || !product.store.isVerified) throw notFoundError("Product not found");
 
   // Auto-heal missing slug in database so all future lookups & SEO canonical URLs are instant
   if (!product.slug && product.name) {
@@ -545,7 +553,12 @@ function formatServiceStore(s: any) {
 
 async function readServiceStores() {
   const rawStores = await prisma.store.findMany({
-    where: SERVICE_STORE_WHERE,
+    where: {
+      AND: [
+        { isVerified: true },
+        SERVICE_STORE_WHERE,
+      ],
+    },
     include: {
       user: { select: { name: true, phone: true, email: true } },
     },
@@ -611,6 +624,7 @@ async function readCategoryProducts(normalizedInput: string) {
   const products = await prisma.product.findMany({
     where: {
       isAvailable: true,
+      store: { isVerified: true },
       OR: orConditions,
     },
     include: categoryProductInclude,
@@ -686,6 +700,8 @@ export async function searchLiveCatalog(query: string) {
     const [products, stores] = await Promise.all([
       prisma.product.findMany({
         where: {
+          isAvailable: true,
+          store: { isVerified: true },
           OR: productOrConditions,
         },
         include: {
@@ -697,6 +713,7 @@ export async function searchLiveCatalog(query: string) {
       }),
       prisma.store.findMany({
         where: {
+          isVerified: true,
           OR: storeOrConditions,
         },
         select: {
@@ -760,7 +777,10 @@ export async function getPaginatedProducts(options: {
     const limit = Math.min(60, Math.max(1, Number(options.limit) || 20));
     const skip = (page - 1) * limit;
 
-    const where: any = { isAvailable: true };
+    const where: any = { 
+      isAvailable: true,
+      store: { isVerified: true },
+    };
 
     if (options.storeId) {
       where.storeId = options.storeId;
