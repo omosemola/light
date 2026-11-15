@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
         "vendor.lightsonmarketplace.com",
         "merchant.lightsonmarketplace.com",
         "admin.lightsonmarketplace.com",
+        "*.vercel.app",
+        "vercel.app",
         "lightsonmarketplace.netlify.app",
         "*.netlify.app",
         "localhost:3000",
