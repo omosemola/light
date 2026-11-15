@@ -971,12 +971,11 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                                 {st.name}
                               </h3>
                               {isOpen ? (
-                                <span className="shrink-0 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-heading font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  <span>Open</span>
+                                <span className="shrink-0 text-emerald-600 dark:text-emerald-400 text-xs font-heading font-bold">
+                                  Open
                                 </span>
                               ) : (
-                                <span className="shrink-0 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                                <span className="shrink-0 text-rose-600 dark:text-rose-400 text-xs font-heading font-bold">
                                   Closed
                                 </span>
                               )}

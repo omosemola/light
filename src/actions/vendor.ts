@@ -296,6 +296,14 @@ export async function toggleProductAvailability(productId: string, isAvailable: 
     if (!session.isAuthenticated || !session.storeId) return { success: false, error: "Unauthorized" };
     const sessionStoreId = session.storeId;
 
+    const storeRecord = await prisma.store.findUnique({
+      where: { id: sessionStoreId },
+      select: { isVerified: true },
+    });
+    if (!storeRecord?.isVerified) {
+      return { success: false, error: "Your store is pending verification. Listings cannot be updated until verified." };
+    }
+
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product || product.storeId !== sessionStoreId) {
       return { success: false, error: "Unauthorized to modify this product" };
@@ -333,8 +341,14 @@ export async function createVendorProduct(data: {
 
     const storeRecord = await prisma.store.findUnique({
       where: { id: data.storeId },
-      select: { isService: true },
+      select: { isService: true, isVerified: true },
     });
+    if (!storeRecord?.isVerified) {
+      return {
+        success: false,
+        error: "Your store is currently pending verification. You cannot create new listings until approved by an administrator.",
+      };
+    }
     if (storeRecord?.isService) {
       return {
         success: false,
@@ -462,6 +476,17 @@ export async function updateVendorProduct(data: {
     const session = await getVendorSession();
     if (!session.isAuthenticated || !session.storeId) return { success: false, error: "Unauthorized" };
     const sessionStoreId = session.storeId;
+
+    const storeRecord = await prisma.store.findUnique({
+      where: { id: sessionStoreId },
+      select: { isVerified: true },
+    });
+    if (!storeRecord?.isVerified) {
+      return {
+        success: false,
+        error: "Your store is currently pending verification. You cannot create or update listings until approved by an administrator.",
+      };
+    }
 
     if (!data.productId) {
       return { success: false, error: "Missing product ID" };

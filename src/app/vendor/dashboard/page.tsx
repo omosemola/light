@@ -596,6 +596,10 @@ export default function VendorDashboardPage() {
   };
 
   const openAddProductModal = () => {
+    if (storeData && !storeData.isVerified) {
+      showToast("⏳ Your store is pending verification. Product listings can be created once approved by an administrator.");
+      return;
+    }
     if (storeData?.isService) {
       showToast("ℹ️ Service providers post availability profiles, not retail products.");
       setSelectedTab("products");
@@ -618,6 +622,10 @@ export default function VendorDashboardPage() {
   };
 
   const openEditProductModal = (prod: any) => {
+    if (storeData && !storeData.isVerified) {
+      showToast("⏳ Your store is pending verification. Product listings can be managed once approved by an administrator.");
+      return;
+    }
     if (storeData?.isService) {
       showToast("ℹ️ Service providers post availability profiles, not retail products.");
       setSelectedTab("products");
@@ -666,6 +674,10 @@ export default function VendorDashboardPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (storeData && !storeData.isVerified) {
+      showToast("⏳ Your store is pending verification. Product listings cannot be created or updated until approved.");
+      return;
+    }
     if (!productName.trim()) {
       showToast("Please enter the product name.");
       return;
@@ -1260,7 +1272,7 @@ export default function VendorDashboardPage() {
                     Store Application Under Review ⏳
                   </h2>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    Your merchant account and store profile are currently being verified by Lightson campus administrators. You can configure your store products, opening hours, and pricing while waiting for activation.
+                    Your merchant account and store profile are currently being verified by Lightson campus administrators. Once verified and approved, you will be able to create product listings and begin receiving customer orders.
                   </p>
                 </div>
               </div>
@@ -2055,10 +2067,16 @@ export default function VendorDashboardPage() {
                 <button
                   type="button"
                   onClick={openAddProductModal}
-                  className="px-5 py-2.5 bg-[#312E81] hover:bg-[#1E1B4B] text-white font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={!storeData?.isVerified}
+                  className={`px-5 py-2.5 font-heading font-extrabold text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                    !storeData?.isVerified
+                      ? "bg-slate-300 dark:bg-zinc-800 text-slate-500 dark:text-zinc-500 cursor-not-allowed"
+                      : "bg-[#312E81] hover:bg-[#1E1B4B] text-white active:scale-95 cursor-pointer"
+                  }`}
+                  title={!storeData?.isVerified ? "Store pending verification" : "Add New Product"}
                 >
                   <Plus size={16} />
-                  <span>Add New Product</span>
+                  <span>{!storeData?.isVerified ? "Listing Locked (Pending Review)" : "Add New Product"}</span>
                 </button>
               </div>
 
@@ -2068,18 +2086,27 @@ export default function VendorDashboardPage() {
                 }`}>
                   <Package size={32} className="text-slate-400 mx-auto mb-3" />
                   <h3 className="font-heading font-extrabold text-base text-slate-900 dark:text-white">
-                    No products found
+                    {!storeData?.isVerified ? "Store Pending Verification" : "No products found"}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
-                    Add your first store product with customizable options, sizes, or variations.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 max-w-md mx-auto">
+                    {!storeData?.isVerified
+                      ? "Your store application is currently under review by campus administrators. Once approved, you will be able to add and publish your product listings."
+                      : "Add your first store product with customizable options, sizes, or variations."}
                   </p>
-                  <button
-                    type="button"
-                    onClick={openAddProductModal}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
-                  >
-                    + Add First Product
-                  </button>
+                  {!storeData?.isVerified ? (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-heading font-bold">
+                      <Clock size={14} />
+                      <span>Approval Required Before Posting</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={openAddProductModal}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                    >
+                      + Add First Product
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -2163,10 +2190,16 @@ export default function VendorDashboardPage() {
                           <button
                             type="button"
                             onClick={() => openEditProductModal(prod)}
-                            className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white font-heading font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
+                            disabled={!storeData?.isVerified}
+                            className={`flex-1 py-2 rounded-xl font-heading font-bold text-xs flex items-center justify-center gap-1 transition ${
+                              !storeData?.isVerified
+                                ? "bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
+                                : "bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-white cursor-pointer"
+                            }`}
+                            title={!storeData?.isVerified ? "Pending administrator verification" : "Edit Product"}
                           >
                             <Edit3 size={13} />
-                            <span>Edit Product</span>
+                            <span>{!storeData?.isVerified ? "Pending Approval" : "Edit Product"}</span>
                           </button>
 
                           <button
