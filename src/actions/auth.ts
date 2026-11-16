@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { notifyAdminNewStudent, sendPasswordResetEmail, sendPasswordResetSuccessEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { cookies } from "next/headers";
+import { applyReferralOnSignUp } from "./referral";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
@@ -30,6 +32,16 @@ export async function syncSupabaseOAuthUser(data: {
         role: Role.STUDENT,
       },
     });
+
+    try {
+      const cookieStore = await cookies();
+      const refCode = cookieStore.get("lightson_ref")?.value;
+      if (refCode) {
+        await applyReferralOnSignUp(newUser.id, refCode);
+      }
+    } catch (e) {
+      console.warn("Failed to apply referral code for OAuth user:", e);
+    }
 
     notifyAdminNewStudent({
       name: newUser.name || "Student",

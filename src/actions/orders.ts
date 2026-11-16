@@ -13,6 +13,8 @@ import {
 } from "@/lib/email";
 import { sendVendorWhatsAppOrderNotification } from "@/lib/whatsapp";
 import { getSafeImageUrl } from "@/lib/productOptions";
+import { applyReferralOrderBonus, applyReferralOnSignUp } from "@/actions/referral";
+import { cookies } from "next/headers";
 
 export interface CreateOrderInput {
   userId?: string;
@@ -82,6 +84,16 @@ export async function createLiveOrder(input: CreateOrderInput) {
           });
           userId = newUser.id;
 
+          try {
+            const cookieStore = await cookies();
+            const refCode = cookieStore.get("lightson_ref")?.value;
+            if (refCode) {
+              await applyReferralOnSignUp(newUser.id, refCode);
+            }
+          } catch (refErr) {
+            console.warn("Failed to apply referral in first checkout:", refErr);
+          }
+
           notifyAdminNewStudent({
             name: newUser.name || input.userName || "Campus Student",
             email: newUser.email,
@@ -128,6 +140,16 @@ export async function createLiveOrder(input: CreateOrderInput) {
             },
           });
           userId = newPhoneUser.id;
+
+          try {
+            const cookieStore = await cookies();
+            const refCode = cookieStore.get("lightson_ref")?.value;
+            if (refCode) {
+              await applyReferralOnSignUp(newPhoneUser.id, refCode);
+            }
+          } catch (refErr) {
+            console.warn("Failed to apply referral in first checkout by phone:", refErr);
+          }
         } catch {
           const fallbackPhoneUser = await prisma.user.findFirst({
             where: { email: phoneCandidateEmail },
@@ -239,6 +261,11 @@ export async function createLiveOrder(input: CreateOrderInput) {
     revalidatePath("/admin/dashboard");
     revalidatePath("/orders");
     revalidatePath(`/orders/${order.id}`);
+
+    // Award +50 points to buyer & +5 points to referrer on every order
+    applyReferralOrderBonus(order.id, userId).catch((err) =>
+      console.error("Error applying referral order bonus:", err)
+    );
 
     // Format item details for email templates
     const orderItemsForEmail = order.items.map((it) => ({

@@ -6,6 +6,8 @@ import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
 import { checkRateLimit } from "./rateLimit";
 import { notifyAdminNewStudent } from "./email";
+import { cookies } from "next/headers";
+import { applyReferralOnSignUp } from "@/actions/referral";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -84,6 +86,16 @@ export const authOptions: NextAuthOptions = {
                 role: Role.STUDENT,
               },
             });
+
+            try {
+              const cookieStore = await cookies();
+              const refCode = cookieStore.get("lightson_ref")?.value;
+              if (refCode) {
+                await applyReferralOnSignUp(newStudent.id, refCode);
+              }
+            } catch (refErr) {
+              console.warn("Failed to apply referral code for Google OAuth user:", refErr);
+            }
 
             notifyAdminNewStudent({
               name: newStudent.name || user.name || "Student",

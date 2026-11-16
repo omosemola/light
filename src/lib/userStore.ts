@@ -12,6 +12,7 @@ export interface UserProfile {
   phone: string;
   avatar: string;
   points: number;
+  referralCode?: string;
   savedStoresCount: number;
   savedLocations?: Array<{ id: string; title: string; address: string; isDefault: boolean }>;
   isVisitor?: boolean;

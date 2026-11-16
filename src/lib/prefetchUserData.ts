@@ -40,7 +40,7 @@ export async function prefetchUserData(email: string) {
 
       const ordersCount = user.ordersCount ?? 0;
       const reviewsCount = user.reviewsCount ?? 0;
-      const points = ordersCount * 50;
+      const points = user.points !== undefined ? user.points : (ordersCount * 50);
 
       // Commit core profile data into persistent userStore immediately
       useUserStore.getState().updateProfile({
@@ -57,6 +57,7 @@ export async function prefetchUserData(email: string) {
         ordersCount,
         reviewsCount,
         points,
+        referralCode: user.referralCode || undefined,
         isVisitor: false,
       });
 

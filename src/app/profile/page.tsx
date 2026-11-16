@@ -24,7 +24,12 @@ import {
   Image as ImageIcon, 
   Store, 
   ShieldCheck, 
-  MessageSquare
+  MessageSquare,
+  Gift,
+  Copy,
+  CheckCheck,
+  History,
+  Share2
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,6 +46,7 @@ import { getUserReviews } from "@/actions/reviews";
 import { updateUserProfileDb, getUserProfileDb } from "@/actions/account";
 import { uploadImageToCloud } from "@/lib/uploadClient";
 import { preloadBrowserImage } from "@/lib/prefetchUserData";
+import { getUserReferralStats } from "@/actions/referral";
 
 const ABSTRACT_AVATARS = [
   {
@@ -76,7 +82,23 @@ export default function ProfilePage() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [referralStats, setReferralStats] = useState<{
+    points: number;
+    referralCode: string | null;
+    referralLink: string;
+    totalReferredCount: number;
+    referralPointsEarned: number;
+    recentTransactions: Array<{
+      id: string;
+      amount: number;
+      type: string;
+      description: string;
+      createdAt: string;
+    }>;
+  } | null>(null);
 
   // Vendor Registration State
   const [vendorStoreName, setVendorStoreName] = useState("");
@@ -115,7 +137,7 @@ export default function ProfilePage() {
             if (orderRes.success && orderRes.orders) {
               const count = orderRes.orders.length;
               setUserOrdersCount(count);
-              updateProfile({ ordersCount: count, points: count * 50 });
+              updateProfile({ ordersCount: count });
             }
             if (userRes.success && userRes.user) {
               if (userRes.user.image) {
@@ -131,7 +153,8 @@ export default function ProfilePage() {
                 savedLocations: userRes.user.savedLocations || profile.savedLocations,
                 ordersCount: userRes.user.ordersCount ?? profile.ordersCount,
                 reviewsCount: userRes.user.reviewsCount ?? profile.reviewsCount,
-                points: userRes.user.points ?? profile.points,
+                points: userRes.user.points !== undefined ? userRes.user.points : profile.points,
+                referralCode: userRes.user.referralCode || profile.referralCode,
               });
               if (userRes.user.ordersCount !== undefined) {
                 setUserOrdersCount(userRes.user.ordersCount);
@@ -143,6 +166,21 @@ export default function ProfilePage() {
           }
         } catch (e) {
           console.error("Error loading user profile & orders:", e);
+        }
+        // Also fetch live referral & rewards stats
+        try {
+          const refRes = await getUserReferralStats(profile.email);
+          if (active && refRes.success && refRes.stats) {
+            setReferralStats(refRes.stats);
+            if (refRes.stats.points !== undefined) {
+              updateProfile({
+                points: refRes.stats.points,
+                referralCode: refRes.stats.referralCode || undefined,
+              });
+            }
+          }
+        } catch (refErr) {
+          console.warn("Error fetching referral stats:", refErr);
         }
       }
     }
@@ -322,6 +360,33 @@ function compressAvatarImage(file: File): Promise<string> {
     } finally {
       setIsRegisteringVendor(false);
     }
+  };
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 3000);
+  };
+
+  const handleCopyReferralLink = async () => {
+    const code = referralStats?.referralCode || profile.referralCode;
+    const link = referralStats?.referralLink || `https://lightsonmarketplace.com/?ref=${code || ""}`;
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedCode(true);
+      showToast("Referral link copied! Share with campus friends 🚀");
+      setTimeout(() => setCopiedCode(false), 2500);
+    } catch {
+      showToast("Link: " + link);
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const code = referralStats?.referralCode || profile.referralCode || "CAMPUS";
+    const link = referralStats?.referralLink || `https://lightsonmarketplace.com/?ref=${code}`;
+    const text = `Hey! Order your meals, groceries, and campus essentials on Lightson Marketplace! Use my link to get 50 Welcome Points immediately: ${link}`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
   };
 
   const { notifications, ensureWelcomeNotification } = useNotificationStore();
@@ -530,12 +595,111 @@ function compressAvatarImage(file: File): Promise<string> {
             <span className="text-[10px] font-body font-semibold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">Favorites</span>
           </Link>
 
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 shadow-sm border border-slate-200/80 dark:border-zinc-800 text-center flex flex-col items-center justify-center">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1">
+          <button
+            type="button"
+            onClick={() => setIsHistoryModalOpen(true)}
+            className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 shadow-sm border border-slate-200/80 dark:border-zinc-800 text-center flex flex-col items-center justify-center hover:border-emerald-300 dark:hover:border-emerald-800 transition-all cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
               <Award size={16} />
             </div>
-            <span className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">{profile.points}</span>
+            <span className="font-heading font-extrabold text-lg text-[#18181B] dark:text-zinc-100">{referralStats?.points ?? profile.points}</span>
             <span className="text-[10px] font-body font-semibold text-[#71717A] dark:text-zinc-400 uppercase tracking-wider">Campus Pts</span>
+          </button>
+        </motion.div>
+
+        {/* REFERRAL & CAMPUS REWARDS CARD */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1E1B4B] via-[#2A2663] to-[#312E81] text-white p-5 md:p-6 shadow-xl border border-indigo-700/50"
+        >
+          {/* Ambient light glow */}
+          <div className="absolute -right-8 -top-8 w-36 h-36 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-8 -bottom-8 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
+                  <Gift size={22} className="text-slate-950" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-base md:text-lg text-white">
+                    Invite Friends & Earn
+                  </h3>
+                  <p className="text-xs text-indigo-200 font-body">
+                    Get <strong className="text-amber-300 font-extrabold">+100 Pts</strong> per friend + <strong className="text-amber-300 font-extrabold">+5 Pts</strong> on their orders!
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="shrink-0 text-[11px] font-heading font-extrabold text-amber-300 hover:text-amber-200 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-full border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <History size={13} />
+                <span>History</span>
+              </button>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-3 gap-2 bg-black/25 backdrop-blur-sm rounded-2xl p-3 border border-white/10 text-center">
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-indigo-300 tracking-wider">Balance</span>
+                <span className="font-heading font-extrabold text-base text-amber-300">
+                  {referralStats?.points ?? profile.points}
+                </span>
+                <span className="block text-[9px] text-white/60">Points</span>
+              </div>
+              <div className="border-x border-white/10">
+                <span className="block text-[10px] uppercase font-bold text-indigo-300 tracking-wider">Friends</span>
+                <span className="font-heading font-extrabold text-base text-white">
+                  {referralStats?.totalReferredCount ?? 0}
+                </span>
+                <span className="block text-[9px] text-white/60">Joined</span>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-indigo-300 tracking-wider">Referral</span>
+                <span className="font-heading font-extrabold text-base text-emerald-400">
+                  +{referralStats?.referralPointsEarned ?? 0}
+                </span>
+                <span className="block text-[9px] text-white/60">Earned</span>
+              </div>
+            </div>
+
+            {/* Referral Code Box */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-indigo-200 uppercase tracking-wider block">
+                Your Personal Referral Code
+              </span>
+              <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-2xl p-2.5">
+                <div className="flex-1 font-mono font-extrabold text-sm md:text-base text-amber-300 tracking-wider px-2 truncate select-all">
+                  {referralStats?.referralCode || profile.referralCode || "Generating..."}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyReferralLink}
+                  className="px-3.5 py-2 rounded-xl bg-white text-indigo-950 font-heading font-bold text-xs hover:bg-slate-100 active:scale-95 transition-all flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
+                >
+                  {copiedCode ? <CheckCheck size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                  <span>{copiedCode ? "Copied!" : "Copy Link"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* WhatsApp Share Button */}
+            <button
+              type="button"
+              onClick={handleShareWhatsApp}
+              className="w-full h-11 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-heading font-extrabold text-xs md:text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+            >
+              <Share2 size={16} />
+              <span>Share to WhatsApp Status & Groups</span>
+            </button>
           </div>
         </motion.div>
 
@@ -917,6 +1081,69 @@ function compressAvatarImage(file: File): Promise<string> {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* CAMPUS POINTS & REWARDS LEDGER MODAL */}
+      <Modal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        title="Campus Points & Rewards Ledger"
+      >
+        <div className="p-5 space-y-4">
+          <div className="bg-indigo-50 dark:bg-indigo-950/50 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-medium text-indigo-900 dark:text-indigo-300 block">Current Balance</span>
+              <span className="text-2xl font-heading font-extrabold text-[#312E81] dark:text-indigo-400">
+                {referralStats?.points ?? profile.points} Points
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold">
+              <Award size={20} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+              Recent Points Activity
+            </h4>
+
+            {referralStats?.recentTransactions && referralStats.recentTransactions.length > 0 ? (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {referralStats.recentTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="font-semibold text-slate-900 dark:text-zinc-100 truncate">
+                        {tx.description}
+                      </p>
+                      <span className="text-[10px] text-slate-400 dark:text-zinc-500 block">
+                        {new Date(tx.createdAt).toLocaleDateString("en-NG", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <span className="font-heading font-extrabold text-sm text-emerald-600 dark:text-emerald-400 shrink-0">
+                      +{tx.amount}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 text-center text-xs text-slate-500 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800">
+                <Gift size={28} className="mx-auto mb-2 text-slate-400 opacity-60" />
+                <p className="font-semibold">No points transactions recorded yet.</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Share your referral link with friends to get 100 points immediately when they sign up!
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </Modal>
     </div>
   );

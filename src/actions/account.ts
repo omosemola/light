@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { notifyAdminNewStudent } from "@/lib/email";
+import { cookies } from "next/headers";
+import { applyReferralOnSignUp } from "./referral";
 export interface SavedLocationItem {
   id: string;
   title: string;
@@ -50,7 +52,16 @@ export async function getUserProfileDb(email: string) {
 
     const ordersCount = user._count?.orders ?? 0;
     const reviewsCount = user._count?.reviews ?? 0;
-    const points = ordersCount * 50;
+    
+    // Persistent accumulated points (with historical order sync if uninitialized)
+    let points = user.points ?? 0;
+    if (points === 0 && ordersCount > 0) {
+      points = ordersCount * 50;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { points },
+      }).catch(() => {});
+    }
 
     return {
       success: true,
@@ -75,6 +86,7 @@ export async function getUserProfileDb(email: string) {
         ordersCount,
         reviewsCount,
         points,
+        referralCode: user.referralCode || "",
       },
     };
   } catch (error: any) {
@@ -148,6 +160,7 @@ export async function updateUserProfileDb(
     smsAlerts?: boolean;
     emailReceipts?: boolean;
     promoAlerts?: boolean;
+    referralCode?: string;
   }
 ) {
   try {
@@ -200,6 +213,18 @@ export async function updateUserProfileDb(
           promoAlerts: data.promoAlerts ?? false,
         },
       });
+
+      // Check for referral code (from registration input or 30-day visit cookie)
+      let refCode = data.referralCode;
+      if (!refCode) {
+        try {
+          const cookieStore = await cookies();
+          refCode = cookieStore.get("lightson_ref")?.value;
+        } catch {}
+      }
+      if (refCode) {
+        await applyReferralOnSignUp(user.id, refCode);
+      }
 
       // Notify Admin via email of new student registration
       notifyAdminNewStudent({

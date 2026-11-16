@@ -50,18 +50,25 @@ model User {
   smsAlerts          Boolean  @default(true)
   emailReceipts      Boolean  @default(true)
   promoAlerts        Boolean  @default(false)
+  points             Int      @default(0)
+  referralCode       String?  @unique
+  referredById       String?
+  referredBy         User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals          User[]   @relation("UserReferrals")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  store         Store?
-  orders        Order[]
-  tickets       SupportTicket[]
-  reviews       Review[]
-  notifications Notification[]
-  chatMessages  ChatMessage[]
+  store             Store?
+  orders            Order[]
+  tickets           SupportTicket[]
+  reviews           Review[]
+  notifications     Notification[]
+  chatMessages      ChatMessage[]
+  pointTransactions PointTransaction[]
 
   @@index([role])
   @@index([createdAt])
+  @@index([referralCode])
 }
 
 model Store {
@@ -268,4 +275,18 @@ model PasswordResetToken {
 
   @@index([email])
 }
+
+model PointTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int      // e.g. +100, +50, +5
+  type        String   // "REFERRAL_SIGNUP" | "WELCOME_BONUS" | "ORDER_REWARD" | "REFERRAL_ORDER_COMMISSION"
+  description String
+  orderId     String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
 
