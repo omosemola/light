@@ -60,28 +60,48 @@ import { MAJOR_CATEGORIES } from "@/lib/categories";
 
 const PROMO_SLIDES = [
   {
-    id: "promo-1",
-    tag: "🔥 FRESH CAMPUS BAKERY • PastryHomebyLayo",
-    title: "Crispy Gourmet Small Chops Platter 🥟",
-    subtitle: "Freshly prepared spring rolls, samosas, peppered puff puff & succulent wings delivered hot to your hostel.",
-    link: "/category/pastries",
-    buttonText: "Order Small Chops",
-    bgColor: "bg-[#1E1B4B]",
-    badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
-    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
-    highlight: "⭐ 5.0 Top Rated • Verified Merchant"
+    id: "promo-layo-asun",
+    storeName: "LAYO’s foodhub",
+    storeLogo: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794348608/lightson_marketplace/stores/smmwrqgldvfk18yp3xns.jpg",
+    storeLink: "/vendor/cmwb8u1t30002l9091kzig3bu",
+    tag: "🔥 HOT CAMPUS CRAVING • LAYO’S FOODHUB",
+    title: "Smoky Party-Style Asun Jollof Rice",
+    subtitle: "Flavor-packed party Jollof rice served hot with spicy peppered Asun, sweet fried plantain & juicy peppered turkey or chicken.",
+    priceTag: "₦7,000",
+    priceSubtext: "Loaded Combo Pack",
+    link: "/product/asun-jollof-rice",
+    secondaryLink: "/vendor/cmwb8u1t30002l9091kzig3bu",
+    buttonText: "Order Asun Jollof",
+    secondaryButtonText: "Visit Foodhub",
+    bgGradient: "bg-gradient-to-br from-[#1E1B4B] via-[#311042] to-[#451A03]",
+    glowColor: "bg-amber-500/25",
+    badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-500/20 border border-amber-300",
+    image: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794740959/lightson_marketplace/products/tmqvrcj2ptqoooa4sae6.jpg",
+    secondaryImage: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794742130/lightson_marketplace/products/qlqda4dknz19hkn1mjlk.jpg",
+    showcaseCaption: "Spicy Asun + Fried Plantain + Turkey",
+    highlight: "⭐ 5.0 Rated • Hot Hostel Delivery"
   },
   {
-    id: "promo-2",
-    tag: "⚡ FAST HOSTEL DELIVERY • Campus Express",
-    title: "Fresh Campus Meals & Quick Bites 🍱",
-    subtitle: "Delicious meals, snacks, groceries, and essentials delivered right to your hostel porter's lodge in 15–25 minutes.",
-    link: "/category/food",
-    buttonText: "Explore Marketplace",
-    bgColor: "bg-[#1E1B4B]",
-    badgeBg: "bg-amber-400 text-slate-950 font-black",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
-    highlight: "⚡ 15-20 Min Fast Delivery"
+    id: "promo-thumie-gadgets",
+    storeName: "Thumie_gadgets",
+    storeLogo: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794322261/lightson_marketplace/stores/qar9wvkryq0hfg1di9iy.jpg",
+    storeLink: "/vendor/cmw9484ao0004lb09giyt77m1",
+    tag: "⚡ VERIFIED TECH PLUG • THUMIE_GADGETS",
+    title: "Premium iPhones & Flagship Gadgets",
+    subtitle: "Factory unlocked iPhone 15, 15 Pro Max, iPhone Air & 17 Pro with verified battery health and same-day campus delivery.",
+    priceTag: "From ₦620k",
+    priceSubtext: "Factory Unlocked",
+    link: "/vendor/cmw9484ao0004lb09giyt77m1",
+    secondaryLink: "/category/gadgets",
+    buttonText: "Explore Gadget Store",
+    secondaryButtonText: "All Tech Deals",
+    bgGradient: "bg-gradient-to-br from-[#090D16] via-[#1E1B4B] to-[#0F172A]",
+    glowColor: "bg-indigo-500/30",
+    badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-500/20 border border-amber-300",
+    image: "https://res.cloudinary.com/yvkipxsa/image/upload/f_auto,q_auto/v1794256481/lightson_marketplace/products/luwrykrrqlxolxdyoqsg.jpg",
+    secondaryImage: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794317387/lightson_marketplace/products/j2qcq7vemdzqdpzdicwl.jpg",
+    showcaseCaption: "iPhone 15 • 15 Pro Max • 17 Pro",
+    highlight: "✓ 100% Authentic • Same-Day Delivery"
   }
 ];
 
@@ -123,13 +143,32 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
   // PROMOTIONAL CAROUSEL STATE
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
   const [isHovered, setIsHovered] = useState(false);
+  const promoTouchStartX = useRef<number | null>(null);
+
+  const goToSlide = (targetIdx: number) => {
+    if (targetIdx === currentSlide) return;
+    setSlideDirection(targetIdx > currentSlide ? 1 : -1);
+    setCurrentSlide(targetIdx);
+  };
+
+  const nextSlide = () => {
+    setSlideDirection(1);
+    setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
+  };
+
+  const prevSlide = () => {
+    setSlideDirection(-1);
+    setCurrentSlide((prev) => (prev - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length);
+  };
 
   useEffect(() => {
     if (isHovered) return;
     const interval = setInterval(() => {
+      setSlideDirection(1);
       setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
-    }, 5500);
+    }, 6500);
     return () => clearInterval(interval);
   }, [isHovered]);
 
@@ -465,82 +504,284 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
         
         {/* PROMOTIONAL HERO CAROUSEL */}
         <section 
-          className="w-full relative overflow-hidden rounded-[28px] shadow-lg border border-slate-200/80 dark:border-zinc-800/90 flex flex-col justify-between min-h-[250px] md:min-h-[280px] group"
+          className="w-full relative overflow-hidden rounded-[28px] shadow-xl border border-slate-200/80 dark:border-zinc-800/90 bg-[#1E1B4B] min-h-[290px] sm:min-h-[300px] md:min-h-[310px] group select-none"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          onTouchStart={(e) => {
+            promoTouchStartX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            if (promoTouchStartX.current === null) return;
+            const deltaX = e.changedTouches[0].clientX - promoTouchStartX.current;
+            if (Math.abs(deltaX) > 45) {
+              if (deltaX < 0) nextSlide();
+              else prevSlide();
+            }
+            promoTouchStartX.current = null;
+          }}
         >
           {/* CAROUSEL SLIDES */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" custom={slideDirection}>
             {PROMO_SLIDES.map((slide, idx) => {
               if (idx !== currentSlide) return null;
               return (
                 <motion.div
                   key={slide.id}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                  className={`absolute inset-0 ${slide.bgColor} p-6 md:p-8 text-white flex flex-col justify-between z-10`}
+                  custom={slideDirection}
+                  initial={{ opacity: 0, x: slideDirection * 40, scale: 0.985 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: slideDirection * -40, scale: 0.985 }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  className={`relative w-full min-h-[290px] sm:min-h-[300px] md:min-h-[310px] ${slide.bgGradient} p-5 sm:p-6 md:p-8 text-white flex flex-col justify-between z-10 overflow-hidden`}
                 >
-                  {/* BACKGROUND AMBIENT IMAGE */}
-                  <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 dark:opacity-20 pointer-events-none overflow-hidden">
+                  {/* AMBIENT RADIAL GLOW & BACKDROP */}
+                  <div className={`absolute -top-20 -right-16 w-72 h-72 rounded-full ${slide.glowColor} blur-3xl pointer-events-none`} />
+                  <div className="absolute -bottom-24 -left-16 w-64 h-64 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-2/3 md:w-1/2 h-full opacity-20 dark:opacity-15 pointer-events-none overflow-hidden">
                     <Image
                       src={slide.image}
                       alt={slide.title}
                       fill
+                      sizes="(max-width: 768px) 60vw, 45vw"
                       className="object-cover object-center scale-110 blur-xs"
+                      unoptimized
                     />
-                    <div className="absolute inset-0 bg-[#1E1B4B]/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#1E1B4B] via-[#1E1B4B]/80 to-transparent" />
                   </div>
 
-                  {/* TOP BADGE */}
-                  <div className="relative z-10 flex items-center justify-between gap-2">
-                    <span className={`${slide.badgeBg} px-3.5 py-1 text-[11px] font-heading font-extrabold rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm`}>
-                      {slide.tag}
-                    </span>
-                  </div>
-
-                  {/* MAIN HEADINGS & COPY */}
-                  <div className="relative z-10 my-3 max-w-xl">
-                    <h2 className="font-heading font-black text-2xl sm:text-3xl lg:text-4xl text-white leading-tight tracking-tight drop-shadow-xs">
-                      {slide.title}
-                    </h2>
-                    <p className="text-slate-200 dark:text-zinc-300 text-xs sm:text-sm font-normal mt-1.5 leading-relaxed line-clamp-2">
-                      {slide.subtitle}
-                    </p>
-                  </div>
-
-                  {/* BOTTOM ACTIONS & PROGRESS CONTROLS */}
-                  <div className="relative z-10 flex items-center justify-between pt-2">
-                    <div className="flex items-center gap-3">
+                  {/* TOP ROW: MERCHANT STORE PILL + VERIFIED TAG */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.05, ease: "easeOut" }}
+                    className="relative z-10 flex items-center justify-between gap-2 flex-wrap"
+                  >
+                    <div className="inline-flex items-center gap-2">
                       <Link
-                        href={slide.link}
+                        href={slide.storeLink}
                         prefetch={true}
-                        className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-400 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-amber-500/20 active:scale-95 transition-all group/btn cursor-pointer"
+                        className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 pl-1.5 pr-3 py-1 rounded-full transition-colors cursor-pointer"
                       >
-                        <span>{slide.buttonText}</span>
-                        <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
+                        <div className="w-6 h-6 rounded-full overflow-hidden relative border border-amber-400/80 shrink-0 bg-slate-900">
+                          <Image
+                            src={slide.storeLogo}
+                            alt={slide.storeName}
+                            fill
+                            sizes="24px"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <span className="text-[11px] font-heading font-bold text-white tracking-tight">
+                          {slide.storeName}
+                        </span>
+                        <ShieldCheck size={13} className="text-amber-400 shrink-0" />
                       </Link>
 
-                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-amber-200 font-semibold bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
-                        {slide.highlight}
+                      <span className={`hidden sm:inline-flex ${slide.badgeBg} px-3 py-1 text-[10px] font-heading font-extrabold rounded-full uppercase tracking-wider items-center gap-1`}>
+                        {slide.tag}
                       </span>
                     </div>
 
-                    {/* Progress Indicator Dots */}
-                    <div className="flex items-center gap-2">
-                      {PROMO_SLIDES.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCurrentSlide(i)}
-                          className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                            currentSlide === i 
-                              ? "w-8 bg-[#FBBF24]" 
-                              : "w-2 bg-white/40 hover:bg-white/70"
-                          }`}
-                          aria-label={`Slide ${i + 1}`}
+                    {/* Mobile Price Tag Pill */}
+                    <span className="md:hidden inline-flex items-center gap-1 bg-amber-400 text-slate-950 font-heading font-black text-xs px-3 py-1 rounded-full shadow-md">
+                      <span>{slide.priceTag}</span>
+                    </span>
+                  </motion.div>
+
+                  {/* MIDDLE ROW: HEADLINE COPY + VISUAL SHOWCASE */}
+                  <div className="relative z-10 my-3 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                    {/* Left Copy Column */}
+                    <div className="flex-1 max-w-xl">
+                      <div className="flex items-start gap-3.5">
+                        {/* Mobile Crisp Product Thumbnail */}
+                        <Link
+                          href={slide.link}
+                          prefetch={true}
+                          className="md:hidden relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-amber-400/70 shadow-xl shrink-0 bg-slate-900 mt-0.5"
+                        >
+                          <Image
+                            src={slide.image}
+                            alt={slide.title}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </Link>
+
+                        <div className="flex-1 min-w-0">
+                          <motion.h2
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}
+                            className="font-heading font-black text-xl sm:text-2xl lg:text-4xl text-white leading-tight tracking-tight drop-shadow-xs"
+                          >
+                            {slide.title}
+                          </motion.h2>
+                          <motion.p
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.45, delay: 0.16, ease: "easeOut" }}
+                            className="text-slate-200/95 text-xs sm:text-sm font-normal mt-1.5 leading-relaxed line-clamp-2"
+                          >
+                            {slide.subtitle}
+                          </motion.p>
+                        </div>
+                      </div>
+
+                      {/* CTA Buttons Row */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, delay: 0.22, ease: "easeOut" }}
+                        className="flex items-center flex-wrap gap-2.5 mt-4"
+                      >
+                        <Link
+                          href={slide.link}
+                          prefetch={true}
+                          className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-300 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-amber-500/25 active:scale-95 transition-all group/btn cursor-pointer"
+                        >
+                          <span>{slide.buttonText}</span>
+                          <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-slate-950/15 text-[11px] font-black">
+                            {slide.priceTag}
+                          </span>
+                          <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
+                        </Link>
+
+                        <Link
+                          href={slide.secondaryLink}
+                          prefetch={true}
+                          className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-heading font-bold text-xs px-4 py-2.5 rounded-full border border-white/20 transition-all active:scale-95 cursor-pointer"
+                        >
+                          <Store size={13} className="text-amber-400" />
+                          <span>{slide.secondaryButtonText}</span>
+                        </Link>
+                      </motion.div>
+                    </div>
+
+                    {/* Right Column: Desktop Floating Visual Showcase Card */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.88, x: 24, rotate: 1.5 }}
+                      animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
+                      transition={{ duration: 0.55, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+                      className="hidden md:flex items-center justify-center relative shrink-0 mr-2"
+                    >
+                      <Link
+                        href={slide.link}
+                        prefetch={true}
+                        className="relative w-64 lg:w-72 h-44 lg:h-48 rounded-2xl overflow-hidden border-2 border-white/25 shadow-2xl group/showcase bg-slate-900 cursor-pointer"
+                      >
+                        <Image
+                          src={slide.image}
+                          alt={slide.title}
+                          fill
+                          sizes="288px"
+                          className="object-cover group-hover/showcase:scale-110 transition-transform duration-700 ease-out"
+                          unoptimized
                         />
-                      ))}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+
+                        {/* Top-right Price Tag on Card */}
+                        <div className="absolute top-2.5 right-2.5 bg-amber-400 text-slate-950 font-heading font-black text-xs px-3 py-1 rounded-full shadow-lg border border-white/50 flex items-center gap-1">
+                          <span>{slide.priceTag}</span>
+                        </div>
+
+                        {/* Bottom Caption Overlay */}
+                        <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-amber-300 truncate">
+                              {slide.priceSubtext}
+                            </p>
+                            <p className="text-xs font-heading font-bold text-white truncate">
+                              {slide.showcaseCaption}
+                            </p>
+                          </div>
+                          <span className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover/showcase:bg-amber-400 group-hover/showcase:text-slate-950 transition-colors shrink-0">
+                            <ArrowRight size={13} />
+                          </span>
+                        </div>
+                      </Link>
+
+                      {/* Floating Secondary Preview Thumbnail */}
+                      {slide.secondaryImage && (
+                        <motion.div
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+                          className="absolute -bottom-3 -left-5 w-16 h-16 lg:w-20 lg:h-20 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-2xl bg-slate-900 z-20 pointer-events-none"
+                        >
+                          <Image
+                            src={slide.secondaryImage}
+                            alt={`${slide.title} view 2`}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  </div>
+
+                  {/* BOTTOM BAR: HIGHLIGHT PILL + NAVIGATION & ANIMATED PROGRESS */}
+                  <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/10">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-200 font-semibold bg-black/25 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
+                      {slide.highlight}
+                    </span>
+
+                    <div className="flex items-center gap-3">
+                      {/* Prev / Next Chevrons */}
+                      <div className="hidden sm:flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={prevSlide}
+                          aria-label="Previous advert"
+                          className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 border border-white/15 flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={nextSlide}
+                          aria-label="Next advert"
+                          className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 border border-white/15 flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+
+                      {/* Animated Progress Indicator Pills */}
+                      <div className="flex items-center gap-2">
+                        {PROMO_SLIDES.map((s, i) => {
+                          const isActive = currentSlide === i;
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => goToSlide(i)}
+                              className={`relative h-2 rounded-full overflow-hidden transition-all duration-300 cursor-pointer ${
+                                isActive
+                                  ? "w-10 bg-white/25"
+                                  : "w-2.5 bg-white/35 hover:bg-white/60"
+                              }`}
+                              aria-label={`Slide ${i + 1}: ${s.storeName}`}
+                            >
+                              {isActive && (
+                                <motion.span
+                                  key={`progress-${currentSlide}-${isHovered ? "paused" : "running"}`}
+                                  initial={{ width: "0%" }}
+                                  animate={{ width: isHovered ? "45%" : "100%" }}
+                                  transition={{
+                                    duration: isHovered ? 0.3 : 6.5,
+                                    ease: "linear",
+                                  }}
+                                  className="absolute inset-y-0 left-0 bg-[#FBBF24] rounded-full"
+                                />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
