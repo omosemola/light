@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import {
   Utensils,
+  Wheat,
   Cake,
   Cookie,
   Coffee,
@@ -48,6 +49,21 @@ export const MAJOR_CATEGORIES: MajorCategory[] = [
     dbAliases: ["food", "campus-food-meals", "Food", "Food & Meals", "Campus Food & Meals"],
     storeCategoryNames: ["Campus Food & Meals"],
     searchStems: ["food", "meal", "cafeteria", "kitchen", "cook", "dish", "rice", "swallow", "shawarma", "lunch", "dinner", "breakfast"],
+  },
+  {
+    id: "foodstuffs",
+    slug: "foodstuffs",
+    name: "Foodstuffs",
+    shortName: "Foodstuffs",
+    badge: "Raw & Fresh",
+    icon: Wheat,
+    iconName: "Wheat",
+    iconColor: "text-[#312E81] dark:text-indigo-400 group-hover:text-[#1E1B4B] dark:group-hover:text-indigo-300",
+    description: "Raw cooking ingredients, crayfish, prawns, grains, pepper, oils & kitchen supplies on Lightson.",
+    heroImage: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1200&q=80",
+    dbAliases: ["foodstuffs", "foodstuff", "Foodstuffs", "Foodstuff", "Raw Foodstuffs", "Cooking Ingredients"],
+    storeCategoryNames: ["Foodstuffs & Raw Cooking Ingredients", "Foodstuffs"],
+    searchStems: ["foodstuff", "crayfish", "prawn", "oil", "pepper", "onion", "garri", "yam", "grain", "seasoning", "maggi", "seafood"],
   },
   {
     id: "pastries",
@@ -277,6 +293,7 @@ export const MAJOR_CATEGORIES: MajorCategory[] = [
 export const STORE_CATEGORY_OPTIONS: string[] = [
   // Product / Retail Store Categories
   "Campus Food & Meals",
+  "Foodstuffs & Raw Cooking Ingredients",
   "Cafeteria & Snacks Combos",
   "Pastries & Bakery",
   "Drinks, Smoothies & Beverages",
@@ -314,7 +331,8 @@ export interface ProductCategoryOption {
 
 export const PRODUCT_CATEGORY_OPTIONS: ProductCategoryOption[] = [
   // Food & Refreshments
-  { id: "food", name: "Food & Meals", group: "Food & Refreshments" },
+  { id: "food", name: "Food & Meals (Prepared Meals)", group: "Food & Refreshments" },
+  { id: "foodstuffs", name: "Foodstuffs (Crayfish, Grains, Oils, Ingredients)", group: "Food & Refreshments" },
   { id: "pastries", name: "Pastries & Bakery", group: "Food & Refreshments" },
   { id: "snacks", name: "Snacks & Treats", group: "Food & Refreshments" },
   { id: "drinks", name: "Drinks & Smoothies", group: "Food & Refreshments" },
@@ -387,6 +405,7 @@ export function getMajorCategoryBySlug(slugOrAlias?: string | null): MajorCatego
   if (storeCatMatch) return storeCatMatch;
 
   // 5. Special keyword contains fallbacks
+  if (clean.includes("foodstuff") || clean.includes("crayfish") || clean.includes("prawn")) return getMajorCategoryBySlug("foodstuffs");
   if (clean.includes("food") || clean.includes("meal")) return getMajorCategoryBySlug("food");
   if (clean.includes("pastr") || clean.includes("bakery")) return getMajorCategoryBySlug("pastries");
   if (clean.includes("snack") || clean.includes("chop")) return getMajorCategoryBySlug("snacks");
@@ -446,5 +465,528 @@ export function getCategoryDisplayName(slugOrIdOrName?: string | null): string {
   if (!slugOrIdOrName) return "Uncategorized";
   const cat = getMajorCategoryBySlug(slugOrIdOrName);
   return cat ? cat.name : slugOrIdOrName.trim();
+}
+
+/* ───────────────────────────── Smart Subcategory Classification ───────────────────────────── */
+
+/**
+ * Checks if a product is a raw foodstuff (e.g. crayfish, prawns, raw meat, spices, raw oils, grains, tubers)
+ * rather than a readily prepared meal.
+ */
+export function isFoodstuffProduct(name?: string | null, description?: string | null): boolean {
+  if (!name && !description) return false;
+  const t = `${name || ""} ${description || ""}`.toLowerCase();
+
+  // Words that indicate readily prepared cooked dishes should not match as raw foodstuffs
+  // unless explicitly specified as raw ingredients
+  const hasReadyMealWords = (
+    t.includes("jollof") || 
+    t.includes("fried rice") || 
+    t.includes("white rice & stew") || 
+    t.includes("white rice and stew") || 
+    t.includes("asun rice") || 
+    t.includes("concoction rice") || 
+    t.includes("shawarma") || 
+    t.includes("burger") || 
+    t.includes("pizza") || 
+    t.includes("spaghetti") || 
+    t.includes("pasta") || 
+    t.includes("macaroni") || 
+    t.includes("plate of") || 
+    t.includes("cooked") || 
+    t.includes("served with") || 
+    t.includes("ready to eat") || 
+    t.includes("chicken and chips") || 
+    t.includes("turkey and chips")
+  );
+
+  // If it's a prepared meal dish, it's not a raw foodstuff
+  if (hasReadyMealWords && !t.includes("crayfish") && !t.includes("prawn") && !t.includes("raw ")) {
+    return false;
+  }
+
+  // Keywords that identify raw foodstuffs, ingredients, seafood, and staples
+  return (
+    // Seafood & raw protein
+    t.includes("crayfish") ||
+    t.includes("cray fish") ||
+    t.includes("prawn") ||
+    t.includes("prawns") ||
+    t.includes("shrimp") ||
+    t.includes("raw fish") ||
+    t.includes("catfish") ||
+    t.includes("stockfish") ||
+    t.includes("stock fish") ||
+    t.includes("dry fish") ||
+    t.includes("dried fish") ||
+    t.includes("periwinkle") ||
+    t.includes("snail") ||
+    t.includes("snails") ||
+    t.includes("raw meat") ||
+    t.includes("goat meat") ||
+    t.includes("beef") ||
+    t.includes("cow leg") ||
+    t.includes("shaki") ||
+    t.includes("tripe") ||
+    t.includes("raw chicken") ||
+    t.includes("frozen chicken") ||
+    t.includes("frozen turkey") ||
+    t.includes("gizzard") ||
+    // Tubers, flours, grains & bulk staples
+    t.includes("foodstuff") ||
+    t.includes("food stuff") ||
+    t.includes("raw ingredient") ||
+    t.includes("cooking ingredient") ||
+    t.includes("yam") ||
+    t.includes("tuber") ||
+    t.includes("garri") ||
+    t.includes("cassava") ||
+    t.includes("raw potato") ||
+    t.includes("irish potato") ||
+    t.includes("sweet potato") ||
+    t.includes("bag of rice") ||
+    t.includes("rice bag") ||
+    t.includes("raw rice") ||
+    t.includes("derica") ||
+    t.includes("raw beans") ||
+    t.includes("beans bag") ||
+    t.includes("bag of beans") ||
+    t.includes("semovita") ||
+    t.includes("semo bag") ||
+    t.includes("flour") ||
+    t.includes("wheat flour") ||
+    t.includes("poundo flour") ||
+    t.includes("cassava flour") ||
+    // Oils, seasonings & spices
+    t.includes("palm oil") ||
+    t.includes("red oil") ||
+    t.includes("groundnut oil") ||
+    t.includes("vegetable oil") ||
+    t.includes("kings oil") ||
+    t.includes("power oil") ||
+    t.includes("maggi") ||
+    t.includes("knorr") ||
+    t.includes("seasoning") ||
+    t.includes("curry powder") ||
+    t.includes("thyme") ||
+    t.includes("locust bean") ||
+    t.includes("iru") ||
+    t.includes("ogbono") ||
+    t.includes("egusi melon") ||
+    t.includes("melon seed") ||
+    t.includes("raw egusi") ||
+    // Fresh raw produce & pepper
+    t.includes("raw pepper") ||
+    t.includes("habanero") ||
+    t.includes("atarodo") ||
+    t.includes("tatashe") ||
+    t.includes("shombo") ||
+    t.includes("fresh tomato") ||
+    t.includes("basket of tomato") ||
+    t.includes("raw onion") ||
+    t.includes("bag of onion") ||
+    t.includes("ugwu") ||
+    t.includes("scent leaf")
+  );
+}
+
+/**
+ * Smartly evaluates whether a product belongs to a given subcategory within a category.
+ */
+export function matchProductToSubcategory(
+  product: { name?: string | null; description?: string | null; categoryName?: string | null; subcategory?: string | null },
+  categorySlug: string,
+  selectedSubcat: string
+): boolean {
+  if (!selectedSubcat || selectedSubcat === "All" || selectedSubcat === "All Products") {
+    // In food category: "All" should ONLY include readily prepared meals!
+    if (categorySlug === "food") {
+      return !isFoodstuffProduct(product.name, product.description);
+    }
+    return true;
+  }
+
+  if (selectedSubcat === "All Meals") {
+    // Explicitly ONLY readily prepared meals
+    return !isFoodstuffProduct(product.name, product.description);
+  }
+
+  if (selectedSubcat === "All Foodstuffs") {
+    return true;
+  }
+
+  const name = (product.name || "").toLowerCase();
+  const desc = (product.description || "").toLowerCase();
+  const cat = (product.categoryName || "").toLowerCase();
+  const t = `${name} ${desc} ${cat}`;
+
+  // 1. FOOD CATEGORY SUBCATEGORIES
+  if (categorySlug === "food") {
+    // "Foodstuffs" or "Foodstuffs & Ingredients" subcategory under Food
+    if (selectedSubcat.toLowerCase().includes("foodstuff")) {
+      return isFoodstuffProduct(product.name, product.description) || cat.includes("foodstuff");
+    }
+
+    // All other food subcategories must NOT contain raw foodstuffs
+    if (isFoodstuffProduct(product.name, product.description)) {
+      return false;
+    }
+
+    if (selectedSubcat === "Rice & Pasta") {
+      return (
+        t.includes("rice") || 
+        t.includes("jollof") || 
+        t.includes("spaghetti") || 
+        t.includes("pasta") || 
+        t.includes("macaroni") || 
+        t.includes("noodle") || 
+        t.includes("stir fry") || 
+        t.includes("concoction")
+      );
+    }
+
+    if (selectedSubcat === "Swallow & Soups") {
+      return (
+        t.includes("soup") || 
+        t.includes("amala") || 
+        t.includes("semo") || 
+        t.includes("pounded yam") || 
+        t.includes("poundo") || 
+        t.includes("eba") || 
+        t.includes("fufu") || 
+        t.includes("egusi") || 
+        t.includes("ewedu") || 
+        t.includes("gbegiri") || 
+        t.includes("okra") || 
+        t.includes("ogbono") || 
+        t.includes("vegetable soup") || 
+        t.includes("banga") || 
+        t.includes("porridge") || 
+        t.includes("asaro")
+      );
+    }
+
+    if (selectedSubcat === "Fast Food & Shawarma") {
+      return (
+        t.includes("shawarma") || 
+        t.includes("burger") || 
+        t.includes("pizza") || 
+        t.includes("sandwich") || 
+        t.includes("fries") || 
+        t.includes("chips") || 
+        t.includes("hot dog") || 
+        t.includes("hotdog") || 
+        t.includes("wrap") || 
+        t.includes("suya") || 
+        t.includes("wing")
+      );
+    }
+
+    if (selectedSubcat === "Pastries & Grills") {
+      return (
+        t.includes("pie") || 
+        t.includes("meat pie") || 
+        t.includes("chicken") || 
+        t.includes("turkey") || 
+        t.includes("grilled") || 
+        t.includes("barbecue") || 
+        t.includes("bbq") || 
+        t.includes("peppered") || 
+        t.includes("fish meal") || 
+        t.includes("pastry") || 
+        t.includes("combo")
+      );
+    }
+
+    return true;
+  }
+
+  // 2. FOODSTUFFS CATEGORY SUBCATEGORIES
+  if (categorySlug === "foodstuffs") {
+    if (selectedSubcat === "Crayfish & Seafood") {
+      return (
+        t.includes("crayfish") || 
+        t.includes("cray fish") || 
+        t.includes("prawn") || 
+        t.includes("shrimp") || 
+        t.includes("fish") || 
+        t.includes("catfish") || 
+        t.includes("stockfish") || 
+        t.includes("dry fish") || 
+        t.includes("dried fish") || 
+        t.includes("periwinkle") || 
+        t.includes("seafood")
+      );
+    }
+
+    if (selectedSubcat === "Tubers & Grains") {
+      return (
+        t.includes("yam") || 
+        t.includes("garri") || 
+        t.includes("cassava") || 
+        t.includes("potato") || 
+        t.includes("rice") || 
+        t.includes("bean") || 
+        t.includes("grain") || 
+        t.includes("corn") || 
+        t.includes("maize") || 
+        t.includes("millet") || 
+        t.includes("semo") || 
+        t.includes("flour") || 
+        t.includes("wheat") || 
+        t.includes("plantain")
+      );
+    }
+
+    if (selectedSubcat === "Oils & Seasonings") {
+      return (
+        t.includes("oil") || 
+        t.includes("palm oil") || 
+        t.includes("groundnut oil") || 
+        t.includes("vegetable oil") || 
+        t.includes("maggi") || 
+        t.includes("knorr") || 
+        t.includes("seasoning") || 
+        t.includes("curry") || 
+        t.includes("thyme") || 
+        t.includes("spice") || 
+        t.includes("salt") || 
+        t.includes("ginger") || 
+        t.includes("garlic") || 
+        t.includes("locust") || 
+        t.includes("iru") || 
+        t.includes("ogbono") || 
+        t.includes("egusi")
+      );
+    }
+
+    if (selectedSubcat === "Peppers & Veggies") {
+      return (
+        t.includes("pepper") || 
+        t.includes("rodo") || 
+        t.includes("atarodo") || 
+        t.includes("tatashe") || 
+        t.includes("shombo") || 
+        t.includes("tomato") || 
+        t.includes("onion") || 
+        t.includes("ugwu") || 
+        t.includes("spinach") || 
+        t.includes("vegetable") || 
+        t.includes("leaf") || 
+        t.includes("cabbage") || 
+        t.includes("carrot")
+      );
+    }
+
+    if (selectedSubcat === "Raw Meat & Poultry") {
+      return (
+        t.includes("meat") || 
+        t.includes("beef") || 
+        t.includes("goat") || 
+        t.includes("cow") || 
+        t.includes("shaki") || 
+        t.includes("tripe") || 
+        t.includes("chicken") || 
+        t.includes("turkey") || 
+        t.includes("gizzard") || 
+        t.includes("snail")
+      );
+    }
+
+    return true;
+  }
+
+  // 3. PASTRIES & BAKERY
+  if (categorySlug === "pastries") {
+    if (selectedSubcat === "Meat Pies & Rolls") {
+      return t.includes("pie") || t.includes("meatpie") || t.includes("roll") || t.includes("sausage") || t.includes("egg roll") || t.includes("spring roll") || t.includes("samosa");
+    }
+    if (selectedSubcat === "Cakes & Pastries") {
+      return t.includes("cake") || t.includes("cupcake") || t.includes("pastry") || t.includes("muffin") || t.includes("brownie") || t.includes("croissant") || t.includes("tart");
+    }
+    if (selectedSubcat === "Bread & Buns") {
+      return t.includes("bread") || t.includes("loaf") || t.includes("bun") || t.includes("toast") || t.includes("agege");
+    }
+    if (selectedSubcat === "Donuts & Waffles") {
+      return t.includes("donut") || t.includes("doughnut") || t.includes("waffle") || t.includes("pancake") || t.includes("puff") || t.includes("chin chin");
+    }
+    return true;
+  }
+
+  // 4. SNACKS & TREATS
+  if (categorySlug === "snacks") {
+    if (selectedSubcat === "Chips & Popcorn") {
+      return t.includes("chip") || t.includes("popcorn") || t.includes("plantain") || t.includes("potato chip") || t.includes("pringles") || t.includes("crisp");
+    }
+    if (selectedSubcat === "Chocolates & Candy") {
+      return t.includes("chocolate") || t.includes("candy") || t.includes("sweet") || t.includes("toffee") || t.includes("gum") || t.includes("gummy") || t.includes("snickers");
+    }
+    if (selectedSubcat === "Biscuits & Cookies") {
+      return t.includes("biscuit") || t.includes("cookie") || t.includes("cracker") || t.includes("wafer") || t.includes("shortbread") || t.includes("oreo");
+    }
+    if (selectedSubcat === "Nuts & Local Snacks") {
+      return t.includes("nut") || t.includes("peanut") || t.includes("cashew") || t.includes("groundnut") || t.includes("chin chin") || t.includes("kulikuli") || t.includes("kokoro");
+    }
+    return true;
+  }
+
+  // 5. DRINKS & SMOOTHIES
+  if (categorySlug === "drinks") {
+    if (selectedSubcat === "Fresh Juices & Smoothies") {
+      return t.includes("juice") || t.includes("smoothie") || t.includes("zobo") || t.includes("tiger nut") || t.includes("tigernut") || t.includes("shake") || t.includes("fresh fruit");
+    }
+    if (selectedSubcat === "Soft Drinks & Sodas") {
+      return t.includes("coke") || t.includes("fanta") || t.includes("sprite") || t.includes("pepsi") || t.includes("soda") || t.includes("mirinda") || t.includes("7up") || t.includes("carbonated");
+    }
+    if (selectedSubcat === "Energy & Malt Drinks") {
+      return t.includes("energy") || t.includes("monster") || t.includes("red bull") || t.includes("fearless") || t.includes("predator") || t.includes("malt") || t.includes("malta") || t.includes("maltina");
+    }
+    if (selectedSubcat === "Water & Yogurt") {
+      return t.includes("water") || t.includes("eva") || t.includes("nestle") || t.includes("yogurt") || t.includes("yoghurt") || t.includes("hollandia") || t.includes("habib");
+    }
+    return true;
+  }
+
+  // 6. GROCERIES & PROVISIONS
+  if (categorySlug === "groceries") {
+    if (selectedSubcat === "Noodles & Instant Food") {
+      return t.includes("noodle") || t.includes("indomie") || t.includes("minimee") || t.includes("chikki") || t.includes("spaghetti") || t.includes("pasta");
+    }
+    if (selectedSubcat === "Milk, Cereal & Breakfast") {
+      return t.includes("milk") || t.includes("peak") || t.includes("dano") || t.includes("cereal") || t.includes("oat") || t.includes("cornflakes") || t.includes("milo") || t.includes("bournvita") || t.includes("coffee") || t.includes("sugar") || t.includes("tea") || t.includes("custard");
+    }
+    if (selectedSubcat === "Canned & Packaged") {
+      return t.includes("can") || t.includes("sardine") || t.includes("geisha") || t.includes("corned beef") || t.includes("tuna") || t.includes("baked bean") || t.includes("tomato paste") || t.includes("sachet") || t.includes("mayonnaise");
+    }
+    if (selectedSubcat === "Dorm Hygiene & Soaps") {
+      return t.includes("soap") || t.includes("detergent") || t.includes("bleach") || t.includes("hypo") || t.includes("dishwash") || t.includes("sponge") || t.includes("tissue") || t.includes("ariel") || t.includes("omo") || t.includes("viva");
+    }
+    return true;
+  }
+
+  // 7. FASHION & WEARS
+  if (categorySlug === "wears" || categorySlug === "fashion") {
+    if (selectedSubcat === "Hoodies & Sweatshirts") {
+      return t.includes("hoodie") || t.includes("sweatshirt") || t.includes("sweater") || t.includes("jacket") || t.includes("cardigan") || t.includes("fleece") || t.includes("coat");
+    }
+    if (selectedSubcat === "T-Shirts & Tops") {
+      return t.includes("shirt") || t.includes("t-shirt") || t.includes("tee") || t.includes("polo") || t.includes("top") || t.includes("jersey") || t.includes("crop") || t.includes("singlet");
+    }
+    if (selectedSubcat === "Pants, Jeans & Shorts") {
+      return t.includes("pant") || t.includes("jean") || t.includes("denim") || t.includes("jogger") || t.includes("trouser") || t.includes("cargo") || t.includes("short") || t.includes("skirt");
+    }
+    if (selectedSubcat === "Footwear & Caps") {
+      return t.includes("shoe") || t.includes("sneaker") || t.includes("slide") || t.includes("crocs") || t.includes("sandal") || t.includes("boot") || t.includes("cap") || t.includes("beanie") || t.includes("hat") || t.includes("sock");
+    }
+    return true;
+  }
+
+  // 8. JEWELRIES & ACCESSORIES
+  if (categorySlug === "jewelries" || categorySlug === "accessories") {
+    if (selectedSubcat === "Chains & Necklaces") {
+      return t.includes("chain") || t.includes("necklace") || t.includes("cuban") || t.includes("rope") || t.includes("choker");
+    }
+    if (selectedSubcat === "Rings & Bands") {
+      return t.includes("ring") || t.includes("band") || t.includes("signet");
+    }
+    if (selectedSubcat === "Bracelets & Bangles") {
+      return t.includes("bracelet") || t.includes("bangle") || t.includes("wristband") || t.includes("cuff");
+    }
+    if (selectedSubcat === "Earrings & Pendants") {
+      return t.includes("earring") || t.includes("pendant") || t.includes("stud") || t.includes("hoop") || t.includes("charm");
+    }
+    if (selectedSubcat === "Watches & Sunglasses") {
+      return t.includes("watch") || t.includes("wristwatch") || t.includes("sunglass") || t.includes("shade") || t.includes("eyewear");
+    }
+    return true;
+  }
+
+  // 9. FRAGRANCES & SCENTS
+  if (categorySlug === "fragrances") {
+    if (selectedSubcat === "Luxury Perfumes") {
+      return t.includes("perfume") || t.includes("edp") || t.includes("edt") || t.includes("cologne") || t.includes("fragrance") || t.includes("oud") || t.includes("scent");
+    }
+    if (selectedSubcat === "Oil Perfumes") {
+      return t.includes("oil") || t.includes("perfume oil") || t.includes("attar") || t.includes("concentrated");
+    }
+    if (selectedSubcat === "Body Sprays & Deodorants") {
+      return t.includes("spray") || t.includes("body spray") || t.includes("mist") || t.includes("deodorant");
+    }
+    if (selectedSubcat === "Roll-Ons") {
+      return t.includes("roll on") || t.includes("roll-on") || t.includes("roller") || t.includes("antiperspirant");
+    }
+    return true;
+  }
+
+  // 10. BEAUTY & PERSONAL CARE
+  if (categorySlug === "care") {
+    if (selectedSubcat === "Skincare & Lotions") {
+      return t.includes("lotion") || t.includes("cream") || t.includes("moisturizer") || t.includes("sunscreen") || t.includes("butter");
+    }
+    if (selectedSubcat === "Hair Care & Oils") {
+      return t.includes("hair") || t.includes("shampoo") || t.includes("conditioner") || t.includes("wig") || t.includes("edge control") || t.includes("relaxer");
+    }
+    if (selectedSubcat === "Soaps & Body Wash") {
+      return t.includes("soap") || t.includes("body wash") || t.includes("shower gel") || t.includes("scrub") || t.includes("black soap");
+    }
+    if (selectedSubcat === "Lip & Face Care") {
+      return t.includes("lip") || t.includes("lipgloss") || t.includes("balm") || t.includes("serum") || t.includes("cleanser") || t.includes("toner") || t.includes("face wash") || t.includes("facial");
+    }
+    return true;
+  }
+
+  // 11. TECH & GADGETS
+  if (categorySlug === "gadgets" || categorySlug === "electronics") {
+    if (selectedSubcat === "Phones & Tablets") {
+      return t.includes("phone") || t.includes("iphone") || t.includes("samsung") || t.includes("redmi") || t.includes("tecno") || t.includes("infinix") || t.includes("ipad") || t.includes("tablet");
+    }
+    if (selectedSubcat === "Audio & Earbuds") {
+      return t.includes("earbud") || t.includes("airpod") || t.includes("headphone") || t.includes("earpiece") || t.includes("speaker") || t.includes("bluetooth");
+    }
+    if (selectedSubcat === "Chargers & Power Banks") {
+      return t.includes("charger") || t.includes("powerbank") || t.includes("power bank") || t.includes("adapter") || t.includes("fast") || t.includes("magsafe");
+    }
+    if (selectedSubcat === "Cables & Accessories") {
+      return t.includes("cable") || t.includes("usb") || t.includes("type-c") || t.includes("lightning") || t.includes("screen guard") || t.includes("case") || t.includes("pouch") || t.includes("stand");
+    }
+    return true;
+  }
+
+  // 12. STATIONERY & BOOKS
+  if (categorySlug === "stationery") {
+    if (selectedSubcat === "Note Books & Jotters") {
+      return t.includes("book") || t.includes("notebook") || t.includes("jotter") || t.includes("notepad") || t.includes("diary") || t.includes("hardcover");
+    }
+    if (selectedSubcat === "Pens & Writing") {
+      return t.includes("pen") || t.includes("pencil") || t.includes("biro") || t.includes("marker") || t.includes("highlighter") || t.includes("eraser");
+    }
+    if (selectedSubcat === "Calculators & Math") {
+      return t.includes("calculator") || t.includes("casio") || t.includes("scientific") || t.includes("math set") || t.includes("ruler");
+    }
+    if (selectedSubcat === "Files & Exam Essentials") {
+      return t.includes("file") || t.includes("folder") || t.includes("stapler") || t.includes("paper") || t.includes("a4") || t.includes("clip") || t.includes("exam board");
+    }
+    return true;
+  }
+
+  // 13. SPORTS & FITNESS
+  if (categorySlug === "sports") {
+    if (selectedSubcat === "Jerseys & Kits") {
+      return t.includes("jersey") || t.includes("kit") || t.includes("club") || t.includes("shorts");
+    }
+    if (selectedSubcat === "Footwear & Boots") {
+      return t.includes("boot") || t.includes("football boot") || t.includes("cleat") || t.includes("sneaker");
+    }
+    if (selectedSubcat === "Gym & Workout Gear") {
+      return t.includes("gym") || t.includes("band") || t.includes("resistance") || t.includes("dumbbell") || t.includes("glove") || t.includes("skipping");
+    }
+    if (selectedSubcat === "Balls & Equipment") {
+      return t.includes("ball") || t.includes("football") || t.includes("basketball") || t.includes("pump") || t.includes("shin guard");
+    }
+    return true;
+  }
+
+  // Default fallback
+  return true;
 }
 

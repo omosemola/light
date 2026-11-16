@@ -82,6 +82,18 @@ const PROMO_SLIDES = [
     badgeBg: "bg-amber-400 text-slate-950 font-black",
     image: "https://res.cloudinary.com/yvkipxsa/image/upload/f_auto,q_auto/v1794256481/lightson_marketplace/products/luwrykrrqlxolxdyoqsg.jpg",
     highlight: "⚡ Same-Day Delivery • 100% Authentic"
+  },
+  {
+    id: "promo-3",
+    tag: "🎁 CAMPUS REWARDS • INVITE & EARN",
+    title: "Earn Up to 100+ Campus Points 🚀",
+    subtitle: "Share your referral link with campus friends! Get 100 Points instantly when they join + 5 Points on every order they place.",
+    link: "/profile/referrals",
+    buttonText: "Start Earning Points",
+    bgColor: "bg-[#1E1B4B]",
+    badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
+    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
+    highlight: "🎉 50 Welcome Points for Friends"
   }
 ];
 
@@ -124,6 +136,35 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
   // PROMOTIONAL CAROUSEL STATE
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+
+  // TOUCH SWIPE FOR PROMO CAROUSEL
+  const promoTouchStartX = useRef<number | null>(null);
+  const promoTouchEndX = useRef<number | null>(null);
+
+  const handlePromoTouchStart = (e: React.TouchEvent) => {
+    promoTouchStartX.current = e.targetTouches[0].clientX;
+    setIsHovered(true);
+  };
+
+  const handlePromoTouchMove = (e: React.TouchEvent) => {
+    promoTouchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handlePromoTouchEnd = () => {
+    setIsHovered(false);
+    if (promoTouchStartX.current !== null && promoTouchEndX.current !== null) {
+      const distance = promoTouchStartX.current - promoTouchEndX.current;
+      if (distance > 45) {
+        // Swipe left -> next slide
+        setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
+      } else if (distance < -45) {
+        // Swipe right -> prev slide
+        setCurrentSlide((prev) => (prev - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length);
+      }
+    }
+    promoTouchStartX.current = null;
+    promoTouchEndX.current = null;
+  };
 
   useEffect(() => {
     if (isHovered) return;
@@ -463,12 +504,39 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full -mt-4 z-20 space-y-8 pb-12">
         
-        {/* PROMOTIONAL HERO CAROUSEL */}
+        {/* PROMOTIONAL HERO CAROUSEL (SWIPEABLE & RESPONSIVE) */}
         <section 
-          className="w-full relative overflow-hidden rounded-[28px] shadow-lg border border-slate-200/80 dark:border-zinc-800/90 flex flex-col justify-between min-h-[250px] md:min-h-[280px] group"
+          className="w-full relative overflow-hidden rounded-[28px] shadow-lg border border-slate-200/80 dark:border-zinc-800/90 flex flex-col justify-between min-h-[250px] md:min-h-[280px] group touch-pan-y"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          onTouchStart={handlePromoTouchStart}
+          onTouchMove={handlePromoTouchMove}
+          onTouchEnd={handlePromoTouchEnd}
         >
+          {/* CAROUSEL CHEVRON CONTROLS */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentSlide((prev) => (prev - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length);
+            }}
+            aria-label="Previous slide"
+            className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border border-white/10"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
+            }}
+            aria-label="Next slide"
+            className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border border-white/10"
+          >
+            <ChevronRight size={18} />
+          </button>
+
           {/* CAROUSEL SLIDES */}
           <AnimatePresence mode="wait">
             {PROMO_SLIDES.map((slide, idx) => {
@@ -479,8 +547,18 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                  className={`absolute inset-0 ${slide.bgColor} p-6 md:p-8 text-white flex flex-col justify-between z-10`}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.15}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x < -40 || info.velocity.x < -300) {
+                      setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
+                    } else if (info.offset.x > 40 || info.velocity.x > 300) {
+                      setCurrentSlide((prev) => (prev - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length);
+                    }
+                  }}
+                  className={`absolute inset-0 ${slide.bgColor} p-6 md:p-8 text-white flex flex-col justify-between z-10 cursor-grab active:cursor-grabbing select-none`}
                 >
                   {/* BACKGROUND AMBIENT IMAGE */}
                   <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 dark:opacity-20 pointer-events-none overflow-hidden">

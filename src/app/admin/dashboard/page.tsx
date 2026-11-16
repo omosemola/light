@@ -1013,7 +1013,7 @@ export default function AdminDashboardPage() {
               type="text"
               value={searchQuery}
               onChange={handleSearchInputChange}
-              placeholder="Search records in tab..."
+              placeholder={activeTab === "products" ? "Search product name..." : "Search records in tab..."}
               className={`w-full h-10 pl-9 pr-4 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                 isDark ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500" : "bg-white border-slate-200 text-zinc-900 placeholder-slate-400"
               }`}
@@ -1024,6 +1024,53 @@ export default function AdminDashboardPage() {
         {/* PRODUCTS TAB */}
         {activeTab === "products" && (
           <div className="space-y-4">
+            {/* PRODUCT SEARCH & FILTER BAR */}
+            <div className={`p-3 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 ${
+              isDark ? "bg-zinc-900/90 border-zinc-800" : "bg-white border-slate-200"
+            }`}>
+              <div className="relative w-full sm:flex-1">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
+                  placeholder="Search products by name, vendor, or keywords..."
+                  className={`w-full h-10 pl-9 pr-8 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                    isDark ? "bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500" : "bg-slate-50 border-slate-200 text-zinc-900 placeholder-slate-400"
+                  }`}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      fetchSection("products", 1, "", productCategoryFilter);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs cursor-pointer p-0.5"
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {searchQuery.trim() && (
+                <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 shrink-0 px-2">
+                  <span>Searching for: &ldquo;{searchQuery}&rdquo;</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      fetchSection("products", 1, "", productCategoryFilter);
+                    }}
+                    className="underline text-[11px] cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* CATEGORY FILTER BAR */}
             <div className={`p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 ${
               isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white border-slate-200"

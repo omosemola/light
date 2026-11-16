@@ -623,6 +623,14 @@ async function readCategoryProducts(normalizedInput: string) {
     });
   }
 
+  // If querying foodstuffs, also include products with foodstuff keywords (e.g. crayfish, prawns, oils, pepper, grains)
+  if (canonicalSlug === "foodstuffs") {
+    const foodstuffKeywords = ["crayfish", "prawn", "stockfish", "catfish", "palm oil", "garri", "yam", "pepper", "foodstuff"];
+    for (const kw of foodstuffKeywords) {
+      orConditions.push({ name: { contains: kw, mode: "insensitive" } });
+    }
+  }
+
   const products = await prisma.product.findMany({
     where: {
       isAvailable: true,

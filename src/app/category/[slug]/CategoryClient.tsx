@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { 
   ArrowLeft, 
+  ArrowRight,
   Search, 
   ArrowUpDown, 
   Utensils, 
@@ -30,6 +31,7 @@ import {
   Car,
   SprayCan,
   Palette,
+  Wheat,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
@@ -45,7 +47,7 @@ import { parseProductImages } from "@/lib/productOptions";
 import { MerchantChatModal, MerchantChatVendor } from "@/components/ui/MerchantChatModal";
 import { getServicePersonnel } from "@/actions/marketplace";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
-import { getMajorCategoryBySlug, normalizeCategorySlug } from "@/lib/categories";
+import { getMajorCategoryBySlug, normalizeCategorySlug, matchProductToSubcategory, isFoodstuffProduct } from "@/lib/categories";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -54,8 +56,16 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     Icon: Utensils,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-    description: "Delicious freshly prepared meals from top campus kitchens and restaurants.",
-    subcategories: ["All", "Rice & Meals", "Fast Food", "Pizza & Suya", "Pastries"],
+    description: "Delicious freshly prepared meals, combos, and delicacies from top campus kitchens and restaurants.",
+    subcategories: ["All Meals", "Rice & Pasta", "Swallow & Soups", "Fast Food & Shawarma", "Pastries & Grills", "Foodstuffs"],
+  },
+  foodstuffs: {
+    name: "Foodstuffs",
+    Icon: Wheat,
+    bg: "bg-[#1E1B4B]",
+    heroImage: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=1200&q=80",
+    description: "Raw cooking ingredients, crayfish, prawns, grains, pepper, oils & kitchen supplies.",
+    subcategories: ["All Foodstuffs", "Crayfish & Seafood", "Tubers & Grains", "Oils & Seasonings", "Peppers & Veggies", "Raw Meat & Poultry"],
   },
   snacks: {
     name: "Snacks & Treats",
@@ -63,7 +73,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=1200&q=80",
     description: "Quick bites, popcorn, chips, nuts, and sweet treats for lectures and study sessions.",
-    subcategories: ["All", "Chips & Popcorn", "Chocolates", "Biscuits", "Traditional Snacks"],
+    subcategories: ["All", "Chips & Popcorn", "Chocolates & Candy", "Biscuits & Cookies", "Nuts & Local Snacks"],
   },
   drinks: {
     name: "Drinks & Beverages",
@@ -71,15 +81,15 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80",
     description: "Chilled juices, sodas, energy drinks, water, and smoothies.",
-    subcategories: ["All", "Fresh Juices", "Soft Drinks", "Energy Drinks", "Smoothies", "Water"],
+    subcategories: ["All", "Fresh Juices & Smoothies", "Soft Drinks & Sodas", "Energy & Malt Drinks", "Water & Yogurt"],
   },
   groceries: {
     name: "Groceries & Provisions",
     Icon: ShoppingCart,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80",
-    description: "Dorm essentials, noodles, canned goods, milk, sugar, and daily cooking items.",
-    subcategories: ["All", "Noodles & Pasta", "Dairy & Breakfast", "Canned Goods", "Toiletries"],
+    description: "Dorm essentials, noodles, canned goods, milk, sugar, and daily hostel items.",
+    subcategories: ["All", "Noodles & Instant Food", "Milk, Cereal & Breakfast", "Canned & Packaged", "Dorm Hygiene & Soaps"],
   },
   pastries: {
     name: "Pastries & Bakery",
@@ -87,7 +97,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
     description: "Freshly baked meat pies, cakes, donuts, and bread.",
-    subcategories: ["All", "Pies & Rolls", "Cakes & Donuts", "Fresh Bread"],
+    subcategories: ["All", "Meat Pies & Rolls", "Cakes & Pastries", "Bread & Buns", "Donuts & Waffles"],
   },
   stationery: {
     name: "Stationery & Books",
@@ -95,7 +105,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=1200&q=80",
     description: "Lecture exercise books, pens, sticky notes, scientific calculators, and exam materials.",
-    subcategories: ["All", "Note Books", "Pens & Pencils", "Files & Accessories"],
+    subcategories: ["All", "Note Books & Jotters", "Pens & Writing", "Calculators & Math", "Files & Exam Essentials"],
   },
   care: {
     name: "Beauty & Personal Care",
@@ -103,7 +113,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
     description: "Skincare, soaps, hair care, and personal hygiene essentials.",
-    subcategories: ["All", "Skincare", "Soaps & Wash", "Hair Care"],
+    subcategories: ["All", "Skincare & Lotions", "Hair Care & Oils", "Soaps & Body Wash", "Lip & Face Care"],
   },
   sports: {
     name: "Sports & Fitness",
@@ -111,7 +121,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80",
     description: "Football boots, gym resistance bands, sports jerseys, and athletic gear.",
-    subcategories: ["All", "Football & Boots", "Gym Gear", "Jerseys"],
+    subcategories: ["All", "Jerseys & Kits", "Footwear & Boots", "Gym & Workout Gear", "Balls & Equipment"],
   },
   wears: {
     name: "Fashion & Campus Wears",
@@ -119,7 +129,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80",
     description: "Trendy hoodies, oversized tees, sneakers, and casual campus wear.",
-    subcategories: ["All", "Hoodies & Jackets", "T-Shirts", "Sneakers"],
+    subcategories: ["All", "Hoodies & Sweatshirts", "T-Shirts & Tops", "Pants, Jeans & Shorts", "Footwear & Caps"],
   },
   jewelries: {
     name: "Jewelries & Accessories",
@@ -127,7 +137,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=80",
     description: "Cuban chains, iced rings, bracelets, and stylish pendants.",
-    subcategories: ["All", "Chains & Necklaces", "Rings", "Bracelets"],
+    subcategories: ["All", "Chains & Necklaces", "Rings & Bands", "Bracelets & Bangles", "Earrings & Pendants", "Watches & Sunglasses"],
   },
   gadgets: {
     name: "Tech & Gadgets",
@@ -135,7 +145,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
     description: "Power banks, wireless earbuds, charging cables, and phone stands.",
-    subcategories: ["All", "Power Banks", "Earbuds", "Cables"],
+    subcategories: ["All", "Phones & Tablets", "Audio & Earbuds", "Chargers & Power Banks", "Cables & Accessories"],
   },
   accessories: {
     name: "Fashion Accessories",
@@ -330,7 +340,7 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
   };
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("All");
+  const [selectedSubcategory, setSelectedSubcategory] = useState(() => category.subcategories[0] || "All");
   const [sortBy, setSortBy] = useState<"popular" | "price-asc" | "price-desc" | "name">("popular");
   const [visibleCount, setVisibleCount] = useState<number>(24);
 
@@ -347,46 +357,14 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             product.vendorName.toLowerCase().includes(searchQuery.toLowerCase());
       
-      let matchesSubcat = selectedSubcategory === "All";
-      if (!matchesSubcat) {
-        if (slug === "services") {
-          const t = `${product.name} ${product.description || ""} ${product.categoryName || ""}`.toLowerCase();
-          if (selectedSubcategory === "Medicals & Health") {
-            matchesSubcat = t.includes("medic") || t.includes("health") || t.includes("pharm") || t.includes("first aid") || t.includes("vitamin") || t.includes("drug");
-          } else if (selectedSubcategory === "Laundry & Dry Cleaning") {
-            matchesSubcat = t.includes("laundr") || t.includes("wash") || t.includes("dry clean") || t.includes("iron") || t.includes("duvet") || t.includes("fold") || t.includes("detergent");
-          } else if (selectedSubcategory === "Errands & Tasks") {
-            matchesSubcat = !t.includes("medic") && !t.includes("laundr") && !t.includes("wash");
-          }
-        } else if (slug === "automobile") {
-          const t = `${product.name} ${product.description || ""}`.toLowerCase();
-          if (selectedSubcategory === "Cars") matchesSubcat = t.includes("car");
-          else if (selectedSubcategory === "Bikes & Motorcycles") matchesSubcat = t.includes("bike") || t.includes("motor");
-          else if (selectedSubcategory === "Bicycles") matchesSubcat = t.includes("bicycl") || t.includes("cycle");
-          else if (selectedSubcategory === "Auto Accessories") matchesSubcat = t.includes("part") || t.includes("accessor") || t.includes("tire") || t.includes("tyre") || t.includes("helmet");
-          else matchesSubcat = product.subcategory === selectedSubcategory;
-        } else if (slug === "fragrances") {
-          const t = `${product.name} ${product.description || ""}`.toLowerCase();
-          if (selectedSubcategory === "Perfumes") matchesSubcat = t.includes("perfum") || t.includes("cologn");
-          else if (selectedSubcategory === "Roll-Ons") matchesSubcat = t.includes("roll on") || t.includes("roll-on") || t.includes("deodor");
-          else if (selectedSubcategory === "Oil Perfumes") matchesSubcat = t.includes("oil");
-          else if (selectedSubcategory === "Body Sprays & Mists") matchesSubcat = t.includes("spray") || t.includes("mist");
-          else matchesSubcat = product.subcategory === selectedSubcategory;
-        } else if (slug === "decorations" || slug === "interior-decorations") {
-          const t = `${product.name} ${product.description || ""}`.toLowerCase();
-          if (selectedSubcategory === "Wall Art & Frames") matchesSubcat = t.includes("art") || t.includes("frame") || t.includes("poster") || t.includes("canvas") || t.includes("paint");
-          else if (selectedSubcategory === "Room Lights & LEDs") matchesSubcat = t.includes("light") || t.includes("led") || t.includes("lamp") || t.includes("strip") || t.includes("neon");
-          else if (selectedSubcategory === "Desk & Shelving") matchesSubcat = t.includes("desk") || t.includes("shelf") || t.includes("organizer") || t.includes("stand") || t.includes("rack");
-          else if (selectedSubcategory === "Cushions & Rugs") matchesSubcat = t.includes("cushion") || t.includes("pillow") || t.includes("rug") || t.includes("mat") || t.includes("carpet") || t.includes("blanket");
-          else if (selectedSubcategory === "Aesthetic Plants & Vases") matchesSubcat = t.includes("plant") || t.includes("vase") || t.includes("flower") || t.includes("pot");
-          else if (selectedSubcategory === "Mirrors & Clocks") matchesSubcat = t.includes("mirror") || t.includes("clock") || t.includes("glass");
-          else matchesSubcat = product.subcategory === selectedSubcategory;
-        } else {
-          matchesSubcat = product.subcategory === selectedSubcategory;
-        }
-      }
+      if (!matchesSearch) return false;
 
-      return matchesSearch && matchesSubcat;
+      // Smart subcategory matching across all categories
+      return matchProductToSubcategory(
+        product,
+        canonicalSlug,
+        selectedSubcategory
+      );
     });
 
     if (sortBy === "price-asc") {
@@ -397,7 +375,7 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
       return [...list].sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [rawProducts, searchQuery, selectedSubcategory, sortBy, slug]);
+  }, [rawProducts, searchQuery, selectedSubcategory, sortBy, canonicalSlug]);
 
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);
@@ -641,6 +619,32 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
             ))}
           </div>
         </div>
+
+        {/* FOOD CATEGORY: FOODSTUFFS SUB-CATEGORY BANNER */}
+        {canonicalSlug === "food" && selectedSubcategory.toLowerCase().includes("foodstuff") && (
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-zinc-900 border border-amber-300 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 font-bold">
+                🌾
+              </div>
+              <div>
+                <h3 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white">
+                  Foodstuffs & Cooking Ingredients
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-zinc-400">
+                  Showing raw cooking ingredients, crayfish, oils & provisions available under Food.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/category/foodstuffs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#312E81] text-white text-xs font-heading font-extrabold hover:bg-indigo-700 transition shrink-0 cursor-pointer shadow-xs"
+            >
+              <span>Explore Dedicated Foodstuffs Hub</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        )}
 
         {/* SERVICES CATEGORY DIRECT PERSONNEL DIRECTORY & CHAT HUB */}
         {slug === "services" && (

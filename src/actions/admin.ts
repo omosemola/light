@@ -139,36 +139,39 @@ export async function getAdminProductsPaginated(params: {
     const limit = Math.min(100, Math.max(1, Number(params.limit) || 25));
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const andConditions: any[] = [];
 
     if (params.categoryId && params.categoryId !== "ALL") {
       const aliases = getCategoryAliases(params.categoryId);
-      where.OR = [
-        { categoryId: { in: aliases } },
-        { category: { id: { in: aliases } } },
-        { category: { name: { in: aliases, mode: "insensitive" } } },
-        { category: { name: { equals: params.categoryId, mode: "insensitive" } } },
-      ];
+      andConditions.push({
+        OR: [
+          { categoryId: { in: aliases } },
+          { category: { id: { in: aliases } } },
+          { category: { name: { in: aliases, mode: "insensitive" } } },
+          { category: { name: { equals: params.categoryId, mode: "insensitive" } } },
+        ],
+      });
     }
 
     if (params.status === "AVAILABLE") {
-      where.isAvailable = true;
+      andConditions.push({ isAvailable: true });
     } else if (params.status === "OUT_OF_STOCK") {
-      where.isAvailable = false;
+      andConditions.push({ isAvailable: false });
     }
 
     if (params.search && params.search.trim()) {
       const q = params.search.trim();
-      where.AND = [
-        {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { slug: { contains: q, mode: "insensitive" } },
-            { store: { name: { contains: q, mode: "insensitive" } } },
-          ],
-        },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { slug: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+          { store: { name: { contains: q, mode: "insensitive" } } },
+        ],
+      });
     }
+
+    const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const products = await prisma.product.findMany({
       where,
