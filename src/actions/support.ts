@@ -100,7 +100,7 @@ export async function createLiveSupportTicket(data: {
           <div style="background: #f4f4f5; padding: 12px; border-radius: 8px; margin: 12px 0;">
             ${data.message}
           </div>
-          <a href="https://campuslightson.com/admin/dashboard" style="display: inline-block; background: #1E1B4B; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none;">View in Admin Panel</a>
+          <a href="https://lightsonmarketplace.com/admin/dashboard" style="display: inline-block; background: #1E1B4B; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none;">View in Admin Panel</a>
         </div>
       `,
     }).catch((e) => console.error("Failed to notify admin of support ticket:", e));

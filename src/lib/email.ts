@@ -177,7 +177,7 @@ export function generateStudentOrderReceiptEmail({
             </div>
 
             <div style="text-align: center; margin: 28px 0 16px 0;">
-              <a href="https://campuslightson.com/orders" class="btn">View Order Receipt & Details ➔</a>
+              <a href="https://lightsonmarketplace.com/orders" class="btn">View Order Receipt & Details ➔</a>
             </div>
 
             <p style="font-size: 12px; color: #71717a; text-align: center; line-height: 1.5; margin: 0;">
@@ -252,7 +252,7 @@ export function generateStudentStatusUpdateEmail({
             </div>
 
             <div style="text-align: center; margin-top: 24px;">
-              <a href="https://campuslightson.com/orders" class="btn">View Live Status ➔</a>
+              <a href="https://lightsonmarketplace.com/orders" class="btn">View Live Status ➔</a>
             </div>
           </div>
           <div class="footer">
@@ -297,7 +297,7 @@ export function generateStudentWelcomeEmail({
               Your Lightson student account is ready. Order hot food, dorm groceries, tech gadgets, stationery, and fashion straight to your campus hostel with ultra-fast room delivery.
             </p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://campuslightson.com" class="btn">Start Exploring Stores ➔</a>
+              <a href="https://lightsonmarketplace.com" class="btn">Start Exploring Stores ➔</a>
             </div>
           </div>
           <div class="footer">Lightson Marketplace • University Multi-Vendor Platform</div>
@@ -394,7 +394,7 @@ export function generateVendorNewOrderAlertEmail({
             </div>
 
             <div style="text-align: center; margin: 28px 0 16px 0;">
-              <a href="https://campuslightson.com/vendor/dashboard" class="btn">Open Merchant POS Terminal ➔</a>
+              <a href="https://lightsonmarketplace.com/vendor/dashboard" class="btn">Open Merchant POS Terminal ➔</a>
             </div>
 
             <p style="font-size: 12px; color: #71717a; text-align: center; margin: 0;">
@@ -446,7 +446,7 @@ export function generateVendorWelcomeEmail({
               Your store <strong>${storeName}</strong> has been registered under <strong>${category}</strong>. You can now log into your merchant dashboard, manage your menu items, view live orders, and toggle your store open/closed.
             </p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://campuslightson.com/vendor/dashboard" class="btn">Launch Merchant Dashboard ➔</a>
+              <a href="https://lightsonmarketplace.com/vendor/dashboard" class="btn">Launch Merchant Dashboard ➔</a>
             </div>
           </div>
           <div class="footer">Lightson Marketplace Merchant Operations</div>
@@ -550,7 +550,7 @@ export function generateAdminNewVendorEmail({
               ` : ""}
             </div>
 
-            <a href="https://campuslightson.com/admin/dashboard" class="btn">
+            <a href="https://lightsonmarketplace.com/admin/dashboard" class="btn">
               Open Admin Dashboard to Verify Store ➔
             </a>
           </div>
@@ -654,7 +654,7 @@ export function generateAdminNewStudentEmail({
               </div>
             </div>
 
-            <a href="https://campuslightson.com/admin/dashboard" class="btn">
+            <a href="https://lightsonmarketplace.com/admin/dashboard" class="btn">
               View All Registered Students in Admin Panel ➔
             </a>
           </div>
@@ -794,12 +794,12 @@ export function generateAdminNewProductEmail({
               ` : ""}
             </div>
 
-            <a href="https://campuslightson.com/admin/dashboard" class="btn">
+            <a href="https://lightsonmarketplace.com/admin/dashboard" class="btn">
               View Product in Admin Catalog ➔
             </a>
             ${productSlug ? `
               <div style="text-align: center; margin-top: 10px;">
-                <a href="https://campuslightson.com/product/${productSlug}" style="font-size: 12px; color: #64748B; text-decoration: underline;">
+                <a href="https://lightsonmarketplace.com/product/${productSlug}" style="font-size: 12px; color: #64748B; text-decoration: underline;">
                   View Live Product Page on Student Marketplace
                 </a>
               </div>
@@ -985,7 +985,7 @@ export function generateAdminPlatformOrderAlertEmail({
               </table>
             ` : ""}
 
-            <a href="https://campuslightson.com/admin/dashboard" class="btn">View in Admin Command Center ➔</a>
+            <a href="https://lightsonmarketplace.com/admin/dashboard" class="btn">View in Admin Command Center ➔</a>
           </div>
 
           <div class="footer">
@@ -1048,7 +1048,7 @@ export function generateChatMessageEmailForVendor({
               "${messageText}"
             </div>
 
-            <a href="https://campuslightson.com/vendor/dashboard" class="btn">
+            <a href="https://lightsonmarketplace.com/vendor/dashboard" class="btn">
               Open Vendor Dashboard to Reply ➔
             </a>
           </div>
@@ -1110,7 +1110,7 @@ export function generateChatMessageEmailForStudent({
               "${messageText}"
             </div>
 
-            <a href="https://campuslightson.com/vendor/${storeId}" class="btn">
+            <a href="https://lightsonmarketplace.com/vendor/${storeId}" class="btn">
               View Store & Chat on Lightson ➔
             </a>
           </div>
@@ -1274,7 +1274,7 @@ export function generatePasswordResetSuccessEmailHTML({
               You can now sign in with your new credentials across the marketplace and merchant terminals.
             </p>
             <div style="text-align: center; margin: 24px 0;">
-              <a href="https://campuslightson.com/login" class="btn">Sign In to Lightson ➔</a>
+              <a href="https://lightsonmarketplace.com/login" class="btn">Sign In to Lightson ➔</a>
             </div>
             <p style="font-size: 12px; color: #ef4444; margin-top: 24px; line-height: 1.5;">
               If you did not perform this change, please contact support immediately at <strong>support@lightsonmarketplace.com</strong>.
