@@ -35,9 +35,10 @@ export async function getUserFavorites(userEmail?: string) {
       };
     }
 
-    const [favoriteProducts, favoriteStores] = await Promise.all([
+    // Sequential execution to keep connection concurrency at 1
+    const favoriteProducts =
       user.favoriteProductIds.length > 0
-        ? prisma.product.findMany({
+        ? await prisma.product.findMany({
             where: {
               id: { in: user.favoriteProductIds },
               isAvailable: true,
@@ -48,9 +49,11 @@ export async function getUserFavorites(userEmail?: string) {
               category: true,
             },
           })
-        : [],
+        : [];
+
+    const favoriteStores =
       user.favoriteStoreIds.length > 0
-        ? prisma.store.findMany({
+        ? await prisma.store.findMany({
             where: {
               id: { in: user.favoriteStoreIds },
               isVerified: true,
@@ -65,8 +68,7 @@ export async function getUserFavorites(userEmail?: string) {
               },
             },
           })
-        : [],
-    ]);
+        : [];
 
     return {
       success: true,

@@ -5,23 +5,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://lightsonmarketplace.com";
 
   try {
-    const [products, categories, stores] = await Promise.all([
-      prisma.product.findMany({
-        where: { 
-          isAvailable: true,
-          store: { isVerified: true },
-        },
-        select: { id: true, slug: true, updatedAt: true },
-        take: 500,
-      }),
-      prisma.category.findMany({
-        select: { id: true, updatedAt: true },
-      }),
-      prisma.store.findMany({
-        where: { isVerified: true },
-        select: { id: true, updatedAt: true },
-      }),
-    ]);
+    // Run queries sequentially to prevent connection pool exhaustion during build static generation
+    const products = await prisma.product.findMany({
+      where: { 
+        isAvailable: true,
+        store: { isVerified: true },
+      },
+      select: { id: true, slug: true, updatedAt: true },
+      take: 500,
+    });
+    const categories = await prisma.category.findMany({
+      select: { id: true, updatedAt: true },
+    });
+    const stores = await prisma.store.findMany({
+      where: { isVerified: true },
+      select: { id: true, updatedAt: true },
+    });
 
     const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
       url: `${baseUrl}/product/${p.slug || p.id}`,

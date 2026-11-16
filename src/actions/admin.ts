@@ -50,37 +50,25 @@ export async function getAdminOverviewMetrics() {
       };
     }
 
-    const [
-      totalUsers,
-      totalStores,
-      verifiedStoresCount,
-      unverifiedStoresCount,
-      openStoresCount,
-      totalOrders,
-      totalProducts,
-      gmvAggregate,
-      openTicketsCount,
-      categories,
-    ] = await Promise.all([
-      prisma.user.count(),
-      prisma.store.count(),
-      prisma.store.count({ where: { isVerified: true } }),
-      prisma.store.count({ where: { isVerified: false } }),
-      prisma.store.count({ where: { isOpen: true } }),
-      prisma.order.count(),
-      prisma.product.count(),
-      prisma.order.aggregate({
-        _sum: { totalAmount: true },
-        where: { status: { not: OrderStatus.CANCELLED } },
-      }),
-      prisma.supportTicket.count({
-        where: { status: TicketStatus.OPEN },
-      }),
-      prisma.category.findMany({
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
+    // Run queries sequentially to prevent connection pool exhaustion on Supabase transaction pooler
+    const totalUsers = await prisma.user.count();
+    const totalStores = await prisma.store.count();
+    const verifiedStoresCount = await prisma.store.count({ where: { isVerified: true } });
+    const unverifiedStoresCount = await prisma.store.count({ where: { isVerified: false } });
+    const openStoresCount = await prisma.store.count({ where: { isOpen: true } });
+    const totalOrders = await prisma.order.count();
+    const totalProducts = await prisma.product.count();
+    const gmvAggregate = await prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { status: { not: OrderStatus.CANCELLED } },
+    });
+    const openTicketsCount = await prisma.supportTicket.count({
+      where: { status: TicketStatus.OPEN },
+    });
+    const categories = await prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
 
     const totalGMV = gmvAggregate._sum.totalAmount || 0;
     const queryDurationMs = Math.round(performance.now() - startTime);
@@ -182,27 +170,25 @@ export async function getAdminProductsPaginated(params: {
       ];
     }
 
-    const [products, totalCount] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          price: true,
-          image: true,
-          isAvailable: true,
-          createdAt: true,
-          categoryId: true,
-          category: { select: { id: true, name: true } },
-          store: { select: { id: true, name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.product.count({ where }),
-    ]);
+    const products = await prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        price: true,
+        image: true,
+        isAvailable: true,
+        createdAt: true,
+        categoryId: true,
+        category: { select: { id: true, name: true } },
+        store: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const totalCount = await prisma.product.count({ where });
 
     // Optimize images for table display (compact thumbnails)
     const formatted = products.map((p) => {
@@ -311,37 +297,35 @@ export async function getAdminOrdersPaginated(params: {
       ];
     }
 
-    const [orders, totalCount] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        select: {
-          id: true,
-          totalAmount: true,
-          status: true,
-          deliveryLocation: true,
-          deliveryFee: true,
-          serviceFee: true,
-          deliveryInstructions: true,
-          paymentReference: true,
-          createdAt: true,
-          updatedAt: true,
-          user: { select: { id: true, name: true, email: true, phone: true } },
-          store: { select: { id: true, name: true, phone: true } },
-          items: {
-            select: {
-              id: true,
-              quantity: true,
-              price: true,
-              product: { select: { id: true, name: true, image: true, price: true } },
-            },
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        totalAmount: true,
+        status: true,
+        deliveryLocation: true,
+        deliveryFee: true,
+        serviceFee: true,
+        deliveryInstructions: true,
+        paymentReference: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        store: { select: { id: true, name: true, phone: true } },
+        items: {
+          select: {
+            id: true,
+            quantity: true,
+            price: true,
+            product: { select: { id: true, name: true, image: true, price: true } },
           },
         },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.order.count({ where }),
-    ]);
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const totalCount = await prisma.order.count({ where });
 
     const totalPages = Math.ceil(totalCount / limit);
     const queryDurationMs = Math.round(performance.now() - startTime);
@@ -431,38 +415,36 @@ export async function getAdminStoresPaginated(params: {
       ];
     }
 
-    const [stores, totalCount, verifiedCount, unverifiedCount, openCount] = await Promise.all([
-      prisma.store.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          logo: true,
-          coverImage: true,
-          isOpen: true,
-          isVerified: true,
-          isService: true,
-          category: true,
-          serviceSubcategory: true,
-          phone: true,
-          bankName: true,
-          accountNumber: true,
-          accountName: true,
-          createdAt: true,
-          updatedAt: true,
-          user: { select: { id: true, email: true, name: true, phone: true } },
-          _count: { select: { products: true, orders: true, reviews: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.store.count({ where }),
-      prisma.store.count({ where: { isVerified: true } }),
-      prisma.store.count({ where: { isVerified: false } }),
-      prisma.store.count({ where: { isOpen: true } }),
-    ]);
+    const stores = await prisma.store.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        logo: true,
+        coverImage: true,
+        isOpen: true,
+        isVerified: true,
+        isService: true,
+        category: true,
+        serviceSubcategory: true,
+        phone: true,
+        bankName: true,
+        accountNumber: true,
+        accountName: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, email: true, name: true, phone: true } },
+        _count: { select: { products: true, orders: true, reviews: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const totalCount = await prisma.store.count({ where });
+    const verifiedCount = await prisma.store.count({ where: { isVerified: true } });
+    const unverifiedCount = await prisma.store.count({ where: { isVerified: false } });
+    const openCount = await prisma.store.count({ where: { isOpen: true } });
 
     const formatted = stores.map((s) => ({
       ...s,
@@ -557,27 +539,25 @@ export async function getAdminUsersPaginated(params: {
       ];
     }
 
-    const [users, totalCount] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-          image: true,
-          hostel: true,
-          createdAt: true,
-          store: { select: { id: true, name: true } },
-          _count: { select: { orders: true, tickets: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.user.count({ where }),
-    ]);
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        image: true,
+        hostel: true,
+        createdAt: true,
+        store: { select: { id: true, name: true } },
+        _count: { select: { orders: true, tickets: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const totalCount = await prisma.user.count({ where });
 
     const totalPages = Math.ceil(totalCount / limit);
     const queryDurationMs = Math.round(performance.now() - startTime);
@@ -637,28 +617,26 @@ export async function getAdminTicketsPaginated(params: {
       where.status = params.status as TicketStatus;
     }
 
-    const [tickets, totalCount] = await Promise.all([
-      prisma.supportTicket.findMany({
-        where,
-        select: {
-          id: true,
-          subject: true,
-          category: true,
-          message: true,
-          status: true,
-          adminReply: true,
-          createdAt: true,
-          updatedAt: true,
-          orderId: true,
-          user: { select: { name: true, email: true } },
-          order: { select: { id: true, totalAmount: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.supportTicket.count({ where }),
-    ]);
+    const tickets = await prisma.supportTicket.findMany({
+      where,
+      select: {
+        id: true,
+        subject: true,
+        category: true,
+        message: true,
+        status: true,
+        adminReply: true,
+        createdAt: true,
+        updatedAt: true,
+        orderId: true,
+        user: { select: { name: true, email: true } },
+        order: { select: { id: true, totalAmount: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const totalCount = await prisma.supportTicket.count({ where });
 
     const totalPages = Math.ceil(totalCount / limit);
     const queryDurationMs = Math.round(performance.now() - startTime);
@@ -713,14 +691,13 @@ export async function getAdminDashboardData() {
       };
     }
 
-    const [overview, productsRes, ordersRes, storesRes, usersRes, ticketsRes] = await Promise.all([
-      getAdminOverviewMetrics(),
-      getAdminProductsPaginated({ page: 1, limit: 50 }),
-      getAdminOrdersPaginated({ page: 1, limit: 50 }),
-      getAdminStoresPaginated({ page: 1, limit: 50 }),
-      getAdminUsersPaginated({ page: 1, limit: 50 }),
-      getAdminTicketsPaginated({ page: 1, limit: 50 }),
-    ]);
+    // Sequential fetching to maintain a single active connection on Supabase pooler
+    const overview = await getAdminOverviewMetrics();
+    const productsRes = await getAdminProductsPaginated({ page: 1, limit: 50 });
+    const ordersRes = await getAdminOrdersPaginated({ page: 1, limit: 50 });
+    const storesRes = await getAdminStoresPaginated({ page: 1, limit: 50 });
+    const usersRes = await getAdminUsersPaginated({ page: 1, limit: 50 });
+    const ticketsRes = await getAdminTicketsPaginated({ page: 1, limit: 50 });
 
     return {
       success: true,

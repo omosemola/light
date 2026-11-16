@@ -149,52 +149,53 @@ const LIST_STORE_SELECT = {
 
 const readHomepageData = unstable_cache(
   async () => {
-    const [products, stores, categories] = await Promise.all([
-      prisma.product.findMany({
-        where: { 
-          isAvailable: true,
-          store: { isVerified: true },
-        },
-        include: {
-          store: { select: LIST_STORE_SELECT },
-          category: { select: { id: true, name: true } },
-        },
-        take: 48,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.store.findMany({
-        where: { isVerified: true },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          logo: true,
-          isOpen: true,
-          isService: true,
-          category: true,
-          serviceSubcategory: true,
-          availabilityStatus: true,
-          startingPrice: true,
-          estimatedDelivery: true,
-          deliveryFee: true,
-          rating: true,
-          openingTime: true,
-          closingTime: true,
-          updatedAt: true,
-          _count: { select: { products: true, orders: true } },
-        },
-        take: 100,
-        orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
-      }),
-      prisma.category.findMany({
-        select: {
-          id: true,
-          name: true,
-          updatedAt: true,
-          _count: { select: { products: true } },
-        },
-      }),
-    ]);
+    // Run sequentially to prevent connection pool exhaustion on Supabase transaction pooler
+    const products = await prisma.product.findMany({
+      where: { 
+        isAvailable: true,
+        store: { isVerified: true },
+      },
+      include: {
+        store: { select: LIST_STORE_SELECT },
+        category: { select: { id: true, name: true } },
+      },
+      take: 48,
+      orderBy: { createdAt: "desc" },
+    });
+
+    const stores = await prisma.store.findMany({
+      where: { isVerified: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        logo: true,
+        isOpen: true,
+        isService: true,
+        category: true,
+        serviceSubcategory: true,
+        availabilityStatus: true,
+        startingPrice: true,
+        estimatedDelivery: true,
+        deliveryFee: true,
+        rating: true,
+        openingTime: true,
+        closingTime: true,
+        updatedAt: true,
+        _count: { select: { products: true, orders: true } },
+      },
+      take: 100,
+      orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
+    });
+
+    const categories = await prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+        updatedAt: true,
+        _count: { select: { products: true } },
+      },
+    });
 
     return {
       success: true as const,
@@ -229,50 +230,51 @@ export async function getLiveHomepageData() {
 
 const readSearchCatalogData = unstable_cache(
   async () => {
-    const [products, stores, categories] = await Promise.all([
-      prisma.product.findMany({
-        where: { 
-          isAvailable: true,
-          store: { isVerified: true },
-        },
-        include: {
-          store: { select: LIST_STORE_SELECT },
-          category: { select: { id: true, name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.store.findMany({
-        where: { isVerified: true },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          logo: true,
-          isOpen: true,
-          isService: true,
-          category: true,
-          serviceSubcategory: true,
-          availabilityStatus: true,
-          startingPrice: true,
-          estimatedDelivery: true,
-          deliveryFee: true,
-          rating: true,
-          openingTime: true,
-          closingTime: true,
-          updatedAt: true,
-          _count: { select: { products: true, orders: true } },
-        },
-        orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
-      }),
-      prisma.category.findMany({
-        select: {
-          id: true,
-          name: true,
-          updatedAt: true,
-          _count: { select: { products: true } },
-        },
-      }),
-    ]);
+    // Run sequentially to prevent connection pool exhaustion on Supabase transaction pooler
+    const products = await prisma.product.findMany({
+      where: { 
+        isAvailable: true,
+        store: { isVerified: true },
+      },
+      include: {
+        store: { select: LIST_STORE_SELECT },
+        category: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const stores = await prisma.store.findMany({
+      where: { isVerified: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        logo: true,
+        isOpen: true,
+        isService: true,
+        category: true,
+        serviceSubcategory: true,
+        availabilityStatus: true,
+        startingPrice: true,
+        estimatedDelivery: true,
+        deliveryFee: true,
+        rating: true,
+        openingTime: true,
+        closingTime: true,
+        updatedAt: true,
+        _count: { select: { products: true, orders: true } },
+      },
+      orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
+    });
+
+    const categories = await prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+        updatedAt: true,
+        _count: { select: { products: true } },
+      },
+    });
 
     return {
       success: true as const,
@@ -697,47 +699,47 @@ export async function searchLiveCatalog(query: string) {
       storeOrConditions.push({ category: { contains: keyword, mode: "insensitive" } });
     }
 
-    const [products, stores] = await Promise.all([
-      prisma.product.findMany({
-        where: {
-          isAvailable: true,
-          store: { isVerified: true },
-          OR: productOrConditions,
-        },
-        include: {
-          store: { select: LIST_STORE_SELECT },
-          category: { select: { id: true, name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 300,
-      }),
-      prisma.store.findMany({
-        where: {
-          isVerified: true,
-          OR: storeOrConditions,
-        },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          logo: true,
-          isOpen: true,
-          isService: true,
-          category: true,
-          serviceSubcategory: true,
-          availabilityStatus: true,
-          startingPrice: true,
-          estimatedDelivery: true,
-          deliveryFee: true,
-          rating: true,
-          openingTime: true,
-          closingTime: true,
-          updatedAt: true,
-          _count: { select: { products: true, orders: true } },
-        },
-        orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
-      }),
-    ]);
+    // Sequential execution to keep connection concurrency at 1
+    const products = await prisma.product.findMany({
+      where: {
+        isAvailable: true,
+        store: { isVerified: true },
+        OR: productOrConditions,
+      },
+      include: {
+        store: { select: LIST_STORE_SELECT },
+        category: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 300,
+    });
+
+    const stores = await prisma.store.findMany({
+      where: {
+        isVerified: true,
+        OR: storeOrConditions,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        logo: true,
+        isOpen: true,
+        isService: true,
+        category: true,
+        serviceSubcategory: true,
+        availabilityStatus: true,
+        startingPrice: true,
+        estimatedDelivery: true,
+        deliveryFee: true,
+        rating: true,
+        openingTime: true,
+        closingTime: true,
+        updatedAt: true,
+        _count: { select: { products: true, orders: true } },
+      },
+      orderBy: [{ isOpen: "desc" }, { createdAt: "desc" }],
+    });
 
     return {
       success: true,
@@ -812,31 +814,30 @@ export async function getPaginatedProducts(options: {
     else if (options.sortBy === "price-desc") orderBy = { price: "desc" };
     else if (options.sortBy === "name") orderBy = { name: "asc" };
 
-    const [products, totalCount] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          price: true,
-          image: true,
-          description: true,
-          isAvailable: true,
-          estimatedDelivery: true,
-          deliveryFee: true,
-          createdAt: true,
-          updatedAt: true,
-          storeId: true,
-          store: { select: LIST_STORE_SELECT },
-          category: { select: { id: true, name: true } },
-        },
-        skip,
-        take: limit,
-        orderBy,
-      }),
-      prisma.product.count({ where }),
-    ]);
+    // Sequential execution to keep connection concurrency at 1
+    const products = await prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        price: true,
+        image: true,
+        description: true,
+        isAvailable: true,
+        estimatedDelivery: true,
+        deliveryFee: true,
+        createdAt: true,
+        updatedAt: true,
+        storeId: true,
+        store: { select: LIST_STORE_SELECT },
+        category: { select: { id: true, name: true } },
+      },
+      skip,
+      take: limit,
+      orderBy,
+    });
+    const totalCount = await prisma.product.count({ where });
 
     const totalPages = Math.ceil(totalCount / limit);
     const hasMore = page < totalPages;
