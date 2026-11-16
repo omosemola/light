@@ -60,42 +60,28 @@ import { MAJOR_CATEGORIES } from "@/lib/categories";
 
 const PROMO_SLIDES = [
   {
-    id: "promo-layo-asun",
-    storeName: "LAYO’s foodhub",
-    storeLogo: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794348608/lightson_marketplace/stores/smmwrqgldvfk18yp3xns.jpg",
-    storeLink: "/vendor/cmwb8u1t30002l9091kzig3bu",
-    tag: "HOT CAMPUS SPECIAL",
-    title: "Party-Style Asun Jollof Rice",
-    subtitle: "Flavor-packed smoky Jollof rice served hot with spicy peppered Asun, sweet fried plantain & juicy peppered turkey or chicken.",
-    priceTag: "₦7,000",
-    deliveryPill: "30–45 Mins Delivery",
-    trustPill: "5.0 ★ Verified Kitchen",
-    link: "/product/asun-jollof-rice",
-    secondaryLink: "/vendor/cmwb8u1t30002l9091kzig3bu",
-    buttonText: "Order Now • ₦7,000",
-    secondaryButtonText: "Visit Store",
-    image: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794740959/lightson_marketplace/products/tmqvrcj2ptqoooa4sae6.jpg",
-    secondaryImage: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794742130/lightson_marketplace/products/qlqda4dknz19hkn1mjlk.jpg",
-    showcaseCaption: "Spicy Asun + Fried Plantain + Turkey",
+    id: "promo-1",
+    tag: "🔥 FRESH CAMPUS BAKERY • PastryHomebyLayo",
+    title: "Crispy Gourmet Small Chops Platter 🥟",
+    subtitle: "Freshly prepared spring rolls, samosas, peppered puff puff & succulent wings delivered hot to your hostel.",
+    link: "/category/pastries",
+    buttonText: "Order Small Chops",
+    bgColor: "bg-[#1E1B4B]",
+    badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    highlight: "⭐ 5.0 Top Rated • Verified Merchant"
   },
   {
-    id: "promo-thumie-gadgets",
-    storeName: "Thumie_gadgets",
-    storeLogo: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794322261/lightson_marketplace/stores/qar9wvkryq0hfg1di9iy.jpg",
-    storeLink: "/vendor/cmw9484ao0004lb09giyt77m1",
-    tag: "VERIFIED TECH STORE",
-    title: "Premium iPhones & Flagship Gadgets",
-    subtitle: "Quality and affordable factory-unlocked iPhone 15, 15 Pro Max, iPhone Air & 17 Pro with verified battery health.",
-    priceTag: "From ₦620,000",
-    deliveryPill: "Same-Day Delivery",
-    trustPill: "100% Authentic",
-    link: "/vendor/cmw9484ao0004lb09giyt77m1",
-    secondaryLink: "/category/gadgets",
-    buttonText: "Explore Gadget Store",
-    secondaryButtonText: "All Gadgets",
-    image: "https://res.cloudinary.com/yvkipxsa/image/upload/f_auto,q_auto/v1794256481/lightson_marketplace/products/luwrykrrqlxolxdyoqsg.jpg",
-    secondaryImage: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794317387/lightson_marketplace/products/j2qcq7vemdzqdpzdicwl.jpg",
-    showcaseCaption: "iPhone 15 • 15 Pro Max • 17 Pro",
+    id: "promo-2",
+    tag: "⚡ FAST HOSTEL DELIVERY • Campus Express",
+    title: "Fresh Campus Meals & Quick Bites 🍱",
+    subtitle: "Delicious meals, snacks, groceries, and essentials delivered right to your hostel porter's lodge in 15–25 minutes.",
+    link: "/category/food",
+    buttonText: "Explore Marketplace",
+    bgColor: "bg-[#1E1B4B]",
+    badgeBg: "bg-amber-400 text-slate-950 font-black",
+    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+    highlight: "⚡ 15-20 Min Fast Delivery"
   }
 ];
 
@@ -137,37 +123,13 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
 
   // PROMOTIONAL CAROUSEL STATE
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [activePhotoIdx, setActivePhotoIdx] = useState<0 | 1>(0);
-  const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
   const [isHovered, setIsHovered] = useState(false);
-  const promoTouchStartX = useRef<number | null>(null);
-
-  const goToSlide = (targetIdx: number) => {
-    if (targetIdx === currentSlide) return;
-    setSlideDirection(targetIdx > currentSlide ? 1 : -1);
-    setActivePhotoIdx(0);
-    setCurrentSlide(targetIdx);
-  };
-
-  const nextSlide = () => {
-    setSlideDirection(1);
-    setActivePhotoIdx(0);
-    setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
-  };
-
-  const prevSlide = () => {
-    setSlideDirection(-1);
-    setActivePhotoIdx(0);
-    setCurrentSlide((prev) => (prev - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length);
-  };
 
   useEffect(() => {
     if (isHovered) return;
     const interval = setInterval(() => {
-      setSlideDirection(1);
-      setActivePhotoIdx(0);
       setCurrentSlide((prev) => (prev + 1) % PROMO_SLIDES.length);
-    }, 6500);
+    }, 5500);
     return () => clearInterval(interval);
   }, [isHovered]);
 
@@ -501,260 +463,85 @@ export default function HomeClient({ initialProducts = [], initialStores = [] }:
       {/* MAIN CONTENT AREA */}
       <div className="px-5 md:px-8 max-w-5xl mx-auto w-full -mt-4 z-20 space-y-8 pb-12">
         
-        {/* PROMOTIONAL HERO CAROUSEL (CLEAN SPLIT EDITORIAL — ZERO GRADIENTS) */}
-        <section
-          className="w-full relative overflow-hidden rounded-[28px] shadow-md border border-slate-200 dark:border-zinc-800 bg-[#1E1B4B] select-none"
+        {/* PROMOTIONAL HERO CAROUSEL */}
+        <section 
+          className="w-full relative overflow-hidden rounded-[28px] shadow-lg border border-slate-200/80 dark:border-zinc-800/90 flex flex-col justify-between min-h-[250px] md:min-h-[280px] group"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onTouchStart={(e) => {
-            promoTouchStartX.current = e.touches[0].clientX;
-          }}
-          onTouchEnd={(e) => {
-            if (promoTouchStartX.current === null) return;
-            const deltaX = e.changedTouches[0].clientX - promoTouchStartX.current;
-            if (Math.abs(deltaX) > 45) {
-              if (deltaX < 0) nextSlide();
-              else prevSlide();
-            }
-            promoTouchStartX.current = null;
-          }}
         >
-          <AnimatePresence mode="wait" custom={slideDirection}>
+          {/* CAROUSEL SLIDES */}
+          <AnimatePresence mode="wait">
             {PROMO_SLIDES.map((slide, idx) => {
               if (idx !== currentSlide) return null;
-              const displayedPhoto = activePhotoIdx === 1 && slide.secondaryImage ? slide.secondaryImage : slide.image;
               return (
                 <motion.div
                   key={slide.id}
-                  custom={slideDirection}
-                  initial={{ opacity: 0, x: slideDirection * 32 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: slideDirection * -32 }}
-                  transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                  className="grid grid-cols-1 md:grid-cols-12 bg-[#1E1B4B] text-white"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                  className={`absolute inset-0 ${slide.bgColor} p-6 md:p-8 text-white flex flex-col justify-between z-10`}
                 >
-                  {/* RIGHT PANEL ON DESKTOP / TOP PANEL ON MOBILE: CRISP FULL-BLEED PRODUCT GALLERY */}
-                  <div className="md:col-span-5 md:order-2 relative h-52 sm:h-60 md:h-auto md:min-h-[290px] bg-zinc-900 overflow-hidden border-b md:border-b-0 md:border-l border-indigo-900/80">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={displayedPhoto}
-                        initial={{ opacity: 0, scale: 1.06 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="absolute inset-0"
-                      >
-                        <Link href={slide.link} prefetch={true} className="block w-full h-full relative group/img cursor-pointer">
-                          <Image
-                            src={displayedPhoto}
-                            alt={slide.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 42vw"
-                            className="object-cover group-hover/img:scale-105 transition-transform duration-500 ease-out"
-                            unoptimized
-                          />
-                        </Link>
-                      </motion.div>
-                    </AnimatePresence>
-
-                    {/* Top-Right Solid Price Badge */}
-                    <div className="absolute top-3.5 right-3.5 z-10 bg-[#FBBF24] text-slate-950 font-heading font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl shadow-md border border-amber-300">
-                      {slide.priceTag}
-                    </div>
-
-                    {/* Bottom-Left Solid Spec Tag */}
-                    <div className="absolute bottom-3.5 left-3.5 z-10 bg-[#1E1B4B] text-white border border-indigo-800 px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 text-[11px] font-heading font-bold">
-                      {idx === 0 ? (
-                        <Flame size={13} className="text-[#FBBF24] shrink-0" />
-                      ) : (
-                        <Smartphone size={13} className="text-[#FBBF24] shrink-0" />
-                      )}
-                      <span className="truncate max-w-[190px]">{slide.showcaseCaption}</span>
-                    </div>
-
-                    {/* Bottom-Right Interactive 2-Photo Thumbnail Switcher */}
-                    {slide.secondaryImage && (
-                      <div className="absolute bottom-3.5 right-3.5 z-10 flex items-center gap-1.5 bg-[#1E1B4B] p-1 rounded-xl border border-indigo-800 shadow-md">
-                        {[slide.image, slide.secondaryImage].map((thumbUrl, pIdx) => (
-                          <button
-                            key={thumbUrl}
-                            type="button"
-                            onClick={() => setActivePhotoIdx(pIdx as 0 | 1)}
-                            className={`relative w-8 h-8 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
-                              activePhotoIdx === pIdx
-                                ? "border-[#FBBF24] scale-105"
-                                : "border-transparent opacity-60 hover:opacity-100"
-                            }`}
-                            aria-label={`View photo ${pIdx + 1}`}
-                          >
-                            <Image
-                              src={thumbUrl}
-                              alt=""
-                              fill
-                              sizes="32px"
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                  {/* BACKGROUND AMBIENT IMAGE */}
+                  <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 dark:opacity-20 pointer-events-none overflow-hidden">
+                    <Image
+                      src={slide.image}
+                      alt={slide.title}
+                      fill
+                      className="object-cover object-center scale-110 blur-xs"
+                    />
+                    <div className="absolute inset-0 bg-[#1E1B4B]/80" />
                   </div>
 
-                  {/* LEFT PANEL ON DESKTOP / BOTTOM PANEL ON MOBILE: SOLID #1E1B4B EDITORIAL CONTENT */}
-                  <div className="md:col-span-7 md:order-1 p-5 sm:p-6 md:p-7 flex flex-col justify-between bg-[#1E1B4B]">
-                    <div>
-                      {/* Top Merchant Header & Tag */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: 0.05 }}
-                        className="flex items-center justify-between gap-2 flex-wrap mb-3.5"
-                      >
-                        <Link
-                          href={slide.storeLink}
-                          prefetch={true}
-                          className="inline-flex items-center gap-2 bg-[#312E81] hover:bg-indigo-800 border border-indigo-700 pl-1.5 pr-3 py-1 rounded-full transition-colors cursor-pointer"
-                        >
-                          <div className="w-6 h-6 rounded-full overflow-hidden relative border border-[#FBBF24] shrink-0 bg-zinc-900">
-                            <Image
-                              src={slide.storeLogo}
-                              alt={slide.storeName}
-                              fill
-                              sizes="24px"
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </div>
-                          <span className="text-xs font-heading font-extrabold text-white">
-                            {slide.storeName}
-                          </span>
-                          <ShieldCheck size={13} className="text-[#FBBF24] shrink-0" />
-                        </Link>
+                  {/* TOP BADGE */}
+                  <div className="relative z-10 flex items-center justify-between gap-2">
+                    <span className={`${slide.badgeBg} px-3.5 py-1 text-[11px] font-heading font-extrabold rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm`}>
+                      {slide.tag}
+                    </span>
+                  </div>
 
-                        <span className="bg-[#FBBF24] text-slate-950 px-3 py-1 rounded-full text-[10px] font-heading font-black uppercase tracking-wider">
-                          {slide.tag}
-                        </span>
-                      </motion.div>
+                  {/* MAIN HEADINGS & COPY */}
+                  <div className="relative z-10 my-3 max-w-xl">
+                    <h2 className="font-heading font-black text-2xl sm:text-3xl lg:text-4xl text-white leading-tight tracking-tight drop-shadow-xs">
+                      {slide.title}
+                    </h2>
+                    <p className="text-slate-200 dark:text-zinc-300 text-xs sm:text-sm font-normal mt-1.5 leading-relaxed line-clamp-2">
+                      {slide.subtitle}
+                    </p>
+                  </div>
 
-                      {/* Headline & Subtitle */}
-                      <motion.h2
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.38, delay: 0.1 }}
-                        className="font-heading font-black text-xl sm:text-2xl lg:text-3xl text-white leading-tight tracking-tight"
+                  {/* BOTTOM ACTIONS & PROGRESS CONTROLS */}
+                  <div className="relative z-10 flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={slide.link}
+                        prefetch={true}
+                        className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-400 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-amber-500/20 active:scale-95 transition-all group/btn cursor-pointer"
                       >
-                        {slide.title}
-                      </motion.h2>
+                        <span>{slide.buttonText}</span>
+                        <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </Link>
 
-                      <motion.p
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.38, delay: 0.15 }}
-                        className="text-slate-300 text-xs sm:text-sm font-normal mt-2 leading-relaxed line-clamp-2"
-                      >
-                        {slide.subtitle}
-                      </motion.p>
-
-                      {/* Solid Feature Pills */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.38, delay: 0.2 }}
-                        className="flex flex-wrap items-center gap-2 mt-3.5"
-                      >
-                        <span className="inline-flex items-center gap-1.5 bg-[#312E81] text-amber-300 border border-indigo-800 px-2.5 py-1 rounded-lg text-[11px] font-heading font-bold">
-                          <Clock size={12} className="text-[#FBBF24]" />
-                          <span>{slide.deliveryPill}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 bg-[#312E81] text-emerald-300 border border-indigo-800 px-2.5 py-1 rounded-lg text-[11px] font-heading font-bold">
-                          <CheckCircle2 size={12} className="text-emerald-400" />
-                          <span>{slide.trustPill}</span>
-                        </span>
-                      </motion.div>
+                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-amber-200 font-semibold bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+                        {slide.highlight}
+                      </span>
                     </div>
 
-                    {/* Bottom Action Buttons & Slide Controls */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.38, delay: 0.25 }}
-                      className="pt-4 mt-4 border-t border-indigo-900 flex items-center justify-between gap-3 flex-wrap"
-                    >
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <Link
-                          href={slide.link}
-                          prefetch={true}
-                          className="inline-flex items-center gap-2 bg-[#FBBF24] hover:bg-amber-300 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-sm active:scale-95 transition-all group/btn cursor-pointer"
-                        >
-                          <span>{slide.buttonText}</span>
-                          <ArrowRight size={15} className="group-hover/btn:translate-x-1 transition-transform" />
-                        </Link>
-
-                        <Link
-                          href={slide.secondaryLink}
-                          prefetch={true}
-                          className="inline-flex items-center gap-1.5 bg-[#312E81] hover:bg-indigo-800 text-white border border-indigo-700 font-heading font-bold text-xs px-4 py-2.5 rounded-xl active:scale-95 transition-all cursor-pointer"
-                        >
-                          <Store size={13} className="text-[#FBBF24]" />
-                          <span>{slide.secondaryButtonText}</span>
-                        </Link>
-                      </div>
-
-                      {/* Navigation Chevrons & Progress Bar */}
-                      <div className="flex items-center gap-2.5 ml-auto">
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={prevSlide}
-                            aria-label="Previous advert"
-                            className="w-7 h-7 rounded-lg bg-[#312E81] hover:bg-indigo-800 border border-indigo-700 flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer"
-                          >
-                            <ChevronLeft size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={nextSlide}
-                            aria-label="Next advert"
-                            className="w-7 h-7 rounded-lg bg-[#312E81] hover:bg-indigo-800 border border-indigo-700 flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer"
-                          >
-                            <ChevronRight size={14} />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {PROMO_SLIDES.map((s, i) => {
-                            const isActive = currentSlide === i;
-                            return (
-                              <button
-                                key={s.id}
-                                type="button"
-                                onClick={() => goToSlide(i)}
-                                className={`relative h-2 rounded-full overflow-hidden transition-all duration-300 cursor-pointer ${
-                                  isActive
-                                    ? "w-9 bg-[#312E81]"
-                                    : "w-2.5 bg-indigo-800 hover:bg-indigo-600"
-                                }`}
-                                aria-label={`Slide ${i + 1}: ${s.storeName}`}
-                              >
-                                {isActive && (
-                                  <motion.span
-                                    key={`progress-${currentSlide}-${isHovered ? "paused" : "running"}`}
-                                    initial={{ width: "0%" }}
-                                    animate={{ width: isHovered ? "50%" : "100%" }}
-                                    transition={{
-                                      duration: isHovered ? 0.3 : 6.5,
-                                      ease: "linear",
-                                    }}
-                                    className="absolute inset-y-0 left-0 bg-[#FBBF24] rounded-full"
-                                  />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </motion.div>
+                    {/* Progress Indicator Dots */}
+                    <div className="flex items-center gap-2">
+                      {PROMO_SLIDES.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentSlide(i)}
+                          className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                            currentSlide === i 
+                              ? "w-8 bg-[#FBBF24]" 
+                              : "w-2 bg-white/40 hover:bg-white/70"
+                          }`}
+                          aria-label={`Slide ${i + 1}`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               );
