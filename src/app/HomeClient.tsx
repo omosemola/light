@@ -61,27 +61,27 @@ import { MAJOR_CATEGORIES } from "@/lib/categories";
 const PROMO_SLIDES = [
   {
     id: "promo-1",
-    tag: "🔥 FRESH CAMPUS BAKERY • PastryHomebyLayo",
-    title: "Crispy Gourmet Small Chops Platter 🥟",
-    subtitle: "Freshly prepared spring rolls, samosas, peppered puff puff & succulent wings delivered hot to your hostel.",
-    link: "/category/pastries",
-    buttonText: "Order Small Chops",
+    tag: "🔥 HOT CAMPUS MEALS • LAYO’S FOODHUB",
+    title: "Party-Style Asun Jollof Rice 🍛",
+    subtitle: "Flavor-packed party-style Asun jollof rice served with sweet fried plantain & juicy peppered turkey/chicken.",
+    link: "/product/asun-jollof-rice",
+    buttonText: "Order Asun Jollof",
     bgColor: "bg-[#1E1B4B]",
     badgeBg: "bg-amber-400 text-slate-950 font-black shadow-md border border-amber-300/90",
-    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+    image: "https://res.cloudinary.com/yvkipxsa/image/upload/v1794740959/lightson_marketplace/products/tmqvrcj2ptqoooa4sae6.jpg",
     highlight: "⭐ 5.0 Top Rated • Verified Merchant"
   },
   {
     id: "promo-2",
-    tag: "⚡ FAST HOSTEL DELIVERY • Campus Express",
-    title: "Fresh Campus Meals & Quick Bites 🍱",
-    subtitle: "Delicious meals, snacks, groceries, and essentials delivered right to your hostel porter's lodge in 15–25 minutes.",
-    link: "/category/food",
-    buttonText: "Explore Marketplace",
+    tag: "⚡ VERIFIED TECH STORE • THUMIE_GADGETS",
+    title: "Premium iPhones & Flagship Gadgets 📱",
+    subtitle: "Quality factory-unlocked iPhone 15, 15 Pro Max & 17 Pro with 90%+ battery health and fast campus delivery.",
+    link: "/vendor/cmw9484ao0004lb09giyt77m1",
+    buttonText: "Explore Gadget Store",
     bgColor: "bg-[#1E1B4B]",
     badgeBg: "bg-amber-400 text-slate-950 font-black",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
-    highlight: "⚡ 15-20 Min Fast Delivery"
+    image: "https://res.cloudinary.com/yvkipxsa/image/upload/f_auto,q_auto/v1794256481/lightson_marketplace/products/luwrykrrqlxolxdyoqsg.jpg",
+    highlight: "⚡ Same-Day Delivery • 100% Authentic"
   }
 ];
 
