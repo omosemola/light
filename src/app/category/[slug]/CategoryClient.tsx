@@ -57,7 +57,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     description: "Delicious freshly prepared meals, combos, and delicacies from top campus kitchens and restaurants.",
-    subcategories: ["All Meals", "Rice & Pasta", "Swallow & Soups", "Fast Food & Shawarma", "Pastries & Grills", "Foodstuffs"],
+    subcategories: ["All Meals", "Rice & Pasta", "Swallow & Soups", "Fast Food & Shawarma", "Pastries & Grills"],
   },
   foodstuffs: {
     name: "Foodstuffs",
@@ -619,32 +619,6 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
             ))}
           </div>
         </div>
-
-        {/* FOOD CATEGORY: FOODSTUFFS SUB-CATEGORY BANNER */}
-        {canonicalSlug === "food" && selectedSubcategory.toLowerCase().includes("foodstuff") && (
-          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-zinc-900 border border-amber-300 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 font-bold">
-                🌾
-              </div>
-              <div>
-                <h3 className="font-heading font-extrabold text-sm text-slate-900 dark:text-white">
-                  Foodstuffs & Cooking Ingredients
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-zinc-400">
-                  Showing raw cooking ingredients, crayfish, oils & provisions available under Food.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/category/foodstuffs"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#312E81] text-white text-xs font-heading font-extrabold hover:bg-indigo-700 transition shrink-0 cursor-pointer shadow-xs"
-            >
-              <span>Explore Dedicated Foodstuffs Hub</span>
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        )}
 
         {/* SERVICES CATEGORY DIRECT PERSONNEL DIRECTORY & CHAT HUB */}
         {slug === "services" && (

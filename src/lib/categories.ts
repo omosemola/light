@@ -620,14 +620,9 @@ export function matchProductToSubcategory(
   const cat = (product.categoryName || "").toLowerCase();
   const t = `${name} ${desc} ${cat}`;
 
-  // 1. FOOD CATEGORY SUBCATEGORIES
+  // 1. FOOD CATEGORY SUBCATEGORIES (Prepared Meals Only)
   if (categorySlug === "food") {
-    // "Foodstuffs" or "Foodstuffs & Ingredients" subcategory under Food
-    if (selectedSubcat.toLowerCase().includes("foodstuff")) {
-      return isFoodstuffProduct(product.name, product.description) || cat.includes("foodstuff");
-    }
-
-    // All other food subcategories must NOT contain raw foodstuffs
+    // Food category strictly contains readily prepared meals; raw foodstuffs belong in the Foodstuffs category
     if (isFoodstuffProduct(product.name, product.description)) {
       return false;
     }
