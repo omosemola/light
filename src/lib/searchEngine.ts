@@ -383,10 +383,11 @@ export function scoreStore(store: ScorableStore, parsed: ParsedQuery): number {
 const CATEGORY_PILL_STEMS: Record<string, string[]> = {
   services: ["service", "medic", "pharm", "health", "drug", "laundr", "wash", "clean", "errand", "barb", "hair", "repair", "print", "tailor", "tutor", "photo"],
   food: ["food", "meal", "cafeteria", "kitchen", "cook", "dish", "rice", "swallow", "shawarma", "lunch", "dinner", "breakfast"],
+  foodstuffs: ["foodstuff", "crayfish", "prawn", "shrimp", "seafood", "garri", "yam", "palm oil", "seasoning"],
   pastries: ["pastr", "bakery", "bread", "cake", "confection", "pie", "donut", "doughnut", "puff", "roll"],
   snacks: ["snack", "chop", "chips", "popcorn", "cookie", "biscuit", "nuts", "sweet", "treat", "munch"],
   drinks: ["drink", "juice", "beverage", "zobo", "smoothie", "shake", "soda", "water", "yoghurt", "yogurt", "coffee", "tea", "boba", "malt"],
-  groceries: ["grocer", "provision", "foodstuff", "noodle", "indomie", "milk", "cereal", "milo", "sugar", "biscuit", "dorm essential"],
+  groceries: ["grocer", "provision", "noodle", "indomie", "milk", "cereal", "milo", "sugar", "biscuit", "dorm essential"],
   wears: ["wear", "fashion", "cloth", "merch", "apparel", "hoodie", "shirt", "pant", "jean", "t-shirt", "tee", "cap", "jacket", "dress", "thrift"],
   fashion: ["wear", "fashion", "cloth", "merch", "apparel", "hoodie", "shirt", "pant", "jean", "t-shirt", "tee", "cap", "jacket", "dress", "thrift"],
   jewelries: ["jewel", "jewelry", "jewellery", "chain", "ring", "bracelet", "watch", "wristwatch", "pendant", "necklace", "earring", "anklet", "bling", "ice", "sunglass"],
@@ -405,7 +406,8 @@ const CATEGORY_PILL_STEMS: Record<string, string[]> = {
 const CATEGORY_PILL_EXCLUDES: Record<string, string[]> = {
   fashion: ["gadget", "electr", "phone", "jewel", "chain", "ring", "bracelet", "perfum", "fragran"],
   wears: ["gadget", "electr", "phone", "jewel", "chain", "ring", "bracelet", "perfum", "fragran"],
-  food: ["snack", "pastr", "cake", "pie"],
+  food: ["foodstuff", "snack", "pastr", "cake", "pie"],
+  groceries: ["foodstuff"],
   jewelries: ["phone", "gadget", "hoodie", "shirt", "pant"],
 };
 
@@ -425,19 +427,25 @@ export function matchesCategoryPill(
   const aliases = getCategoryAliases(canonicalSlug).map((a) => a.toLowerCase());
 
   // 1. Direct ID / alias match on productCategory
-  if (productCategory) {
+  if (productCategory && productCategory.trim()) {
     const prodClean = productCategory.toLowerCase().trim();
-    const prodSlug = normalizeCategorySlug(prodClean);
-    if (prodSlug === canonicalSlug || aliases.includes(prodClean)) {
+    const majorProdCat = getMajorCategoryBySlug(prodClean);
+    if (majorProdCat) {
+      return majorProdCat.slug === canonicalSlug;
+    }
+    if (aliases.includes(prodClean)) {
       return true;
     }
   }
 
   // 2. Direct ID / alias match on storeCategory (fallback if product has no specific category)
-  if (!productCategory && storeCategory) {
+  if ((!productCategory || !productCategory.trim()) && storeCategory && storeCategory.trim()) {
     const storeClean = storeCategory.toLowerCase().trim();
-    const storeSlug = normalizeCategorySlug(storeClean);
-    if (storeSlug === canonicalSlug || aliases.includes(storeClean)) {
+    const majorStoreCat = getMajorCategoryBySlug(storeClean);
+    if (majorStoreCat) {
+      return majorStoreCat.slug === canonicalSlug;
+    }
+    if (aliases.includes(storeClean)) {
       return true;
     }
   }

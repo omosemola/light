@@ -45,9 +45,9 @@ import { Modal } from "@/components/ui/Modal";
 import { ProductCustomizerModal, CustomizerProduct } from "@/components/ui/ProductCustomizerModal";
 import { parseProductImages } from "@/lib/productOptions";
 import { MerchantChatModal, MerchantChatVendor } from "@/components/ui/MerchantChatModal";
-import { getServicePersonnel } from "@/actions/marketplace";
+import { getServicePersonnel, getLiveCategoryProducts } from "@/actions/marketplace";
 import { useSwipeScroll } from "@/hooks/useSwipeScroll";
-import { getMajorCategoryBySlug, normalizeCategorySlug, matchProductToSubcategory, isFoodstuffProduct } from "@/lib/categories";
+import { getMajorCategoryBySlug, normalizeCategorySlug, matchProductToSubcategory } from "@/lib/categories";
 
 // CATEGORY METADATA WITH VECTOR ICONS & UNSPLASH HERO IMAGES
 const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroImage: string; description: string; subcategories: string[] }> = {
@@ -57,7 +57,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     description: "Delicious freshly prepared meals, combos, and delicacies from top campus kitchens and restaurants.",
-    subcategories: ["All Meals", "Rice & Pasta", "Swallow & Soups", "Fast Food & Shawarma", "Pastries & Grills"],
+    subcategories: ["All Meals", "Rice & Pasta", "Swallow & Soups", "Fast Food & Shawarma", "Meat, Grills & Sauces"],
   },
   foodstuffs: {
     name: "Foodstuffs",
@@ -72,8 +72,8 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     Icon: Cookie,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=1200&q=80",
-    description: "Quick bites, popcorn, chips, nuts, and sweet treats for lectures and study sessions.",
-    subcategories: ["All", "Chips & Popcorn", "Chocolates & Candy", "Biscuits & Cookies", "Nuts & Local Snacks"],
+    description: "Quick bites, popcorn, chips, parfaits, and sweet treats for lectures and study sessions.",
+    subcategories: ["All", "Chips & Popcorn", "Parfaits & Sweet Treats", "Biscuits & Cookies", "Nuts & Local Snacks"],
   },
   drinks: {
     name: "Drinks & Beverages",
@@ -96,8 +96,8 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     Icon: Cake,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
-    description: "Freshly baked meat pies, cakes, donuts, and bread.",
-    subcategories: ["All", "Meat Pies & Rolls", "Cakes & Pastries", "Bread & Buns", "Donuts & Waffles"],
+    description: "Freshly baked meat pies, small chops, cakes, donuts, and bread.",
+    subcategories: ["All", "Small Chops, Pies & Rolls", "Cakes & Pastries", "Bread & Buns", "Donuts & Waffles"],
   },
   stationery: {
     name: "Stationery & Books",
@@ -112,8 +112,8 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     Icon: HeartPulse,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-    description: "Skincare, soaps, hair care, and personal hygiene essentials.",
-    subcategories: ["All", "Skincare & Lotions", "Hair Care & Oils", "Soaps & Body Wash", "Lip & Face Care"],
+    description: "Skincare, lotions, face serums, soaps, body scrubs, and personal hygiene essentials.",
+    subcategories: ["All", "Face Care, Serums & Sunscreens", "Body Lotions, Oils & Creams", "Soaps, Scrubs & Body Wash", "Wellness, Nails & Care Kits"],
   },
   sports: {
     name: "Sports & Fitness",
@@ -128,24 +128,24 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     Icon: Shirt,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80",
-    description: "Trendy hoodies, oversized tees, sneakers, and casual campus wear.",
-    subcategories: ["All", "Hoodies & Sweatshirts", "T-Shirts & Tops", "Pants, Jeans & Shorts", "Footwear & Caps"],
+    description: "Trendy tees, polos, jeans, shorts, gowns, nightwear, footwear, and campus wear.",
+    subcategories: ["All", "T-Shirts, Polos & Tops", "Jeans, Shorts & Joggers", "Gowns & Two-Piece Sets", "Nightwear & Loungewear", "Footwear, Bags & Caps"],
   },
   jewelries: {
     name: "Jewelries & Accessories",
     Icon: Gem,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=80",
-    description: "Cuban chains, iced rings, bracelets, and stylish pendants.",
-    subcategories: ["All", "Chains & Necklaces", "Rings & Bands", "Bracelets & Bangles", "Earrings & Pendants", "Watches & Sunglasses"],
+    description: "Wristwatches, Cuban chains, iced rings, bracelets, and complete jewelry sets.",
+    subcategories: ["All", "Wristwatches", "Chains & Necklaces", "Bracelets & Bangles", "Rings, Earrings & Sets"],
   },
   gadgets: {
     name: "Tech & Gadgets",
     Icon: Smartphone,
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
-    description: "Power banks, wireless earbuds, charging cables, and phone stands.",
-    subcategories: ["All", "Phones & Tablets", "Audio & Earbuds", "Chargers & Power Banks", "Cables & Accessories"],
+    description: "Smartphones, headsets, wireless earbuds, power banks, clippers, and tech accessories.",
+    subcategories: ["All", "Phones & Tablets", "Audio & Headsets", "Chargers, Clippers & Gadgets"],
   },
   accessories: {
     name: "Fashion Accessories",
@@ -213,7 +213,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1200&q=80",
     description: "Luxury perfumes, roll-ons, body sprays, oil perfumes, and long-lasting fragrances.",
-    subcategories: ["All", "Perfumes", "Roll-Ons", "Oil Perfumes", "Body Sprays & Mists"],
+    subcategories: ["All", "Perfumes & EDPs", "Body Sprays & Mists", "Oil Perfumes & Roll-Ons"],
   },
   decorations: {
     name: "Interior Decorations & Asthetics",
@@ -221,7 +221,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80",
     description: "Aesthetic room decor, fairy lights, wall posters, desk organizers, cozy rugs, and dorm styling essentials.",
-    subcategories: ["All", "Wall Art & Frames", "Room Lights & LEDs", "Desk & Shelving", "Cushions & Rugs", "Aesthetic Plants & Vases", "Mirrors & Clocks"],
+    subcategories: ["All", "Wall Art, Stickers & Decor", "Room Lights & Humidifiers", "Mirrors & Clocks", "Desk, Dorm & Room Essentials"],
   },
   "interior-decorations": {
     name: "Interior Decorations & Asthetics",
@@ -229,7 +229,7 @@ const CATEGORY_DATA: Record<string, { name: string; Icon: any; bg: string; heroI
     bg: "bg-[#1E1B4B]",
     heroImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80",
     description: "Aesthetic room decor, fairy lights, wall posters, desk organizers, cozy rugs, and dorm styling essentials.",
-    subcategories: ["All", "Wall Art & Frames", "Room Lights & LEDs", "Desk & Shelving", "Cushions & Rugs", "Aesthetic Plants & Vases", "Mirrors & Clocks"],
+    subcategories: ["All", "Wall Art, Stickers & Decor", "Room Lights & Humidifiers", "Mirrors & Clocks", "Desk, Dorm & Room Essentials"],
   },
   electronics: {
     name: "Electronics & Appliances",
@@ -310,10 +310,25 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   useEffect(() => {
-    if (initialProducts && initialProducts.length > 0) {
-      setRawProducts(formatProducts(initialProducts));
-    }
+    setRawProducts(formatProducts(initialProducts || []));
   }, [initialProducts]);
+
+  // Refresh live category products on mount so admin edits reflect immediately even across client router cache
+  useEffect(() => {
+    let active = true;
+    if (canonicalSlug !== "services") {
+      getLiveCategoryProducts(canonicalSlug)
+        .then((res) => {
+          if (active && res && res.success && Array.isArray(res.products)) {
+            setRawProducts(formatProducts(res.products));
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [canonicalSlug]);
 
   useEffect(() => {
     if (initialServiceStores && initialServiceStores.length > 0) {

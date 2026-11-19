@@ -752,20 +752,23 @@ export async function updateProductCategoryAdmin(productId: string, categoryIdOr
     const majorCat = getMajorCategoryBySlug(cleanCat);
     const canonicalId = majorCat ? majorCat.id : normalizeCategorySlug(cleanCat);
     const canonicalName = majorCat ? majorCat.name : cleanCat;
-    const aliases = majorCat ? majorCat.dbAliases : [cleanCat];
 
-    // 1. Find or create the category in the database
-    let category = await prisma.category.findFirst({
-      where: {
-        OR: [
-          { id: canonicalId },
-          { id: cleanCat },
-          { id: { in: aliases } },
-          { name: { equals: canonicalName, mode: "insensitive" } },
-          { name: { equals: cleanCat, mode: "insensitive" } },
-        ],
-      },
-    });
+    // 1. Always prefer the canonical category ID when it maps to a known MajorCategory
+    let category = canonicalId
+      ? await prisma.category.findUnique({ where: { id: canonicalId } })
+      : null;
+
+    if (!category) {
+      category = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { id: cleanCat },
+            { name: { equals: canonicalName, mode: "insensitive" } },
+            { name: { equals: cleanCat, mode: "insensitive" } },
+          ],
+        },
+      });
+    }
 
     if (!category) {
       category = await prisma.category.create({
@@ -786,11 +789,13 @@ export async function updateProductCategoryAdmin(productId: string, categoryIdOr
       },
     });
 
-    // 3. Clear cache and revalidate all relevant paths across the marketplace
-    await clearMarketplaceCache({ productId, categorySlug: category.id, storeId: updatedProduct.storeId });
+    // 3. Clear ALL marketplace cache tags and revalidate both old and new category pages + layout
+    await clearMarketplaceCache();
+    revalidatePath("/", "layout");
     revalidatePath("/admin/dashboard");
     revalidatePath("/");
     revalidatePath("/search");
+    revalidatePath("/category/[slug]", "page");
     revalidatePath(`/category/${category.id}`);
     revalidatePath(`/product/${updatedProduct.slug || updatedProduct.id}`);
 

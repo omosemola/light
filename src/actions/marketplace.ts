@@ -125,7 +125,7 @@ function formatListProduct(p: any, defaultRating: number) {
       p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : (p.store?.deliveryFee ?? 500),
     estimatedDelivery: p.estimatedDelivery || null,
     deliveryFee: p.deliveryFee !== null && p.deliveryFee !== undefined ? p.deliveryFee : null,
-    category: p.category?.name || "Pastries",
+    category: p.category?.name || p.store?.category || "Campus Essentials",
     // Search metadata: real category (no fallback) + store category for uncategorised products.
     categoryId: p.categoryId || null,
     categoryName: p.category?.name || "",
@@ -208,7 +208,7 @@ const readHomepageData = unstable_cache(
       })),
     };
   },
-  ["marketplace-homepage-v3"],
+  ["marketplace-homepage-v5"],
   { tags: [TAG_ALL, TAG_PRODUCTS, TAG_STORES, TAG_CATEGORIES], revalidate: CACHE_TTL_SECONDS }
 );
 
@@ -287,7 +287,7 @@ const readSearchCatalogData = unstable_cache(
       })),
     };
   },
-  ["marketplace-search-catalog-v2"],
+  ["marketplace-search-catalog-v5"],
   { tags: [TAG_ALL, TAG_PRODUCTS, TAG_STORES, TAG_CATEGORIES], revalidate: CACHE_TTL_SECONDS }
 );
 
@@ -569,7 +569,7 @@ async function readServiceStores() {
   return rawStores.map(formatServiceStore);
 }
 
-const readServiceStoresCached = unstable_cache(readServiceStores, ["marketplace-services-v3"], {
+const readServiceStoresCached = unstable_cache(readServiceStores, ["marketplace-services-v5"], {
   tags: [TAG_ALL, TAG_STORES, TAG_CATEGORIES],
   revalidate: CACHE_TTL_SECONDS,
 });
@@ -608,28 +608,22 @@ async function readCategoryProducts(normalizedInput: string) {
 
   const aliases = getCategoryAliases(canonicalSlug);
   const majorCat = getMajorCategoryBySlug(canonicalSlug);
-  const searchStems = majorCat?.searchStems || [canonicalSlug];
+  const storeCatAliases = majorCat
+    ? Array.from(new Set([...aliases, ...majorCat.storeCategoryNames]))
+    : aliases;
 
   const orConditions: any[] = [
     { categoryId: { in: aliases } },
     { category: { id: { in: aliases } } },
     { category: { name: { in: aliases, mode: "insensitive" } } },
+    // Fallback for any product added without an explicit categoryId: inherit from its store's category
+    {
+      AND: [
+        { categoryId: null },
+        { store: { category: { in: storeCatAliases, mode: "insensitive" } } },
+      ],
+    },
   ];
-
-  // Include top search stems for broad recall
-  for (const stem of searchStems.slice(0, 4)) {
-    orConditions.push({
-      category: { name: { contains: stem, mode: "insensitive" } },
-    });
-  }
-
-  // If querying foodstuffs, also include products with foodstuff keywords (e.g. crayfish, prawns, oils, pepper, grains)
-  if (canonicalSlug === "foodstuffs") {
-    const foodstuffKeywords = ["crayfish", "prawn", "stockfish", "catfish", "palm oil", "garri", "yam", "pepper", "foodstuff"];
-    for (const kw of foodstuffKeywords) {
-      orConditions.push({ name: { contains: kw, mode: "insensitive" } });
-    }
-  }
 
   const products = await prisma.product.findMany({
     where: {
@@ -649,7 +643,7 @@ export async function getLiveCategoryProducts(categorySlug: string) {
   try {
     const rawNormalized = (categorySlug || "").toLowerCase().trim();
     const normalized = rawNormalized === "medicals" ? "medical" : rawNormalized;
-    const cached = unstable_cache(readCategoryProducts, ["marketplace-category-v3", normalized], {
+    const cached = unstable_cache(readCategoryProducts, ["marketplace-category-v5", normalized], {
       tags: [TAG_ALL, TAG_PRODUCTS, TAG_CATEGORIES],
       revalidate: CACHE_TTL_SECONDS,
     });

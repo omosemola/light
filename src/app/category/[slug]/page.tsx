@@ -4,8 +4,8 @@ import { getLiveCategoryProducts } from "@/actions/marketplace";
 import { getMajorCategoryBySlug, normalizeCategorySlug } from "@/lib/categories";
 import CategoryClient from "./CategoryClient";
 
-// Cache category catalogs on CDN edge for 60 seconds
-export const revalidate = 60;
+// Serve live category catalogs (backed by tag-invalidated server cache)
+export const dynamic = "force-dynamic";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
