@@ -53,10 +53,43 @@ const MEDICAL_PRESETS = [
 ];
 
 const SERVICE_PRESETS = [
+  "Are you available right now for a booking?",
   "When is the earliest you can fulfill this?",
-  "Can you deliver directly to my hostel lodge?",
-  "Do you handle urgent student requests?",
+  "Can you come directly to my hostel lodge?",
+  "What are your rates for this service?",
 ];
+
+const HAIR_PRESETS = [
+  "Are you available for hair styling or wig revamping?",
+  "How much is a wig revamp or installation?",
+  "Do you have human hair or braids in stock?",
+  "Can I book an appointment for today?",
+];
+
+const CLEANING_PRESETS = [
+  "Are you available for hostel room cleaning this week?",
+  "How much do you charge for room cleaning or fumigation?",
+  "Can you help run a quick campus errand?",
+];
+
+const TAILORING_PRESETS = [
+  "Are you available for outfit alterations or custom sewing?",
+  "How soon can you complete an urgent adjustment?",
+  "Where is your workshop/hall located?",
+];
+
+function getGuestChatIdentifier(): string {
+  if (typeof window === "undefined") return "guest_server@campus.lightson";
+  try {
+    const existing = localStorage.getItem("lightson_guest_chat_id");
+    if (existing && existing.trim()) return existing.trim();
+    const generated = `guest_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}@campus.lightson`;
+    localStorage.setItem("lightson_guest_chat_id", generated);
+    return generated;
+  } catch {
+    return "guest_fallback@campus.lightson";
+  }
+}
 
 const playNotificationChime = () => {
   try {
@@ -99,31 +132,66 @@ export function MerchantChatModal({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevVendorMsgCountRef = useRef<number>(0);
 
+  const chatSenderEmail = useMemo(() => {
+    if (profile?.email && profile.email.trim()) {
+      return profile.email.trim().toLowerCase();
+    }
+    return getGuestChatIdentifier();
+  }, [profile?.email]);
+
   const isServiceVendor = useMemo(() => {
     const cat = (vendor?.category || "").toLowerCase();
     const ctx = (initialProductContext || "").toLowerCase();
-    return cat.includes("service") || cat.includes("laundr") || cat.includes("medic") || cat.includes("pharm") || ctx.includes("laundr") || ctx.includes("wash") || ctx.includes("medic");
+    return (
+      cat.includes("service") ||
+      cat.includes("laundr") ||
+      cat.includes("medic") ||
+      cat.includes("pharm") ||
+      cat.includes("hair") ||
+      cat.includes("barb") ||
+      cat.includes("clean") ||
+      cat.includes("tailor") ||
+      cat.includes("print") ||
+      cat.includes("repair") ||
+      cat.includes("tutor") ||
+      cat.includes("photo") ||
+      ctx.includes("laundr") ||
+      ctx.includes("wash") ||
+      ctx.includes("medic")
+    );
   }, [vendor?.category, initialProductContext]);
 
   const activePresets = useMemo(() => {
     const cat = (vendor?.category || "").toLowerCase();
     const ctx = (initialProductContext || "").toLowerCase();
-    if (cat.includes("laundr") || ctx.includes("laundr") || ctx.includes("wash") || ctx.includes("iron")) {
+    const name = (vendor?.name || "").toLowerCase();
+    const all = `${cat} ${ctx} ${name}`;
+
+    if (all.includes("laundr") || all.includes("wash") || all.includes("iron")) {
       return LAUNDRY_PRESETS;
     }
-    if (cat.includes("medic") || cat.includes("pharm") || cat.includes("health") || ctx.includes("medic") || ctx.includes("pharm")) {
+    if (all.includes("medic") || all.includes("pharm") || all.includes("health")) {
       return MEDICAL_PRESETS;
     }
-    if (cat.includes("service") || ctx.includes("service") || ctx.includes("errand")) {
+    if (all.includes("hair") || all.includes("barb") || all.includes("wig") || all.includes("strand") || all.includes("hadassah")) {
+      return HAIR_PRESETS;
+    }
+    if (all.includes("clean") || all.includes("errand") || all.includes("fumigat") || all.includes("diva")) {
+      return CLEANING_PRESETS;
+    }
+    if (all.includes("tailor") || all.includes("alter") || all.includes("atelier")) {
+      return TAILORING_PRESETS;
+    }
+    if (isServiceVendor) {
       return SERVICE_PRESETS;
     }
     return DEFAULT_PRESETS;
-  }, [vendor?.category, initialProductContext]);
+  }, [vendor?.category, vendor?.name, initialProductContext, isServiceVendor]);
 
   const fetchLiveMessages = useCallback(async () => {
     if (!vendor?.id) return;
     try {
-      const res = await getConversationMessages(vendor.id, profile?.email);
+      const res = await getConversationMessages(vendor.id, chatSenderEmail);
       if (res.success && res.messages) {
         const formatted: ChatMessage[] = res.messages.map((m) => ({
           id: m.id,
@@ -148,7 +216,9 @@ export function MerchantChatModal({
             {
               id: "m-welcome",
               sender: "merchant",
-              text: `Hello there! 👋 Welcome to ${vendor.name}. How can we assist you with your campus order today?`,
+              text: isServiceVendor
+                ? `Hello there! 👋 Welcome to ${vendor.name}. Send us a message to inquire about rates, check live availability, or book a service right now.`
+                : `Hello there! 👋 Welcome to ${vendor.name}. How can we assist you with your campus order today?`,
               timestamp: nowStr,
             },
           ];
@@ -168,7 +238,7 @@ export function MerchantChatModal({
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [vendor?.id, vendor?.name, profile?.email, initialProductContext]);
+  }, [vendor?.id, vendor?.name, chatSenderEmail, initialProductContext, isServiceVendor]);
 
   useEffect(() => {
     if (isOpen) {
@@ -264,7 +334,7 @@ export function MerchantChatModal({
         storeId: vendor.id,
         senderType: "STUDENT",
         senderName: profile.name || "Campus Student",
-        senderEmail: profile.email || undefined,
+        senderEmail: chatSenderEmail,
         text: text,
         image: finalChatImg || undefined,
         orderId: orderId,

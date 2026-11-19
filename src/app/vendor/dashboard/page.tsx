@@ -86,6 +86,8 @@ import {
   VariationOption, 
   AddOnOption 
 } from "@/lib/productOptions";
+import { VendorChatInbox } from "@/components/ui/VendorChatInbox";
+import { getStoreChatThreads } from "@/actions/chat";
 
 // Client-side image compression to prevent payload limits and ensure fast loading
 function compressImage(file: File, maxWidth = 720, quality = 0.72): Promise<string> {
@@ -141,7 +143,8 @@ export default function VendorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
-  const [selectedTab, setSelectedTab] = useState<"orders" | "products" | "reviews" | "settings">("orders");
+  const [selectedTab, setSelectedTab] = useState<"orders" | "products" | "messages" | "reviews" | "settings">("orders");
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
   const [orderFilter, setOrderFilter] = useState<string>("ALL");
   const [productSearch, setProductSearch] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -178,7 +181,7 @@ export default function VendorDashboardPage() {
   const [storeCategory, setStoreCategory] = useState("Campus Food & Meals");
   const [ownerName, setOwnerName] = useState("");
   const [storeDesc, setStoreDesc] = useState("");
-  const [storePhone, setStorePhone] = useState("+2348012345678");
+  const [storePhone, setStorePhone] = useState("");
   const [storeEmail, setStoreEmail] = useState("");
   const [storeLogo, setStoreLogo] = useState("");
   const [storeCoverImage, setStoreCoverImage] = useState("");
@@ -197,6 +200,7 @@ export default function VendorDashboardPage() {
   // Sound Alarm State
   const [isAlarmMuted, setIsAlarmMuted] = useState(false);
   const prevPendingCountRef = useRef<number>(0);
+  const prevUnreadChatRef = useRef<number>(0);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showToast = (msg: string, durationMs = 1500) => {
@@ -451,6 +455,20 @@ export default function VendorDashboardPage() {
         playVendorOrderAlarm();
       }
       prevPendingCountRef.current = currentPending;
+
+      // Check unread student chat messages
+      getStoreChatThreads(res.store.id)
+        .then((chatRes) => {
+          if (chatRes.success && Array.isArray(chatRes.threads)) {
+            const totalUnread = chatRes.threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0);
+            setUnreadChatCount(totalUnread);
+            if (isPoll && totalUnread > 0 && totalUnread > prevUnreadChatRef.current && !isAlarmMuted) {
+              playMessageChime();
+            }
+            prevUnreadChatRef.current = totalUnread;
+          }
+        })
+        .catch(() => {});
     } else if (!isPoll) {
       router.replace("/vendor/login");
     }
@@ -1498,6 +1516,24 @@ export default function VendorDashboardPage() {
 
           <button
             type="button"
+            onClick={() => setSelectedTab("messages")}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-heading font-black transition shrink-0 cursor-pointer flex items-center gap-2 ${
+              selectedTab === "messages"
+                ? "bg-[#312E81] text-white shadow-md"
+                : isDark ? "bg-zinc-900 text-zinc-400 hover:bg-zinc-800" : "bg-white text-zinc-600 border border-slate-200 hover:bg-slate-100"
+            }`}
+          >
+            <MessageSquare size={15} />
+            <span>Student Messages & Chat</span>
+            {unreadChatCount > 0 && (
+              <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded-full animate-pulse">
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setSelectedTab("reviews")}
             className={`px-4 py-2.5 rounded-2xl text-xs font-heading font-black transition shrink-0 cursor-pointer flex items-center gap-2 ${
               selectedTab === "reviews"
@@ -2218,6 +2254,18 @@ export default function VendorDashboardPage() {
               )}
             </div>
           )
+        )}
+
+        {/* 2.5 STUDENT MESSAGES & LIVE CHAT INBOX TAB */}
+        {selectedTab === "messages" && storeData?.id && (
+          <VendorChatInbox
+            storeId={storeData.id}
+            storeName={storeData.name || "Campus Store"}
+            isDark={isDark}
+            isService={Boolean(storeData.isService)}
+            onUnreadCountChange={(count) => setUnreadChatCount(count)}
+            onNewMessageSound={() => playMessageChime()}
+          />
         )}
 
         {/* 3. STUDENT REVIEWS TAB */}

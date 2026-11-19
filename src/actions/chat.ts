@@ -39,9 +39,12 @@ export async function saveChatMessage(input: {
 }) {
   try {
     const cleanEmail = input.senderEmail ? input.senderEmail.trim().toLowerCase() : null;
+    const isGuestSession = Boolean(
+      cleanEmail && (cleanEmail.startsWith("guest_") || cleanEmail.endsWith("@campus.lightson"))
+    );
     let userId: string | null = null;
 
-    if (cleanEmail) {
+    if (cleanEmail && !isGuestSession) {
       const user = await prisma.user.findUnique({
         where: { email: cleanEmail },
       });
@@ -99,7 +102,7 @@ export async function saveChatMessage(input: {
         const vendorEmail = store?.user?.email || "vendor@campuslightson.com";
         const emailHtml = generateChatMessageEmailForVendor({
           studentName: input.senderName || "Campus Student",
-          studentEmail: cleanEmail || undefined,
+          studentEmail: !isGuestSession && cleanEmail ? cleanEmail : undefined,
           storeName: store?.name || "Campus Vendor",
           messageText: input.text,
           storeId: input.storeId,
@@ -110,11 +113,9 @@ export async function saveChatMessage(input: {
           subject: `💬 New message from ${input.senderName} - ${store?.name || "Store"}`,
           html: emailHtml,
         });
-      } else if (cleanEmail) {
-        // Vendor replying to student
-        const store = await prisma.store.findUnique({
-          where: { id: input.storeId },
-        });
+      } else if (cleanEmail && !isGuestSession) {
+        // Vendor replying to registered student
+        const store = targetStore;
 
         const emailHtml = generateChatMessageEmailForStudent({
           storeName: store?.name || "Campus Vendor",
@@ -158,17 +159,18 @@ export async function getConversationMessages(storeId: string, studentEmail?: st
   try {
     const cleanEmail = studentEmail ? studentEmail.trim().toLowerCase() : null;
 
-    let whereClause: any = { storeId };
-
-    if (cleanEmail) {
-      whereClause = {
-        storeId,
-        OR: [
-          { senderEmail: cleanEmail },
-          { user: { email: cleanEmail } },
-        ],
-      };
+    // Never return all store messages if no student/session identifier is provided
+    if (!cleanEmail) {
+      return { success: true, messages: [] };
     }
+
+    const whereClause = {
+      storeId,
+      OR: [
+        { senderEmail: cleanEmail },
+        { user: { email: cleanEmail } },
+      ],
+    };
 
     const messages = await prisma.chatMessage.findMany({
       where: whereClause,
@@ -233,7 +235,7 @@ export async function getStoreChatThreads(storeId: string) {
           studentEmail: emailKey,
           studentName: msg.senderType === "STUDENT" ? msg.senderName : msg.user?.name || "Campus Student",
           studentAvatar: msg.user?.image || null,
-          lastMessage: msg.text,
+          lastMessage: msg.text || (msg.image ? "📷 Sent a photo attachment" : ""),
           lastMessageAt: msg.createdAt.toISOString(),
           unreadCount: msg.senderType === "STUDENT" && !msg.isRead ? 1 : 0,
           orderId: msg.orderId,
@@ -241,6 +243,9 @@ export async function getStoreChatThreads(storeId: string) {
         });
       } else {
         const existing = threadMap.get(emailKey)!;
+        if (msg.senderType === "STUDENT" && msg.senderName && existing.studentName === "Campus Student") {
+          existing.studentName = msg.senderName;
+        }
         if (msg.senderType === "STUDENT" && !msg.isRead) {
           existing.unreadCount += 1;
         }

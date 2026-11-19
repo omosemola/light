@@ -333,14 +333,17 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
   useEffect(() => {
     if (initialServiceStores && initialServiceStores.length > 0) {
       setServicePersonnel(initialServiceStores);
-    } else if (slug === "services") {
-      getServicePersonnel().then((res) => {
-        if (res.success && res.stores && res.stores.length > 0) {
-          setServicePersonnel(res.stores);
-        }
-      }).catch(() => {});
     }
-  }, [initialServiceStores, slug]);
+    if (canonicalSlug === "services" || slug === "services") {
+      getServicePersonnel()
+        .then((res) => {
+          if (res.success && Array.isArray(res.stores)) {
+            setServicePersonnel(res.stores);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [initialServiceStores, canonicalSlug, slug]);
 
   const handleOpenChat = (vendor: { id: string; name: string; logo?: string; avatar?: string; phone?: string | null; categoryType?: string; category?: string }, contextText?: string) => {
     setSelectedChatVendor({
@@ -651,8 +654,8 @@ export default function CategoryClient({ initialProducts = [], initialServiceSto
               className="object-cover object-center scale-105"
             />
 
-            {/* SOLID HIGH CONTRAST OVERLAY (MATCHING HOMEPAGE HERO) */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1E1B4B]/95 via-[#1E1B4B]/90 to-[#312E81]/85 dark:from-[#09090B]/95 dark:to-[#121215]/95" />
+            {/* SOLID HIGH CONTRAST OVERLAY (NO GRADIENT) */}
+            <div className="absolute inset-0 bg-[#1E1B4B]/95 dark:bg-[#121215]/95" />
 
             <div className="relative z-10 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

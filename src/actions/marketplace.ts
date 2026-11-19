@@ -515,16 +515,16 @@ const SERVICE_STORE_WHERE = {
   OR: [
     { isService: true },
     { category: { equals: "services", mode: "insensitive" as const } },
-    { description: { contains: "service", mode: "insensitive" as const } },
-    { description: { contains: "laundry", mode: "insensitive" as const } },
-    { description: { contains: "medical", mode: "insensitive" as const } },
-    { description: { contains: "pharmacy", mode: "insensitive" as const } },
-    { name: { contains: "laundry", mode: "insensitive" as const } },
-    { name: { contains: "pharmacy", mode: "insensitive" as const } },
+    { category: { startsWith: "Services:", mode: "insensitive" as const } },
+    { category: { in: ["Laundry", "Medical", "Medicals", "Campus Services"], mode: "insensitive" as const } },
   ],
 };
 
 function formatServiceStore(s: any) {
+  const validStorePhone = s.phone && s.phone !== "+2348012345678" ? s.phone : null;
+  const validUserPhone = s.user?.phone && s.user.phone !== "+2348012345678" ? s.user.phone : null;
+  const cleanCat = (s.category || "").replace(/^Services:\s*/i, "").trim();
+
   return {
     id: s.id,
     name: s.name,
@@ -533,11 +533,12 @@ function formatServiceStore(s: any) {
       optimizeSingleImage(s.logo, "logo", s.id, s.updatedAt) ||
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=300&q=80",
     rating: s.rating || 4.9,
-    phone: s.phone || s.user?.phone || null,
+    phone: validStorePhone || validUserPhone || null,
     isOpen: computeIsStoreOpen(s),
     estimatedDelivery: s.estimatedDelivery || "15-30 mins",
     categoryType:
       s.serviceSubcategory ||
+      (cleanCat && cleanCat.toLowerCase() !== "services" ? cleanCat : null) ||
       (s.name.toLowerCase().includes("laundry") || (s.description && s.description.toLowerCase().includes("laundry"))
         ? "Laundry & Dry Cleaning"
         : s.name.toLowerCase().includes("health") ||
@@ -566,10 +567,21 @@ async function readServiceStores() {
     },
     orderBy: { createdAt: "desc" },
   });
-  return rawStores.map(formatServiceStore);
+
+  // Deduplicate by normalized store name so duplicate vendor accounts never appear twice
+  const seenNames = new Set<string>();
+  const uniqueStores = rawStores.filter((st) => {
+    const key = (st.name || "").trim().toLowerCase();
+    if (!key) return true;
+    if (seenNames.has(key)) return false;
+    seenNames.add(key);
+    return true;
+  });
+
+  return uniqueStores.map(formatServiceStore);
 }
 
-const readServiceStoresCached = unstable_cache(readServiceStores, ["marketplace-services-v5"], {
+const readServiceStoresCached = unstable_cache(readServiceStores, ["marketplace-services-v6"], {
   tags: [TAG_ALL, TAG_STORES, TAG_CATEGORIES],
   revalidate: CACHE_TTL_SECONDS,
 });
@@ -643,7 +655,7 @@ export async function getLiveCategoryProducts(categorySlug: string) {
   try {
     const rawNormalized = (categorySlug || "").toLowerCase().trim();
     const normalized = rawNormalized === "medicals" ? "medical" : rawNormalized;
-    const cached = unstable_cache(readCategoryProducts, ["marketplace-category-v5", normalized], {
+    const cached = unstable_cache(readCategoryProducts, ["marketplace-category-v6", normalized], {
       tags: [TAG_ALL, TAG_PRODUCTS, TAG_CATEGORIES],
       revalidate: CACHE_TTL_SECONDS,
     });
