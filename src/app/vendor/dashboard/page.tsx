@@ -219,7 +219,9 @@ export default function VendorDashboardPage() {
       setStoreCategory(storeData.category || "Campus Food & Meals");
       setOwnerName(storeData.user?.name || "");
       setStoreDesc(storeData.description || "");
-      setStorePhone(storeData.phone || storeData.user?.phone || "");
+      const validStorePhone = storeData.phone && storeData.phone !== "+2348012345678" ? storeData.phone : "";
+      const validUserPhone = storeData.user?.phone && storeData.user.phone !== "+2348012345678" ? storeData.user.phone : "";
+      setStorePhone(validStorePhone || validUserPhone || "");
       setStoreEmail(storeData.user?.email || "");
       setStoreLogo(storeData.logo || "");
       setStoreCoverImage(storeData.coverImage || "");
@@ -429,7 +431,9 @@ export default function VendorDashboardPage() {
           setStoreDesc(res.store.description);
           setServiceBio(res.store.description);
         }
-        if (res.store.phone || res.store.user?.phone) setStorePhone(res.store.phone || res.store.user?.phone || "");
+        const initialStorePhone = res.store.phone && res.store.phone !== "+2348012345678" ? res.store.phone : "";
+        const initialUserPhone = res.store.user?.phone && res.store.user.phone !== "+2348012345678" ? res.store.user.phone : "";
+        if (initialStorePhone || initialUserPhone) setStorePhone(initialStorePhone || initialUserPhone);
         if (res.store.user?.email) setStoreEmail(res.store.user.email);
         if (res.store.logo) setStoreLogo(res.store.logo);
         if (res.store.coverImage) setStoreCoverImage(res.store.coverImage);
@@ -2471,7 +2475,7 @@ export default function VendorDashboardPage() {
                       type="text"
                       value={storePhone}
                       onChange={(e) => setStorePhone(e.target.value)}
-                      placeholder="e.g. +2348012345678"
+                      placeholder="Enter your active phone number (e.g. 0803...)"
                       className={`w-full h-12 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}
@@ -2829,7 +2833,7 @@ export default function VendorDashboardPage() {
                       type="text"
                       value={storePhone}
                       onChange={(e) => setStorePhone(e.target.value)}
-                      placeholder="e.g. +2348012345678"
+                      placeholder="Enter your active phone number (e.g. 0803...)"
                       className={`w-full h-11 px-4 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                         isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900"
                       }`}

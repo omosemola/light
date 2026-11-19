@@ -24,6 +24,7 @@ import { getLiveOrderById } from "@/actions/orders";
 import { useUserStore } from "@/lib/userStore";
 import { getSafeImageUrl } from "@/lib/productOptions";
 import { getOrderStatusMeta } from "@/lib/machines/orderMachine";
+import { MerchantChatModal } from "@/components/ui/MerchantChatModal";
 
 interface OrderDetail {
   id: string;
@@ -90,12 +91,14 @@ const getStatusDisplay = (status: string) => {
 
 function formatDbOrder(dbOrder: any, fallback: OrderDetail): OrderDetail {
   if (!dbOrder) return fallback;
+  const rawStorePhone = dbOrder.store?.phone && dbOrder.store.phone !== "+2348012345678" ? dbOrder.store.phone : "";
+  const rawUserPhone = dbOrder.store?.user?.phone && dbOrder.store.user.phone !== "+2348012345678" ? dbOrder.store.user.phone : "";
   return {
     id: dbOrder.id.length > 10 ? dbOrder.id.slice(-6).toUpperCase() : dbOrder.id,
     vendorId: dbOrder.storeId || dbOrder.store?.id || "vendor",
     vendorName: dbOrder.store?.name || "Campus Vendor",
     vendorAvatar: getSafeImageUrl(dbOrder.store?.logo || fallback.vendorAvatar),
-    vendorPhone: dbOrder.store?.phone || dbOrder.store?.user?.phone || "+234 812 345 9900",
+    vendorPhone: rawStorePhone || rawUserPhone || "",
     total: dbOrder.totalAmount,
     subtotal: Math.max(
       0,
@@ -209,6 +212,7 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
   const [reviewComment, setReviewComment] = useState("");
   const [isReviewSubmitted, setIsReviewSubmitted] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const { profile } = useUserStore();
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -280,8 +284,6 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
   }
 
   const statusInfo = getStatusDisplay(order.status);
-  const whatsappNumber = (order.vendorPhone || "2348012345678").replace(/[^0-9]/g, "");
-  const formattedWhatsapp = whatsappNumber.startsWith("0") ? `234${whatsappNumber.slice(1)}` : whatsappNumber;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAF7] dark:bg-[#09090B] font-body text-[#18181B] dark:text-zinc-100 pb-28 transition-colors duration-200">
@@ -319,7 +321,7 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
           className="bg-white dark:bg-[#121215] rounded-[32px] border border-slate-200/90 dark:border-zinc-800 shadow-lg shadow-indigo-950/5 dark:shadow-black/40 overflow-hidden"
         >
           {/* RECEIPT HEADER */}
-          <div className="p-6 md:p-8 bg-linear-to-b from-indigo-50/60 via-transparent to-transparent dark:from-indigo-950/20 border-b border-slate-100 dark:border-zinc-800/80 text-center space-y-3">
+          <div className="p-6 md:p-8 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-slate-100 dark:border-zinc-800/80 text-center space-y-3">
             <div className="flex items-center justify-center gap-2">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-heading font-extrabold border ${statusInfo.color}`}>
                 <span className={`w-2 h-2 rounded-full ${statusInfo.dotColor} animate-pulse`} />
@@ -371,23 +373,24 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
 
               {/* 1-Tap Action buttons */}
               <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={`tel:${order.vendorPhone}`}
-                  className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center transition-colors shadow-2xs"
-                  title="Call Store"
-                >
-                  <Phone size={15} />
-                </a>
+                {order.vendorPhone && (
+                  <a
+                    href={`tel:${order.vendorPhone}`}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 text-[#312E81] dark:text-indigo-400 hover:bg-[#312E81] hover:text-white border border-slate-200 dark:border-zinc-700 flex items-center justify-center transition-colors shadow-2xs"
+                    title="Call Store"
+                  >
+                    <Phone size={15} />
+                  </a>
+                )}
 
-                <a
-                  href={`https://wa.me/${formattedWhatsapp}?text=${encodeURIComponent(`Hello ${order.vendorName}! 👋 I placed Order #${order.id} on Lightson for delivery to ${order.hostelAddress || "my campus hostel"}.\n\nItems: ${order.items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}\nTotal: ₦${order.total.toLocaleString()}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 h-9 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 text-xs font-heading font-bold"
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="px-3 h-9 rounded-xl bg-[#312E81] hover:bg-[#1E1B4B] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 text-xs font-heading font-bold cursor-pointer"
                 >
                   <MessageSquare size={13} />
-                  <span>WhatsApp</span>
-                </a>
+                  <span>Chat Store</span>
+                </button>
               </div>
             </div>
 
@@ -576,6 +579,19 @@ export default function OrderTrackingClient({ initialOrder, id }: OrderTrackingC
           </Link>
         </div>
       </div>
+
+      {/* IN-APP MERCHANT CHAT MODAL */}
+      <MerchantChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        vendor={{
+          id: order.vendorId,
+          name: order.vendorName,
+          avatar: order.vendorAvatar,
+          phone: order.vendorPhone || undefined,
+        }}
+        orderId={dbOrder?.id || id}
+      />
 
     </div>
   );

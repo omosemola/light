@@ -18,7 +18,14 @@ import { generateUniqueProductSlug } from "@/lib/slugify";
 import { clearMarketplaceCache } from "@/actions/marketplace";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { productCreationSchema, productUpdateSchema, vendorStoreRegistrationSchema, storeScheduleSchema } from "@/lib/validations";
+import {
+  productCreationSchema,
+  productUpdateSchema,
+  vendorStoreRegistrationSchema,
+  storeScheduleSchema,
+  sanitizePhoneNumber,
+  isDummyPhoneNumber,
+} from "@/lib/validations";
 import { canTransitionOrder } from "@/lib/machines/orderMachine";
 import {
   getMajorCategoryBySlug,
@@ -146,6 +153,27 @@ export async function getVendorDashboardData(vendorUserId?: string) {
         success: false, 
         error: "No store found matching your merchant credentials. Please log in." 
       };
+    }
+
+    // Ensure store.phone is always synced with the owner's real phone and never uses a dummy number
+    const cleanStorePhone = sanitizePhoneNumber(store.phone);
+    const cleanUserPhone = sanitizePhoneNumber(store.user?.phone);
+    const resolvedPhone = cleanStorePhone || cleanUserPhone || null;
+
+    if (!cleanStorePhone && cleanUserPhone) {
+      store.phone = cleanUserPhone;
+      prisma.store
+        .update({
+          where: { id: store.id },
+          data: { phone: cleanUserPhone },
+        })
+        .catch(() => {});
+    } else if (!cleanStorePhone && store.phone) {
+      store.phone = null;
+    }
+
+    if (store.user) {
+      store.user.phone = cleanUserPhone || resolvedPhone;
     }
 
     // Calculate metrics
@@ -693,6 +721,14 @@ export async function registerVendorStore(data: {
     const rateLimit = await checkRateLimit(`vendor_reg_${parsedData.email.trim().toLowerCase()}`, 3, 15 * 60 * 1000);
     if (!rateLimit.success) return { success: false, error: rateLimit.error };
 
+    const cleanPhone = sanitizePhoneNumber(data.phone);
+    if (!cleanPhone) {
+      return {
+        success: false,
+        error: "Please enter a valid, active phone number (not a placeholder example).",
+      };
+    }
+
     // 1. Find or create user
     let user = await prisma.user.findUnique({
       where: { email: data.email },
@@ -703,7 +739,7 @@ export async function registerVendorStore(data: {
         data: {
           name: data.ownerName || data.storeName,
           email: data.email,
-          phone: data.phone,
+          phone: cleanPhone,
           password: data.password ? await bcrypt.hash(data.password, 10) : null,
           role: "VENDOR",
         },
@@ -713,7 +749,7 @@ export async function registerVendorStore(data: {
         where: { id: user.id },
         data: { 
           role: "VENDOR",
-          phone: data.phone || user.phone,
+          phone: cleanPhone || sanitizePhoneNumber(user.phone),
           password: data.password ? await bcrypt.hash(data.password, 10) : user.password,
         },
       });
@@ -752,6 +788,7 @@ export async function registerVendorStore(data: {
       data: {
         name: data.storeName,
         description: data.description || `Welcome to ${data.storeName}! Finest campus vendor.`,
+        phone: cleanPhone,
         logo: finalLogo,
         coverImage: finalCover,
         userId: user.id,
@@ -897,6 +934,7 @@ export async function authenticateVendor(email: string, password?: string) {
           name: `${user.name || "Campus"}'s Store`,
           description: "Fresh campus meals, student combos, and quick hostel deliveries.",
           userId: user.id,
+          phone: sanitizePhoneNumber(user.phone),
           rating: 5.0,
           estimatedDelivery: "20-30 mins",
           isOpen: true,
@@ -910,11 +948,16 @@ export async function authenticateVendor(email: string, password?: string) {
         storeName: targetStore.name,
         ownerName: user.name || "Campus Vendor",
         email: user.email,
-        phone: user.phone || "Not specified",
+        phone: sanitizePhoneNumber(user.phone) || "Not specified",
         category: "Campus Retail & Essentials",
         location: "University Campus",
         description: targetStore.description,
       }).catch((e) => console.error("Admin vendor alert error:", e));
+    } else if (!sanitizePhoneNumber(targetStore.phone) && sanitizePhoneNumber(user.phone)) {
+      targetStore = await prisma.store.update({
+        where: { id: targetStore.id },
+        data: { phone: sanitizePhoneNumber(user.phone) },
+      });
     }
 
     // Ensure user role is VENDOR
@@ -962,16 +1005,21 @@ export async function updateStoreSchedule(data: {
   isOpen?: boolean;
 }) {
   try {
+    if (data.phone && isDummyPhoneNumber(data.phone)) {
+      return { success: false, error: "Please enter your real active phone number instead of a placeholder example." };
+    }
     storeScheduleSchema.parse(data);
     const session = await getVendorSession();
     if (!session.isAuthenticated || session.storeId !== data.storeId) return { success: false, error: "Unauthorized" };
+
+    const cleanPhone = sanitizePhoneNumber(data.phone);
 
     const updatedStore = await prisma.store.update({
       where: { id: data.storeId },
       data: {
         openingTime: data.openingTime,
         closingTime: data.closingTime,
-        phone: data.phone,
+        ...(cleanPhone ? { phone: cleanPhone } : {}),
         estimatedDelivery: data.estimatedDelivery,
         ...(data.deliveryFee !== undefined ? { deliveryFee: Number(data.deliveryFee) } : {}),
         ...(typeof data.isOpen === "boolean" ? { isOpen: data.isOpen } : {}),
@@ -1016,6 +1064,14 @@ export async function updateVendorProfile(data: {
     const session = await getVendorSession();
     if (!session.isAuthenticated || session.storeId !== data.storeId) return { success: false, error: "Unauthorized" };
 
+    if (data.phone && isDummyPhoneNumber(data.phone)) {
+      return {
+        success: false,
+        error: "Please enter your real active phone number instead of a placeholder example.",
+      };
+    }
+
+    const cleanPhone = sanitizePhoneNumber(data.phone);
     const finalLogo = data.logo !== undefined ? await ensureCloudinaryImageUrl(data.logo, "lightson_marketplace/stores") : undefined;
     const finalCover = data.coverImage !== undefined ? await ensureCloudinaryImageUrl(data.coverImage, "lightson_marketplace/stores") : undefined;
 
@@ -1025,7 +1081,7 @@ export async function updateVendorProfile(data: {
       data: {
         name: data.storeName.trim(),
         description: data.description !== undefined ? data.description.trim() : undefined,
-        phone: data.phone !== undefined ? data.phone.trim() : undefined,
+        ...(cleanPhone ? { phone: cleanPhone } : {}),
         openingTime: data.openingTime || undefined,
         closingTime: data.closingTime || undefined,
         estimatedDelivery: data.estimatedDelivery || undefined,
@@ -1055,7 +1111,7 @@ export async function updateVendorProfile(data: {
         where: { id: updatedStore.userId },
         data: {
           ...(data.ownerName ? { name: data.ownerName.trim() } : {}),
-          ...(data.phone ? { phone: data.phone.trim() } : {}),
+          ...(cleanPhone ? { phone: cleanPhone } : {}),
           ...(finalLogo ? { image: finalLogo } : {}),
         },
       });

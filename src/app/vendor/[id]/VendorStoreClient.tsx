@@ -68,7 +68,9 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
       coverImage: coverImg,
       hasCustomCover,
       description: dbStore.description || `Welcome to ${dbStore.name} on campus. Order fresh food & campus items delivered fast.`,
-      phone: dbStore.phone || dbStore.user?.phone || "",
+      phone:
+        (dbStore.phone && dbStore.phone !== "+2348012345678" ? dbStore.phone : "") ||
+        (dbStore.user?.phone && dbStore.user.phone !== "+2348012345678" ? dbStore.user.phone : ""),
       ordersCount: dbStore._count?.orders || 12,
       products: dbStore.products && dbStore.products.length > 0
         ? dbStore.products.map((p: any) => {
@@ -251,7 +253,7 @@ export default function VendorStoreClient({ initialStore, id }: VendorStoreClien
               : "scale-125 blur-2xl opacity-60 dark:opacity-40"
           }`}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#FAFAF7] dark:from-[#09090B] via-black/40 to-black/30" />
+        <div className="absolute inset-0 bg-black/45" />
 
         {/* Top Controls */}
         <div className="absolute top-5 inset-x-5 flex items-center justify-between max-w-5xl mx-auto z-10">
